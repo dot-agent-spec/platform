@@ -1,0 +1,13 @@
+{
+  "grammars": [
+    {
+      "name": "agent",
+      "scope": "source.agent",
+      "file-types": ["agent", "type"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0"
+  }
+}

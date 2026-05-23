@@ -1,0 +1,19 @@
+{
+  "name": "tree-sitter-agent",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the Agent DSL (.agent / .type)",
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test":     "tree-sitter test",
+    "parse":    "tree-sitter parse"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.0"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.agent",
+      "file-types": ["agent", "type"]
+    }
+  ]
+}
