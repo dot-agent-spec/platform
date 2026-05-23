@@ -1,0 +1,56 @@
+{
+  "name": "agent-dsl-syntax",
+  "displayName": "Agent DSL Syntax Highlighting",
+  "description": "Syntax highlighting for .agent DSL files",
+  "version": "1.0.0",
+  "publisher": "entelekheia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/entelekheia/dot-agent-spec"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:agent"
+  ],
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "scripts": {
+    "package": "vsce package",
+    "install-ext": "code --install-extension agent-dsl-syntax-*.vsix"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.0.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "agent",
+        "aliases": [
+          "Agent",
+          "agent"
+        ],
+        "extensions": [
+          ".agent"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "agent",
+        "scopeName": "source.agent",
+        "path": "./agent.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "agent",
+        "path": "./snippets.json"
+      }
+    ]
+  }
+}

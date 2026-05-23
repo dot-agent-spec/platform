@@ -1,0 +1,4 @@
+.DS_Store
+DSL/vscode-extension/node_modules/
+DSL/vscode-extension/*.vsix
+Deprecated/*

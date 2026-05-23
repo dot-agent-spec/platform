@@ -1,0 +1,9 @@
+[submodule "org-spec"]
+	path = org-spec
+	url = https://github.com/dot-agent-spec/.github.git
+[submodule "DSL/tree-sitter-agent"]
+	path = DSL/tree-sitter-agent
+	url = https://github.com/daniloborges/dot-agent-tree-sitter.git
+[submodule "DSL/zed-agent/grammars/agent"]
+	path = DSL/zed-agent/grammars/agent
+	url = https://github.com/daniloborges/dot-agent-tree-sitter.git
