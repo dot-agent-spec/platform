@@ -1,0 +1,12 @@
+node_modules/
+build/
+prebuilds/
+
+# tree-sitter generated files
+src/grammar.json
+src/node-types.json
+src/parser.c
+src/scanner.c
+src/tree_sitter/
+
+.DS_Store

@@ -1,0 +1,181 @@
+================================================================================
+type simples com concept
+================================================================================
+
+type Prontuario
+  concept https://www.wikidata.org/wiki/Q251648 (EHR)
+  patient: Person "Paciente que será atendido"
+  symptoms: Text
+  timestamp: DateTime
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (type_property
+        (concept_prop
+          uri: (url)))
+      (type_property
+        (property_decl
+          name: (identifier)
+          type: (type_value (type_ref (identifier)))
+          description: (quoted_string)))
+      (type_property
+        (property_decl
+          name: (identifier)
+          type: (type_value (type_ref (identifier)))))
+      (type_property
+        (property_decl
+          name: (identifier)
+          type: (type_value (type_ref (identifier))))))))
+
+================================================================================
+type com array
+================================================================================
+
+type BankStatement
+  concept https://www.wikidata.org/wiki/Q806653
+  account: Person
+  transactions: [Transaction]
+  balance: Number
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (type_property (concept_prop uri: (url)))
+      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
+      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
+      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))))))))
+
+================================================================================
+type com Enum
+================================================================================
+
+type MedicalAlert
+  concept https://schema.org/MedicalCondition
+  severity: Enum(low, medium, high)
+  active: Boolean
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (type_property (concept_prop uri: (url)))
+      (type_property (property_decl name: (identifier) type: (type_value (identifier) (identifier) (identifier) (identifier))))
+      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))))))))
+
+================================================================================
+type com propriedade opcional
+================================================================================
+
+type AvatarWithMickey
+  concept https://schema.org/ImageObject
+  image: Avatar
+  caption?: Text "Legenda opcional"
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (type_property (concept_prop uri: (url)))
+      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
+      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))) optional_marker: "?" description: (quoted_string))))))
+
+================================================================================
+agent simples sem metadata
+================================================================================
+
+agent Doctor
+
+description
+  Um especialista em análise clínica
+
+behavior doctor.flow
+requires Prontuario
+input Patient, MedicalCondition
+output Prescription
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (agent_decl name: (agent_name (identifier))))
+  (statement
+    (description_block (text_content)))
+  (statement
+    (behavior_block file: (bare_string (filename))))
+  (statement
+    (requires_block (type_list (type_reference (type_ref (identifier))))))
+  (statement
+    (input_block (type_list
+      (type_reference (type_ref (identifier)))
+      (type_reference (type_ref (identifier))))))
+  (statement
+    (output_block (type_list (type_reference (type_ref (identifier)))))))
+
+================================================================================
+agent com metadata completo
+================================================================================
+
+agent Doctor
+  domain health.example.com
+  license MIT
+  terms https://health.example.com/terms
+  privacy https://health.example.com/privacy
+
+behavior doctor.flow
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (agent_decl
+      name: (agent_name (identifier))
+      (agent_meta key: "domain"  value: (bare_string (identifier)))
+      (agent_meta key: "license" value: (bare_string (identifier)))
+      (agent_meta key: "terms"   value: (bare_string (url)))
+      (agent_meta key: "privacy" value: (bare_string (url)))))
+  (statement
+    (behavior_block file: (bare_string (filename)))))
+
+================================================================================
+capabilities multiline com descrições
+================================================================================
+
+capabilities
+  CreateAction "Generate images of Mickey Mouse"
+  SearchAction "Fetch external financial rates"
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (capabilities_block
+      (cap_item (type_reference (type_ref (identifier))) (quoted_string))
+      (cap_item (type_reference (type_ref (identifier))) (quoted_string)))))
+
+================================================================================
+type com namespace (std.)
+================================================================================
+
+type Prescription
+  concept https://www.wikidata.org/wiki/Q656094
+  schema prescription.json
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (type_property (concept_prop uri: (url)))
+      (type_property (schema_prop file: (filename))))))
