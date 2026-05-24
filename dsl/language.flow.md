@@ -54,7 +54,20 @@ The `.flow` file is the universal source of truth. The runtime compiles it to wh
 `.flow` intentionally omits certain constructs common in mature state machine frameworks. These are deliberate choices to keep the language readable by non-programmers and predictable for LLMs.
 
 **Flat states only — no hierarchical nesting.**
-Nested states create scope ambiguity around which state handles a given event. `.flow` machines are flat. When a workflow grows too complex, the correct pattern is delegation: `run flow "other.flow"` or decomposition into `.run` (the compiled execution layer).
+Nested states create scope ambiguity around which state handles a given event. `.flow` machines are flat. When a workflow grows too complex, the correct pattern is composition: `merge "other.flow"` (preamble, eager) or decomposition into `.run` (the compiled execution layer).
+
+### Flow Composition via `merge`
+
+`.flow` files can include states from other `.flow` files using `merge`:
+
+```flow
+merge "phases/planning.flow"
+merge "phases/review.flow"
+```
+
+`merge` is preamble-only: it must appear at the top of the file, before any `state` declaration. It is resolved at compile time (eager). All states from the merged file enter the same flat namespace as if they had been written inline.
+
+**Dynamic/lazy loading is out of scope for `.flow`.** Scenarios requiring conditional or runtime-deferred flow loading belong in `.run` (the WASM execution layer), which has the memory management primitives to handle unload safely.
 
 **Procedural guards — not declarative.**
 XState evaluates guards *before* entering a state. `.flow` evaluates conditions *inside* the state after entry. This matches both the natural reading order of humans and the generative direction of LLMs. `if / else` inside a state is always clearer than an entry predicate attached to a transition.
@@ -73,7 +86,7 @@ While the `.flow` grammar only specifies how the text is parsed, tooling (like L
 
 ### Document Links
 
-Any IDE or tooling implementing support for `.flow` MUST resolve file paths in string literals that follow standard actions (e.g., `run script`, `run flow`, `guide`, `teach`). These should be rendered as clickable document links (with underline on hover), allowing the developer to navigate directly to the referenced script or flow file relative to the workspace root.
+Any IDE or tooling implementing support for `.flow` MUST resolve file paths in string literals that follow standard actions (e.g., `merge`, `run script`, `guide`, `teach`). These should be rendered as clickable document links (with underline on hover), allowing the developer to navigate directly to the referenced script or flow file relative to the workspace root.
 
 ---
 

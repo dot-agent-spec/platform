@@ -16,17 +16,14 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 2 — Revisão de Vocabulário / Sintaxe
+## Etapa 2 — Revisão de Vocabulário / Sintaxe ✅
 
-> Deve preceder a implementação de tooling (tree-sitter, extensões) para evitar retrabalho.
-
-- [ ] Decidir substituição de `run flow` por verbos com semântica precisa  
-  Candidatos: `include "file.flow"` (eager, preamble) e `load "file.flow"` (lazy, dentro de state)  
-  Referência: `entelekheia/merge.md §4b`
-- [ ] Decidir semântica do bloco `behavior` no `.agent` (referência única vs inline opcional)  
-  Referência: `entelekheia/merge.md §5 Opção B`
-- [ ] Atualizar `grammar.flow.md` com as decisões tomadas
-- [ ] Atualizar `grammar.agent.md` se houver impacto no bloco `behavior`
+- [x] Decidir keyword e semântica de composição de flows → `merge "file.flow"` (preamble, eager)
+- [x] Remover `run flow` do `run_type` em `grammar.flow.md`
+- [x] Adicionar `merge_decl` ao top-level de `grammar.flow.md`
+- [x] Atualizar `language.flow.md` — §3 (flat states), §4 (IDE doc links), nova subseção de composição
+- [x] `grammar.agent.md` sem impacto — `behavior` mantido como está
+- [x] Sem lazy loading — casos complexos delegados a `.run` / WASM
 
 ---
 

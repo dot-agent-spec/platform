@@ -43,10 +43,27 @@ null_literal = "null" ;
 
 ## 3. Top-Level Grammar
 
-A `.flow` file consists of top-level declarations: Memory variables, Global Triggers, and States.
+A `.flow` file consists of top-level declarations: Merge directives, Global Triggers, and States.
 
 ```ebnf
-flow_file = { memory_decl | trigger_decl | state_decl } ;
+flow_file = { merge_decl | trigger_decl | state_decl } ;
+
+merge_decl = "merge" , string_literal ;
+```
+
+`merge_decl` is **preamble-only**: it must appear before any `state` declaration and is resolved at compile time (eager). All states from the merged file join the same flat namespace as if written inline.
+
+*Example:*
+```flow
+// preamble — before any state
+merge "phases/planning.flow"
+merge "phases/review.flow"
+
+state responsive
+  interact
+  on intent "planning" next phases.planning.start
+  on intent "review"   next phases.review.start
+  on escape            next responsive
 ```
 
 ### 3.1. Memory Assignment
@@ -102,7 +119,7 @@ Actions are deterministic side-effects or external calls.
 action_stmt = run_stmt | set_stmt | apply_stmt | remove_stmt | interaction_stmt ;
 
 run_stmt = "run" , run_type , string_literal , [ string_literal ] , { run_modifier } ;
-run_type = "script" | "flow" | "subagent" | "tool" ;
+run_type = "script" | "subagent" | "tool" ;
 run_modifier = "silent" | "in" "background" ;
 
 interaction_stmt = guide_stmt | teach_stmt | goal_stmt | interact_stmt ;
