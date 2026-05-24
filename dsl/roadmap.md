@@ -27,25 +27,26 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 3 — Revisão e consolidação do texto da spec
+## Etapa 3 — Spec text consolidation ✅
 
-Os documentos atuais herdaram estrutura e linguagem de quando eram dois projetos separados. O objetivo é reescrever a spec como um documento coeso, com voz unificada, seções que fazem sentido juntas e sem redundâncias ou artefatos de origem.
-
-- [ ] Definir estrutura-alvo dos documentos de spec (quais arquivos, quais seções)
-- [ ] Consolidar `language.agent.md` e `language.flow.md` — avaliar merge em um único `language.md` ou manter separados com seções revisadas
-- [ ] Revisar `grammar.agent.md` — adequar tom e estrutura ao padrão consolidado
-- [ ] Revisar `grammar.flow.md` — adequar tom e estrutura, garantir cobertura do `merge` e demais adições recentes
-- [ ] Revisar `manifesto.md` — contextualizar no ecossistema unificado (não mais como projeto standalone)
-- [ ] Atualizar `README.md` da pasta `dsl/` conforme estrutura final
+- [x] Merge `language.agent.md` + `language.flow.md` + `manifesto.md` → unified `language.md` (English)
+- [x] Clarify `.flow` / `.run` relationship: same purpose, text subset vs compiled WASM
+- [x] Add deprecation notices to `grammar.agent.md` and `grammar.flow.md`
+- [x] Fix broken links in grammar files (old `grammar.md` and `DSL/` path references)
+- [x] Remove "How to use this documentation?" section from `grammar.flow.md`
+- [x] Update `README.md` for new file structure
+- [x] Note `.logic` → `.run` rename still needed in `org-spec/` (separate submodule)
 
 ---
 
 ## Etapa 4 — Tree-sitter
 
-- [ ] Criar grammar tree-sitter para `.flow` (atualmente só existe TextMate grammar em `dsl-old/flow-lang/syntax/`)
-- [ ] Alinhar `tree-sitter-agent/grammar.js` com spec atualizado em `grammar.agent.md`
-- [ ] Avaliar unificação dos dois parsers em um repositório `tree-sitter-agent-flow`
-- [ ] Atualizar `dsl/tree-sitter-agent/` com resultado
+- [ ] Resolve open question: `project` vs `worksession` memory domain name — align grammar and spec
+- [ ] Create tree-sitter grammar for `.flow` (currently only TextMate grammar in `dsl-old/flow-lang/syntax/`)
+- [ ] Align `tree-sitter-agent/grammar.js` with updated spec in `grammar.agent.md`
+- [ ] Evaluate unifying both parsers into a single `tree-sitter-agent-flow` repository
+- [ ] **After tree-sitter grammars are finalized: delete `grammar.agent.md` and `grammar.flow.md`**
+- [ ] Update `dsl/tree-sitter-agent/` with result
 
 ---
 

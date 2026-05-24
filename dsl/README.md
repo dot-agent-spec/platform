@@ -1,41 +1,41 @@
-# DSL — Especificação Consolidada
+# DSL — Consolidated Specification
 
-Especificação unificada dos dois formatos de arquivo do ecossistema de agentes: `.agent` (manifesto) e `.flow` (comportamento).
+Unified specification for the two file formats of the agent ecosystem: `.agent` (manifest) and `.flow` (behavior).
 
-## Estrutura
+## Documents
 
-| Arquivo | Papel |
-|---------|-------|
-| [`grammar.agent.md`](grammar.agent.md) | Gramática formal EBNF do formato `.agent` |
-| [`language.agent.md`](language.agent.md) | Design, sintaxe e arquitetura do `.agent` |
-| [`grammar.flow.md`](grammar.flow.md) | Gramática formal EBNF do formato `.flow` |
-| [`language.flow.md`](language.flow.md) | Design philosophy e decisões do `.flow` |
-| [`manifesto.md`](manifesto.md) | O espaço que `.flow` ocupa — motivação e fronteiras |
-| [`roadmap.md`](roadmap.md) | Próximas etapas da especificação |
+| File | Purpose |
+|------|---------|
+| [`language.md`](language.md) | Language design, architecture, type system, security model, packaging — the main spec |
+| [`grammar.agent.md`](grammar.agent.md) | Formal EBNF for `.agent` *(transitional — will be removed after Stage 4)* |
+| [`grammar.flow.md`](grammar.flow.md) | Formal EBNF for `.flow` *(transitional — will be removed after Stage 4)* |
+| [`roadmap.md`](roadmap.md) | Spec evolution roadmap |
 
 ## Tooling
 
-| Diretório | Função |
-|-----------|--------|
-| [`tree-sitter-agent/`](tree-sitter-agent/) | Parser tree-sitter para `.agent` (git submodule) |
-| [`vscode-extension/`](vscode-extension/) | Extensão VS Code para `.agent` |
-| [`zed-agent/`](zed-agent/) | Extensão Zed para `.agent` |
+| Directory | Purpose |
+|-----------|---------|
+| [`tree-sitter-agent/`](tree-sitter-agent/) | Tree-sitter parser for `.agent` (git submodule) — canonical grammar source |
+| [`vscode-extension/`](vscode-extension/) | VS Code extension for `.agent` |
+| [`zed-agent/`](zed-agent/) | Zed extension for `.agent` |
 
-> `.flow` tem TextMate grammar e snippets em `dsl-old/flow-lang/syntax/`. Consolidação de extensões é a Etapa 4 do roadmap.
+> `.flow` tooling (TextMate grammar, snippets) is in `dsl-old/flow-lang/syntax/`. Consolidation into a unified extension is Stage 5 of the roadmap.
 
-## Modelo mental
+## Mental model
 
 ```
-.agent  =  header (.h em C)     — o que o agente é, consome e expõe
-.flow   =  implementação (.c)   — como ele funciona, estado por estado
+.agent  =  manifest  (the public contract — what the agent is, consumes, and exposes)
+.flow   =  behavior  (the implementation — how it executes, state by state)
 ```
 
-O `.agent` aponta para o `.flow` via `behavior main.flow`. O runtime lê o manifesto para sandbox e discovery; executa o flow para orquestração.
+The `.agent` points to its `.flow` via `behavior main.flow`. The Runtime reads the manifest for sandboxing and discovery; it executes the flow for orchestration.
 
-## Histórico
+Both `.flow` and `.run` (WASM) serve the same purpose: deterministic state orchestration. `.flow` is a text-based subset of `.run` — designed for authoring agents without writing compiled code. See [`language.md §1.3`](language.md#13-flow-and-run-same-purpose-different-formats) for the full explanation.
 
-O conteúdo desta pasta foi consolidado a partir de dois diretórios anteriores:
-- `dot-agent-spec/DSL/` — spec original do `.agent`
-- `flow-lang/` — spec standalone do `.flow`
+## History
 
-O estado anterior está preservado em `entelekheia/dsl-old/`.
+Consolidated from two separate directories:
+- `dot-agent-spec/DSL/` — original `.agent` spec
+- `flow-lang/` — original `.flow` spec
+
+Prior state is preserved in `entelekheia/dsl-old/`.

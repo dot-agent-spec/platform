@@ -1,8 +1,8 @@
 # `.flow` Grammar
 
-Formal EBNF specification for the `.flow` DSL. This is the parser contract — map these rules to build an interpreter using Tree-sitter, ANTLR, or PEG.js.
+> **Transitional reference.** A tree-sitter grammar for `.flow` does not yet exist. This document serves as the working spec for its creation (Stage 4 of the [roadmap](roadmap.md)). Once tree-sitter grammars are finalized, this file will be removed and `tree-sitter-flow/grammar.js` becomes the canonical source.
 
-To document a DSL formally, the industry standard is to use **EBNF (Extended Backus-Naur Form)** combined with a Language Reference Manual (LRM) style. This provides the exact rules needed to build a parser (e.g., using Tree-sitter, ANTLR, or PEG.js) that translates the human-readable text into an Abstract Syntax Tree (AST) for the engine.
+Formal EBNF specification for the `.flow` DSL.
 
 ---
 
@@ -196,7 +196,3 @@ expression = identifier
 operator = "==" | "!=" | ">" | "<" | ">=" | "<=" ;
 ```
 
----
-
-## How to use this documentation?
-This document acts as the contract for anyone building a `.flow` interpreter. If you are writing a parser in Python, Rust, or JavaScript, you map these exact EBNF rules to generate an AST (Abstract Syntax Tree), ensuring that every implementation of `dot-agent-spec` interprets the DSL identically.

@@ -1,6 +1,8 @@
 # `.agent` Grammar
 
-Especificação formal da DSL `.agent`. Este arquivo é o contrato do parser — gerado a partir de `DSL/tree-sitter-agent/grammar.js`, que é a **única fonte da verdade**. Qualquer discrepância entre este documento e o `grammar.js` deve ser resolvida favorecendo o `grammar.js`.
+> **Transitional reference.** The canonical grammar is [`dsl/tree-sitter-agent/grammar.js`](tree-sitter-agent/grammar.js). This document will be removed once tree-sitter grammars are finalized (Stage 4 of the [roadmap](roadmap.md)). Any discrepancy between this document and `grammar.js` should be resolved in favor of `grammar.js`.
+
+Formal EBNF specification for the `.agent` DSL — a working reference for tree-sitter development and parser implementors.
 
 ---
 
