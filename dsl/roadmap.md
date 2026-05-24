@@ -27,7 +27,20 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 3 — Tree-sitter
+## Etapa 3 — Revisão e consolidação do texto da spec
+
+Os documentos atuais herdaram estrutura e linguagem de quando eram dois projetos separados. O objetivo é reescrever a spec como um documento coeso, com voz unificada, seções que fazem sentido juntas e sem redundâncias ou artefatos de origem.
+
+- [ ] Definir estrutura-alvo dos documentos de spec (quais arquivos, quais seções)
+- [ ] Consolidar `language.agent.md` e `language.flow.md` — avaliar merge em um único `language.md` ou manter separados com seções revisadas
+- [ ] Revisar `grammar.agent.md` — adequar tom e estrutura ao padrão consolidado
+- [ ] Revisar `grammar.flow.md` — adequar tom e estrutura, garantir cobertura do `merge` e demais adições recentes
+- [ ] Revisar `manifesto.md` — contextualizar no ecossistema unificado (não mais como projeto standalone)
+- [ ] Atualizar `README.md` da pasta `dsl/` conforme estrutura final
+
+---
+
+## Etapa 4 — Tree-sitter
 
 - [ ] Criar grammar tree-sitter para `.flow` (atualmente só existe TextMate grammar em `dsl-old/flow-lang/syntax/`)
 - [ ] Alinhar `tree-sitter-agent/grammar.js` com spec atualizado em `grammar.agent.md`
@@ -36,7 +49,7 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 4 — Extensões (VS Code / Zed)
+## Etapa 5 — Extensões (VS Code / Zed)
 
 - [ ] Consolidar `dsl-old/flow-lang/syntax/` e `dsl/vscode-extension/` em uma única extensão que suporte `.agent` e `.flow`
 - [ ] Atualizar extensão Zed (`dsl/zed-agent/`) para incluir highlighting de `.flow`
@@ -44,7 +57,7 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 5 — Exemplos
+## Etapa 6 — Exemplos
 
 - [ ] Adicionar arquivo `.flow` companion para cada exemplo em `dot-agent-spec/examples/` (hoje só `.agent`)
 - [ ] Adicionar arquivo `.agent` para os exemplos em `dsl-old/flow-lang/examples/`
