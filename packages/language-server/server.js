@@ -17,6 +17,7 @@ const { provideDefinition }     = require('./features/definition');
 const { provideReferences }     = require('./features/references');
 const { provideRenameEdits }    = require('./features/rename');
 const { format }                = require('./features/formatting');
+const { provideDocumentLinks }  = require('./features/links');
 
 const connection = createConnection(ProposedFeatures.all);
 const documents  = new TextDocuments(TextDocument);
@@ -33,6 +34,7 @@ connection.onInitialize(() => ({
         renameProvider: { prepareProvider: false },
         documentSymbolProvider: true,
         documentFormattingProvider: true,
+        documentLinkProvider: { resolveProvider: false },
     },
 }));
 
@@ -99,6 +101,14 @@ connection.onDocumentSymbol(({ textDocument }) => {
         ...sym,
         location: { ...sym.location, uri: doc.uri },
     }));
+});
+
+// ── Document Links ───────────────────────────────────────────────────────────
+
+connection.onDocumentLinks(({ textDocument }) => {
+    const doc = documents.get(textDocument.uri);
+    if (!doc) return [];
+    return provideDocumentLinks(doc.languageId, doc.getText(), doc.uri);
 });
 
 // ── Formatting ───────────────────────────────────────────────────────────────
