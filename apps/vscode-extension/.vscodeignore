@@ -1,9 +1,2 @@
-node_modules/**
-!node_modules/vscode-languageclient/**
-!node_modules/vscode-jsonrpc/**
-!node_modules/vscode-languageserver-protocol/**
-!node_modules/vscode-languageserver-types/**
-!node_modules/agent-dsl-language-server/**
-!node_modules/agent-dsl-language-server/node_modules/**
 .vscode/**
 *.vsix
