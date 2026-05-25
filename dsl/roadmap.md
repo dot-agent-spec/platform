@@ -47,6 +47,7 @@ Próximas etapas de evolução da especificação consolidada.
 - [x] Unified both parsers in `dsl/tree-sitter-agent/` — `flow/` subdirectory, `tree-sitter.json` updated
 - [x] Rename local directory `tree-sitter` → `tree-sitter-agent` so tree-sitter CLI discovers it as a grammar package
 - [x] Delete `grammar.agent.md` and `grammar.flow.md` — `dsl/tree-sitter-agent/` is now the canonical source
+- [x] Fix `text_content` precedence (`prec(-1)` removido) — acentos e pontuação em blocos `description` deixaram de produzir nós ERROR (cinza no editor)
 
 ---
 
@@ -76,8 +77,14 @@ Próximas etapas de evolução da especificação consolidada.
 
 ## Etapa 8 — Extensões (VS Code / Zed) ⚙️ (Foco em UX e Salvaguardas de Dev)
 - [ ] [Linter] Implementar regra de análise estática no Language Server para warning quando tipo customizado faz shadowing de tipo nativo (`std.*`)
-- [x] [Navegabilidade] Links clicáveis para caminhos de arquivos (`merge`, `run script`, `guide`, `teach`) implementados no Language Server (`features/definition.js`) e como Document Links no VS Code
 - [x] [Language Server] Publicado como submodule standalone em `github.com/daniloborges/language-server` — suporta VS Code, Zed, Neovim e qualquer editor com LSP
+- [x] [Extensão VS Code] Publicada como submodule standalone em `github.com/daniloborges/vscode-dot-agent` — v1.4.0
+- [x] [Document Symbols] Outline do VS Code populado para `.agent` (agent + types) e `.flow` (states + events) via `DocumentSymbol` format (LSP moderno, sem URI hack)
+- [x] [Document Links] Links clicáveis implementados via `documentLinkProvider` no Language Server:
+  - `.agent`: `behavior <file>`, `schema <file>` — resolvidos relativos ao diretório do arquivo
+  - `.flow`: `merge "<file>"`, `run script "<file>"` — idem
+- [x] [word boundary] `wordPattern` adicionado ao `.flow` para nomes de estado com ponto (`planning.context`) serem selecionados como unidade no Ctrl+Click / go-to-definition
+- [x] [Packaging] `.vscodeignore` corrigido para incluir todos os `node_modules` — dependências transitivas (`vscode-languageserver`, `balanced-match`, etc.) estavam ausentes do `.vsix`, impedindo o servidor LSP de iniciar
 - [ ] Publicar extensão VS Code atualizada no marketplace
 
 ---
