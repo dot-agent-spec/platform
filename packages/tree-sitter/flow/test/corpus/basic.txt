@@ -1,0 +1,217 @@
+================================================================================
+merge preamble
+================================================================================
+
+merge "phases/planning.flow"
+merge "phases/review.flow"
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (merge_decl path: (quoted_string))
+  (merge_decl path: (quoted_string)))
+
+================================================================================
+state simples com interact
+================================================================================
+
+state responsive
+  interact
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement
+        (interact_stmt)))))
+
+================================================================================
+state com intent trigger inline
+================================================================================
+
+state responsive
+  interact
+  on intent "planning" next planning
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement (interact_stmt))
+      (statement
+        (intent_trigger
+          intent: (quoted_string)
+          state: (path (identifier)))))))
+
+================================================================================
+state com on escape
+================================================================================
+
+state responsive
+  interact
+  on escape
+    guide "Voltando ao início."
+    next responsive
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement (interact_stmt))
+      (statement
+        (escape_stmt
+          block: (block
+            (statement (guide_stmt text: (quoted_string)))
+            (statement (transition_stmt state: (path (identifier))))))))))
+
+================================================================================
+state com on fallback
+================================================================================
+
+state review
+  interact requiring "Qual arquivo revisar?"
+  on fallback
+    guide "Revisão indisponível."
+    next responsive
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement (interact_stmt requirement: (quoted_string)))
+      (statement
+        (fallback_stmt
+          block: (block
+            (statement (guide_stmt text: (quoted_string)))
+            (statement (transition_stmt state: (path (identifier))))))))))
+
+================================================================================
+memory assignment com domain
+================================================================================
+
+state init
+  set context.active_phase = "planning"
+  set worksession.phase = "review"
+  set user.language = "pt-br"
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement
+        (memory_stmt
+          target: (memory_target domain: (memory_domain) var: (identifier))
+          op: (assignment_op)
+          value: (expression (value (quoted_string)))))
+      (statement
+        (memory_stmt
+          target: (memory_target domain: (memory_domain) var: (identifier))
+          op: (assignment_op)
+          value: (expression (value (quoted_string)))))
+      (statement
+        (memory_stmt
+          target: (memory_target domain: (memory_domain) var: (identifier))
+          op: (assignment_op)
+          value: (expression (value (quoted_string))))))))
+
+================================================================================
+run simples
+================================================================================
+
+state execute
+  run script "build.sh" silent
+  run subagent "Reviewer"
+  run tool "search" "query"
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement
+        (run_stmt
+          run_type: (run_type)
+          target: (quoted_string)
+          (run_modifier)))
+      (statement
+        (run_stmt
+          run_type: (run_type)
+          target: (quoted_string)))
+      (statement
+        (run_stmt
+          run_type: (run_type)
+          target: (quoted_string)
+          label: (quoted_string))))))
+
+================================================================================
+conditional simples
+================================================================================
+
+state check
+  if session.has_context == true
+    next proceed
+  next fallback
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier))
+    (block
+      (statement
+        (conditional_stmt
+          condition: (condition
+            (expression
+              left: (value (path (identifier) (identifier)))
+              op: (comparison_op)
+              right: (value (boolean_literal))))
+          then: (block
+            (statement (transition_stmt state: (path (identifier)))))))
+      (statement (transition_stmt state: (path (identifier)))))))
+
+================================================================================
+global trigger com event
+================================================================================
+
+on event "session.ended"
+  run script "cleanup.sh" silent
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (trigger_decl
+    event: (quoted_string)
+    (block
+      (statement
+        (run_stmt
+          run_type: (run_type)
+          target: (quoted_string)
+          (run_modifier))))))
+
+================================================================================
+state com dotted path name
+================================================================================
+
+state phases.planning.start
+  guide "Iniciando planejamento."
+  next phases.review.start
+
+--------------------------------------------------------------------------------
+
+(flow_file
+  (state_decl
+    name: (path (identifier) (identifier) (identifier))
+    (block
+      (statement (guide_stmt text: (quoted_string)))
+      (statement (transition_stmt state: (path (identifier) (identifier) (identifier)))))))

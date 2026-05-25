@@ -5,6 +5,13 @@
       "scope": "source.agent",
       "file-types": ["agent", "type"],
       "highlights": "queries/highlights.scm"
+    },
+    {
+      "name": "flow",
+      "scope": "source.flow",
+      "file-types": ["flow"],
+      "path": "flow",
+      "highlights": "flow/queries/highlights.scm"
     }
   ],
   "metadata": {

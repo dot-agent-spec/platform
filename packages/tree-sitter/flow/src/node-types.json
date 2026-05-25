@@ -1,0 +1,990 @@
+[
+  {
+    "type": "apply_stmt",
+    "named": true,
+    "fields": {
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "ui_target",
+            "named": true
+          }
+        ]
+      },
+      "text": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "assignment_op",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "statement",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "boolean_literal",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "comparison_op",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "condition",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "expression",
+          "named": true
+        },
+        {
+          "type": "logical_op",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "conditional_stmt",
+    "named": true,
+    "fields": {
+      "condition": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "condition",
+            "named": true
+          }
+        ]
+      },
+      "else": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "then": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "escape_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "expression",
+    "named": true,
+    "fields": {
+      "left": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "value",
+            "named": true
+          }
+        ]
+      },
+      "op": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "comparison_op",
+            "named": true
+          }
+        ]
+      },
+      "right": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "value",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "fallback_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "flow_file",
+    "named": true,
+    "root": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "merge_decl",
+          "named": true
+        },
+        {
+          "type": "state_decl",
+          "named": true
+        },
+        {
+          "type": "trigger_decl",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "goal_stmt",
+    "named": true,
+    "fields": {
+      "text": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "guide_stmt",
+    "named": true,
+    "fields": {
+      "text": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "intent_trigger",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "intent": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      },
+      "state": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "path",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "interact_stmt",
+    "named": true,
+    "fields": {
+      "requirement": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "logical_op",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "memory_domain",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "memory_stmt",
+    "named": true,
+    "fields": {
+      "op": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "assignment_op",
+            "named": true
+          }
+        ]
+      },
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "memory_target",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "memory_target",
+    "named": true,
+    "fields": {
+      "domain": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "memory_domain",
+            "named": true
+          }
+        ]
+      },
+      "var": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "merge_decl",
+    "named": true,
+    "fields": {
+      "path": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "parallel_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "parallel_trigger",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "event": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "complete",
+            "named": false
+          },
+          {
+            "type": "failed",
+            "named": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "path",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "remove_stmt",
+    "named": true,
+    "fields": {
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "ui_target",
+            "named": true
+          }
+        ]
+      },
+      "text": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "run_modifier",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "run_stmt",
+    "named": true,
+    "fields": {
+      "collection": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "path",
+            "named": true
+          }
+        ]
+      },
+      "label": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      },
+      "run_type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "run_type",
+            "named": true
+          }
+        ]
+      },
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "run_modifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "run_type",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "state_decl",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "path",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "block",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "statement",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "apply_stmt",
+          "named": true
+        },
+        {
+          "type": "conditional_stmt",
+          "named": true
+        },
+        {
+          "type": "escape_stmt",
+          "named": true
+        },
+        {
+          "type": "fallback_stmt",
+          "named": true
+        },
+        {
+          "type": "goal_stmt",
+          "named": true
+        },
+        {
+          "type": "guide_stmt",
+          "named": true
+        },
+        {
+          "type": "intent_trigger",
+          "named": true
+        },
+        {
+          "type": "interact_stmt",
+          "named": true
+        },
+        {
+          "type": "memory_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_trigger",
+          "named": true
+        },
+        {
+          "type": "remove_stmt",
+          "named": true
+        },
+        {
+          "type": "run_stmt",
+          "named": true
+        },
+        {
+          "type": "teach_stmt",
+          "named": true
+        },
+        {
+          "type": "temporal_stmt",
+          "named": true
+        },
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "teach_stmt",
+    "named": true,
+    "fields": {
+      "text": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "temporal_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "count": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "number_literal",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "transition_stmt",
+    "named": true,
+    "fields": {
+      "state": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "path",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "trigger_decl",
+    "named": true,
+    "fields": {
+      "event": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "block",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "ui_target",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "value",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "boolean_literal",
+          "named": true
+        },
+        {
+          "type": "null_literal",
+          "named": true
+        },
+        {
+          "type": "number_literal",
+          "named": true
+        },
+        {
+          "type": "path",
+          "named": true
+        },
+        {
+          "type": "quoted_string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "!=",
+    "named": false
+  },
+  {
+    "type": "+=",
+    "named": false
+  },
+  {
+    "type": "-=",
+    "named": false
+  },
+  {
+    "type": ".",
+    "named": false
+  },
+  {
+    "type": "<",
+    "named": false
+  },
+  {
+    "type": "<=",
+    "named": false
+  },
+  {
+    "type": "=",
+    "named": false
+  },
+  {
+    "type": "==",
+    "named": false
+  },
+  {
+    "type": ">",
+    "named": false
+  },
+  {
+    "type": ">=",
+    "named": false
+  },
+  {
+    "type": "after",
+    "named": false
+  },
+  {
+    "type": "and",
+    "named": false
+  },
+  {
+    "type": "apply",
+    "named": false
+  },
+  {
+    "type": "background",
+    "named": false
+  },
+  {
+    "type": "comment",
+    "named": true,
+    "extra": true
+  },
+  {
+    "type": "complete",
+    "named": false
+  },
+  {
+    "type": "context",
+    "named": false
+  },
+  {
+    "type": "css",
+    "named": false
+  },
+  {
+    "type": "each",
+    "named": false
+  },
+  {
+    "type": "else",
+    "named": false
+  },
+  {
+    "type": "escape",
+    "named": false
+  },
+  {
+    "type": "event",
+    "named": false
+  },
+  {
+    "type": "failed",
+    "named": false
+  },
+  {
+    "type": "fallback",
+    "named": false
+  },
+  {
+    "type": "false",
+    "named": false
+  },
+  {
+    "type": "goal",
+    "named": false
+  },
+  {
+    "type": "guide",
+    "named": false
+  },
+  {
+    "type": "html",
+    "named": false
+  },
+  {
+    "type": "identifier",
+    "named": true
+  },
+  {
+    "type": "if",
+    "named": false
+  },
+  {
+    "type": "in",
+    "named": false
+  },
+  {
+    "type": "intent",
+    "named": false
+  },
+  {
+    "type": "interact",
+    "named": false
+  },
+  {
+    "type": "merge",
+    "named": false
+  },
+  {
+    "type": "next",
+    "named": false
+  },
+  {
+    "type": "null_literal",
+    "named": true
+  },
+  {
+    "type": "number_literal",
+    "named": true
+  },
+  {
+    "type": "on",
+    "named": false
+  },
+  {
+    "type": "or",
+    "named": false
+  },
+  {
+    "type": "parallel",
+    "named": false
+  },
+  {
+    "type": "prompts",
+    "named": false
+  },
+  {
+    "type": "quoted_string",
+    "named": true
+  },
+  {
+    "type": "remove",
+    "named": false
+  },
+  {
+    "type": "requiring",
+    "named": false
+  },
+  {
+    "type": "run",
+    "named": false
+  },
+  {
+    "type": "script",
+    "named": false
+  },
+  {
+    "type": "session",
+    "named": false
+  },
+  {
+    "type": "set",
+    "named": false
+  },
+  {
+    "type": "silent",
+    "named": false
+  },
+  {
+    "type": "state",
+    "named": false
+  },
+  {
+    "type": "subagent",
+    "named": false
+  },
+  {
+    "type": "teach",
+    "named": false
+  },
+  {
+    "type": "tool",
+    "named": false
+  },
+  {
+    "type": "true",
+    "named": false
+  },
+  {
+    "type": "user",
+    "named": false
+  },
+  {
+    "type": "video",
+    "named": false
+  },
+  {
+    "type": "worksession",
+    "named": false
+  }
+]

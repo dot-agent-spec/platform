@@ -1,11 +1,13 @@
 {
   "name": "tree-sitter-agent",
   "version": "0.1.0",
-  "description": "Tree-sitter grammar for the Agent DSL (.agent / .type)",
+  "description": "Tree-sitter grammars for the Agent DSL (.agent / .type / .flow)",
   "scripts": {
-    "generate": "tree-sitter generate",
-    "test":     "tree-sitter test",
-    "parse":    "tree-sitter parse"
+    "generate":      "tree-sitter generate",
+    "generate-flow": "cd flow && npx tree-sitter generate",
+    "test":          "tree-sitter test",
+    "test-flow":     "cd flow && npx tree-sitter test",
+    "parse":         "tree-sitter parse"
   },
   "devDependencies": {
     "tree-sitter-cli": "^0.25.0"
@@ -14,6 +16,10 @@
     {
       "scope": "source.agent",
       "file-types": ["agent", "type"]
+    },
+    {
+      "scope": "source.flow",
+      "file-types": ["flow"]
     }
   ]
 }

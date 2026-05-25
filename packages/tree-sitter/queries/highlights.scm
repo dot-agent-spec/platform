@@ -49,7 +49,7 @@
 (property_decl name: (identifier) @property)
 
 ; Optional marker
-(property_decl optional_marker: "?" @operator)
+(optional_marker) @operator
 
 ; Colon separator in property_decl
 ":" @punctuation.delimiter
@@ -84,10 +84,7 @@
 ; Agent metadata values
 ; ----------------------------------------------------------------
 
-(agent_meta key: "domain"  (bare_string) @string.special)
-(agent_meta key: "license" (bare_string) @constant)
-(agent_meta key: "terms"   (bare_string) @string.special)
-(agent_meta key: "privacy" (bare_string) @string.special)
+(agent_meta key: (agent_meta_key) @keyword value: (bare_string) @string.special)
 
 ; ----------------------------------------------------------------
 ; Concept URI — semantic anchor, highlight like a special string

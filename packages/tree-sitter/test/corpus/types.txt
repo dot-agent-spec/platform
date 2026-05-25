@@ -1,5 +1,5 @@
 ================================================================================
-type simples com concept
+type simples com concept e label
 ================================================================================
 
 type Prontuario
@@ -16,7 +16,8 @@ type Prontuario
       name: (identifier)
       (type_property
         (concept_prop
-          uri: (url)))
+          uri: (url)
+          label: (bare_string (identifier))))
       (type_property
         (property_decl
           name: (identifier)
@@ -68,7 +69,7 @@ type MedicalAlert
     (type_decl
       name: (identifier)
       (type_property (concept_prop uri: (url)))
-      (type_property (property_decl name: (identifier) type: (type_value (identifier) (identifier) (identifier) (identifier))))
+      (type_property (property_decl name: (identifier) type: (type_value (identifier) (identifier) (identifier))))
       (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))))))))
 
 ================================================================================
@@ -88,7 +89,12 @@ type AvatarWithMickey
       name: (identifier)
       (type_property (concept_prop uri: (url)))
       (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
-      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))) optional_marker: "?" description: (quoted_string))))))
+      (type_property
+        (property_decl
+          name: (identifier)
+          optional_marker: (optional_marker)
+          type: (type_value (type_ref (identifier)))
+          description: (quoted_string))))))
 
 ================================================================================
 agent simples sem metadata
@@ -140,10 +146,10 @@ behavior doctor.flow
   (statement
     (agent_decl
       name: (agent_name (identifier))
-      (agent_meta key: "domain"  value: (bare_string (identifier)))
-      (agent_meta key: "license" value: (bare_string (identifier)))
-      (agent_meta key: "terms"   value: (bare_string (url)))
-      (agent_meta key: "privacy" value: (bare_string (url)))))
+      (agent_meta key: (agent_meta_key) value: (bare_string (filename)))
+      (agent_meta key: (agent_meta_key) value: (bare_string (identifier)))
+      (agent_meta key: (agent_meta_key) value: (url))
+      (agent_meta key: (agent_meta_key) value: (url))))
   (statement
     (behavior_block file: (bare_string (filename)))))
 
@@ -164,7 +170,7 @@ capabilities
       (cap_item (type_reference (type_ref (identifier))) (quoted_string)))))
 
 ================================================================================
-type com namespace (std.)
+type com schema
 ================================================================================
 
 type Prescription

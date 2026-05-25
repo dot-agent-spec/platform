@@ -39,7 +39,7 @@ module.exports = grammar({
     // Top-level
     // ----------------------------------------------------------------
 
-    manifest: $ => repeat1($.statement),
+    manifest: $ => repeat1(choice($._newline, $.statement)),
 
     statement: $ => choice(
       $.agent_decl,
@@ -83,9 +83,11 @@ module.exports = grammar({
     // agent_meta does NOT consume a trailing _newline.
     // The sep-by pattern in agent_decl handles newlines between items.
     agent_meta: $ => seq(
-      field('key', choice('domain', 'license', 'terms', 'privacy')),
+      field('key', $.agent_meta_key),
       field('value', choice($.url, $.bare_string)),
     ),
+
+    agent_meta_key: $ => choice('domain', 'license', 'terms', 'privacy'),
 
     // ----------------------------------------------------------------
     // Semantic Blocks  (top-level per examples)
@@ -195,14 +197,16 @@ module.exports = grammar({
       field('file', $.filename),
     ),
 
-    // prop: Type?  "optional description"
+    // name?: Type  "optional description"   (? before colon, TypeScript-style)
     property_decl: $ => seq(
-      field('name',           $.identifier),
+      field('name',                       $.identifier),
+      optional(field('optional_marker',   $.optional_marker)),
       ':',
-      field('type',           $.type_value),
-      optional(field('optional_marker', '?')),
-      optional(field('description',     $.quoted_string)),
+      field('type',                       $.type_value),
+      optional(field('description',       $.quoted_string)),
     ),
+
+    optional_marker: $ => '?',
 
     // ----------------------------------------------------------------
     // Type Values  (grammar.md + extensions from review)
