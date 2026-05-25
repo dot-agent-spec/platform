@@ -10,3 +10,6 @@
 [submodule "dsl/language-server"]
 	path = dsl/language-server
 	url = git@github.com:daniloborges/language-server.git
+[submodule "dsl/vscode-extension"]
+	path = dsl/vscode-extension
+	url = git@github.com:daniloborges/vscode-dot-agent.git
