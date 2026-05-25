@@ -50,10 +50,10 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 5 — Extensões (VS Code / Zed)
+## Etapa 5 — Extensões (VS Code / Zed) ✅
 
-- [ ] Consolidar `dsl-old/flow-lang/syntax/` e `dsl/vscode-extension/` em uma única extensão que suporte `.agent` e `.flow`
-- [ ] Atualizar extensão Zed (`dsl/zed-agent/`) para incluir highlighting de `.flow`
+- [x] Consolidar `dsl-old/flow-lang/syntax/` e `dsl/vscode-extension/` em uma única extensão que suporte `.agent` e `.flow`
+- [x] Atualizar extensão Zed (`dsl/zed-agent/`) para incluir highlighting de `.flow`
 
 ---
 

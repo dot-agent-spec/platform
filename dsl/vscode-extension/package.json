@@ -1,8 +1,8 @@
 {
   "name": "agent-dsl-syntax",
-  "displayName": "Agent DSL Syntax Highlighting",
-  "description": "Syntax highlighting for .agent DSL files",
-  "version": "1.0.0",
+  "displayName": "Agent & Flow DSL",
+  "description": "Syntax highlighting, hover docs, and snippets for .agent and .flow DSL files",
+  "version": "1.1.0",
   "publisher": "entelekheia",
   "repository": {
     "type": "git",
@@ -41,6 +41,21 @@
           "light": "./agent-icon.svg",
           "dark": "./agent-icon.svg"
         }
+      },
+      {
+        "id": "flow",
+        "aliases": [
+          "Flow",
+          "flow"
+        ],
+        "extensions": [
+          ".flow"
+        ],
+        "configuration": "./flow-language-configuration.json",
+        "icon": {
+          "light": "./flow-icon.svg",
+          "dark": "./flow-icon.svg"
+        }
       }
     ],
     "grammars": [
@@ -48,12 +63,21 @@
         "language": "agent",
         "scopeName": "source.agent",
         "path": "./agent.tmLanguage.json"
+      },
+      {
+        "language": "flow",
+        "scopeName": "source.flow",
+        "path": "./flow.tmLanguage.json"
       }
     ],
     "snippets": [
       {
         "language": "agent",
         "path": "./snippets.json"
+      },
+      {
+        "language": "flow",
+        "path": "./flow-snippets.json"
       }
     ]
   }

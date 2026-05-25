@@ -1,11 +1,18 @@
 id = "agent-dsl"
-name = "Agent DSL"
-version = "0.1.0"
+name = "Agent & Flow DSL"
+version = "0.2.0"
 schema_version = 1
 authors = ["Danilo Borges <danilobor@gmail.com>"]
-description = "Syntax highlighting for the Agent DSL (.agent, .type files)"
+description = "Syntax highlighting for the Agent DSL (.agent, .type) and Flow DSL (.flow) files"
 repository = "https://github.com/placeholder"
 
 [grammars.agent]
-repository = "file:///Users/danilo/Development/entelekheia/dot-agent-spec/DSL/tree-sitter-agent"
+repository = "file:///Users/danilo/Development/entelekheia/dot-agent-spec/dsl/zed-agent/grammars/agent"
 commit = "d9f3c2dd7a838569889d7d1987464121480792d3"
+
+# flow.wasm must be compiled from dsl/tree-sitter/flow/ before this grammar is usable.
+# Build: cd dsl/tree-sitter/flow && npx tree-sitter build --wasm
+# Then copy the output to dsl/zed-agent/grammars/flow.wasm
+[grammars.flow]
+repository = "file:///Users/danilo/Development/entelekheia/dot-agent-spec/dsl/tree-sitter/flow"
+commit = "8743f4c20783abb950570c877d1a397ad9bec0e8"

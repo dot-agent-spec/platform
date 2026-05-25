@@ -1,5 +1,28 @@
 const vscode = require('vscode');
 
+const flowHoverDocs = {
+    'merge':       '**`merge "file.flow"`**\n\nIncludes another `.flow` file. Must appear before any `state` or `on event` declarations (preamble-only, eager loading).',
+    'state':       '**`state name`**\n\nDeclares a named state. States contain the logic that runs while the agent is in that state.',
+    'on':          '**`on event|intent|escape|fallback|complete|failed`**\n\nBinds a handler to a trigger. Top-level: `on event`. Inside a state: `on intent`, `on escape`, `on fallback`. After parallel: `on complete`, `on failed`.',
+    'run':         '**`run script|subagent|tool "target"`**\n\nExecutes a script, subagent, or tool. Accepts optional modifiers: `silent`, `in background`, `each collection`.',
+    'guide':       '**`guide "text"`**\n\nInjects a system-level instruction into the conversation context, shaping the agent\'s persona or approach without being visible as a reply.',
+    'teach':       '**`teach "text"`**\n\nAdds a fact or constraint to the agent\'s working knowledge for the duration of this state.',
+    'goal':        '**`goal "text"`**\n\nSets the agent\'s objective for this state, used by the runtime for planning and alignment checks.',
+    'interact':    '**`interact [requiring "text"]`**\n\nPauses execution and waits for user input. Optionally enforces a requirement before continuing.',
+    'set':         '**`set domain.var = value`**\n\nAssigns a value to a memory variable. Domains: `context`, `session`, `worksession`, `user`.',
+    'context':     '**`context`** memory domain — scoped to the current agent run.',
+    'session':     '**`session`** memory domain — persists for the user\'s current session.',
+    'worksession': '**`worksession`** memory domain — persists across a task-oriented work session (isolated per task).',
+    'user':        '**`user`** memory domain — persists across sessions for a given user.',
+    'next':        '**`next state`**\n\nTransitions immediately to the named state.',
+    'if':          '**`if condition`**\n\nConditional execution. Condition can use `==`, `!=`, `>`, `<`, `>=`, `<=`, `and`, `or`.',
+    'else':        '**`else`**\n\nAlternative branch of an `if` statement.',
+    'after':       '**`after N prompts`**\n\n[Experimental] Executes a block after N user prompts have occurred in this state.',
+    'parallel':    '**`parallel`**\n\n[Experimental] Runs a block of `run` statements concurrently. Follow with `on complete` and `on failed` handlers.',
+    'apply':       '**`apply css|html|video "text"`**\n\nApplies a UI manipulation to a CSS selector, HTML element, or video element.',
+    'remove':      '**`remove css|html|video "text"`**\n\nRemoves a UI element by selector or reference.',
+};
+
 const hoverDocs = {
     'agent': '**`agent name`**\n\nDeclares a new agent. The central node of the manifest.',
     'domain': '**`domain url`**\n\nDeclares the canonical domain for this agent, establishing cryptographic identity and ownership.',
@@ -19,14 +42,14 @@ const hoverDocs = {
 
 function activate(context) {
     const AGENT_MODE = { language: 'agent', scheme: 'file' };
+    const FLOW_MODE  = { language: 'flow',  scheme: 'file' };
 
-    // Hover Provider
+    // Hover Provider — .agent
     const hoverProvider = vscode.languages.registerHoverProvider(AGENT_MODE, {
         provideHover(document, position, token) {
             const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z0-9_]+/);
             if (!wordRange) return null;
             const word = document.getText(wordRange);
-
             if (hoverDocs[word]) {
                 return new vscode.Hover(new vscode.MarkdownString(hoverDocs[word]));
             }
@@ -34,13 +57,26 @@ function activate(context) {
         }
     });
 
-    // Document Symbol Provider (Outline)
+    // Hover Provider — .flow
+    const flowHoverProvider = vscode.languages.registerHoverProvider(FLOW_MODE, {
+        provideHover(document, position, token) {
+            const wordRange = document.getWordRangeAtPosition(position, /[a-zA-Z0-9_]+/);
+            if (!wordRange) return null;
+            const word = document.getText(wordRange);
+            if (flowHoverDocs[word]) {
+                return new vscode.Hover(new vscode.MarkdownString(flowHoverDocs[word]));
+            }
+            return null;
+        }
+    });
+
+    // Document Symbol Provider (Outline) — .agent
     const symbolProvider = vscode.languages.registerDocumentSymbolProvider(AGENT_MODE, {
         provideDocumentSymbols(document, token) {
             const symbols = [];
             for (let i = 0; i < document.lineCount; i++) {
                 const line = document.lineAt(i);
-                
+
                 // Match agent declarations (supports multi-word names: "agent Mickey Mouse")
                 const agentMatch = line.text.match(/^agent\s+(.+)/);
                 if (agentMatch) {
@@ -69,6 +105,45 @@ function activate(context) {
                         range
                     );
                     symbols.push(symbol);
+                }
+            }
+            return symbols;
+        }
+    });
+
+    // Document Symbol Provider (Outline) — .flow
+    const flowSymbolProvider = vscode.languages.registerDocumentSymbolProvider(FLOW_MODE, {
+        provideDocumentSymbols(document, token) {
+            const symbols = [];
+            for (let i = 0; i < document.lineCount; i++) {
+                const line = document.lineAt(i);
+
+                // Match state declarations
+                const stateMatch = line.text.match(/^state\s+([a-zA-Z_][a-zA-Z0-9_.\\-]*)/);
+                if (stateMatch) {
+                    const name = stateMatch[1];
+                    const range = new vscode.Range(i, 0, i, line.text.length);
+                    symbols.push(new vscode.DocumentSymbol(
+                        name,
+                        'State',
+                        vscode.SymbolKind.Module,
+                        range,
+                        range
+                    ));
+                }
+
+                // Match top-level event triggers
+                const triggerMatch = line.text.match(/^on\s+event\s+"([^"]+)"/);
+                if (triggerMatch) {
+                    const name = triggerMatch[1];
+                    const range = new vscode.Range(i, 0, i, line.text.length);
+                    symbols.push(new vscode.DocumentSymbol(
+                        name,
+                        'Event',
+                        vscode.SymbolKind.Event,
+                        range,
+                        range
+                    ));
                 }
             }
             return symbols;
@@ -160,7 +235,11 @@ function activate(context) {
         vscode.workspace.onDidCloseTextDocument(doc => diagnosticCollection.delete(doc.uri))
     );
 
-    context.subscriptions.push(hoverProvider, symbolProvider, diagnosticCollection);
+    context.subscriptions.push(
+        hoverProvider, flowHoverProvider,
+        symbolProvider, flowSymbolProvider,
+        diagnosticCollection
+    );
 }
 
 function deactivate() {}
