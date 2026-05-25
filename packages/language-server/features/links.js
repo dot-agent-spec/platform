@@ -11,7 +11,10 @@ const PATTERNS = {
         { re: /^\s+schema\s+("?)([^\s"]+)\1/, fileGroup: 2 },
     ],
     flow: [
-        { re: /^(?:run|load)\s+("?)([^\s"]+)\1/, fileGroup: 2 },
+        // merge "phases/generation.flow"
+        { re: /^merge\s+"([^"]+)"/, fileGroup: 1 },
+        // run script "scripts/log_error.sh"  (may be indented inside event handlers)
+        { re: /^\s*run\s+script\s+"([^"]+)"/, fileGroup: 1 },
     ],
 };
 
