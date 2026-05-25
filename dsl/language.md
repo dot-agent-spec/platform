@@ -1,6 +1,6 @@
 # DSL — Language & Architecture
 
-Complete reference for the agent DSL ecosystem: design philosophy, syntax, type system, security model, and packaging strategy. For formal grammar rules, see [`grammar.agent.md`](grammar.agent.md) and [`grammar.flow.md`](grammar.flow.md).
+Complete reference for the agent DSL ecosystem: design philosophy, syntax, type system, security model, and packaging strategy. For formal grammar rules, see [`grammar.agent.md`](grammar.agent.md) and [`grammar.flow.md`](grammar.flow.md) (transitional — to be superseded by `tree-sitter/` in Stage 4).
 
 ---
 
@@ -303,8 +303,6 @@ set worksession.phase      = "review"     // cleared when work unit ends
 set user.language          = "pt-br"      // persists across all conversations
 ```
 
-> **Note:** `grammar.flow.md` currently lists `project` as a domain name instead of `worksession`. This discrepancy is tracked as an open question and will be resolved when tree-sitter grammars are updated in Stage 4.
-
 ### 4.3 Flow Composition via `merge`
 
 `.flow` files can include states from other `.flow` files using `merge`:
@@ -325,7 +323,38 @@ state responsive
 
 Dynamic/lazy loading is out of scope for `.flow`. Scenarios requiring conditional or runtime-deferred flow loading belong in `.run`, which has the memory management primitives to handle unload safely.
 
-### 4.4 Design Philosophy
+### 4.4 State Control Statements
+
+Inside a state block, three routing keywords handle exceptional control flow:
+
+| Statement | Trigger | Semantics |
+|---|---|---|
+| `on intent "..."` | LLM-interpreted user intent | Routes to another state or executes a block |
+| `on escape` | User explicitly leaves the current flow | Fallback when no intent matches |
+| `on fallback` | Runtime cannot resolve the required action | Error/degradation path |
+
+`on escape` fires when the user exits a task context. `on fallback` fires when the Runtime itself encounters an unresolvable situation (e.g., a required subagent is unavailable). Both take a block, not just a `next` transition.
+
+```flow
+state review
+  interact requiring "Which files should I review?"
+  on intent "all files"  next review_all
+  on escape              next responsive
+  on fallback
+    guide "Review is unavailable, returning to main flow."
+    next responsive
+```
+
+**Temporal triggers [experimental]:** `after N prompts` fires after a given number of prompts exchanged while inside the current state. Useful for pacing or nudging inactive conversations.
+
+```flow
+state waiting
+  interact
+  after 3 prompts
+    guide "Still here — type /done when finished."
+```
+
+### 4.5 Design Philosophy
 
 **Flat states only — no hierarchical nesting.**
 Nested states create scope ambiguity around which state handles a given event. `.flow` machines are flat. When a workflow grows too complex, the correct pattern is composition via `merge` (for related states) or decomposition into `.run` (for logic that exceeds `.flow`'s cognitive scope).
@@ -339,7 +368,7 @@ The underlying LLM is stateless across turns. Exit actions introduce lifecycle c
 **Global observers replace orthogonal states.**
 True orthogonality — being in multiple states simultaneously — creates concurrency paradoxes. `.flow` uses `on event` at the top level to monitor background signals while the main machine remains linear.
 
-### 4.5 IDE Tooling
+### 4.6 IDE Tooling
 
 Any IDE or tooling implementing `.flow` support **must** resolve file paths in string literals that follow standard actions (e.g., `merge`, `run script`, `guide`, `teach`). These should be rendered as clickable document links (underline on hover), allowing the developer to navigate directly to the referenced file relative to the workspace root.
 
@@ -400,14 +429,12 @@ The optimized representation the Runtime OS reads:
 
 Areas identified for future specification work:
 
-**Memory domain naming:** `grammar.flow.md` lists `project` as a memory domain; other docs and examples use `worksession`. The canonical name must be aligned and the grammar updated before tree-sitter grammars are finalized (Stage 4).
-
 **HTTP/MCP interface declaration:** If an agent is an MCP wrapper (like `figma.agent`), there is no formal syntax yet to declare that it exposes HTTP endpoints. Candidates under evaluation:
 - Keyword `server` in the DSL (Layer 1)
 - Attribute in Layer 2, inferred by static analysis of `capabilities`
 - Explicit registration in the domain's `.well-known`
 
-**Dynamic parallelism (batch execution):** The current `parallel` block requires a statically known list of tasks. A batch modifier for iterating over a collection is tentatively called `each`:
+**Dynamic parallelism — `each` [experimental]:** The current `parallel` block requires a statically known list of tasks. `each` iterates a run statement over a collection, spawning tasks in parallel:
 
 ```flow
 run subagent "reviewer" each context.files
@@ -417,6 +444,8 @@ on complete
 on failed
   next handle_review_error
 ```
+
+The `each` modifier is defined in the grammar but its runtime semantics (result accumulation, partial failure handling) are still being specified.
 
 **Human-in-the-loop gate:** `interact` pauses the machine for conversational input. Some workflows need a stricter authorization gate — separate from conversation — before executing a dangerous tool.
 

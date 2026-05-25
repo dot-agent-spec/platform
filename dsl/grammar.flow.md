@@ -1,6 +1,6 @@
 # `.flow` Grammar
 
-> **Transitional reference.** A tree-sitter grammar for `.flow` does not yet exist. This document serves as the working spec for its creation (Stage 4 of the [roadmap](roadmap.md)). Once tree-sitter grammars are finalized, this file will be removed and `tree-sitter-flow/grammar.js` becomes the canonical source.
+> **Transitional reference.** A tree-sitter grammar for `.flow` does not yet exist. This document serves as the working spec for its creation (Stage 4 of the [roadmap](roadmap.md)). Once tree-sitter grammars are finalized, this file will be removed and `tree-sitter/grammars/flow/grammar.js` becomes the canonical source.
 
 Formal EBNF specification for the `.flow` DSL.
 
@@ -67,13 +67,13 @@ state responsive
 ```
 
 ### 3.1. Memory Assignment
-Defines stateful variables tracked by the runtime's Blackboard across 4 domains (`context`, `session`, `project`, `user`).
+Defines stateful variables tracked by the runtime's Blackboard across 4 domains (`context`, `session`, `worksession`, `user`).
 
 ```ebnf
 assignment_stmt = "set" , memory_domain , "." , identifier , "=" , expression ;
-memory_domain = "context" | "session" | "project" | "user" ;
+memory_domain = "context" | "session" | "worksession" | "user" ;
 ```
-*Example:* `set session.active_phase = "planning"`
+*Example:* `set worksession.active_phase = "planning"`
 
 ### 3.2. Global Observers (Triggers)
 Listens for standard runtime events to execute actions outside the normal state flow.
@@ -81,10 +81,10 @@ Listens for standard runtime events to execute actions outside the normal state 
 ```ebnf
 trigger_decl = "on" , "event" , string_literal , block ;
 ```
-*Example:* 
-```dsl
-on memory.backlog_count > 0
-  run prompt "Warning" silent
+*Example:*
+```flow
+on event "session.ended"
+  run script "cleanup.sh" silent
 ```
 
 ### 3.3. State Declarations
@@ -159,7 +159,7 @@ escape_stmt  = "on" , "escape" , block ;
 fallback_stmt = "on" , "fallback" , block ;
 ```
 
-### 4.5. Temporal / Metric Blocks
+### 4.5. Temporal / Metric Blocks [experimental]
 Reacts to session metrics like the number of prompts exchanged while in the current state.
 
 ```ebnf
@@ -173,7 +173,7 @@ Executes multiple statements concurrently and handles their combined completion 
 parallel_stmt = "parallel" , newline , indent , { statement } , dedent , { parallel_trigger } ;
 parallel_trigger = "on" , ( "complete" | "failed" ) , block ;
 
-batch_stmt = "run" , run_type , string_literal , "each" , identifier , { parallel_trigger } ;
+batch_stmt = "run" , run_type , string_literal , "each" , identifier , { parallel_trigger } ; (* experimental *)
 ```
 
 ---

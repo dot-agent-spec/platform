@@ -230,7 +230,7 @@ concept_prop  = "concept" , url , [ "(" , bare_string , ")" ] ;
 
 schema_prop   = "schema" , filename ;
 
-property_decl = identifier , ":" , type_value , [ "?" ] , [ quoted_string ] ;
+property_decl = identifier , [ "?" ] , ":" , type_value , [ quoted_string ] ;
 
 type_value    = type_ref
               | "[" , type_ref , "]"

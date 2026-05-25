@@ -39,14 +39,14 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 4 — Tree-sitter
+## Etapa 4 — Tree-sitter ✅
 
-- [ ] Resolve open question: `project` vs `worksession` memory domain name — align grammar and spec
-- [ ] Create tree-sitter grammar for `.flow` (currently only TextMate grammar in `dsl-old/flow-lang/syntax/`)
-- [ ] Align `tree-sitter-agent/grammar.js` with updated spec in `grammar.agent.md`
-- [ ] Evaluate unifying both parsers into a single `tree-sitter-agent-flow` repository
+- [x] Resolve open question: `project` → `worksession` memory domain name — aligned in `grammar.flow.md` and `language.md`
+- [x] Create tree-sitter grammar for `.flow` — `dsl/tree-sitter-agent/flow/grammar.js` (10/10 tests passing)
+- [x] Align `tree-sitter-agent/grammar.js` with updated spec — `?` moved before `:`, `agent_meta_key`/`optional_marker`/`run_type`/`assignment_op` as named rules (8/8 tests passing)
+- [x] Unified both parsers in `dsl/tree-sitter-agent/` — `flow/` subdirectory, `tree-sitter.json` updated
+- [ ] **Rename repo `tree-sitter-agent` → `tree-sitter` and update submodule pointer** (git operation)
 - [ ] **After tree-sitter grammars are finalized: delete `grammar.agent.md` and `grammar.flow.md`**
-- [ ] Update `dsl/tree-sitter-agent/` with result
 
 ---
 
@@ -64,3 +64,24 @@ Próximas etapas de evolução da especificação consolidada.
 - [ ] Adicionar arquivo `.agent` para os exemplos em `dsl-old/flow-lang/examples/`
 - [ ] Mover exemplos consolidados (pares `.agent` + `.flow`) para `dot-agent-spec/examples/`
 - [ ] Avaliar mover `dsl-old/flow-lang/compiled/` para `dot-agent-spec/` como referência de compilação
+
+
+---
+
+## Etapa 7 — Contratos
+- [ ] [Correção Spec] Resolver a ambiguidade do Contrato de Retorno Oculto: Adicionar à especificação textual a obrigatoriedade da sintaxe de injeção explícita para saídas de subagentes (ex: run subagent "Name" into context.target).
+- [ ] Resolve open question: project vs worksession memory domain name — align grammar and spec. Definição recomendada: Adotar worksession globalmente devido à semântica de isolamento de tarefas de IA.
+- [ ] [Aprimoramento] Adicionar suporte gramatical inicial para propriedades de resiliência (ex: palavra reservada timeout aceita em blocos de execução de ferramentas e subagentes).
+
+---
+
+## Etapa 5 — Extensões (VS Code / Zed) ⚙️ (Foco em UX e Salvaguardas de Dev)
+- [ ] [Implementação de Proteção (Linter)] Implementar uma regra de análise estática (Linter) na extensão para injetar um Warning visual caso o usuário declare um tipo customizado que cause Shadowing nos tipos nativos (std.*).
+- [ ] [Navegabilidade Sênior] Implementar a diretiva de renderização de links clicáveis para caminhos de arquivos (merge, run script, guide, teach) conforme exigido pelo design de experiência do desenvolvedor (DX).
+- [ ] Publicar extensão VS Code atualizada no marketplace
+
+---
+
+## Etapa 6 — Exemplos 🧪 (Foco em Validação Prática e Casos Complexos)
+- [ ] [Validação do Arquiteto] Garantir que os novos arquivos .flow de exemplo façam uso da nova sintaxe de atribuição into para subagentes, validando o Data Lineage nos exemplos práticos.
+- [ ] [Antipadrão Docs] Incluir na documentação de exemplos um caso de uso demonstrando "Quando migrar do .flow para o .run", aplicando o limiar prático da densidade cognitiva (ex: demonstrando um fluxo que exigiria loops complexos sendo elegantemente substituído por um módulo compilado em WASM).
