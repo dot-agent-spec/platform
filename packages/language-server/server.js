@@ -94,9 +94,19 @@ connection.onRenameRequest(({ textDocument, position, newName }) => {
 // ── Document Symbols ─────────────────────────────────────────────────────────
 
 connection.onDocumentSymbol(({ textDocument }) => {
-    const doc = documents.get(textDocument.uri);
-    if (!doc) return [];
-    return provideDocumentSymbols(doc.languageId, doc.getText());
+    try {
+        const doc = documents.get(textDocument.uri);
+        if (!doc) {
+            connection.console.log('[symbols] doc not found for ' + textDocument.uri);
+            return [];
+        }
+        const result = provideDocumentSymbols(doc.languageId, doc.getText());
+        connection.console.log(`[symbols] langId=${doc.languageId} count=${result.length} sample=${JSON.stringify(result[0]).slice(0,120)}`);
+        return result;
+    } catch (e) {
+        connection.console.error('[symbols] threw: ' + e.message + '\n' + e.stack);
+        return [];
+    }
 });
 
 // ── Document Links ───────────────────────────────────────────────────────────
