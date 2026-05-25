@@ -100,9 +100,11 @@ module.exports = grammar({
       $._dedent,
     ),
 
-    // Free-form text line — low precedence so it yields to external tokens
-    // Note: lines starting with // are consumed as $.comment (extras) first
-    text_content: $ => token(prec(-1, /[^\n\r]+/)),
+    // Free-form text line — external tokens (_indent/_dedent/_newline) already
+    // take automatic priority over regular tokens; no prec(-1) needed.
+    // Without it, same-prec ties are broken by match length, so text_content
+    // (whole line) beats identifier (single word), fixing accented chars.
+    text_content: $ => token(/[^\n\r]+/),
 
     behavior_block: $ => seq(
       'behavior',
