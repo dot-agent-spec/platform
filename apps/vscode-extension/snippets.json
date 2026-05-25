@@ -1,0 +1,32 @@
+{
+  "Agent Declaration": {
+    "prefix": "agent",
+    "body": [
+      "agent ${1:Name}",
+      "  domain ${2:example.com}",
+      "  license ${3:MIT}",
+      "",
+      "description",
+      "  ${4:Agent description...}",
+      "",
+      "behavior ${5:agent.flow}",
+      "",
+      "input ${6:std.Prompt}",
+      "",
+      "capabilities",
+      "  ${7:Action}",
+      "",
+      "output ${8:Output}"
+    ],
+    "description": "Create a new agent manifest"
+  },
+  "Type Declaration": {
+    "prefix": "type",
+    "body": [
+      "type ${1:Name}",
+      "  concept ${2:https://schema.org/Thing}",
+      "  ${3:property}: ${4:Type}"
+    ],
+    "description": "Create a custom type declaration"
+  }
+}
