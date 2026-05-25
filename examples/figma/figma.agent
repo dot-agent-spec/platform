@@ -26,6 +26,8 @@ description
 // (ex: `urn:agent:com.figma`).
 // ==========================================
 
+behavior figma.flow
+
 capabilities ProvideMCP // Capability informando que este agente atua primariamente como servidor MCP.
 
 // === NOTA ARQUITETURAL: I/O EM SERVIDORES ===

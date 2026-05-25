@@ -1,0 +1,26 @@
+// doctor.flow
+// Clinical diagnostic workflow — covers patient examination and prescription emission.
+
+state init
+  next responsive
+
+state responsive
+  interact
+  on intent "examine"  next examine
+  on intent "diagnose" next diagnose
+  on escape            next responsive
+
+state examine
+  goal "Review the patient's medical history and current symptoms."
+  set context.record = run tool "EMR.Fetch" context.patient_id
+  interact
+  on intent "examination_complete" next diagnose
+  on escape                        next responsive
+
+state diagnose
+  goal "Analyze examination findings and emit a structured Prescription."
+  interact requiring "What is your diagnosis based on the examination?"
+  on intent "diagnosis_ready"
+    run tool "EMR.CreatePrescription" context.diagnosis
+    next responsive
+  on escape next responsive

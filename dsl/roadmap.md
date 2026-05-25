@@ -58,11 +58,10 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 6 — Exemplos
+## Etapa 6 — Exemplos ✅
 
-- [ ] Adicionar arquivo `.flow` companion para cada exemplo em `dot-agent-spec/examples/` (hoje só `.agent`)
-- [ ] Adicionar arquivo `.agent` para os exemplos em `dsl-old/flow-lang/examples/`
-- [ ] Mover exemplos consolidados (pares `.agent` + `.flow`) para `dot-agent-spec/examples/`
+- [x] Adicionar arquivo `.flow` companion para cada exemplo em `dot-agent-spec/examples/` (hoje só `.agent`) — cada exemplo organizado em sua própria pasta
+- [x] Exemplos em `dsl-old/flow-lang/examples/` eram rascunhos internos do `builder.agent`; lifecycle e sub-flow de planejamento foram incorporados diretamente ao `builder.flow`
 - [ ] Avaliar mover `dsl-old/flow-lang/compiled/` para `dot-agent-spec/` como referência de compilação
 
 
