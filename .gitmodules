@@ -13,3 +13,6 @@
 [submodule "dsl/vscode-extension"]
 	path = dsl/vscode-extension
 	url = git@github.com:daniloborges/vscode-dot-agent.git
+[submodule "dsl/dot-agent-kernel"]
+	path = dsl/dot-agent-kernel
+	url = git@github.com:daniloborges/dot-agent-kernel.git
