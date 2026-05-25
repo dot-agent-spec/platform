@@ -7,15 +7,13 @@ Unified specification for the two file formats of the agent ecosystem: `.agent` 
 | File | Purpose |
 |------|---------|
 | [`language.md`](language.md) | Language design, architecture, type system, security model, packaging — the main spec |
-| [`grammar.agent.md`](grammar.agent.md) | Formal EBNF for `.agent` *(transitional — will be removed after Stage 4)* |
-| [`grammar.flow.md`](grammar.flow.md) | Formal EBNF for `.flow` *(transitional — will be removed after Stage 4)* |
 | [`roadmap.md`](roadmap.md) | Spec evolution roadmap |
 
 ## Tooling
 
 | Directory | Purpose |
 |-----------|---------|
-| [`tree-sitter-agent/`](tree-sitter-agent/) | Tree-sitter parser for `.agent` (git submodule) — canonical grammar source |
+| [`tree-sitter/`](tree-sitter/) | Tree-sitter parsers for `.agent` and `.flow` (git submodule) — canonical grammar source |
 | [`vscode-extension/`](vscode-extension/) | VS Code extension for `.agent` |
 | [`zed-agent/`](zed-agent/) | Zed extension for `.agent` |
 
