@@ -1,17 +1,4 @@
-<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <!-- Flow arrows / state machine -->
-  <!-- Left state node -->
-  <circle cx="14" cy="32" r="8" fill="none" stroke="#a855f7" stroke-width="2.5"/>
-  <!-- Right state node -->
-  <circle cx="50" cy="32" r="8" fill="none" stroke="#a855f7" stroke-width="2.5"/>
-  <!-- Arrow from left to right (top arc) -->
-  <path d="M 22 28 Q 32 16 42 28" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round"/>
-  <polygon points="42,28 38,22 45,23" fill="#a855f7"/>
-  <!-- Arrow from right to left (bottom arc) -->
-  <path d="M 42 36 Q 32 48 22 36" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-  <polygon points="22,36 26,42 19,41" fill="#a855f7" opacity="0.6"/>
-  <!-- Sparkles -->
-  <circle cx="32" cy="8" r="2" fill="#a855f7" opacity="0.7"/>
-  <circle cx="8" cy="14" r="1.5" fill="#a855f7" opacity="0.5"/>
-  <circle cx="56" cy="50" r="1.5" fill="#a855f7" opacity="0.5"/>
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M14 1H2v3h12V1zm-1 2H3V2h10v1zM2 6h4v3H2V6zm3 2H3V7h2v1zm4 3h5v3H9v-3zm4 2h-3v-1h3v1z" fill="#7B1FA2"/>
+  <path d="M4 6V5h8v1h-1v5h-1V6H4z" fill="#7B1FA2"/>
 </svg>
