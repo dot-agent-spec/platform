@@ -54,7 +54,6 @@ Próximas etapas de evolução da especificação consolidada.
 
 - [ ] Consolidar `dsl-old/flow-lang/syntax/` e `dsl/vscode-extension/` em uma única extensão que suporte `.agent` e `.flow`
 - [ ] Atualizar extensão Zed (`dsl/zed-agent/`) para incluir highlighting de `.flow`
-- [ ] Publicar extensão VS Code atualizada no marketplace
 
 ---
 
@@ -75,13 +74,13 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 5 — Extensões (VS Code / Zed) ⚙️ (Foco em UX e Salvaguardas de Dev)
+## Etapa 8 — Extensões (VS Code / Zed) ⚙️ (Foco em UX e Salvaguardas de Dev)
 - [ ] [Implementação de Proteção (Linter)] Implementar uma regra de análise estática (Linter) na extensão para injetar um Warning visual caso o usuário declare um tipo customizado que cause Shadowing nos tipos nativos (std.*).
 - [ ] [Navegabilidade Sênior] Implementar a diretiva de renderização de links clicáveis para caminhos de arquivos (merge, run script, guide, teach) conforme exigido pelo design de experiência do desenvolvedor (DX).
 - [ ] Publicar extensão VS Code atualizada no marketplace
 
 ---
 
-## Etapa 6 — Exemplos 🧪 (Foco em Validação Prática e Casos Complexos)
+## Etapa 9 — Exemplos 🧪 (Foco em Validação Prática e Casos Complexos)
 - [ ] [Validação do Arquiteto] Garantir que os novos arquivos .flow de exemplo façam uso da nova sintaxe de atribuição into para subagentes, validando o Data Lineage nos exemplos práticos.
 - [ ] [Antipadrão Docs] Incluir na documentação de exemplos um caso de uso demonstrando "Quando migrar do .flow para o .run", aplicando o limiar prático da densidade cognitiva (ex: demonstrando um fluxo que exigiria loops complexos sendo elegantemente substituído por um módulo compilado em WASM).
