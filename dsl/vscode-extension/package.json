@@ -20,6 +20,10 @@
     "package": "vsce package",
     "install-ext": "code --install-extension agent-dsl-syntax-*.vsix"
   },
+  "dependencies": {
+    "agent-dsl-language-server": "github:daniloborges/language-server",
+    "vscode-languageclient": "^9.0.1"
+  },
   "devDependencies": {
     "@vscode/vsce": "^3.0.0"
   },

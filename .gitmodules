@@ -7,3 +7,6 @@
 [submodule "DSL/zed-agent/grammars/agent"]
 	path = dsl/zed-agent/grammars/agent
 	url = https://github.com/daniloborges/dot-agent-tree-sitter.git
+[submodule "dsl/language-server"]
+	path = dsl/language-server
+	url = git@github.com:daniloborges/language-server.git

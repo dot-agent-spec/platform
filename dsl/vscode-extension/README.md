@@ -4,6 +4,16 @@ Full IDE support for the **Agent DSL** (`.agent`) and **Flow DSL** (`.flow`) lan
 
 ---
 
+## Architecture
+
+This extension is a thin LSP client. Most IDE features (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting) are provided by the **[Agent DSL Language Server](https://github.com/daniloborges/language-server)** — a standalone Node.js process started automatically when the extension activates. The server is bundled with the extension and speaks the Language Server Protocol over stdio.
+
+Two features are implemented directly in the extension (VS Code-specific):
+- **Flow Graph** — Mermaid state diagram rendered in a WebView panel
+- **Status bar** — shows the current `state` the cursor is inside
+
+---
+
 ## Features
 
 ### Syntax Highlighting

@@ -1,10 +1,16 @@
 id = "agent-dsl"
 name = "Agent & Flow DSL"
-version = "0.2.0"
+version = "0.3.0"
 schema_version = 1
 authors = ["Danilo Borges <danilobor@gmail.com>"]
-description = "Syntax highlighting for the Agent DSL (.agent, .type) and Flow DSL (.flow) files"
+description = "Syntax highlighting, hover, completions, diagnostics, and navigation for Agent DSL (.agent) and Flow DSL (.flow) files"
 repository = "https://github.com/placeholder"
+
+[language_servers.agent-dsl-lsp]
+name = "Agent DSL Language Server"
+languages = ["Agent DSL", "Flow DSL"]
+command = "node"
+args = ["../language-server/server.js", "--stdio"]
 
 [grammars.agent]
 repository = "file:///Users/danilo/Development/entelekheia/dot-agent-spec/dsl/zed-agent/grammars/agent"
