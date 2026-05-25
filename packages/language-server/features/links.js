@@ -3,9 +3,6 @@
 const { fileURLToPath, pathToFileURL } = require('url');
 const path = require('path');
 
-// Patterns that reference external files, per language.
-// Each entry: { re, fileGroup } where re is applied per line and fileGroup
-// is the capture group index that holds the bare filename.
 const PATTERNS = {
     agent: [
         // behavior mickey.flow
@@ -14,7 +11,6 @@ const PATTERNS = {
         { re: /^\s+schema\s+("?)([^\s"]+)\1/, fileGroup: 2 },
     ],
     flow: [
-        // run agent.some-file  (if the spec ever adds it)
         { re: /^(?:run|load)\s+("?)([^\s"]+)\1/, fileGroup: 2 },
     ],
 };
@@ -32,7 +28,6 @@ function provideDocumentLinks(langId, text, docUri) {
 
     const links = [];
     const lines = text.split('\n');
-    let offset = 0;
 
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
         const line = lines[lineIdx];
@@ -44,8 +39,9 @@ function provideDocumentLinks(langId, text, docUri) {
             const filename = m[fileGroup];
             if (!filename) continue;
 
-            // Column range of the filename inside the line
-            const colStart = m.index + m[0].indexOf(filename);
+            // lastIndexOf is safe even when the filename is a substring of the keyword
+            // (e.g. `behavior behavior.flow`) because the filename always appears last.
+            const colStart = m.index + m[0].lastIndexOf(filename);
             const colEnd   = colStart + filename.length;
 
             const targetPath = path.resolve(docDir, filename);
@@ -59,8 +55,6 @@ function provideDocumentLinks(langId, text, docUri) {
                 target: targetUri,
             });
         }
-
-        offset += line.length + 1; // +1 for '\n'
     }
 
     return links;

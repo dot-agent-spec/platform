@@ -96,19 +96,20 @@ connection.onRenameRequest(({ textDocument, position, newName }) => {
 connection.onDocumentSymbol(({ textDocument }) => {
     const doc = documents.get(textDocument.uri);
     if (!doc) return [];
-    // Fix up the uri in each location before returning
-    return provideDocumentSymbols(doc.languageId, doc.getText()).map(sym => ({
-        ...sym,
-        location: { ...sym.location, uri: doc.uri },
-    }));
+    return provideDocumentSymbols(doc.languageId, doc.getText());
 });
 
 // ── Document Links ───────────────────────────────────────────────────────────
 
 connection.onDocumentLinks(({ textDocument }) => {
-    const doc = documents.get(textDocument.uri);
-    if (!doc) return [];
-    return provideDocumentLinks(doc.languageId, doc.getText(), doc.uri);
+    try {
+        const doc = documents.get(textDocument.uri);
+        if (!doc) return [];
+        return provideDocumentLinks(doc.languageId, doc.getText(), doc.uri);
+    } catch (e) {
+        connection.console.error(`documentLinks error: ${e.message}`);
+        return [];
+    }
 });
 
 // ── Formatting ───────────────────────────────────────────────────────────────
