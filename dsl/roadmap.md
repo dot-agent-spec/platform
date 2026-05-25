@@ -42,11 +42,11 @@ Próximas etapas de evolução da especificação consolidada.
 ## Etapa 4 — Tree-sitter ✅
 
 - [x] Resolve open question: `project` → `worksession` memory domain name — aligned in `grammar.flow.md` and `language.md`
-- [x] Create tree-sitter grammar for `.flow` — `dsl/tree-sitter/flow/grammar.js` (10/10 tests passing)
-- [x] Align `tree-sitter/grammar.js` with updated spec — `?` moved before `:`, `agent_meta_key`/`optional_marker`/`run_type`/`assignment_op` as named rules (8/8 tests passing)
-- [x] Unified both parsers in `dsl/tree-sitter/` — `flow/` subdirectory, `tree-sitter.json` updated
-- [x] Rename local directory `tree-sitter-agent` → `tree-sitter` and update submodule pointer in `.gitmodules`
-- [x] Delete `grammar.agent.md` and `grammar.flow.md` — `dsl/tree-sitter/` is now the canonical source
+- [x] Create tree-sitter grammar for `.flow` — `dsl/tree-sitter-agent/flow/grammar.js` (10/10 tests passing)
+- [x] Align `tree-sitter-agent/grammar.js` with updated spec — `?` moved before `:`, `agent_meta_key`/`optional_marker`/`run_type`/`assignment_op` as named rules (8/8 tests passing)
+- [x] Unified both parsers in `dsl/tree-sitter-agent/` — `flow/` subdirectory, `tree-sitter.json` updated
+- [x] Rename local directory `tree-sitter` → `tree-sitter-agent` so tree-sitter CLI discovers it as a grammar package
+- [x] Delete `grammar.agent.md` and `grammar.flow.md` — `dsl/tree-sitter-agent/` is now the canonical source
 
 ---
 
