@@ -2,6 +2,13 @@
 name = "dot-agent-kernel"
 version = "0.1.0"
 edition = "2021"
+description = "WASM kernel for parsing and validating Agent DSL"
+license = "Apache-2.0"
+authors = ["Danilo Borges <contato@daniloborg.es>"]
+repository = "https://github.com/daniloborges/dot-agent-kernel"
+homepage = "https://github.com/daniloborges/dot-agent-kernel"
+keywords = ["wasm", "agent", "dsl", "parser"]
+categories = ["wasm", "parser-implementations"]
 
 [lib]
 crate-type = ["cdylib"]
