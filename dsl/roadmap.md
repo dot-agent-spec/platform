@@ -1,36 +1,34 @@
-# Roadmap da DSL
+# DSL Roadmap
 
-Próximas etapas de evolução da especificação consolidada.
-
-> Contexto e análise de base: `entelekheia/merge.md`
+Upcoming evolution stages for the consolidated specification.
 
 ---
 
-## Etapa 1 — Reorganização e consolidação documental ✅
+## Stage 1 — Reorganization and document consolidation ✅
 
-- [x] Criar `dsl-old/` com backup do estado anterior
-- [x] Mover `flow-lang/` para `dsl-old/`
-- [x] Renomear `DSL/` → `dsl/`
-- [x] Incorporar spec do `.flow` em `dsl/` (`grammar.flow.md`, `language.flow.md`, `manifesto.md`)
-- [x] Criar `README.md` e `roadmap.md`
-
----
-
-## Etapa 2 — Revisão de Vocabulário / Sintaxe ✅
-
-- [x] Decidir keyword e semântica de composição de flows → `merge "file.flow"` (preamble, eager)
-- [x] Remover `run flow` do `run_type` em `grammar.flow.md`
-- [x] Adicionar `merge_decl` ao top-level de `grammar.flow.md`
-- [x] Atualizar `language.flow.md` — §3 (flat states), §4 (IDE doc links), nova subseção de composição
-- [x] `grammar.agent.md` sem impacto — `behavior` mantido como está
-- [x] Sem lazy loading — casos complexos delegados a `.run` / WASM
+- [x] Create `dsl-old/` with backup of previous state
+- [x] Move `flow-lang/` to `dsl-old/`
+- [x] Rename `DSL/` → `dsl/`
+- [x] Incorporate `.flow` spec into `dsl/` (`grammar.flow.md`, `language.flow.md`, `manifesto.md`)
+- [x] Create `README.md` and `roadmap.md`
 
 ---
 
-## Etapa 3 — Spec text consolidation ✅
+## Stage 2 — Vocabulary / Syntax revision ✅
+
+- [x] Decide keyword and semantics for flow composition → `merge "file.flow"` (preamble, eager)
+- [x] Remove `run flow` from `run_type` in `grammar.flow.md`
+- [x] Add `merge_decl` to the top-level of `grammar.flow.md`
+- [x] Update `language.flow.md` — §3 (flat states), §4 (IDE doc links), new composition subsection
+- [x] `grammar.agent.md` unaffected — `behavior` kept as-is
+- [x] No lazy loading — complex cases delegated to `.run` / WASM
+
+---
+
+## Stage 3 — Spec text consolidation ✅
 
 - [x] Merge `language.agent.md` + `language.flow.md` + `manifesto.md` → unified `language.md` (English)
-- [x] Clarify `.flow` / `.run` relationship: same purpose, text subset vs compiled WASM
+- [x] Clarify `.flow` / `.run` relationship: same purpose, text subset vs. compiled WASM
 - [x] Add deprecation notices to `grammar.agent.md` and `grammar.flow.md`
 - [x] Fix broken links in grammar files (old `grammar.md` and `DSL/` path references)
 - [x] Remove "How to use this documentation?" section from `grammar.flow.md`
@@ -39,56 +37,60 @@ Próximas etapas de evolução da especificação consolidada.
 
 ---
 
-## Etapa 4 — Tree-sitter ✅
+## Stage 4 — Tree-sitter ✅
 
 - [x] Resolve open question: `project` → `worksession` memory domain name — aligned in `grammar.flow.md` and `language.md`
 - [x] Create tree-sitter grammar for `.flow` — `dsl/tree-sitter-agent/flow/grammar.js` (10/10 tests passing)
 - [x] Align `tree-sitter-agent/grammar.js` with updated spec — `?` moved before `:`, `agent_meta_key`/`optional_marker`/`run_type`/`assignment_op` as named rules (8/8 tests passing)
 - [x] Unified both parsers in `dsl/tree-sitter-agent/` — `flow/` subdirectory, `tree-sitter.json` updated
 - [x] Rename local directory `tree-sitter` → `tree-sitter-agent` so tree-sitter CLI discovers it as a grammar package
-- [x] Delete `grammar.agent.md` and `grammar.flow.md` — `dsl/tree-sitter-agent/` is now the canonical source
-- [x] Fix `text_content` precedence (`prec(-1)` removido) — acentos e pontuação em blocos `description` deixaram de produzir nós ERROR (cinza no editor)
+- [x] Delete `grammar.agent.md` and `grammar.flow.md` — `dsl/tree-sitter-agent/` is now the canonical grammar source
+- [x] Fix `text_content` precedence (`prec(-1)` removed) — accents and punctuation in `description` blocks no longer produce ERROR nodes in the editor
 
 ---
 
-## Etapa 5 — Extensões (VS Code / Zed) ✅
+## Stage 5 — Extensions (VS Code / Zed) ✅
 
-- [x] Consolidar `dsl-old/flow-lang/syntax/` e `dsl/vscode-extension/` em uma única extensão que suporte `.agent` e `.flow`
-- [x] Atualizar extensão Zed (`dsl/zed-agent/`) para incluir highlighting de `.flow`
-- [x] Extrair toda a lógica de IDE para um Language Server standalone (`dsl/language-server/`, submodule em `github.com/daniloborges/language-server`) — extensões VS Code e Zed reescritas como thin clients LSP
-
----
-
-## Etapa 6 — Exemplos ✅
-
-- [x] Adicionar arquivo `.flow` companion para cada exemplo em `dot-agent-spec/examples/` (hoje só `.agent`) — cada exemplo organizado em sua própria pasta
-- [x] Exemplos em `dsl-old/flow-lang/examples/` eram rascunhos internos do `builder.agent`; lifecycle e sub-flow de planejamento foram incorporados diretamente ao `builder.flow`
-- [ ] Avaliar mover `dsl-old/flow-lang/compiled/` para `dot-agent-spec/` como referência de compilação
-
+- [x] Consolidate `dsl-old/flow-lang/syntax/` and `dsl/vscode-extension/` into a single extension supporting both `.agent` and `.flow`
+- [x] Update Zed extension (`dsl/zed-agent/`) to include `.flow` highlighting
+- [x] Extract all IDE logic into a standalone Language Server (`dsl/language-server/`, submodule at `github.com/daniloborges/language-server`) — VS Code and Zed extensions rewritten as thin LSP clients
 
 ---
 
-## Etapa 7 — Contratos
-- [ ] [Correção Spec] Resolver a ambiguidade do Contrato de Retorno Oculto: Adicionar à especificação textual a obrigatoriedade da sintaxe de injeção explícita para saídas de subagentes (ex: run subagent "Name" into context.target).
-- [ ] Resolve open question: project vs worksession memory domain name — align grammar and spec. Definição recomendada: Adotar worksession globalmente devido à semântica de isolamento de tarefas de IA.
-- [ ] [Aprimoramento] Adicionar suporte gramatical inicial para propriedades de resiliência (ex: palavra reservada timeout aceita em blocos de execução de ferramentas e subagentes).
+## Stage 6 — Examples ✅
+
+- [x] Add a companion `.flow` file for each example in `dot-agent-spec/examples/` (previously only `.agent`) — each example organized in its own folder
+- [x] Examples in `dsl-old/flow-lang/examples/` were internal drafts of `builder.agent`; lifecycle and planning sub-flow were incorporated directly into `builder.flow`
+- [ ] Evaluate moving `dsl-old/flow-lang/compiled/` to `dot-agent-spec/` as a compilation reference
 
 ---
 
-## Etapa 8 — Extensões (VS Code / Zed) ⚙️ (Foco em UX e Salvaguardas de Dev)
-- [ ] [Linter] Implementar regra de análise estática no Language Server para warning quando tipo customizado faz shadowing de tipo nativo (`std.*`)
-- [x] [Language Server] Publicado como submodule standalone em `github.com/daniloborges/language-server` — suporta VS Code, Zed, Neovim e qualquer editor com LSP
-- [x] [Extensão VS Code] Publicada como submodule standalone em `github.com/daniloborges/vscode-dot-agent` — v1.4.0
-- [x] [Document Symbols] Outline do VS Code populado para `.agent` (agent + types) e `.flow` (states + events) via `DocumentSymbol` format (LSP moderno, sem URI hack)
-- [x] [Document Links] Links clicáveis implementados via `documentLinkProvider` no Language Server:
-  - `.agent`: `behavior <file>`, `schema <file>` — resolvidos relativos ao diretório do arquivo
-  - `.flow`: `merge "<file>"`, `run script "<file>"` — idem
-- [x] [word boundary] `wordPattern` adicionado ao `.flow` para nomes de estado com ponto (`planning.context`) serem selecionados como unidade no Ctrl+Click / go-to-definition
-- [x] [Packaging] `.vscodeignore` corrigido para incluir todos os `node_modules` — dependências transitivas (`vscode-languageserver`, `balanced-match`, etc.) estavam ausentes do `.vsix`, impedindo o servidor LSP de iniciar
-- [ ] Publicar extensão VS Code atualizada no marketplace
+## Stage 7 — Contracts
+
+- [ ] **[Spec fix]** Resolve the Hidden Return Contract ambiguity: add to the spec the requirement for explicit injection syntax for subagent outputs (e.g. `run subagent "Name" into context.target`).
+- [ ] Resolve open question: `project` vs `worksession` memory domain name — align grammar and spec. Recommended: adopt `worksession` globally due to AI task isolation semantics.
+- [ ] **[Enhancement]** Add initial grammar support for resilience properties (e.g. `timeout` as a reserved keyword accepted in tool and subagent execution blocks).
 
 ---
 
-## Etapa 9 — Exemplos 🧪 (Foco em Validação Prática e Casos Complexos)
-- [ ] [Validação do Arquiteto] Garantir que os novos arquivos .flow de exemplo façam uso da nova sintaxe de atribuição into para subagentes, validando o Data Lineage nos exemplos práticos.
-- [ ] [Antipadrão Docs] Incluir na documentação de exemplos um caso de uso demonstrando "Quando migrar do .flow para o .run", aplicando o limiar prático da densidade cognitiva (ex: demonstrando um fluxo que exigiria loops complexos sendo elegantemente substituído por um módulo compilado em WASM).
+## Stage 8 — Extensions (VS Code / Zed) ⚙️ (Focus: UX and dev safeguards)
+
+- [ ] **[Linter]** Implement static analysis rule in the Language Server to warn when a custom type shadows a native type (`std.*`)
+- [x] **[Language Server]** Published as standalone submodule at `github.com/daniloborges/language-server` — supports VS Code, Zed, Neovim, and any LSP-capable editor
+- [x] **[VS Code Extension]** Published as standalone submodule at `github.com/daniloborges/vscode-dot-agent` — v1.4.0
+- [x] **[Document Symbols]** VS Code Outline populated for `.agent` (agent + types) and `.flow` (states + events) via `DocumentSymbol` format (modern LSP, no URI hack)
+- [x] **[Document Links]** Clickable links implemented via `documentLinkProvider` in the Language Server:
+  - `.agent`: `behavior <file>`, `schema <file>` — resolved relative to the document directory
+  - `.flow`: `merge "<file>"`, `run script "<file>"` — same
+- [x] **[Word boundary]** `wordPattern` added to `.flow` so state names with dots (`planning.context`) are selected as a unit on Ctrl+Click / go-to-definition
+- [x] **[Packaging]** `.vscodeignore` fixed to include all `node_modules` — transitive dependencies (`vscode-languageserver`, `balanced-match`, etc.) were missing from the `.vsix`, preventing the LSP server from starting
+- [ ] Remove logs from the output panel
+- [ ] Add links and linter for `guide` and `teach`
+- [ ] Publish updated VS Code extension to the marketplace
+
+---
+
+## Stage 9 — Examples 🧪 (Focus: practical validation and complex cases)
+
+- [ ] **[Architect validation]** Ensure new example `.flow` files use the new `into` assignment syntax for subagents, validating data lineage in practical examples.
+- [ ] **[Antipattern docs]** Include in the examples documentation a use case demonstrating "When to migrate from `.flow` to `.run`", applying the practical cognitive-density threshold (e.g. showing a flow that would require complex loops being elegantly replaced by a WASM-compiled module).
