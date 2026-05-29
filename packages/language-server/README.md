@@ -15,7 +15,7 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 | **Document Symbols** | Agents, types | States, `on event` observers |
 | **Formatting** | 0 / 2-space indentation | 0 / 2 / 4-space indentation by block depth |
 
-> The VS Code extension adds two capabilities on top: **Flow Graph** (Mermaid state diagram WebView) and **status bar** (current state indicator). Those are VS Code-specific and live in `vscode-extension/extension.js`.
+> The VS Code extension adds two capabilities on top: **Flow Graph** (Mermaid state diagram WebView) and **status bar** (current state indicator). Those are VS Code-specific and live in [`extension.js`](https://github.com/daniloborges/vscode-dot-agent/blob/main/extension.js).
 
 ## Architecture
 
@@ -97,11 +97,11 @@ args = ["/path/to/language-server/server.js", "--stdio"]
 
 ## VS Code Integration
 
-The VS Code extension (`dsl/vscode-extension/`) installs the server as an npm dependency and starts it automatically via `vscode-languageclient`. No manual setup needed — install the `.vsix` and the server starts with the editor.
+The [VS Code extension](https://github.com/daniloborges/vscode-dot-agent) installs the server as an npm dependency and starts it automatically via `vscode-languageclient`. No manual setup needed — install the `.vsix` and the server starts with the editor.
 
 ## Zed Integration
 
-Configured in `dsl/zed-agent/extension.toml` under `[language_servers.agent-dsl-lsp]`. Note: Zed extensions with full LSP support may require Rust bindings depending on the Zed version.
+Configured in `zed-agent/extension.toml` under `[language_servers.agent-dsl-lsp]`. Note: Zed extensions with full LSP support may require Rust bindings depending on the Zed version.
 
 ## Development
 
@@ -144,3 +144,11 @@ p.stdin.write('Content-Length: ' + Buffer.byteLength(msg) + '\r\n\r\n' + msg);
 p.stdout.on('data', d => { console.log(d.toString()); p.kill(); });
 "
 ```
+
+---
+
+## License
+
+Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+
+Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).
