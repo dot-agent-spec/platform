@@ -2,7 +2,7 @@ id = "agent-dsl"
 name = "Agent & Flow DSL"
 version = "0.3.0"
 schema_version = 1
-authors = ["Danilo Borges <danilobor@gmail.com>"]
+authors = ["Danilo Borges <contato@daniloborg.es>"]
 description = "Syntax highlighting, hover, completions, diagnostics, and navigation for Agent DSL (.agent) and Flow DSL (.flow) files"
 repository = "https://github.com/placeholder"
 
