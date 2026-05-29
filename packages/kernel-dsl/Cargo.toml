@@ -10,6 +10,11 @@ homepage = "https://github.com/daniloborges/dot-agent-kernel"
 keywords = ["wasm", "agent", "dsl", "parser"]
 categories = ["wasm", "parser-implementations"]
 
+[package.metadata.scripts]
+build   = "wasm-pack build --target bundler"
+patch   = """node -e "const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')" """
+release = "cargo run-script build && cargo run-script patch"
+
 [lib]
 crate-type = ["cdylib"]
 
