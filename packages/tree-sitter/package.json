@@ -1,7 +1,18 @@
 {
-  "name": "tree-sitter-agent",
+  "name": "@dot-agent/tree-sitter-agent",
   "version": "0.1.0",
   "description": "Tree-sitter grammars for the Agent DSL (.agent / .type / .flow)",
+  "license": "Apache-2.0",
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daniloborges/tree-sitter-agent.git"
+  },
+  "homepage": "https://github.com/daniloborges/tree-sitter-agent#readme",
+  "bugs": {
+    "url": "https://github.com/daniloborges/tree-sitter-agent/issues"
+  },
+  "keywords": ["tree-sitter", "agent", "dsl", "parser", "grammar"],
   "scripts": {
     "generate":      "tree-sitter generate",
     "generate-flow": "cd flow && npx tree-sitter generate",
@@ -21,5 +32,8 @@
       "scope": "source.flow",
       "file-types": ["flow"]
     }
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
