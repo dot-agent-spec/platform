@@ -180,7 +180,7 @@ state confirmation
 Install from the `.vsix` file:
 
 ```bash
-code --install-extension agent-dsl-syntax-1.3.0.vsix
+code --install-extension agent-dsl-syntax-1.4.0.vsix
 ```
 
 Or build from source:
@@ -189,3 +189,11 @@ Or build from source:
 npm run package
 npm run install-ext
 ```
+
+---
+
+## License
+
+Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+
+Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).

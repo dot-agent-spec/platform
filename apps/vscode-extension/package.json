@@ -6,7 +6,7 @@
   "publisher": "entelekheia",
   "repository": {
     "type": "git",
-    "url": "https://github.com/entelekheia/dot-agent-spec"
+    "url": "https://github.com/daniloborges/vscode-dot-agent"
   },
   "main": "./extension.js",
   "activationEvents": [
