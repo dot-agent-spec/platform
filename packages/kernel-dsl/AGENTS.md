@@ -1,12 +1,12 @@
-# AI Agent Guidelines
+# dot-agent-kernel — Agent Guidelines
 
-If you are an AI agent working in this repository, follow these rules when modifying `dot-agent-kernel`.
+AI collaboration guide for maintaining and evolving the `dot-agent-kernel` Rust/WASM execution engine.
 
 ## Context
 
 - **Language**: Rust
 - **Target**: WebAssembly (`wasm32-unknown-unknown`)
-- **Purpose**: Parse and execute the `.flow` DSL as specified in `../language.md`, exposing a FSM engine to JavaScript via WASM bindings
+- **Purpose**: Parse and execute the `.flow` DSL as specified in [`language.md`](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md), exposing a FSM engine to JavaScript via WASM bindings
 
 ## Module responsibilities
 
@@ -14,7 +14,7 @@ If you are an AI agent working in this repository, follow these rules when modif
 |------|---------------|
 | `src/lib.rs` | WASM bindings only (`#[wasm_bindgen]`) — no business logic |
 | `src/effect.rs` | `Effect` enum and `MemValue` — serialized types returned to JS |
-| `src/parser/ast.rs` | AST types — mirror the grammar in `tree-sitter-agent/flow/grammar.js` |
+| `src/parser/ast.rs` | AST types — mirror the grammar in [`tree-sitter-agent/flow/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js) |
 | `src/parser/lexer.rs` | Tokenizer with indentation stack (INDENT/DEDENT), all DSL keywords |
 | `src/parser/mod.rs` | Recursive descent parser — `parse_flow(text) → FlowFile` |
 | `src/engine/memory.rs` | `MemoryStore` — 4 domains, `get`/`set` with `AssignOp`, snapshot |
@@ -33,7 +33,7 @@ Never put parser or FSM logic in `lib.rs`. Never expose internal structs directl
 
 ## Keeping in sync with the spec
 
-The parser in `src/parser/` must stay in sync with `../tree-sitter-agent/flow/grammar.js`. When the tree-sitter grammar changes:
+The parser in `src/parser/` must stay in sync with [`tree-sitter-agent/flow/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js). When the tree-sitter grammar changes:
 
 1. Update `src/parser/ast.rs` with new types or variants
 2. Update `src/parser/lexer.rs` with new keywords
@@ -59,3 +59,25 @@ wasm-pack build --target web --out-dir pkg
 ```
 
 `pkg/` is the artifact consumed by frontends. Never edit files inside `pkg/` manually — they are all generated.
+
+## License rules
+
+- **Every new `.rs` file** must carry the Apache 2.0 header using `//` line comments (idiomatic Rust style):
+  ```rust
+  // Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // ...
+  ```
+- **Generated files in `pkg/`**: no header — overwritten on every `wasm-pack build`.
+- **No NOTICE file**: no third-party source is distributed in this repo. Cargo dependencies are resolved at build time only.
+
+## Key references
+
+| Resource | Link |
+|----------|------|
+| Language specification | [language.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) |
+| .flow grammar (canonical) | [tree-sitter-agent/flow/grammar.js](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js) |
+| Full API reference | [API.md](API.md) |
+| VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
+| Language server (LSP) | [language-server](https://github.com/daniloborges/language-server) |

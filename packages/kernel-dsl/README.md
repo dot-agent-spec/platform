@@ -18,7 +18,7 @@ src/
     └── memory.rs       — MemoryStore: 4 domains (context/session/worksession/user)
 ```
 
-The parser is a **pure-Rust recursive descent parser** — no tree-sitter runtime dependency, fully compatible with `wasm32-unknown-unknown`. It is kept in sync with the canonical grammar at `tree-sitter-agent/flow/grammar.js`.
+The parser is a **pure-Rust recursive descent parser** — no tree-sitter runtime dependency, fully compatible with `wasm32-unknown-unknown`. It is kept in sync with the canonical grammar at [`tree-sitter-agent/flow/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js).
 
 ## Supported constructs
 
@@ -114,6 +114,8 @@ type Effect =
   | { type: "parse_error";      message: string }
 ```
 
+For the full API reference — all effect types, handler implementation examples, memory domains, TypeScript types, and a React hook — see [API.md](API.md).
+
 ### Dynamic import (Next.js / SSR)
 
 ```javascript
@@ -125,3 +127,11 @@ import("dot-agent-kernel").then(module => {
   });
 });
 ```
+
+---
+
+## License
+
+Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+
+Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).

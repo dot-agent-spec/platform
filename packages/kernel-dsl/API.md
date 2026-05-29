@@ -1,5 +1,7 @@
 # dot-agent-kernel — API Reference
 
+← Back to [README.md](README.md) for architecture overview and build instructions.
+
 ## The two-sided contract
 
 The kernel works like a native WebAssembly module with an **import object**: JS provides functions that WASM calls, and WASM provides functions that JS calls. Neither side is passive.
