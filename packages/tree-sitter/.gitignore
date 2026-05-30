@@ -1,6 +1,7 @@
 node_modules/
 build/
 prebuilds/
+dist/
 
 # tree-sitter generated files
 src/grammar.json

@@ -18,7 +18,13 @@
     "generate-flow": "cd flow && npx tree-sitter generate",
     "test":          "tree-sitter test",
     "test-flow":     "cd flow && npx tree-sitter test",
-    "parse":         "tree-sitter parse"
+    "parse":         "tree-sitter parse",
+    "clean": "node scripts/clean.js",
+    "prebuild": "npm run clean",
+    "build:wasm-agent": "tree-sitter build --wasm && mv tree-sitter-agent.wasm dist/",
+    "build:wasm-flow": "cd flow && tree-sitter build --wasm && mv tree-sitter-flow.wasm ../dist/",
+    "build": "npm run build:wasm-agent && npm run build:wasm-flow",
+    "prepare": "npm run build"
   },
   "devDependencies": {
     "tree-sitter-cli": "^0.25.0"
