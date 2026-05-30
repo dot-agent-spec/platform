@@ -2,6 +2,18 @@
   "name": "@dot-agent/tree-sitter-agent",
   "version": "0.1.0",
   "description": "Tree-sitter grammars for the Agent DSL (.agent / .type / .flow)",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "dist/",
+    "queries/",
+    "grammar.js",
+    "tree-sitter.json",
+    "src/node-types.json",
+    "flow/grammar.js",
+    "flow/queries/",
+    "flow/src/node-types.json"
+  ],
   "license": "Apache-2.0",
   "author": "Danilo Borges <contato@daniloborg.es>",
   "repository": {
@@ -24,7 +36,7 @@
     "build:wasm-agent": "tree-sitter build --wasm && mv tree-sitter-agent.wasm dist/",
     "build:wasm-flow": "cd flow && tree-sitter build --wasm && mv tree-sitter-flow.wasm ../dist/",
     "build": "npm run build:wasm-agent && npm run build:wasm-flow",
-    "prepare": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "tree-sitter-cli": "^0.25.0"

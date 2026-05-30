@@ -2,6 +2,7 @@ node_modules/
 build/
 prebuilds/
 dist/
+*.dylib
 
 # tree-sitter generated files
 src/grammar.json
