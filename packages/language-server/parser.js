@@ -16,43 +16,111 @@
 
 'use strict';
 
-function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const path = require('path');
+const { Parser, Language } = require('web-tree-sitter');
+const grammar = require('@dot-agent/tree-sitter-agent');
+
+// path.resolve ensures absolute paths survive vsix packaging and cwd changes
+const AGENT_WASM = path.resolve(grammar.agentWasmPath);
+const FLOW_WASM  = path.resolve(grammar.flowWasmPath);
+
+let agentParser, flowParser;
+
+async function initParsers() {
+    await Parser.init();
+    const Agent = await Language.load(AGENT_WASM);
+    const Flow  = await Language.load(FLOW_WASM);
+    agentParser = new Parser();
+    agentParser.setLanguage(Agent);
+    flowParser = new Parser();
+    flowParser.setLanguage(Flow);
 }
 
-function collectStates(text) {
-    const results = [];
-    const re = /^state\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/gm;
-    let m;
-    while ((m = re.exec(text)) !== null) {
-        results.push({ name: m[1], offset: m.index + (m[0].length - m[1].length) });
+// Cache: uri → { version, tree }
+const cache = new Map();
+
+function parse(uri, langId, text, version) {
+    const prev = cache.get(uri);
+    if (prev?.version === version) return prev.tree;
+    const parser = langId === 'flow' ? flowParser : agentParser;
+    if (!parser) return null;
+    const tree = parser.parse(text, prev?.tree);   // incremental reuse when possible
+    cache.set(uri, { version, tree });
+    return tree;
+}
+
+function evict(uri) {
+    cache.delete(uri);
+}
+
+// ── AST helpers ──────────────────────────────────────────────────────────────
+
+function nodesOfType(tree, type) {
+    if (!tree) return [];
+    return tree.rootNode.descendantsOfType(type);
+}
+
+function nodeAtOffset(tree, offset) {
+    if (!tree) return null;
+    return tree.rootNode.descendantForIndex(offset);
+}
+
+// Convert a tree-sitter {row, column} position to an LSP Range
+function nodeToRange(node) {
+    return {
+        start: { line: node.startPosition.row, character: node.startPosition.column },
+        end:   { line: node.endPosition.row,   character: node.endPosition.column },
+    };
+}
+
+// Convert LSP position (line, character) to a byte offset in text
+function positionToOffset(text, line, character) {
+    let offset = 0;
+    for (let i = 0; i < line; i++) {
+        const nl = text.indexOf('\n', offset);
+        offset = nl === -1 ? text.length : nl + 1;
     }
-    return results;
+    return offset + character;
 }
 
-function collectTypes(text) {
-    const results = [];
-    const re = /^type\s+([a-zA-Z0-9_.-]+)/gm;
-    let m;
-    while ((m = re.exec(text)) !== null) {
-        results.push({ name: m[1], offset: m.index + (m[0].length - m[1].length) });
+// Extract the word (identifier chars including dots) around position
+function wordAtPosition(text, line, character) {
+    const lines = text.split('\n');
+    const lineText = lines[line] || '';
+    let start = character, end = character;
+    while (start > 0 && /[a-zA-Z0-9_.]/.test(lineText[start - 1])) start--;
+    while (end < lineText.length && /[a-zA-Z0-9_.]/.test(lineText[end])) end++;
+    return { word: lineText.slice(start, end), start, end };
+}
+
+// Walk up the tree from offset, skipping ERROR/MISSING nodes
+function getContextNode(tree, offset) {
+    let node = nodeAtOffset(tree, offset);
+    while (node && (node.isError || node.isMissing)) {
+        node = node.parent;
     }
-    return results;
-}
-
-function offsetToPosition(text, offset) {
-    const lines = text.slice(0, offset).split('\n');
-    return { line: lines.length - 1, character: lines[lines.length - 1].length };
-}
-
-function getCurrentStateName(text, offset) {
-    const before = text.slice(0, offset);
-    const lines = before.split('\n').reverse();
-    for (const line of lines) {
-        const m = line.match(/^state\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/);
-        if (m) return m[1];
+    // If still on an error, try the previous sibling's last descendant
+    if (!node || node.type === 'ERROR') {
+        const raw = nodeAtOffset(tree, offset);
+        const parent = raw?.parent;
+        if (parent) {
+            const siblings = parent.children;
+            const idx = siblings.findIndex(c => c.startIndex > offset);
+            const prev = idx > 0 ? siblings[idx - 1] : siblings[siblings.length - 1];
+            if (prev && !prev.isError) node = prev;
+        }
     }
-    return null;
+    return node ?? tree?.rootNode;
 }
 
-module.exports = { escapeRegex, collectStates, collectTypes, offsetToPosition, getCurrentStateName };
+module.exports = {
+    initParsers,
+    parse,
+    evict,
+    nodesOfType,
+    nodeAtOffset,
+    nodeToRange,
+    positionToOffset,
+    wordAtPosition,
+    getContextNode,
+};

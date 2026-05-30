@@ -16,35 +16,49 @@
 
 'use strict';
 
-const { escapeRegex, offsetToPosition } = require('../parser');
+const { nodesOfType, nodeToRange, wordAtPosition } = require('../parser');
 
-function provideReferences(langId, text, uri, position) {
-    const lines = text.split('\n');
-    const line = lines[position.line] || '';
-    const ch = position.character;
+function provideReferences(langId, tree, text, uri, position) {
+    if (!tree) return [];
 
-    let start = ch, end = ch;
-    while (start > 0 && /[a-zA-Z0-9_.]/.test(line[start - 1])) start--;
-    while (end < line.length && /[a-zA-Z0-9_.]/.test(line[end])) end++;
-    const word = line.slice(start, end);
+    const { word } = wordAtPosition(text, position.line, position.character);
     if (!word) return [];
 
-    const patterns = langId === 'flow'
-        ? [new RegExp(`^state\\s+(${escapeRegex(word)})\\b`, 'gm'), new RegExp(`\\bnext\\s+(${escapeRegex(word)})\\b`, 'g')]
-        : [new RegExp(`^type\\s+(${escapeRegex(word)})\\b`, 'gm'), new RegExp(`^\\s+(${escapeRegex(word)})\\b`, 'gm')];
-
     const locations = [];
-    for (const re of patterns) {
-        let m;
-        while ((m = re.exec(text)) !== null) {
-            const idx = m.index + m[0].indexOf(m[1]);
-            const pos = offsetToPosition(text, idx);
-            locations.push({
-                uri,
-                range: { start: pos, end: { line: pos.line, character: pos.character + word.length } },
-            });
+
+    function add(node) {
+        locations.push({ uri, range: nodeToRange(node) });
+    }
+
+    if (langId === 'flow') {
+        // Declaration
+        for (const n of nodesOfType(tree, 'state_decl')) {
+            const nameNode = n.childForFieldName('name');
+            if (nameNode?.text === word) add(nameNode);
+        }
+        // Direct transitions: next <state>
+        for (const n of nodesOfType(tree, 'transition_stmt')) {
+            const stateNode = n.childForFieldName('state');
+            if (stateNode?.text === word) add(stateNode);
+        }
+        // Inline intent handlers: on intent "..." next <state>
+        for (const n of nodesOfType(tree, 'intent_trigger')) {
+            const stateNode = n.childForFieldName('state');
+            if (stateNode?.text === word) add(stateNode);
+        }
+    } else if (langId === 'agent') {
+        // Declaration
+        for (const n of nodesOfType(tree, 'type_decl')) {
+            const nameNode = n.childForFieldName('name');
+            if (nameNode?.text === word) add(nameNode);
+        }
+        // All type_ref usages (input/output/requires/capabilities blocks and property types)
+        for (const n of nodesOfType(tree, 'type_ref')) {
+            const idNode = n.firstNamedChild;
+            if (idNode?.text === word) add(idNode);
         }
     }
+
     return locations;
 }
 

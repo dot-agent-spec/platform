@@ -20,21 +20,34 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 ## Architecture
 
 ```
-┌──────────────┐   LSP/stdio   ┌─────────────────────────────┐
-│  VS Code     │ ←──────────── │  server.js                  │
-│  Zed         │               │   ├── features/hover.js      │
-│  Neovim/etc  │               │   ├── features/completions.js│
-└──────────────┘               │   ├── features/diagnostics.js│
-                               │   ├── features/definition.js │
-                               │   ├── features/references.js │
-                               │   ├── features/rename.js     │
-                               │   ├── features/symbols.js    │
-                               │   └── features/formatting.js │
-                               │   parser.js  (shared helpers)│
-                               └─────────────────────────────┘
+┌──────────────┐   LSP/stdio   ┌─────────────────────────────────┐
+│  VS Code     │ ←──────────── │  server.js                      │
+│  Zed         │               │   ├── features/hover.js          │
+│  Neovim/etc  │               │   ├── features/completions.js    │
+└──────────────┘               │   ├── features/diagnostics.js    │
+                               │   ├── features/definition.js     │
+                               │   ├── features/references.js     │
+                               │   ├── features/rename.js         │
+                               │   ├── features/symbols.js        │
+                               │   └── features/formatting.js     │
+                               │   parser.js  (tree-sitter engine)│
+                               └─────────────────────────────────┘
 ```
 
 The server speaks LSP over `stdio`. Each editor starts it as a subprocess and communicates via JSON-RPC messages.
+
+All structural analysis uses the **tree-sitter** parse trees from [`@dot-agent/tree-sitter-agent`](https://github.com/daniloborges/tree-sitter-agent). `parser.js` initializes the WASM-based parsers during `initialize` and maintains a per-document AST cache with incremental reparse.
+
+## Prerequisites
+
+The grammar package must have its WASM binaries built before first use:
+
+```bash
+cd dsl/tree-sitter-agent
+npm run build          # requires Emscripten; generates dist/*.wasm
+```
+
+When consuming the package from npm (published), `dist/` is already included — no build step needed.
 
 ## Installation
 
@@ -43,6 +56,7 @@ The server speaks LSP over `stdio`. Each editor starts it as a subprocess and co
 ```bash
 git clone git@github.com:daniloborges/language-server.git
 cd language-server
+# Build the grammar WASMs first (see Prerequisites above)
 npm install
 ```
 
@@ -107,29 +121,47 @@ Configured in `zed-agent/extension.toml` under `[language_servers.agent-dsl-lsp]
 
 ### Adding a new LSP capability
 
-1. Create `features/my-feature.js` exporting a `provideXxx(langId, text, ...)` function.
-2. Import and wire it in `server.js` via `connection.onXxx(...)`.
+1. Create `features/my-feature.js` exporting a `provideXxx(langId, tree, text, ...)` function.
+2. Import and wire it in `server.js` via `connection.onXxx(...)`, passing `getTree(doc)` and `doc.getText()`.
 
 ### Shared parsing helpers (`parser.js`)
 
 | Export | Description |
 |---|---|
-| `collectStates(text)` | Returns `[{ name, offset }]` for all `state` declarations |
-| `collectTypes(text)` | Returns `[{ name, offset }]` for all `type` declarations |
-| `offsetToPosition(text, offset)` | Converts a byte offset to `{ line, character }` |
-| `getCurrentStateName(text, offset)` | Returns the name of the enclosing `state` at a given offset |
-| `escapeRegex(str)` | Escapes a string for use in a RegExp |
+| `initParsers()` | Async — initializes both WASM parsers. Called once inside `onInitialize`. |
+| `parse(uri, langId, text, version)` | Returns a cached `Tree` for the document, reparsing incrementally on version change. |
+| `evict(uri)` | Removes a document's cached tree on close. |
+| `nodesOfType(tree, type)` | `SyntaxNode[]` — all descendants of the given node type. |
+| `nodeAtOffset(tree, offset)` | The deepest node at a byte offset. |
+| `nodeToRange(node)` | Converts a `SyntaxNode` to an LSP `Range` via `startPosition`/`endPosition`. |
+| `positionToOffset(text, line, character)` | Converts an LSP `{line, character}` to a byte offset. |
+| `wordAtPosition(text, line, character)` | Extracts the identifier (including dots) around a cursor position. |
+| `getContextNode(tree, offset)` | Walks up past `ERROR`/`MISSING` nodes to find a clean context ancestor. |
 
-### Testing a feature manually
+### Testing features manually
 
 ```bash
+# Parse a real file and inspect the AST
 node -e "
+const { initParsers, parse, nodesOfType } = require('./parser');
+(async () => {
+  await initParsers();
+  const text = require('fs').readFileSync('../examples/doctor/doctor.flow', 'utf8');
+  const tree = parse('f', 'flow', text, 1);
+  console.log(nodesOfType(tree, 'state_decl').map(n => n.childForFieldName('name').text));
+})();
+"
+
+# Run a diagnostic check
+node -e "
+const { initParsers, parse } = require('./parser');
 const { diagnose } = require('./features/diagnostics');
-console.log(diagnose('flow', \`
-state greeting
-  interact
-  next missing
-\`));
+(async () => {
+  await initParsers();
+  const text = 'state greeting\n  interact\n  next missing\n';
+  const tree = parse('f', 'flow', text, 1);
+  console.log(diagnose('flow', tree, text));
+})();
 "
 ```
 

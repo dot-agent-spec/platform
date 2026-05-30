@@ -17,17 +17,25 @@
 'use strict';
 
 const { DiagnosticSeverity } = require('vscode-languageserver');
-const { collectStates, collectTypes, offsetToPosition } = require('../parser');
+const { nodesOfType, nodeToRange } = require('../parser');
 
-const DEPRECATED_AGENT_KW = new Set(['do', 'server', 'endpoint', 'author', 'version', 'requirements', 'step', 'softwareVersion', 'applicationCategory', 'character', 'publishingPrinciples']);
-const STRICT_BLOCKS = new Set(['input', 'output', 'requires', 'capabilities']);
+const DEPRECATED_AGENT_KW = new Set([
+    'do', 'server', 'endpoint', 'author', 'version', 'requirements', 'step',
+    'softwareVersion', 'applicationCategory', 'character', 'publishingPrinciples',
+]);
 
-function diagnoseAgent(text) {
+const STRICT_BLOCK_TYPES = {
+    input_block:        'input',
+    output_block:       'output',
+    requires_block:     'requires',
+    capabilities_block: 'capabilities',
+};
+
+function diagnoseAgent(tree, text) {
     const diagnostics = [];
-    const lines = text.split('\n');
-    const declaredTypes = new Set(collectTypes(text).map(t => t.name));
-    let currentBlock = null;
 
+    // ── Deprecated keywords: line scan (no tree-sitter benefit here) ──────────
+    const lines = text.split('\n');
     for (let i = 0; i < lines.length; i++) {
         const raw = lines[i];
         const stripped = raw.split('//')[0].trim();
@@ -35,7 +43,6 @@ function diagnoseAgent(text) {
         const wordM = stripped.match(/^([a-zA-Z0-9_.-]+)\b/);
         if (!wordM) continue;
         const word = wordM[1];
-
         if (DEPRECATED_AGENT_KW.has(word)) {
             const col = raw.indexOf(word);
             diagnostics.push({
@@ -45,63 +52,66 @@ function diagnoseAgent(text) {
                 source: 'agent-dsl',
             });
         }
+    }
 
-        const isIndented = raw.startsWith('  ') || raw.startsWith('\t');
-        if (!isIndented) {
-            currentBlock = word;
-            if (STRICT_BLOCKS.has(word)) {
-                const remainder = stripped.slice(word.length).trim();
-                if (remainder && !/^([a-zA-Z0-9_.-]+)(\s*,\s*[a-zA-Z0-9_.-]+)*$/.test(remainder)) {
-                    const col = raw.indexOf(remainder);
-                    diagnostics.push({
-                        range: { start: { line: i, character: col }, end: { line: i, character: col + remainder.length } },
-                        message: 'Invalid Compact Mode format. Expected comma-separated Types: Type1, Type2.',
-                        severity: DiagnosticSeverity.Error,
-                        source: 'agent-dsl',
-                    });
-                }
-            }
-        } else if (STRICT_BLOCKS.has(currentBlock)) {
-            if (!/^([a-zA-Z0-9_.-]+)(\s+"[^"]*")?$/.test(stripped)) {
-                const col = raw.indexOf(stripped);
+    // ── Strict block validation ───────────────────────────────────────────────
+    const declaredTypes = new Set(
+        nodesOfType(tree, 'type_decl')
+            .map(n => n.childForFieldName('name')?.text)
+            .filter(Boolean)
+    );
+
+    for (const [blockType, blockName] of Object.entries(STRICT_BLOCK_TYPES)) {
+        for (const blockNode of nodesOfType(tree, blockType)) {
+            // Syntax errors inside the block
+            for (const errorNode of blockNode.descendantsOfType('ERROR')) {
                 diagnostics.push({
-                    range: { start: { line: i, character: col }, end: { line: i, character: col + stripped.length } },
-                    message: `Invalid Documented Mode format in ${currentBlock}. Expected: Type or Type "Description".`,
+                    range: nodeToRange(errorNode),
+                    message: `Syntax error in '${blockName}' block. Expected: Type or Type "Description", or compact: Type1, Type2.`,
                     severity: DiagnosticSeverity.Error,
                     source: 'agent-dsl',
                 });
-            } else if (declaredTypes.size > 0) {
-                const typeName = stripped.match(/^([a-zA-Z0-9_.-]+)/)[1];
-                if (!declaredTypes.has(typeName)) {
-                    const col = raw.indexOf(typeName);
-                    diagnostics.push({
-                        range: { start: { line: i, character: col }, end: { line: i, character: col + typeName.length } },
-                        message: `Type '${typeName}' is not declared in this file (assuming native or external).`,
-                        severity: DiagnosticSeverity.Warning,
-                        source: 'agent-dsl',
-                    });
+            }
+
+            // Undeclared type references (semantic warning)
+            if (declaredTypes.size > 0) {
+                for (const typeRefNode of blockNode.descendantsOfType('type_ref')) {
+                    const idNode = typeRefNode.firstNamedChild;
+                    if (!idNode) continue;
+                    const typeName = idNode.text;
+                    if (!declaredTypes.has(typeName)) {
+                        diagnostics.push({
+                            range: nodeToRange(idNode),
+                            message: `Type '${typeName}' is not declared in this file (assuming native or external).`,
+                            severity: DiagnosticSeverity.Warning,
+                            source: 'agent-dsl',
+                        });
+                    }
                 }
             }
         }
     }
+
     return diagnostics;
 }
 
-function diagnoseFlow(text) {
+function diagnoseFlow(tree) {
     const diagnostics = [];
-    const states = new Set(collectStates(text).map(s => s.name));
 
-    // Rule 1: Dangling transitions
-    const nextRe = /\bnext\s+([a-zA-Z0-9_.]+)/g;
-    let m;
-    while ((m = nextRe.exec(text)) !== null) {
-        const target = m[1];
-        if (!states.has(target)) {
+    // ── Rule 1: Dangling transitions ──────────────────────────────────────────
+    const definedStates = new Set(
+        nodesOfType(tree, 'state_decl')
+            .map(n => n.childForFieldName('name')?.text)
+            .filter(Boolean)
+    );
+
+    function checkTransitionTarget(stateNode) {
+        if (!stateNode) return;
+        const target = stateNode.text;
+        if (!definedStates.has(target)) {
             const external = target.includes('.');
-            const start = offsetToPosition(text, m.index + m[0].indexOf(target));
-            const end = offsetToPosition(text, m.index + m[0].length);
             diagnostics.push({
-                range: { start, end },
+                range: nodeToRange(stateNode),
                 message: external
                     ? `State '${target}' is not defined locally (assuming external flow reference).`
                     : `State '${target}' is not defined in this file.`,
@@ -111,30 +121,43 @@ function diagnoseFlow(text) {
         }
     }
 
-    // Rule 2: Dead-end interact (no next and no intent/escape handler)
-    const blocks = text.split(/^state\s+/m);
-    let offset = blocks[0].length;
-    for (let i = 1; i < blocks.length; i++) {
-        const block = blocks[i];
-        if (block.includes('interact') && !/next\s+/.test(block) && !/on\s+(?:intent|escape)/.test(block)) {
-            const idx = block.indexOf('interact');
-            const pos = offsetToPosition(text, offset + idx);
+    for (const n of nodesOfType(tree, 'transition_stmt')) {
+        checkTransitionTarget(n.childForFieldName('state'));
+    }
+    for (const n of nodesOfType(tree, 'intent_trigger')) {
+        // inline form: on intent "..." next <state>
+        checkTransitionTarget(n.childForFieldName('state'));
+    }
+
+    // ── Rule 2: Dead-end interact ─────────────────────────────────────────────
+    for (const interactNode of nodesOfType(tree, 'interact_stmt')) {
+        let ancestor = interactNode.parent;
+        while (ancestor && ancestor.type !== 'state_decl') {
+            ancestor = ancestor.parent;
+        }
+        if (!ancestor) continue;
+
+        const hasNext   = ancestor.descendantsOfType('transition_stmt').length > 0;
+        const hasIntent = ancestor.descendantsOfType('intent_trigger').length > 0;
+        const hasEscape = ancestor.descendantsOfType('escape_stmt').length > 0;
+
+        if (!hasNext && !hasIntent && !hasEscape) {
             diagnostics.push({
-                range: { start: pos, end: { line: pos.line, character: pos.character + 8 } },
-                message: `This state calls interact but has no 'next' or 'on intent/escape'. This will trap the agent.`,
+                range: nodeToRange(interactNode),
+                message: "This state calls interact but has no 'next' or 'on intent/escape'. This will trap the agent.",
                 severity: DiagnosticSeverity.Warning,
                 source: 'flow-dsl',
             });
         }
-        offset += block.length + 6; // 'state ' is 6 chars
     }
 
     return diagnostics;
 }
 
-function diagnose(langId, text) {
-    if (langId === 'agent') return diagnoseAgent(text);
-    if (langId === 'flow') return diagnoseFlow(text);
+function diagnose(langId, tree, text) {
+    if (!tree) return [];
+    if (langId === 'agent') return diagnoseAgent(tree, text);
+    if (langId === 'flow')  return diagnoseFlow(tree);
     return [];
 }
 

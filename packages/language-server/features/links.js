@@ -18,25 +18,10 @@
 
 const { fileURLToPath, pathToFileURL } = require('url');
 const path = require('path');
+const { nodesOfType, nodeToRange } = require('../parser');
 
-const PATTERNS = {
-    agent: [
-        // behavior mickey.flow
-        { re: /^behavior\s+("?)([^\s"]+)\1/, fileGroup: 2 },
-        // schema doctor.schema.json
-        { re: /^\s+schema\s+("?)([^\s"]+)\1/, fileGroup: 2 },
-    ],
-    flow: [
-        // merge "phases/generation.flow"
-        { re: /^merge\s+"([^"]+)"/, fileGroup: 1 },
-        // run script "scripts/log_error.sh"  (may be indented inside event handlers)
-        { re: /^\s*run\s+script\s+"([^"]+)"/, fileGroup: 1 },
-    ],
-};
-
-function provideDocumentLinks(langId, text, docUri) {
-    const patterns = PATTERNS[langId];
-    if (!patterns) return [];
+function provideDocumentLinks(langId, tree, docUri) {
+    if (!tree) return [];
 
     let docDir;
     try {
@@ -46,33 +31,37 @@ function provideDocumentLinks(langId, text, docUri) {
     }
 
     const links = [];
-    const lines = text.split('\n');
 
-    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-        const line = lines[lineIdx];
+    function addLink(fileNode, rawText) {
+        const filename = rawText.replace(/^"|"$/g, '');   // strip optional quotes
+        if (!filename) return;
+        links.push({
+            range: nodeToRange(fileNode),
+            target: pathToFileURL(path.resolve(docDir, filename)).toString(),
+        });
+    }
 
-        for (const { re, fileGroup } of patterns) {
-            const m = re.exec(line);
-            if (!m) continue;
+    if (langId === 'agent') {
+        for (const node of nodesOfType(tree, 'behavior_block')) {
+            const fileNode = node.childForFieldName('file');
+            if (fileNode) addLink(fileNode, fileNode.text);
+        }
+        for (const node of nodesOfType(tree, 'schema_prop')) {
+            const fileNode = node.childForFieldName('file');
+            if (fileNode) addLink(fileNode, fileNode.text);
+        }
+    }
 
-            const filename = m[fileGroup];
-            if (!filename) continue;
-
-            // lastIndexOf is safe even when the filename is a substring of the keyword
-            // (e.g. `behavior behavior.flow`) because the filename always appears last.
-            const colStart = m.index + m[0].lastIndexOf(filename);
-            const colEnd   = colStart + filename.length;
-
-            const targetPath = path.resolve(docDir, filename);
-            const targetUri  = pathToFileURL(targetPath).toString();
-
-            links.push({
-                range: {
-                    start: { line: lineIdx, character: colStart },
-                    end:   { line: lineIdx, character: colEnd },
-                },
-                target: targetUri,
-            });
+    if (langId === 'flow') {
+        for (const node of nodesOfType(tree, 'merge_decl')) {
+            const pathNode = node.childForFieldName('path');
+            if (pathNode) addLink(pathNode, pathNode.text);
+        }
+        for (const node of nodesOfType(tree, 'run_stmt')) {
+            const runTypeNode = node.childForFieldName('run_type');
+            if (runTypeNode?.text !== 'script') continue;
+            const targetNode = node.childForFieldName('target');
+            if (targetNode) addLink(targetNode, targetNode.text);
         }
     }
 

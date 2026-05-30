@@ -16,38 +16,27 @@
 
 'use strict';
 
-const { escapeRegex, offsetToPosition } = require('../parser');
+const { nodesOfType, nodeToRange, wordAtPosition } = require('../parser');
 
-function provideDefinition(langId, text, uri, position) {
-    const lines = text.split('\n');
-    const line = lines[position.line] || '';
-    const ch = position.character;
+function provideDefinition(langId, tree, text, uri, position) {
+    if (!tree) return null;
 
-    // Find word at cursor
-    let start = ch, end = ch;
-    while (start > 0 && /[a-zA-Z0-9_.]/.test(line[start - 1])) start--;
-    while (end < line.length && /[a-zA-Z0-9_.]/.test(line[end])) end++;
-    const word = line.slice(start, end);
+    const { word } = wordAtPosition(text, position.line, position.character);
     if (!word) return null;
 
-    let pattern;
+    let targetNode = null;
+
     if (langId === 'flow') {
-        pattern = new RegExp(`^state\\s+${escapeRegex(word)}\\b`, 'm');
+        targetNode = nodesOfType(tree, 'state_decl')
+            .find(n => n.childForFieldName('name')?.text === word);
     } else if (langId === 'agent') {
         if (!/^[A-Z]/.test(word) && !word.includes('.')) return null;
-        pattern = new RegExp(`^type\\s+${escapeRegex(word)}\\b`, 'm');
-    } else {
-        return null;
+        targetNode = nodesOfType(tree, 'type_decl')
+            .find(n => n.childForFieldName('name')?.text === word);
     }
 
-    const m = pattern.exec(text);
-    if (!m) return null;
-
-    const pos = offsetToPosition(text, m.index);
-    return {
-        uri,
-        range: { start: pos, end: { line: pos.line, character: lines[pos.line].length } },
-    };
+    if (!targetNode) return null;
+    return { uri, range: nodeToRange(targetNode) };
 }
 
 module.exports = { provideDefinition };

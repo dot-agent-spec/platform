@@ -16,47 +16,59 @@
 
 'use strict';
 
+const { nodesOfType, nodeToRange } = require('../parser');
+
 // DocumentSymbol kind constants (LSP spec §3.17.5)
 const Kind = { Class: 5, Struct: 23, Event: 24 };
 
-function provideDocumentSymbols(langId, text) {
+function provideDocumentSymbols(langId, tree) {
+    if (!tree) return [];
     const symbols = [];
-    const lines = text.split('\n');
-
-    function range(offset) {
-        const before = text.slice(0, offset);
-        const linesBefore = before.split('\n');
-        const line = linesBefore.length - 1;
-        const start = { line, character: linesBefore[line].length };
-        const end   = { line, character: lines[line].length };
-        return { start, end };
-    }
 
     if (langId === 'flow') {
-        const stateRe = /^state\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/gm;
-        const eventRe = /^on\s+event\s+"([^"]+)"/gm;
-        let m;
-        while ((m = stateRe.exec(text)) !== null) {
-            const r = range(m.index);
-            symbols.push({ name: m[1], kind: Kind.Class,  range: r, selectionRange: r });
+        for (const node of nodesOfType(tree, 'state_decl')) {
+            const nameNode = node.childForFieldName('name');
+            if (!nameNode) continue;
+            symbols.push({
+                name: nameNode.text,
+                kind: Kind.Class,
+                range: nodeToRange(node),
+                selectionRange: nodeToRange(nameNode),
+            });
         }
-        while ((m = eventRe.exec(text)) !== null) {
-            const r = range(m.index);
-            symbols.push({ name: `on event: ${m[1]}`, kind: Kind.Event, range: r, selectionRange: r });
+        for (const node of nodesOfType(tree, 'trigger_decl')) {
+            const eventNode = node.childForFieldName('event');
+            if (!eventNode) continue;
+            const name = eventNode.text.replace(/^"|"$/g, '');
+            symbols.push({
+                name: `on event: ${name}`,
+                kind: Kind.Event,
+                range: nodeToRange(node),
+                selectionRange: nodeToRange(eventNode),
+            });
         }
     }
 
     if (langId === 'agent') {
-        const agentRe = /^agent\s+(.+)/gm;
-        const typeRe  = /^type\s+([a-zA-Z0-9_.-]+)/gm;
-        let m;
-        while ((m = agentRe.exec(text)) !== null) {
-            const r = range(m.index);
-            symbols.push({ name: m[1].trim(), kind: Kind.Class,  range: r, selectionRange: r });
+        for (const node of nodesOfType(tree, 'agent_decl')) {
+            const nameNode = node.childForFieldName('name');
+            if (!nameNode) continue;
+            symbols.push({
+                name: nameNode.text,
+                kind: Kind.Class,
+                range: nodeToRange(node),
+                selectionRange: nodeToRange(nameNode),
+            });
         }
-        while ((m = typeRe.exec(text)) !== null) {
-            const r = range(m.index);
-            symbols.push({ name: m[1],        kind: Kind.Struct, range: r, selectionRange: r });
+        for (const node of nodesOfType(tree, 'type_decl')) {
+            const nameNode = node.childForFieldName('name');
+            if (!nameNode) continue;
+            symbols.push({
+                name: nameNode.text,
+                kind: Kind.Struct,
+                range: nodeToRange(node),
+                selectionRange: nodeToRange(nameNode),
+            });
         }
     }
 
