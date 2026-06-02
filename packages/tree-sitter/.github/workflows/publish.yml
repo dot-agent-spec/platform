@@ -4,12 +4,13 @@ on:
   release:
     types: [published]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,9 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - name: Update npm
-        run: npm install -g npm@latest
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -29,6 +28,4 @@ jobs:
         run: npm run generate && npm run generate-behavior
 
       - name: Publish package to npm
-        run: |
-          rm -f .npmrc
-          npm publish --provenance --access public
+        run: npm publish --provenance --access public
