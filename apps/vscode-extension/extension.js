@@ -83,7 +83,7 @@ h2 { font-size:13px; font-weight:500; color:#a855f7; margin:0 0 16px; letter-spa
 </style>
 </head>
 <body>
-<h2>Flow Graph</h2>
+<h2>Behavior Graph</h2>
 <pre class="mermaid">${mermaidDiagram}</pre>
 <script type="module">
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -102,7 +102,7 @@ function activate(context) {
     const serverModule = context.asAbsolutePath(path.join('node_modules', '@dot-agent', 'language-server', 'server.js'));
     client = new LanguageClient(
         'agentDsl',
-        'Agent & Flow DSL Language Server',
+        '.agent DSL Language Server',
         {
             run:   { module: serverModule, transport: TransportKind.stdio },
             debug: { module: serverModule, transport: TransportKind.stdio },

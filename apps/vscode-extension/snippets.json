@@ -9,7 +9,7 @@
       "description",
       "  ${4:Agent description...}",
       "",
-      "behavior ${5:agent.flow}",
+      "behavior ${5:agent.behavior}",
       "",
       "input ${6:std.Prompt}",
       "",

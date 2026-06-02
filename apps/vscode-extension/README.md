@@ -6,10 +6,10 @@ Full IDE support for the **.agent DSL** (`.description`, `.type`, `.behavior`) u
 
 ## Architecture
 
-This extension is a thin LSP client. Most IDE features (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting) are provided by the **[Agent DSL Language Server](https://github.com/daniloborges/language-server)** — a standalone Node.js process started automatically when the extension activates. The server is bundled with the extension and speaks the Language Server Protocol over stdio.
+This extension is a thin LSP client. Most IDE features (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting) are provided by the **[.agent DSL Language Server](https://github.com/dot-agent-spec/language-server)** — a standalone Node.js process started automatically when the extension activates. The server is bundled with the extension and speaks the Language Server Protocol over stdio.
 
 Two features are implemented directly in the extension (VS Code-specific):
-- **Flow Graph** — Mermaid state diagram rendered in a WebView panel
+- **Behavior Graph** — Mermaid state diagram rendered in a WebView panel
 - **Status bar** — shows the current `state` the cursor is inside
 
 ---
@@ -17,7 +17,7 @@ Two features are implemented directly in the extension (VS Code-specific):
 ## Features
 
 ### Syntax Highlighting
-TextMate grammars for both `.agent` and `.flow` files — keywords, strings, operators, memory domains, and identifiers each get distinct colors.
+TextMate grammars for `.description`, `.type`, and `.behavior` files — keywords, strings, operators, memory domains, and identifiers each get distinct colors.
 
 ### Hover Documentation
 Hover over any keyword to see inline documentation explaining its purpose and syntax.
@@ -33,24 +33,24 @@ Context-aware suggestions as you type:
 | `on ` | `event`, `intent`, `offtopic`, `fallback`, `complete`, `failed` |
 | Line start (unindented) in `.behavior` | Top-level keywords: `state`, `merge`, `on event`, … |
 | Line start (indented) in `.behavior` | Block keywords: `guide`, `interact`, `transition`, `if`, `parallel`, … |
-| Line start (unindented) in `.agent` | Manifest keywords: `agent`, `input`, `output`, `type`, … |
+| Line start (unindented) in `.description` | Manifest keywords: `agent`, `input`, `output`, `type`, … |
 | Indented inside `input`/`output`/`requires`/`capabilities` | Custom types declared in the file |
 
 ### Go-to-Definition
 - **`.behavior`** — Ctrl/Cmd+Click on a state name to jump to its `state` declaration.
-- **`.agent`** — Ctrl/Cmd+Click on a type name to jump to its `type` declaration.
+- **`.description`** — Ctrl/Cmd+Click on a type name to jump to its `type` declaration.
 
 ### Find All References
 Right-click → "Find All References" on a state or type name to list every occurrence across the file.
 
 ### Rename Symbol (F2)
 - **`.behavior`** — Rename a state and all `transition` references update automatically.
-- **`.agent`** — Rename a type and all references in `input`/`output`/`requires`/`capabilities` update automatically.
+- **`.description`** — Rename a type and all references in `input`/`output`/`requires`/`capabilities` update automatically.
 
 ### Document Links
 File references become clickable links — Ctrl/Cmd+Click to open the target file:
 - **`.behavior`** — `run script "file.js"`, `run behavior "file.behavior"`, `guide "file"`, `teach "file"`, `apply css "file"`, etc.
-- **`.agent`** — `behavior file.behavior`, `schema file.json`
+- **`.description`** — `behavior file.behavior`, `schema file.json`
 
 ### Linting / Diagnostics
 
@@ -58,40 +58,38 @@ File references become clickable links — Ctrl/Cmd+Click to open the target fil
 - **Dangling transition** — `transition to` pointing to an undeclared state → error (or warning if it looks like an external reference with a dot).
 - **Dead-end interact** — `interact` with no `transition` or `on intent/offtopic` → warning ("will trap the agent").
 
-**`.agent` files:**
-- **Deprecated keywords** — flags obsolete keywords (`do`, `server`, `author`, `version`, etc.) as errors.
+**`.description` files:**
 - **Strict lint** — validates `input`/`output`/`requires`/`capabilities` blocks in both compact mode (`Type1, Type2`) and documented mode (`Type "Description"`).
 - **Undeclared types** — warns when a type used in a block is not declared in the file (could be native or external).
 
 ### Code Actions (Quick Fixes)
 Lightbulb on a diagnostic:
 - **"Create state 'X'"** — inserts a new state scaffold at the end of the file.
-- **"Remove this line"** — removes a deprecated keyword line.
 - **"Add 'on intent' handler"** — inserts an `on intent` block after a dead-end `interact`.
 
 ### Outline (Document Symbols)
 The Outline panel shows:
 - **`.behavior`** — states (class icon) and global event observers (`on event: name`).
-- **`.agent`** — agent declarations and type declarations.
+- **`.description`** — agent declarations and type declarations.
 
 ### Workspace Symbols
-Ctrl/Cmd+T searches states and events across all `.flow` files and agents/types across all `.agent` files in the workspace.
+Ctrl/Cmd+T searches states and events across all `.behavior` files and agents/types across all `.description` files in the workspace.
 
 ### Document Formatting
 Format Document normalizes indentation for both languages:
-- **`.flow`** — 0 / 2 / 4 spaces for top-level, state body, and nested blocks respectively.
-- **`.agent`** — 0 / 2 spaces for top-level keywords and their block content.
+- **`.behavior`** — 0 / 2 / 4 spaces for top-level, state body, and nested blocks respectively.
+- **`.description`** — 0 / 2 spaces for top-level keywords and their block content.
 
 ### Folding
-Explicit fold regions at `state` and `on event` boundaries in `.flow`; at top-level keyword boundaries in `.agent`.
+Explicit fold regions at `state` and `on event` boundaries in `.behavior`; at top-level keyword boundaries in `.description`.
 
 ### Status Bar
-When editing a `.flow` file, the status bar shows the name of the state the cursor is currently inside.
+When editing a `.behavior` file, the status bar shows the name of the state the cursor is currently inside.
 
-### Flow Graph
-Open the visual state diagram for any `.flow` file:
+### Behavior Graph
+Open the visual state diagram for any `.behavior` file:
 - Click the **graph icon** in the editor title bar, or
-- Run **"Flow: Open Graph"** from the Command Palette.
+- Run **"Behavior: Open Graph"** from the Command Palette.
 
 A Mermaid `stateDiagram-v2` diagram opens in a side panel and automatically refreshes on save.
 
@@ -99,7 +97,7 @@ A Mermaid `stateDiagram-v2` diagram opens in a side panel and automatically refr
 
 ## Language Reference
 
-### `.agent` — Agent Manifest
+### `.description` — Agent Manifest
 
 ```
 agent My Agent
@@ -194,6 +192,6 @@ npm run install-ext
 
 ## License
 
-Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges) — Project: https://github.com/dot-agent-spec
 
 Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).

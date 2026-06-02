@@ -1,12 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Agent DSL",
+  "name": ".agent DSL",
   "scopeName": "source.description",
   "patterns": [
     { "include": "#comments" },
     { "include": "#keywords" },
     { "include": "#keywordOperators" },
-    { "include": "#invalidKeywords" },
     { "include": "#urls" },
     { "include": "#strings" },
     { "include": "#optionalMarker" },
@@ -32,10 +31,6 @@
           "match": "\\bEnum\\b"
         }
       ]
-    },
-    "invalidKeywords": {
-      "name": "invalid.illegal.deprecated.agent",
-      "match": "^\\s*(do|server|endpoint|author|version|requirements|step|softwareVersion|applicationCategory|character|publishingPrinciples)\\b"
     },
     "urls": {
       "name": "string.special.url.agent",

@@ -6,7 +6,7 @@ AI collaboration guide for maintaining and evolving the VS Code extension.
 
 ## What this extension is
 
-A **thin LSP client**. Almost all IDE intelligence (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting, document links) is provided by the [.agent DSL Language Server](https://github.com/daniloborges/language-server) — a separate Node.js process started automatically on activation. This extension is responsible only for VS Code-specific features that cannot be delivered over LSP.
+A **thin LSP client**. Almost all IDE intelligence (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting, document links) is provided by the [.agent DSL Language Server](https://github.com/dot-agent-spec/language-server) — a separate Node.js process started automatically on activation. This extension is responsible only for VS Code-specific features that cannot be delivered over LSP.
 
 ---
 
@@ -17,13 +17,13 @@ A **thin LSP client**. Almost all IDE intelligence (hover, completions, diagnost
 | `extension.js` | `activate()` / `deactivate()`, LSP client lifecycle, status bar, Behavior Graph WebView, `behavior.openGraph` command |
 | `agent.tmLanguage.json` | TextMate grammar for `.description` and `.type` syntax highlighting |
 | `behavior.tmLanguage.json` | TextMate grammar for `.behavior` syntax highlighting |
-| `language-configuration.json` | Comment characters, bracket pairs, folding for `.agent` files |
+| `language-configuration.json` | Comment characters, bracket pairs, folding for `.description` files |
 | `behavior-language-configuration.json` | Same for `.behavior` plus indentation rules |
-| `snippets.json` | Code snippets for `.agent` files |
+| `snippets.json` | Code snippets for `.description` files |
 | `behavior-snippets.json` | Code snippets for `.behavior` files |
 | `agent-icon.svg`, `behavior-icon.svg` | File-type icons in the Explorer |
 
-**Rule:** Never add LSP feature logic to `extension.js`. If you need a new hover, completion, diagnostic, or definition behavior, add it to [`language-server/features/`](https://github.com/daniloborges/language-server) instead.
+**Rule:** Never add LSP feature logic to `extension.js`. If you need a new hover, completion, diagnostic, or definition behavior, add it to [`language-server/features/`](https://github.com/dot-agent-spec/language-server) instead.
 
 ---
 
@@ -79,7 +79,7 @@ The Apache 2.0 header:
 
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) |
-| Language server (LSP features) | [language-server](https://github.com/daniloborges/language-server) |
-| Tree-sitter grammar | [dot-agent-tree-sitter](https://github.com/daniloborges/dot-agent-tree-sitter) |
-| WASM execution engine | [dot-agent-kernel](https://github.com/daniloborges/dot-agent-kernel) |
+| Language specification | [language.md](https://github.com/dot-agent-spec/dot-agent/blob/main/dsl/language.md) |
+| Language server (LSP features) | [language-server](https://github.com/dot-agent-spec/language-server) |
+| Tree-sitter grammar | [dot-agent-tree-sitter](https://github.com/dot-agent-spec/dot-agent-tree-sitter) |
+| WASM execution engine | [dot-agent-kernel](https://github.com/dot-agent-spec/dot-agent-kernel) |
