@@ -153,4 +153,4 @@ The Apache 2.0 header:
 | Agent grammar (canonical) | [tree-sitter-agent/grammar.js](https://github.com/daniloborges/tree-sitter-agent/blob/main/grammar.js) |
 | Flow grammar (canonical) | [tree-sitter-agent/flow/grammar.js](https://github.com/daniloborges/tree-sitter-agent/blob/main/flow/grammar.js) |
 | VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
-| WASM execution engine | [dot-agent-kernel](https://github.com/daniloborges/dot-agent-kernel) |
+| WASM execution engine | [dot-agent-kernel](https://github.com/dot-agent-spec/kernel-dsl) |
