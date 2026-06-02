@@ -11,6 +11,7 @@
     "tree-sitter.json",
     "src/node-types.json",
     "behavior/grammar.js",
+    "behavior/tree-sitter.json",
     "behavior/queries/",
     "behavior/src/node-types.json"
   ],

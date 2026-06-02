@@ -1,9 +1,9 @@
 {
   "grammars": [
     {
-      "name": "agent",
-      "scope": "source.description",
-      "file-types": ["description", "type"],
+      "name": "behavior",
+      "scope": "source.behavior",
+      "file-types": ["behavior"],
       "highlights": "queries/highlights.scm"
     }
   ],
