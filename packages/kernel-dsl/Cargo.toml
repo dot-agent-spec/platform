@@ -5,8 +5,8 @@ edition = "2021"
 description = "WASM kernel for parsing and validating Agent DSL"
 license = "Apache-2.0"
 authors = ["Danilo Borges <contato@daniloborg.es>"]
-repository = "https://github.com/daniloborges/dot-agent-kernel"
-homepage = "https://github.com/daniloborges/dot-agent-kernel"
+repository = "https://github.com/dot-agent-spec/kernel-dsl"
+homepage = "https://github.com/dot-agent-spec/kernel-dsl"
 keywords = ["wasm", "agent", "dsl", "parser"]
 categories = ["wasm", "parser-implementations"]
 
