@@ -1,0 +1,31 @@
+agent Financial Analyst
+  domain customfinantcial.com
+  license MIT
+
+description
+  Agente focado em auditoria de despesas e validação cross-agent.
+    
+behavior "v1.flow"
+
+capabilities
+  FinancialReport "Generate reports based on financial data"
+  FinancialAdvice "Provide financial advice based on user profile and market trends"
+  SpreadSheetGenerator "Create spreadsheets summarizing financial data for analysis"
+
+requires UserProfile, FinancialData
+
+input
+    MonthExtract "O extrato de transações do mês corrente"
+output
+    FinancialReport "Relatório de auditoria e validação das despesas"
+
+type FinancialReport
+  category https://www.wikidata.org/wiki/Q1917135
+  id_report: string(template "REP-9999-AA")
+  email_notification: string(format email)
+  approved: boolean
+  files: .pdf, .xlsx
+
+type MonthExtract
+  category https://www.wikidata.org/wiki/Q1917135
+  transactions: [Number]

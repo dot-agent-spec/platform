@@ -86,6 +86,7 @@ Upcoming evolution stages for the consolidated specification.
 - [x] **[Packaging]** `.vscodeignore` fixed to include all `node_modules` — transitive dependencies (`vscode-languageserver`, `balanced-match`, etc.) were missing from the `.vsix`, preventing the LSP server from starting
 - [ ] Remove logs from the output panel
 - [ ] Add links and linter for `guide` and `teach`
+- [ ] After publishing `@dot-agent/tree-sitter-agent` and `@dot-agent/language-server` to npm, update `dsl/vscode-extension/package.json` to replace `file:` references with npm version references, then run `npm install` + `vsce package` to generate a clean VSIX
 - [ ] Publish updated VS Code extension to the marketplace
 
 ---
@@ -94,3 +95,8 @@ Upcoming evolution stages for the consolidated specification.
 
 - [ ] **[Architect validation]** Ensure new example `.flow` files use the new `into` assignment syntax for subagents, validating data lineage in practical examples.
 - [ ] **[Antipattern docs]** Include in the examples documentation a use case demonstrating "When to migrate from `.flow` to `.run`", applying the practical cognitive-density threshold (e.g. showing a flow that would require complex loops being elegantly replaced by a WASM-compiled module).
+
+
+Limitação conhecida: on escape next X / on fallback next X na forma inline (mesma linha, sem bloco) gera um nó
+  ERROR no tree-sitter pois o grammar atual exige bloco indentado para escape_stmt. References e diagnostics não
+  capturam essas transições — requer fix no flow/grammar.js como follow-up separado.

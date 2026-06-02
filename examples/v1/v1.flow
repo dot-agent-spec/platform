@@ -1,0 +1,167 @@
+```flow
+global on offtopic
+  transition to available
+
+state init //when created, the transition must be explicit written in the flow
+  set worksession.backlog_count = 0
+  set session.is_ready = true
+  transition to onboarding //required
+
+state onboarding
+  goal "Introduce yourself and explain the available features."
+  guide "onboarding.md" // "Be brief and objective; the user wants to start using the system as quickly as possible."
+// teach the agent, this information will be stored in the agent's cache only during this state, 
+// and can be used in the guide or in the interact block. After transition to another state, the cache will be cleared.
+  teach "features_description.md" // File with features description, can be used to teach the agent about its capabilities.
+
+  interact
+
+  on intent create_report transition to FinancialReport 
+
+state available
+  goal "Direct the user to archive their desired action or provide help if they are lost."
+  guide "Present the user with a menu of options or ask them what they would like to do."
+  interact
+// `interact` require `on intent`, can have an optional on offtopic
+// LLM will understand and emit an on intent based on the goal, if the user change the topic
+// the agent will transition to the state defined in on offtopic
+  on CreateFinancialReport transition to FinancialReport
+  on offtopic transition to cant_help
+  on cant_help finish
+
+state analisar_dados
+  guide "Execute o extrator."
+  set context.dados_brutos = run tool Finance.ParseExtrato
+  
+  if context.dados_brutos.total_processado > 10000
+    transition to auditoria_externa
+  else
+    transition to emitir_relatorio
+
+state auditoria_externa
+  guide "Solicite validação ao agente especialista externo."
+  start ValidarAction in audit.com
+    on complete with RelatorioValidado
+      set context.auditoria_final = RelatorioValidado
+      transition to emitir_relatorio
+    on failed
+      transition to ajuda_global
+
+state emitir_relatorio
+  complete GerarRelatorioAction with context.auditoria_final
+  transition to offline
+
+state cant_help
+  guide "Inform the user that you cannot assist with their request and ask if they need help with something else."
+  interact
+  on finish
+    end 
+state end_session
+    goal "End the session."
+    guide "Thank the user for using the system and end the session."
+
+```
+
+cada chat existe para conquistar algo.
+o algo é feito em varias chats, e cada chat pode completar vários algo.
+QUando a pessoa busca ela pode buscar por algo, ou pelo chat
+algo N : N chat
+
+o algo pode conter um resumo de como foi construido, baseado no resumo das sessoes relevantes. 
+porém o agente pode conter um resumo de si com os algo construido
+ e em cada chat pode conter um resumo de si com os algo contruido
+
+um algo pode ter sido construido por N agentes, em diversos chats
+um agent pode destacar que interagiu com outro para produzir um algo
+
+-- numa busca por contexto de como algo foi feito, varios chats seriam buscados, porem o resumo do algo já resolve
+
+ao completar uma capability podemos gerar um algo. um ponto na memoria deterministica.
+esse ponto se conecta ao [chat], [agent] relacionados. Chat tem metadados (data hora, etc)
+ao completar um capability podemos gerar um resumo probalistico verificando os chats e agents envolvidos. - o vetor de ligação no grafo entre pontos de memoria
+
+Até entao temos:
+Memoria de [algo]
+
+Para produzir algo, etapas sao necessárias (espalhadas pelos chats e agentes)
+um algo pode ter n etapas.
+Para produzir o algo o agent precisa ter a memoria do algo e suas [subpartes] 
+o agente pode requisitar a memoria de outros [algo] relacionados, ou usar os históricos para buscar contexto e agentes.
+entao
+algo tem subpartes [algo.subparte]
+algo tem historico [algo.historico] e algo.historico, pode tb ser algo.historico.[algos], linknado como grafo.
+(começo a ver que não é array, linear, é grafo, multicamada e distribuido)
+
+para llm tb gerenciamos o contexto da maquina stateless, entao temos o [llm context]
+até entao, numa forma 1:1:1:1
+historico tem 
+algo que tem
+subpartes 
+& llm context dinamico
+
+contexto dinamico é dividido em 
+system: para prompts de sistema (goal, guide)
+cache: conteudo de cache para otimizar tokens (teach)
+user: mensagens de usuario
+e o llm chama funcoes (on intent, offtopic, run script, etc)
+Como a memoria pode ser?
+
+remember subpartes(algo)
+remember context (algo): context
+remember algo (context): [algo]
+remember whenUsed{context|algo}(agent):context|algo, a partir disso filtro até subparte
+
+abordagem deterministica, parte de coisas 'concretas' o algo, o chat, os pontos do grafo.
+workmemory = algo
+ .current (é o algo atual)
+ .remember()
+
+
+session = chat (talvez renomear para ficar claro)
+ .current (o chat atual)
+ .remember()
+
+context = llm context, sempre current
+ .property
+
+ workmemory.[datatype].property <- sempre current
+ chat.[?] : o que teria aqui? contexto do chat? agents em uso, ultimo prompt, mensagens da covnersa, state atual
+ llm context: o que o agent precisa fazer aqui que nao seria via runtime, goal e guide sao injetados aqui
+
+ runtime repassa à llm durante a covnersa:
+ monta context com:
+  state.goal
+  state.guide
+  state.teach CacheId
+  state.current
+  state.intents disponiveis e offtopic
+  state.global events
+  state.workmemory.current (lista de algos)
+  runtime.[allowedCapabilities]
+
+
+  memoria multicamadas
+  runtime
+    .capabilities
+    .allowedCapabilities: requested + enabled
+    .requestCapability([capability])
+    .allowOnceCapability([capability])
+
+  state
+    .goal
+    .guide
+    .teach
+    .intents
+
+  agent
+    .state:Current State
+    .[states]
+    .events
+
+  artifact
+    .versionOf: artifact
+    .history: A summary text about the creation of this artefact
+    .chatList: List off all chats that worked with this artefact
+    .agentsUsed
+    .linkedArtifacts
+    .timestamp

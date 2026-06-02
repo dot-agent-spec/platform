@@ -1,0 +1,48 @@
+agent Car Renting
+  domain carrent.com
+  license Copyright
+  terms  https://carrent.com/terms
+  privacy https://carrent.com/privacy
+
+description
+  This agent helps users find and rent cars based on their
+  preferences and location. It provides car options, pricing,
+  and handles the full booking flow.
+
+behavior main.flow
+
+input std.Prompt
+
+capabilities
+  SearchAction "Search for available cars based on user preferences"
+  BookingAction "Book a car rental based on user selection"
+  custom.PaymentProcessing "Process payments securely for car rentals"
+
+output
+  CarOptions
+  BookingConfirmation
+
+// Tipos locais do agente
+type CarOptions
+  concept https://schema.org/Offer
+  car: Car
+  price: Price
+
+type BookingConfirmation
+  concept https://schema.org/Reservation
+  reservationId: string
+  car: Car
+  pickupLocation: string
+  dropoffLocation: string
+  pickupDate: string
+  dropoffDate: string
+
+type Car
+  concept https://schema.org/Product
+  make: string
+  model: string
+
+type Price
+  concept https://schema.org/PriceSpecification
+  amount: number
+  currency: string
