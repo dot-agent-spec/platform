@@ -6,11 +6,11 @@
   "author": "Danilo Borges <contato@daniloborg.es>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daniloborges/language-server.git"
+    "url": "https://github.com/dot-agent-spec/language-server.git"
   },
-  "homepage": "https://github.com/daniloborges/language-server#readme",
+  "homepage": "https://github.com/dot-agent-spec/language-server#readme",
   "bugs": {
-    "url": "https://github.com/daniloborges/language-server/issues"
+    "url": "https://github.com/dot-agent-spec/language-server/issues"
   },
   "keywords": ["lsp", "language-server", "agent", "dsl", "flow"],
   "main": "server.js",
@@ -24,7 +24,7 @@
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "web-tree-sitter": "^0.25.0",
-    "@dot-agent/tree-sitter": "file:../tree-sitter-agent"
+    "@dot-agent/tree-sitter": "^0.2.0"
   },
   "publishConfig": {
     "access": "public"
