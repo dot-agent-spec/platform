@@ -2,12 +2,12 @@
 merge preamble
 ================================================================================
 
-merge "phases/planning.flow"
-merge "phases/review.flow"
+merge "phases/planning.behavior"
+merge "phases/review.behavior"
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (merge_decl path: (quoted_string))
   (merge_decl path: (quoted_string)))
 
@@ -20,7 +20,7 @@ state responsive
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
@@ -33,11 +33,11 @@ state com intent trigger inline
 
 state responsive
   interact
-  on intent "planning" next planning
+  on intent "planning" transition to planning
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
@@ -48,24 +48,24 @@ state responsive
           state: (path (identifier)))))))
 
 ================================================================================
-state com on escape
+state com on offtopic
 ================================================================================
 
 state responsive
   interact
-  on escape
+  on offtopic
     guide "Voltando ao início."
-    next responsive
+    transition to responsive
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
       (statement (interact_stmt))
       (statement
-        (escape_stmt
+        (offtopic_stmt
           block: (block
             (statement (guide_stmt text: (quoted_string)))
             (statement (transition_stmt state: (path (identifier))))))))))
@@ -75,18 +75,18 @@ state com on fallback
 ================================================================================
 
 state review
-  interact requiring "Qual arquivo revisar?"
+  interact
   on fallback
     guide "Revisão indisponível."
-    next responsive
+    transition to responsive
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
-      (statement (interact_stmt requirement: (quoted_string)))
+      (statement (interact_stmt))
       (statement
         (fallback_stmt
           block: (block
@@ -104,7 +104,7 @@ state init
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
@@ -135,7 +135,7 @@ state execute
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
@@ -160,12 +160,12 @@ conditional simples
 
 state check
   if session.has_context == true
-    next proceed
-  next fallback
+    transition to proceed
+  transition to fallback
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier))
     (block
@@ -189,7 +189,7 @@ on event "session.ended"
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (trigger_decl
     event: (quoted_string)
     (block
@@ -205,11 +205,11 @@ state com dotted path name
 
 state phases.planning.start
   guide "Iniciando planejamento."
-  next phases.review.start
+  transition to phases.review.start
 
 --------------------------------------------------------------------------------
 
-(flow_file
+(behavior_file
   (state_decl
     name: (path (identifier) (identifier) (identifier))
     (block

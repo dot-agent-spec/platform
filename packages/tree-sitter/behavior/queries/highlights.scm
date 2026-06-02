@@ -2,7 +2,7 @@
 ; Licensed under the Apache License, Version 2.0
 ; http://www.apache.org/licenses/LICENSE-2.0
 
-; flow/queries/highlights.scm — Tree-sitter highlight queries for the .flow DSL
+; flow/queries/highlights.scm — Tree-sitter highlight queries for the .behavior DSL
 
 ; ----------------------------------------------------------------
 ; Keywords — structural
@@ -32,7 +32,6 @@
 "teach"     @keyword
 "goal"      @keyword
 "interact"  @keyword
-"requiring" @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — memory
@@ -48,19 +47,20 @@
 ; Keywords — control flow
 ; ----------------------------------------------------------------
 
-"if"     @keyword
-"else"   @keyword
-"next"   @keyword
+"if"           @keyword
+"else"         @keyword
+"transition"   @keyword
+"to"           @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — triggers
 ; ----------------------------------------------------------------
 
-"on"       @keyword
-"event"    @keyword.operator
-"intent"   @keyword.operator
-"escape"   @keyword.operator
-"fallback" @keyword.operator
+"on"        @keyword
+"event"     @keyword.operator
+"intent"    @keyword.operator
+"offtopic"  @keyword.operator
+"fallback"  @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — temporal / parallel [experimental]

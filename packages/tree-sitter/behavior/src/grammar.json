@@ -1,9 +1,9 @@
 {
   "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
-  "name": "flow",
+  "name": "behavior",
   "word": "identifier",
   "rules": {
-    "flow_file": {
+    "behavior_file": {
       "type": "REPEAT1",
       "content": {
         "type": "CHOICE",
@@ -159,7 +159,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "escape_stmt"
+          "name": "offtopic_stmt"
         },
         {
           "type": "SYMBOL",
@@ -519,31 +519,6 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "STRING",
-                  "value": "requiring"
-                },
-                {
-                  "type": "FIELD",
-                  "name": "requirement",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "quoted_string"
-                  }
-                }
-              ]
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
               "type": "SYMBOL",
               "name": "_newline"
             },
@@ -700,7 +675,11 @@
       "members": [
         {
           "type": "STRING",
-          "value": "next"
+          "value": "transition"
+        },
+        {
+          "type": "STRING",
+          "value": "to"
         },
         {
           "type": "FIELD",
@@ -751,7 +730,11 @@
               "members": [
                 {
                   "type": "STRING",
-                  "value": "next"
+                  "value": "transition"
+                },
+                {
+                  "type": "STRING",
+                  "value": "to"
                 },
                 {
                   "type": "FIELD",
@@ -787,7 +770,7 @@
         }
       ]
     },
-    "escape_stmt": {
+    "offtopic_stmt": {
       "type": "SEQ",
       "members": [
         {
@@ -796,7 +779,7 @@
         },
         {
           "type": "STRING",
-          "value": "escape"
+          "value": "offtopic"
         },
         {
           "type": "FIELD",

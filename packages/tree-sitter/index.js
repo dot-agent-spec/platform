@@ -19,7 +19,6 @@
 const path = require('path');
 
 module.exports = {
-  // Caminhos centralizados e protegidos dentro da pasta dist
-  agentWasmPath: path.resolve(__dirname, 'dist', 'tree-sitter-agent.wasm'),
-  flowWasmPath:  path.resolve(__dirname, 'dist', 'tree-sitter-flow.wasm')
+  agentWasmPath:    path.resolve(__dirname, 'dist', 'tree-sitter-agent.wasm'),
+  behaviorWasmPath: path.resolve(__dirname, 'dist', 'tree-sitter-behavior.wasm'),
 };

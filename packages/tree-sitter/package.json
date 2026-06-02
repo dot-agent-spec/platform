@@ -1,7 +1,7 @@
 {
   "name": "@dot-agent/tree-sitter-agent",
-  "version": "0.1.0",
-  "description": "Tree-sitter grammars for the Agent DSL (.agent / .type / .flow)",
+  "version": "0.2.0",
+  "description": "Tree-sitter grammars for the Agent DSL (.description / .type / .behavior)",
   "main": "index.js",
   "files": [
     "index.js",
@@ -10,9 +10,9 @@
     "grammar.js",
     "tree-sitter.json",
     "src/node-types.json",
-    "flow/grammar.js",
-    "flow/queries/",
-    "flow/src/node-types.json"
+    "behavior/grammar.js",
+    "behavior/queries/",
+    "behavior/src/node-types.json"
   ],
   "license": "Apache-2.0",
   "author": "Danilo Borges <contato@daniloborg.es>",
@@ -26,29 +26,29 @@
   },
   "keywords": ["tree-sitter", "agent", "dsl", "parser", "grammar"],
   "scripts": {
-    "generate":      "tree-sitter generate",
-    "generate-flow": "cd flow && npx tree-sitter generate",
-    "test":          "tree-sitter test",
-    "test-flow":     "cd flow && npx tree-sitter test",
-    "parse":         "tree-sitter parse",
-    "clean": "node scripts/clean.js",
-    "prebuild": "npm run clean",
-    "build:wasm-agent": "tree-sitter build --wasm && mv tree-sitter-agent.wasm dist/",
-    "build:wasm-flow": "cd flow && tree-sitter build --wasm && mv tree-sitter-flow.wasm ../dist/",
-    "build": "npm run build:wasm-agent && npm run build:wasm-flow",
-    "prepublishOnly": "npm run build"
+    "generate":           "tree-sitter generate",
+    "generate-behavior":  "cd behavior && npx tree-sitter generate",
+    "test":               "tree-sitter test",
+    "test-behavior":      "cd behavior && npx tree-sitter test",
+    "parse":              "tree-sitter parse",
+    "clean":              "node scripts/clean.js",
+    "prebuild":           "npm run clean",
+    "build:wasm-agent":    "tree-sitter build --wasm && mv tree-sitter-agent.wasm dist/",
+    "build:wasm-behavior": "cd behavior && tree-sitter build --wasm && mv tree-sitter-behavior.wasm ../dist/",
+    "build":              "npm run build:wasm-agent && npm run build:wasm-behavior",
+    "prepublishOnly":     "npm run build"
   },
   "devDependencies": {
     "tree-sitter-cli": "^0.25.0"
   },
   "tree-sitter": [
     {
-      "scope": "source.agent",
-      "file-types": ["agent", "type"]
+      "scope": "source.description",
+      "file-types": ["description", "type"]
     },
     {
-      "scope": "source.flow",
-      "file-types": ["flow"]
+      "scope": "source.behavior",
+      "file-types": ["behavior"]
     }
   ],
   "publishConfig": {

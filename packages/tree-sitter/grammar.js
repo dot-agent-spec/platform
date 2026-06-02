@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// grammar.js — Tree-sitter grammar for the Agent DSL
+// grammar.js — Tree-sitter grammar for the Agent DSL (.description / .type)
 //
 // Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
 // scanner in src/scanner.c — Tree-sitter has no native indent support.
@@ -282,7 +282,7 @@ module.exports = grammar({
     // Matches URLs: http:// or https:// followed by non-whitespace non-paren chars
     url: $ => /https?:\/\/[^\s)]+/,
 
-    // Matches filenames with one or more dots: doctor.flow, health.example.com
+    // Matches filenames with one or more dots: doctor.behavior, health.example.com
     filename: $ => /[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+/,
 
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_-]*/,

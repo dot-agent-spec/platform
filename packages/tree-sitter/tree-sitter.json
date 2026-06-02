@@ -2,19 +2,19 @@
   "grammars": [
     {
       "name": "agent",
-      "scope": "source.agent",
-      "file-types": ["agent", "type"],
+      "scope": "source.description",
+      "file-types": ["description", "type"],
       "highlights": "queries/highlights.scm"
     },
     {
-      "name": "flow",
-      "scope": "source.flow",
-      "file-types": ["flow"],
-      "path": "flow",
-      "highlights": "flow/queries/highlights.scm"
+      "name": "behavior",
+      "scope": "source.behavior",
+      "file-types": ["behavior"],
+      "path": "behavior",
+      "highlights": "behavior/queries/highlights.scm"
     }
   ],
   "metadata": {
-    "version": "0.1.0"
+    "version": "0.2.0"
   }
 }

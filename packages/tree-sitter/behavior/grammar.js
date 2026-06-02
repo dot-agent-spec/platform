@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// flow/grammar.js — Tree-sitter grammar for the .flow DSL
+// behavior/grammar.js — Tree-sitter grammar for the .behavior DSL
 //
 // Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
 // scanner in src/scanner.c — same algorithm as the agent grammar.
@@ -29,13 +29,13 @@
 // "on" disambiguation:
 //   on event "..."   → trigger_decl  (top-level)
 //   on intent "..."  → intent_trigger (inside block)
-//   on escape        → escape_stmt   (inside block)
+//   on offtopic      → offtopic_stmt  (inside block)
 //   on fallback      → fallback_stmt (inside block)
 //   on complete      → parallel_trigger (inside block)
 //   on failed        → parallel_trigger (inside block)
 
 module.exports = grammar({
-  name: 'flow',
+  name: 'behavior',
 
   externals: $ => [
     $._newline,   // \n where next line has SAME indentation level
@@ -56,14 +56,14 @@ module.exports = grammar({
     // Top-level
     // ----------------------------------------------------------------
 
-    flow_file: $ => repeat1(choice(
+    behavior_file: $ => repeat1(choice(
       $._newline,      // blank lines between top-level declarations
       $.merge_decl,
       $.trigger_decl,
       $.state_decl,
     )),
 
-    // merge "file.flow"   — preamble only, enforced by runtime
+    // merge "file.behavior"   — preamble only, enforced by runtime
     // Note: trailing _newline is handled by the $._newline alternative in flow_file
     merge_decl: $ => seq(
       'merge',
@@ -110,7 +110,7 @@ module.exports = grammar({
       $.conditional_stmt,
       $.transition_stmt,
       $.intent_trigger,
-      $.escape_stmt,
+      $.offtopic_stmt,
       $.fallback_stmt,
       $.temporal_stmt,
       $.parallel_stmt,
@@ -176,7 +176,6 @@ module.exports = grammar({
 
     interact_stmt: $ => seq(
       'interact',
-      optional(seq('requiring', field('requirement', $.quoted_string))),
       optional($._newline),
     ),
 
@@ -212,24 +211,24 @@ module.exports = grammar({
       optional(seq('else', field('else', $.block))),
     ),
 
-    // next state_name
+    // transition to state_name
     transition_stmt: $ => seq(
-      'next',
+      'transition', 'to',
       field('state', $.path),
       optional($._newline),
     ),
 
-    // on intent "text" (next state | block)
+    // on intent "text" (transition to state | block)
     intent_trigger: $ => seq(
       'on', 'intent',
       field('intent', $.quoted_string),
       choice(
-        seq('next', field('state', $.path), optional($._newline)), // inline
-        field('block', $.block),                                    // block form
+        seq('transition', 'to', field('state', $.path), optional($._newline)), // inline
+        field('block', $.block),                                                // block form
       ),
     ),
 
-    escape_stmt:   $ => seq('on', 'escape',   field('block', $.block)),
+    offtopic_stmt: $ => seq('on', 'offtopic', field('block', $.block)),
     fallback_stmt: $ => seq('on', 'fallback', field('block', $.block)),
 
     // ----------------------------------------------------------------
@@ -305,7 +304,7 @@ module.exports = grammar({
     boolean_literal: $ => choice('true', 'false'),
     null_literal:    $ => 'null',
 
-    // Identifiers in .flow: same as .agent (no dots — handled via path rule)
+    // Identifiers in .behavior: same as .description (no dots — handled via path rule)
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_-]*/,
 
     comment: $ => token(seq('//', /.*/)),

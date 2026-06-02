@@ -31,6 +31,30 @@
     "fields": {}
   },
   {
+    "type": "behavior_file",
+    "named": true,
+    "root": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "merge_decl",
+          "named": true
+        },
+        {
+          "type": "state_decl",
+          "named": true
+        },
+        {
+          "type": "trigger_decl",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "block",
     "named": true,
     "fields": {},
@@ -111,22 +135,6 @@
     }
   },
   {
-    "type": "escape_stmt",
-    "named": true,
-    "fields": {
-      "block": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "block",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
     "type": "expression",
     "named": true,
     "fields": {
@@ -186,30 +194,6 @@
           }
         ]
       }
-    }
-  },
-  {
-    "type": "flow_file",
-    "named": true,
-    "root": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": false,
-      "types": [
-        {
-          "type": "merge_decl",
-          "named": true
-        },
-        {
-          "type": "state_decl",
-          "named": true
-        },
-        {
-          "type": "trigger_decl",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -283,18 +267,7 @@
   {
     "type": "interact_stmt",
     "named": true,
-    "fields": {
-      "requirement": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "quoted_string",
-            "named": true
-          }
-        ]
-      }
-    }
+    "fields": {}
   },
   {
     "type": "logical_op",
@@ -378,6 +351,22 @@
         "types": [
           {
             "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "offtopic_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
             "named": true
           }
         ]
@@ -580,10 +569,6 @@
           "named": true
         },
         {
-          "type": "escape_stmt",
-          "named": true
-        },
-        {
           "type": "fallback_stmt",
           "named": true
         },
@@ -605,6 +590,10 @@
         },
         {
           "type": "memory_stmt",
+          "named": true
+        },
+        {
+          "type": "offtopic_stmt",
           "named": true
         },
         {
@@ -840,10 +829,6 @@
     "named": false
   },
   {
-    "type": "escape",
-    "named": false
-  },
-  {
     "type": "event",
     "named": false
   },
@@ -896,16 +881,16 @@
     "named": false
   },
   {
-    "type": "next",
-    "named": false
-  },
-  {
     "type": "null_literal",
     "named": true
   },
   {
     "type": "number_literal",
     "named": true
+  },
+  {
+    "type": "offtopic",
+    "named": false
   },
   {
     "type": "on",
@@ -929,10 +914,6 @@
   },
   {
     "type": "remove",
-    "named": false
-  },
-  {
-    "type": "requiring",
     "named": false
   },
   {
@@ -968,7 +949,15 @@
     "named": false
   },
   {
+    "type": "to",
+    "named": false
+  },
+  {
     "type": "tool",
+    "named": false
+  },
+  {
+    "type": "transition",
     "named": false
   },
   {

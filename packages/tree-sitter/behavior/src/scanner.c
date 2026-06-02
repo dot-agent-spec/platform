@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-// flow/src/scanner.c — External scanner for the .flow DSL
+// behavior/src/scanner.c — External scanner for the .behavior DSL
 //
 // Identical algorithm to the agent scanner. Emits:
 //   NEWLINE  — \n where the next line has the SAME indentation level
 //   INDENT   — \n where the next line has MORE indentation (block opens)
 //   DEDENT   — \n where the next line has LESS indentation (block closes)
 //
-// Function names use the tree_sitter_flow_ prefix (required by tree-sitter
-// when grammar name is 'flow').
+// Function names use the tree_sitter_behavior_ prefix (required by tree-sitter
+// when grammar name is 'behavior').
 
 #include "tree_sitter/parser.h"
 #include <stdlib.h>
@@ -46,7 +46,7 @@ typedef struct {
 
 // ---- Tree-sitter lifecycle -------------------------------------------------
 
-void *tree_sitter_flow_external_scanner_create() {
+void *tree_sitter_behavior_external_scanner_create() {
   Scanner *s = calloc(1, sizeof(Scanner));
   s->stack[0] = 0;
   s->depth = 0;
@@ -54,11 +54,11 @@ void *tree_sitter_flow_external_scanner_create() {
   return s;
 }
 
-void tree_sitter_flow_external_scanner_destroy(void *payload) {
+void tree_sitter_behavior_external_scanner_destroy(void *payload) {
   free(payload);
 }
 
-unsigned tree_sitter_flow_external_scanner_serialize(void *payload, char *buffer) {
+unsigned tree_sitter_behavior_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *s = payload;
   buffer[0] = s->depth;
   buffer[1] = s->pending_dedents;
@@ -70,7 +70,7 @@ unsigned tree_sitter_flow_external_scanner_serialize(void *payload, char *buffer
   return offset;
 }
 
-void tree_sitter_flow_external_scanner_deserialize(void *payload, const char *buffer, unsigned n) {
+void tree_sitter_behavior_external_scanner_deserialize(void *payload, const char *buffer, unsigned n) {
   Scanner *s = payload;
   if (n < 2) return;
   s->depth = (uint8_t)buffer[0];
@@ -103,7 +103,7 @@ static uint16_t count_indent(TSLexer *lexer) {
 
 // ---- Main scan function ----------------------------------------------------
 
-bool tree_sitter_flow_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid) {
+bool tree_sitter_behavior_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid) {
   Scanner *s = payload;
 
   if (s->pending_dedents > 0 && valid[DEDENT]) {

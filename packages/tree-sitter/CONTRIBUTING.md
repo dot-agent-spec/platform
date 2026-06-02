@@ -5,7 +5,7 @@
 ## Grammar evolution workflow
 
 ```
-1. Edit grammar.js (or flow/grammar.js)
+1. Edit grammar.js (or behavior/grammar.js)
        ↓
 2. npx tree-sitter generate      ← recompiles src/parser.c
        ↓
@@ -16,11 +16,11 @@
 5. npx tree-sitter test          ← confirm all cases pass
 ```
 
-For the `.flow` grammar use the same steps from inside `flow/`, or the npm scripts:
+For the `.behavior` grammar use the same steps from inside `behavior/`, or the npm scripts:
 
 ```bash
-npm run generate-flow
-npm run test-flow
+npm run generate-behavior
+npm run test-behavior
 ```
 
 **Always regenerate before committing.** Stale `src/parser.c` causes silent parse failures in editors.
@@ -39,7 +39,7 @@ agent Doctor
 requires Prontuario
 ```
 
-Running `npx tree-sitter parse doctor.agent` produces:
+Running `npx tree-sitter parse doctor.description` produces:
 
 ```
 (manifest
@@ -113,7 +113,7 @@ npx tree-sitter test --filter "test name"
 ### Terminal check
 
 ```bash
-npx tree-sitter highlight path/to/file.agent
+npx tree-sitter highlight path/to/file.description
 ```
 
 Prints the file with ANSI colors. If it appears colorized, the highlight queries in `queries/highlights.scm` are working.

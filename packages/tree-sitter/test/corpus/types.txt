@@ -105,7 +105,7 @@ agent Doctor
 description
   Um especialista em análise clínica
 
-behavior doctor.flow
+behavior doctor.behavior
 requires Prontuario
 input Patient, MedicalCondition
 output Prescription
@@ -138,7 +138,7 @@ agent Doctor
   terms https://health.example.com/terms
   privacy https://health.example.com/privacy
 
-behavior doctor.flow
+behavior doctor.behavior
 
 --------------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # tree-sitter-agent
 
-Tree-sitter grammars for the Agent DSL — `.agent` manifests, `.type` declarations, and `.flow` behavior files.
+Tree-sitter grammars for the Agent DSL — `.description` manifests, `.type` declarations, and `.behavior` behavior files.
 
 Part of the [dot-agent](https://github.com/daniloborges/dot-agent) ecosystem.
 
@@ -10,8 +10,8 @@ Part of the [dot-agent](https://github.com/daniloborges/dot-agent) ecosystem.
 
 | Grammar | Scope | File extensions |
 |---------|-------|----------------|
-| `grammar.js` | `source.agent` | `.agent`, `.type` |
-| `flow/grammar.js` | `source.flow` | `.flow` |
+| `grammar.js` | `source.description` | `.description`, `.type` |
+| `behavior/grammar.js` | `source.behavior` | `.behavior` |
 
 ---
 
@@ -30,21 +30,21 @@ Part of the [dot-agent](https://github.com/daniloborges/dot-agent) ecosystem.
 ```
 tree-sitter-agent/
 ├── index.js              ← entry point — exports WASM paths
-├── grammar.js            ← .agent / .type grammar
+├── grammar.js            ← .description / .type grammar
 ├── tree-sitter.json      ← grammar scope declarations
 ├── dist/
-│   ├── tree-sitter-agent.wasm   ← compiled WASM parser (.agent / .type)
-│   └── tree-sitter-flow.wasm    ← compiled WASM parser (.flow)
+│   ├── tree-sitter-agent.wasm    ← compiled WASM parser (.description / .type)
+│   └── tree-sitter-behavior.wasm ← compiled WASM parser (.behavior)
 ├── src/
 │   ├── scanner.c         ← manual INDENT/DEDENT scanner
 │   └── tree_sitter/      ← runtime headers (MIT, see NOTICE)
 ├── queries/
-│   └── highlights.scm    ← highlight queries for .agent / .type
+│   └── highlights.scm    ← highlight queries for .description / .type
 ├── scripts/
 │   └── clean.js          ← cleans dist/ before WASM build
 ├── test/corpus/
 │   └── types.txt         ← grammar test cases
-└── flow/                 ← .flow grammar (separate Tree-sitter grammar)
+└── behavior/                 ← .behavior grammar (separate Tree-sitter grammar)
     ├── grammar.js
     ├── src/scanner.c
     ├── queries/highlights.scm
@@ -60,8 +60,8 @@ tree-sitter-agent/
 
 ```bash
 npm install
-npx tree-sitter generate      # compile the .agent grammar
-npm run generate-flow          # compile the .flow grammar
+npx tree-sitter generate      # compile the .description grammar
+npm run generate-behavior      # compile the .behavior grammar
 ```
 
 Re-run `generate` every time you edit `grammar.js`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow.
@@ -73,9 +73,9 @@ Re-run `generate` every time you edit `grammar.js`. See [CONTRIBUTING.md](CONTRI
 The package ships pre-compiled WebAssembly parsers for use in JavaScript environments (browser, Node.js, Deno):
 
 ```js
-const { agentWasmPath, flowWasmPath } = require('@dot-agent/tree-sitter-agent');
-// agentWasmPath → absolute path to dist/tree-sitter-agent.wasm
-// flowWasmPath  → absolute path to dist/tree-sitter-flow.wasm
+const { agentWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter-agent');
+// agentWasmPath    → absolute path to dist/tree-sitter-agent.wasm
+// behaviorWasmPath → absolute path to dist/tree-sitter-behavior.wasm
 ```
 
 Load them with [`web-tree-sitter`](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web):
@@ -92,9 +92,9 @@ const tree = parser.parse(sourceCode);
 To rebuild the WASM artifacts locally (requires [Emscripten](https://emscripten.org/)):
 
 ```bash
-npm run build        # compiles both grammars → dist/
+npm run build              # compiles both grammars → dist/
 npm run build:wasm-agent   # agent grammar only
-npm run build:wasm-flow    # flow grammar only
+npm run build:wasm-behavior # behavior grammar only
 ```
 
 ---
@@ -103,17 +103,17 @@ npm run build:wasm-flow    # flow grammar only
 
 ```bash
 # Parse a file and display the syntax tree
-npx tree-sitter parse path/to/file.agent
+npx tree-sitter parse path/to/file.description
 
 # Silent mode — only print errors (exit 0 if valid)
-npx tree-sitter parse --quiet path/to/file.agent
+npx tree-sitter parse --quiet path/to/file.description
 
 # Syntax highlight in the terminal
-npx tree-sitter highlight path/to/file.agent
+npx tree-sitter highlight path/to/file.description
 
 # Run corpus tests
-npx tree-sitter test          # .agent grammar
-npm run test-flow              # .flow grammar
+npx tree-sitter test          # .description grammar
+npm run test-behavior          # .behavior grammar
 
 # Filter to a specific test case
 npx tree-sitter test --filter "type simples"
@@ -126,7 +126,6 @@ npx tree-sitter test --filter "type simples"
 | Resource | Link |
 |----------|------|
 | Language specification | [language.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) |
-| DSL roadmap | [roadmap.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/roadmap.md) |
 | Example agent files | [examples/](https://github.com/daniloborges/dot-agent/tree/main/examples) |
 | VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
 | Language server (LSP) | [language-server](https://github.com/daniloborges/language-server) |
