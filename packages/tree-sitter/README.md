@@ -1,6 +1,6 @@
 # tree-sitter
 
-Tree-sitter grammars for the Agent DSL — `.description` manifests, `.type` declarations, and `.behavior` behavior files.
+Tree-sitter grammars for the .agent DSL — `.description` manifests, `.type` declarations, and `.behavior` behavior files.
 
 Part of the [dot-agent](https://github.com/dot-agent-spec/dot-agent) ecosystem.
 

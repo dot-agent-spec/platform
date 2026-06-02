@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// grammar.js — Tree-sitter grammar for the Agent DSL (.description / .type)
+// grammar.js — Tree-sitter grammar for the .agent DSL (.description / .type)
 //
 // Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
 // scanner in src/scanner.c — Tree-sitter has no native indent support.

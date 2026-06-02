@@ -1,12 +1,12 @@
 # tree-sitter — Agent Guidelines
 
-AI collaboration guide for maintaining and evolving the Tree-sitter grammars for the Agent DSL.
+AI collaboration guide for maintaining and evolving the Tree-sitter grammars for the .agent DSL.
 
 ---
 
 ## What this package is
 
-`tree-sitter` provides the **canonical grammar source** for the two file formats of the Agent DSL:
+`tree-sitter` provides the **canonical grammar source** for the two file formats of the .agent DSL:
 
 | Grammar | Covers | Located in |
 |---------|--------|------------|

@@ -2,7 +2,7 @@
 ; Licensed under the Apache License, Version 2.0
 ; http://www.apache.org/licenses/LICENSE-2.0
 
-; highlights.scm — Tree-sitter highlight queries for the Agent DSL
+; highlights.scm — Tree-sitter highlight queries for the .agent DSL
 ; Capture names follow the standard tree-sitter convention:
 ; https://tree-sitter.github.io/tree-sitter/syntax-highlighting#capture-names
 
