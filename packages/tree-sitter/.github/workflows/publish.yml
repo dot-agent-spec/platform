@@ -14,11 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Emscripten
-        uses: emscripten-core/setup-emscripten@v1
-        with:
-          version: 3.1.64
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
