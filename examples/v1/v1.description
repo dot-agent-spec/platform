@@ -5,7 +5,7 @@ agent Financial Analyst
 description
   Agente focado em auditoria de despesas e validação cross-agent.
     
-behavior "v1.flow"
+behavior "v1.behavior"
 
 capabilities
   FinancialReport "Generate reports based on financial data"

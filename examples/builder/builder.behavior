@@ -1,26 +1,22 @@
-// builder.flow
+// builder.behavior
 // Full lifecycle for the Builder agent.
 // Covers onboarding, new agent/skill creation, evolution, self-evolution, review, and upgrade.
 // The planning phase is inlined to illustrate multi-state orchestration;
-// generation phase is extracted via merge (too dense for .flow — belongs in .run).
+// generation phase is extracted via merge (too dense for .behavior — belongs in .run).
 
-merge "phases/generation.flow"
-
-set worksession.active_phase = null
-set worksession.backlog_count = 0
-set user.has_profile = false
+merge "phases/generation.behavior"
 
 on event "action_failed"
   set worksession.backlog_count += 1
-  run script "scripts/log_error.sh" event.error_message
+  run script "scripts/log_error.sh"
 
 // ─── Init & Onboarding ────────────────────────────────────────────────────────
 
 state init
   if session.is_first_time
-    next onboarding
+    transition to onboarding
   else
-    next responsive
+    transition to responsive
 
 state onboarding
   run script "scripts/detect-env.sh"
@@ -30,22 +26,23 @@ state onboarding
   on intent "profile_complete"
     set user.has_profile = true
     set session.is_first_time = false
-    next responsive
-  on escape
-    next responsive
+    transition to responsive
+  on offtopic
+    transition to responsive
 
 // ─── Main Router ──────────────────────────────────────────────────────────────
 
 state responsive
   guide "AGENTS.md"
   interact
-  on intent "new"    next planning.context
-  on intent "skill"  next planning.context
-  on intent "evolve" next evolve
-  on intent "self"   next self_evolve
-  on intent "review" next review
-  on intent "upgrade" next upgrade
-  on escape          next responsive
+  on intent "new" transition to planning.context
+  on intent "skill" transition to planning.context
+  on intent "evolve" transition to evolve
+  on intent "self" transition to self_evolve
+  on intent "review" transition to review
+  on intent "upgrade" transition to upgrade
+  on offtopic
+    transition to responsive
 
 // ─── Planning Phase ───────────────────────────────────────────────────────────
 
@@ -55,23 +52,24 @@ state planning.context
   if session.has_claude
     set context.claude_rules = run tool "Fs.ReadFile" "CLAUDE.md"
   set context.spec = run tool "Fs.ReadFile" "phases/shared/_skill-spec.md"
-  next planning.initial_checks
+  transition to planning.initial_checks
 
 state planning.initial_checks
   parallel
     run subagent "meta_checks"
     run subagent "automation_radar"
   on complete
-    set context.radar_results = results
+    set context.radar_results = run tool "Memory.Get" "radar_results"
     guide "planning-guide.md#phase_1"
     goal "Present consolidated results and await user approval."
     interact
-    on intent "user_approved" next planning.concept
-    on intent "user_rejected" next planning.cancel
-    on escape                 next planning.cancel
+    on intent "user_approved" transition to planning.concept
+    on intent "user_rejected" transition to planning.cancel
+    on offtopic
+      transition to planning.cancel
   on failed
     run tool "Log.Error" "Initial checks failed"
-    next planning.cancel
+    transition to planning.cancel
 
 state planning.concept
   guide "planning-guide.md#golden_rule"
@@ -79,43 +77,48 @@ state planning.concept
   interact
   on intent "concept_ready"
     set worksession.concept_defined = true
-    next planning.structure
-  on escape next planning.cancel
+    transition to planning.structure
+  on offtopic
+    transition to planning.cancel
 
 state planning.structure
   guide "planning-guide.md#structure"
   goal "Define if this will be a single SKILL.md, modular, or a full Agent."
   interact
-  on intent "structure_ready" next planning.references
-  on escape                   next planning.cancel
+  on intent "structure_ready" transition to planning.references
+  on offtopic
+    transition to planning.cancel
 
 state planning.references
   teach "websearch.knowledge"
   goal "Search for similar references on the web and present up to 3 examples."
   interact
-  on intent "references_ready" next planning.handoff
-  on escape                    next planning.cancel
+  on intent "references_ready" transition to planning.handoff
+  on offtopic
+    transition to planning.cancel
 
 state planning.handoff
   goal "Present structured planning summary and request final confirmation."
   interact
   on intent "handoff_approved"
     set worksession.handoff_ready = true
-    next planning.quality_check
-  on escape next planning.cancel
+    transition to planning.quality_check
+  on offtopic
+    transition to planning.cancel
 
 state planning.quality_check
-  // ⚠️ Subagent return contract not yet formally specified — see Etapa 7.
-  // `into` syntax pins the output to a named memory slot instead of implicit session convention.
-  run subagent "planning_quality_checker" into worksession.quality_result
-  if worksession.quality_result.passed
-    next phases.generation.scaffold
-  else
-    next planning.cancel
+  run subagent "planning_quality_checker"
+  on complete
+    if context.quality_passed == true
+      transition to phases.generation.scaffold
+    else
+      transition to planning.cancel
+  on failed
+    transition to planning.cancel
 
 state planning.cancel
   run tool "Log.Info" "Planning cancelled or failed quality check."
-  next responsive
+  transition to responsive
 
 // ─── Review Phase ─────────────────────────────────────────────────────────────
 
@@ -123,27 +126,29 @@ state review
   set worksession.active_phase = "Review"
   guide "phases/review.md"
   goal "Audit the target agent or skill against current spec and best practices."
-  interact requiring "Which agent or skill should I review?"
+  interact
   on intent "target_ready"
     set context.review_target = run tool "Fs.ReadDir" context.target_path
-    next review.analyze
-  on escape next responsive
+    transition to review.analyze
+  on offtopic
+    transition to responsive
 
 state review.analyze
   parallel
     run subagent "spec_compliance_checker"
     run subagent "security_auditor"
   on complete
-    set context.review_results = results
+    set context.review_results = run tool "Memory.Get" "review_results"
     guide "phases/review.md#report"
     goal "Present findings and propose improvements."
     interact
-    on intent "review_complete" next responsive
-    on intent "evolve_now"      next evolve
-    on escape                   next responsive
+    on intent "review_complete" transition to responsive
+    on intent "evolve_now" transition to evolve
+    on offtopic
+      transition to responsive
   on failed
     guide "Review could not be completed. Check agent path and try again."
-    next responsive
+    transition to responsive
 
 // ─── Evolution (AgentEvolution) ───────────────────────────────────────────────
 
@@ -151,45 +156,44 @@ state evolve
   set worksession.active_phase = "Evolution"
   guide "phases/evolve.md"
   goal "Identify which agent or skill will be evolved and what changes are needed."
-  interact requiring "Which agent should be evolved and what should change?"
+  interact
   on intent "target_identified"
     set worksession.evolve_target = context.target
-    next evolve.confirm
-  on escape next responsive
+    transition to evolve.confirm
+  on offtopic
+    transition to responsive
 
 state evolve.confirm
-  // AgentEvolution requires explicit user confirmation before overwriting files.
-  // Runtime MUST surface this as a Human-in-the-Loop gate before writing to .agents/*.
   goal "Confirm authorization to modify the target agent package."
-  interact requiring "Confirm you want to modify this agent. Existing files will be overwritten."
+  interact
   on intent "evolution_confirmed"
-    next planning.context
-  on escape next responsive
+    transition to planning.context
+  on offtopic
+    transition to responsive
 
 // ─── Self-Evolution (SelfEvolution) ───────────────────────────────────────────
 
 state self_evolve
-  // SelfEvolution: highest-risk capability. Runtime MUST intercept and sandbox.
-  // Only worksession/data may change freely; modifying the agent's own code
-  // requires AgentUpgrade authorization (see `upgrade` state).
   goal "Propose improvements to the Builder agent's own behavior files."
-  interact requiring "What aspect of Builder should be improved?"
+  interact
   on intent "self_evolution_approved"
     set worksession.evolve_target = "builder"
-    next evolve.confirm
-  on escape next responsive
+    transition to evolve.confirm
+  on offtopic
+    transition to responsive
 
 // ─── Upgrade (AgentUpgrade) ───────────────────────────────────────────────────
 
 state upgrade
   goal "Apply a Runtime-approved version update to an agent package."
-  interact requiring "Which agent should be upgraded and to which version?"
+  interact
   on intent "upgrade_confirmed"
-    run script "scripts/apply-upgrade.sh" context.upgrade_target
+    run script "scripts/apply-upgrade.sh"
     on complete
       guide "Upgrade applied successfully."
-      next responsive
+      transition to responsive
     on failed
       guide "Upgrade failed. The previous version remains active."
-      next responsive
-  on escape next responsive
+      transition to responsive
+  on offtopic
+    transition to responsive

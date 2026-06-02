@@ -25,11 +25,11 @@ description
 //     Nunca encerrar um turno sem próximo passo claro.
 //     Sempre validar a conformidade na fase de Testes.
 
-behavior builder.flow
-  // A Lógica, Persona e Mapeamento de Ferramentas residem estritamente no .flow.
+behavior "builder.behavior"
+  // A Lógica, Persona e Mapeamento de Ferramentas residem estritamente no .behavior.
   // - Persona e Prompts: Injetados em runtime via `guide "AGENTS.md"`. O manifesto se mantém agnóstico a prompts.
-  // - Mapeamento Físico: Validações da árvore de arquivos (`hasPart`) são feitas
-  //   no estado `init` ou `onboarding` do .flow. O manifesto não audita pastas.
+  // - Mapeamento Físico: Validações da árvore de arquivos são feitas
+  //   no estado `init` ou `onboarding` do .behavior. O manifesto não audita pastas.
 
   // Sobre a persona, o quanto é valido ter um guia como o soul.md ou character v2 embutido, direcionando a postura geral do agente? O quanto isso impacta no contexto/tokens?
   // Capabilities declaration
