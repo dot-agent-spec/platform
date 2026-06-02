@@ -20,7 +20,7 @@ All structural analysis is performed on **tree-sitter ASTs** (not regex). `parse
 | `parser.js` | Tree-sitter engine — WASM initialization, per-document AST cache, and shared traversal helpers |
 | `features/hover.js` | Hover documentation for all DSL keywords (static lookup, no tree traversal) |
 | `features/completions.js` | Context-aware completions using `getContextNode` and `nodesOfType` for name lookups |
-| `features/diagnostics.js` | Linting — dangling transitions, dead-end interact (AST), deprecated keywords (line scan), undeclared types (AST) |
+| `features/diagnostics.js` | Linting — dangling transitions, dead-end interact (AST), undeclared types (AST) |
 | `features/definition.js` | Go-to-definition via `state_decl` / `type_decl` node lookup |
 | `features/references.js` | Find all references via `transition_stmt`, `intent_trigger`, `type_ref` traversal |
 | `features/rename.js` | Rename symbol — same traversal as references, produces `TextEdit[]` |

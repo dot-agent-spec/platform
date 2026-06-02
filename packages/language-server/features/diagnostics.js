@@ -19,11 +19,6 @@
 const { DiagnosticSeverity } = require('vscode-languageserver');
 const { nodesOfType, nodeToRange } = require('../parser');
 
-const DEPRECATED_AGENT_KW = new Set([
-    'do', 'server', 'endpoint', 'author', 'version', 'requirements', 'step',
-    'softwareVersion', 'applicationCategory', 'character', 'publishingPrinciples',
-]);
-
 const STRICT_BLOCK_TYPES = {
     input_block:        'input',
     output_block:       'output',
@@ -33,26 +28,6 @@ const STRICT_BLOCK_TYPES = {
 
 function diagnoseAgent(tree, text) {
     const diagnostics = [];
-
-    // ── Deprecated keywords: line scan (no tree-sitter benefit here) ──────────
-    const lines = text.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-        const raw = lines[i];
-        const stripped = raw.split('//')[0].trim();
-        if (!stripped) continue;
-        const wordM = stripped.match(/^([a-zA-Z0-9_.-]+)\b/);
-        if (!wordM) continue;
-        const word = wordM[1];
-        if (DEPRECATED_AGENT_KW.has(word)) {
-            const col = raw.indexOf(word);
-            diagnostics.push({
-                range: { start: { line: i, character: col }, end: { line: i, character: col + word.length } },
-                message: `The keyword '${word}' is deprecated or invalid in the current .agent specification.`,
-                severity: DiagnosticSeverity.Error,
-                source: 'agent-dsl',
-            });
-        }
-    }
 
     // ── Strict block validation ───────────────────────────────────────────────
     const declaredTypes = new Set(

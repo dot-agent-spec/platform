@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/language-server",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "LSP server for .agent DSL files",
   "license": "Apache-2.0",
   "author": "Danilo Borges <contato@daniloborg.es>",
@@ -24,7 +24,7 @@
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "web-tree-sitter": "^0.25.0",
-    "@dot-agent/tree-sitter": "^0.2.0"
+    "@dot-agent/tree-sitter": "^0.2.1"
   },
   "publishConfig": {
     "access": "public"

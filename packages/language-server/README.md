@@ -8,7 +8,7 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 |---|---|---|
 | **Hover** | Keyword documentation | Keyword documentation |
 | **Completion** | Manifest keywords, custom types | Keywords, state names, memory domains (`context.`, `session.`, …) |
-| **Diagnostics** | Deprecated keywords, strict block lint, undeclared types | Dangling `transition` targets, dead-end `interact` |
+| **Diagnostics** | Strict block lint, undeclared types | Dangling `transition` targets, dead-end `interact` |
 | **Go-to-Definition** | Type name → `type` declaration | `transition to stateName` → `state` declaration |
 | **Find References** | All uses of a type | All `transition` references to a state |
 | **Rename** | Type and its references | State and all `transition` references |
