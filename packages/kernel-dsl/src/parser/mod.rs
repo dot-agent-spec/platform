@@ -111,7 +111,7 @@ impl Parser {
             Token::KwTool        => "tool".into(),
             Token::KwState       => "state".into(),
             Token::KwOn          => "on".into(),
-            Token::KwNext        => "next".into(),
+            Token::KwTo          => "to".into(),
             Token::KwGoal        => "goal".into(),
             Token::KwGuide       => "guide".into(),
             Token::KwTeach       => "teach".into(),
@@ -307,7 +307,7 @@ impl Parser {
         Ok(Statement::Set { path: MemoryPath { domain, key }, op, value })
     }
 
-    // Parse on-variants: on intent|escape|fallback|event|complete|failed
+    // Parse on-variants: on intent|offtopic|fallback|event|complete|failed
     fn parse_on(&mut self) -> Result<Statement, ParseError> {
         match self.peek().clone() {
             Token::KwIntent => {
@@ -318,8 +318,12 @@ impl Parser {
                         "expected intent string, got {:?}", other
                     ))),
                 };
-                // inline form: on intent "X" next state
-                if matches!(self.peek(), Token::KwNext) {
+                // inline form: on intent "X" transition to state
+                if matches!(self.peek(), Token::KwTransition) {
+                    self.advance();
+                    if !matches!(self.peek(), Token::KwTo) {
+                        return Err(ParseError::new("expected 'to' after 'transition'"));
+                    }
                     self.advance();
                     let target = self.parse_path();
                     self.expect_newline();
@@ -334,11 +338,11 @@ impl Parser {
                 Ok(Statement::OnIntent { intent, body: IntentBody::Block(body) })
             }
 
-            Token::KwEscape => {
+            Token::KwOfftopic => {
                 self.advance();
                 self.expect_newline();
                 let body = self.parse_block()?;
-                Ok(Statement::OnEscape(body))
+                Ok(Statement::OnOfftopic(body))
             }
 
             Token::KwFallback => {
@@ -372,11 +376,8 @@ impl Parser {
                     ))),
                 };
                 self.expect_newline();
-                // treat as a guide noting the event — nested handler
                 let body = self.parse_block()?;
-                // Re-use OnEscape slot as a placeholder — events inside blocks
-                // are not part of the core FSM spec, return OnEscape with a comment
-                // For now wrap as a special intent trigger matching the event name
+                // Wrap as a special intent trigger matching the event name
                 Ok(Statement::OnIntent {
                     intent: format!("event:{}", event),
                     body: IntentBody::Block(body),
@@ -384,7 +385,7 @@ impl Parser {
             }
 
             other => Err(ParseError::new(format!(
-                "expected intent|escape|fallback|event|complete|failed after on, got {:?}", other
+                "expected intent|offtopic|fallback|event|complete|failed after on, got {:?}", other
             ))),
         }
     }
@@ -465,24 +466,19 @@ impl Parser {
 
             Token::KwInteract => {
                 self.advance();
-                let requiring = if matches!(self.peek(), Token::KwRequiring) {
-                    self.advance();
-                    match self.peek().clone() {
-                        Token::Str(s) => { self.advance(); Some(s) }
-                        _ => None,
-                    }
-                } else {
-                    None
-                };
                 self.expect_newline();
-                Ok(Statement::Interact { requiring })
+                Ok(Statement::Interact)
             }
 
-            Token::KwNext => {
+            Token::KwTransition => {
+                self.advance();
+                if !matches!(self.peek(), Token::KwTo) {
+                    return Err(ParseError::new("expected 'to' after 'transition'"));
+                }
                 self.advance();
                 let target = self.parse_path();
                 self.expect_newline();
-                Ok(Statement::Next(target))
+                Ok(Statement::Transition(target))
             }
 
             Token::KwOn => {

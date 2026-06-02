@@ -66,7 +66,7 @@ impl Fsm {
                 Statement::Goal(_)
                 | Statement::Guide(_)
                 | Statement::Teach(_)
-                | Statement::Interact { .. }
+                | Statement::Interact
                 | Statement::Run(_)
                 | Statement::Set { .. }
                 | Statement::If { .. }
@@ -75,7 +75,7 @@ impl Fsm {
                 | Statement::Parallel(_) => {
                     effects.extend(self.exec_single(stmt, mem));
                 }
-                // handlers and next are not auto-executed at entry
+                // handlers and transition are not auto-executed at entry
                 _ => {}
             }
         }
@@ -105,11 +105,11 @@ impl Fsm {
         vec![]
     }
 
-    pub fn send_escape(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
+    pub fn send_offtopic(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
         let name = self.current_state.clone();
         if let Some(state) = self.states.get(&name).cloned() {
             for stmt in &state.body {
-                if let Statement::OnEscape(stmts) = stmt {
+                if let Statement::OnOfftopic(stmts) = stmt {
                     return self.exec_statements(stmts, mem);
                 }
             }
@@ -157,6 +157,30 @@ impl Fsm {
         effects
     }
 
+    pub fn send_complete(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
+        let name = self.current_state.clone();
+        if let Some(state) = self.states.get(&name).cloned() {
+            for stmt in &state.body {
+                if let Statement::OnComplete(stmts) = stmt {
+                    return self.exec_statements(stmts, mem);
+                }
+            }
+        }
+        vec![]
+    }
+
+    pub fn send_failed(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
+        let name = self.current_state.clone();
+        if let Some(state) = self.states.get(&name).cloned() {
+            for stmt in &state.body {
+                if let Statement::OnFailed(stmts) = stmt {
+                    return self.exec_statements(stmts, mem);
+                }
+            }
+        }
+        vec![]
+    }
+
     fn transition_to(&mut self, target: &str, _mem: &mut MemoryStore) -> Vec<Effect> {
         let from = self.current_state.clone();
         if self.states.contains_key(target) {
@@ -185,11 +209,11 @@ impl Fsm {
 
             Statement::Teach(text) => vec![Effect::Teach { text: text.clone() }],
 
-            Statement::Interact { requiring } => {
-                vec![Effect::RequestInteract { requiring: requiring.clone() }]
+            Statement::Interact => {
+                vec![Effect::RequestInteract { requiring: None }]
             }
 
-            Statement::Next(target) => {
+            Statement::Transition(target) => {
                 let target = target.clone();
                 let mut fx = self.transition_to(&target, mem);
                 fx.extend(self.enter_current_state(mem));
@@ -268,7 +292,7 @@ impl Fsm {
             }
 
             Statement::OnIntent { .. }
-            | Statement::OnEscape(_)
+            | Statement::OnOfftopic(_)
             | Statement::OnFallback(_)
             | Statement::OnComplete(_)
             | Statement::OnFailed(_)
@@ -342,8 +366,8 @@ fn collect_transitions(from: &str, stmts: &[Statement], out: &mut Vec<GraphTrans
                 let to = match body {
                     IntentBody::Next(t) => t.clone(),
                     IntentBody::Block(stmts) => {
-                        // look for a Next inside the block
-                        find_next_in_block(stmts).unwrap_or_default()
+                        // look for a Transition inside the block
+                        find_transition_in_block(stmts).unwrap_or_default()
                     }
                 };
                 if !to.is_empty() {
@@ -354,10 +378,10 @@ fn collect_transitions(from: &str, stmts: &[Statement], out: &mut Vec<GraphTrans
                     });
                 }
             }
-            Statement::OnEscape(stmts) | Statement::OnFallback(stmts) => {
-                if let Some(to) = find_next_in_block(stmts) {
-                    let label = if matches!(stmt, Statement::OnEscape(_)) {
-                        "escape".into()
+            Statement::OnOfftopic(stmts) | Statement::OnFallback(stmts) => {
+                if let Some(to) = find_transition_in_block(stmts) {
+                    let label = if matches!(stmt, Statement::OnOfftopic(_)) {
+                        "offtopic".into()
                     } else {
                         "fallback".into()
                     };
@@ -369,9 +393,9 @@ fn collect_transitions(from: &str, stmts: &[Statement], out: &mut Vec<GraphTrans
     }
 }
 
-fn find_next_in_block(stmts: &[Statement]) -> Option<String> {
+fn find_transition_in_block(stmts: &[Statement]) -> Option<String> {
     for stmt in stmts {
-        if let Statement::Next(t) = stmt {
+        if let Statement::Transition(t) = stmt {
             return Some(t.clone());
         }
     }

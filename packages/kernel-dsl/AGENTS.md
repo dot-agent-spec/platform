@@ -6,7 +6,7 @@ AI collaboration guide for maintaining and evolving the `dot-agent-kernel` Rust/
 
 - **Language**: Rust
 - **Target**: WebAssembly (`wasm32-unknown-unknown`)
-- **Purpose**: Parse and execute the `.flow` DSL as specified in [`language.md`](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md), exposing a FSM engine to JavaScript via WASM bindings
+- **Purpose**: Parse and execute the `.behavior` DSL as specified in [`syntax.md`](https://github.com/daniloborges/dot-agent/blob/main/syntax.md), exposing a FSM engine to JavaScript via WASM bindings
 
 ## Module responsibilities
 
@@ -14,11 +14,11 @@ AI collaboration guide for maintaining and evolving the `dot-agent-kernel` Rust/
 |------|---------------|
 | `src/lib.rs` | WASM bindings only (`#[wasm_bindgen]`) — no business logic |
 | `src/effect.rs` | `Effect` enum and `MemValue` — serialized types returned to JS |
-| `src/parser/ast.rs` | AST types — mirror the grammar in [`tree-sitter-agent/flow/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js) |
+| `src/parser/ast.rs` | AST types — mirror the grammar in [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js) |
 | `src/parser/lexer.rs` | Tokenizer with indentation stack (INDENT/DEDENT), all DSL keywords |
 | `src/parser/mod.rs` | Recursive descent parser — `parse_flow(text) → FlowFile` |
 | `src/engine/memory.rs` | `MemoryStore` — 4 domains, `get`/`set` with `AssignOp`, snapshot |
-| `src/engine/fsm.rs` | `Fsm` — executes statements, dispatches intents/escape/event/tick |
+| `src/engine/fsm.rs` | `Fsm` — executes statements, dispatches intents/offtopic/event/tick/complete/failed |
 | `src/engine/mod.rs` | `FlowEngine` — orchestrates parser + Fsm + MemoryStore |
 
 Never put parser or FSM logic in `lib.rs`. Never expose internal structs directly via `#[wasm_bindgen]` — serialize with `serde_wasm_bindgen::to_value` instead.
@@ -33,7 +33,7 @@ Never put parser or FSM logic in `lib.rs`. Never expose internal structs directl
 
 ## Keeping in sync with the spec
 
-The parser in `src/parser/` must stay in sync with [`tree-sitter-agent/flow/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js). When the tree-sitter grammar changes:
+The parser in `src/parser/` must stay in sync with [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js). When the tree-sitter grammar changes:
 
 1. Update `src/parser/ast.rs` with new types or variants
 2. Update `src/parser/lexer.rs` with new keywords
@@ -76,8 +76,8 @@ wasm-pack build --target web --out-dir pkg
 
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) |
-| .flow grammar (canonical) | [tree-sitter-agent/flow/grammar.js](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js) |
+| Syntax specification | [syntax.md](https://github.com/daniloborges/dot-agent/blob/main/syntax.md) |
+| .behavior grammar (canonical) | [tree-sitter-agent/behavior/grammar.js](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js) |
 | Full API reference | [API.md](API.md) |
 | VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
 | Language server (LSP) | [language-server](https://github.com/daniloborges/language-server) |

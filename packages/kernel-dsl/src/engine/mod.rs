@@ -45,9 +45,9 @@ impl FlowEngine {
         }
     }
 
-    pub fn send_escape(&mut self) -> Vec<Effect> {
+    pub fn send_offtopic(&mut self) -> Vec<Effect> {
         match &mut self.fsm {
-            Some(fsm) => fsm.send_escape(&mut self.memory),
+            Some(fsm) => fsm.send_offtopic(&mut self.memory),
             None => vec![],
         }
     }
@@ -69,6 +69,20 @@ impl FlowEngine {
     pub fn tick_prompt(&mut self) -> Vec<Effect> {
         match &mut self.fsm {
             Some(fsm) => fsm.tick_prompt(&mut self.memory),
+            None => vec![],
+        }
+    }
+
+    pub fn send_complete(&mut self) -> Vec<Effect> {
+        match &mut self.fsm {
+            Some(fsm) => fsm.send_complete(&mut self.memory),
+            None => vec![],
+        }
+    }
+
+    pub fn send_failed(&mut self) -> Vec<Effect> {
+        match &mut self.fsm {
+            Some(fsm) => fsm.send_failed(&mut self.memory),
             None => vec![],
         }
     }

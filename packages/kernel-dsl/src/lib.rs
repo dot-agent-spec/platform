@@ -85,11 +85,11 @@ impl FlowEngine {
         serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
     }
 
-    /// Signal that the user explicitly exited the current flow.
+    /// Signal that the current message is off-topic.
     ///
-    /// Fires the observer with the effects of the current state's `on escape` block.
-    pub fn send_escape(&mut self) -> JsValue {
-        let effects = self.inner.send_escape();
+    /// Fires the observer with the effects of the current state's `on offtopic` block.
+    pub fn send_offtopic(&mut self) -> JsValue {
+        let effects = self.inner.send_offtopic();
         self.dispatch(&effects);
         serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
     }
@@ -153,6 +153,24 @@ impl FlowEngine {
     pub fn set_memory(&mut self, domain: &str, key: &str, value_json: &str) {
         let mem_value = parse_json_primitive(value_json);
         self.inner.set_memory(domain, key, mem_value);
+    }
+
+    /// Signal that the last async operation (run_script, run_subagent, run_tool) completed successfully.
+    ///
+    /// Fires the observer with the effects of the current state's `on complete` block.
+    pub fn send_complete(&mut self) -> JsValue {
+        let effects = self.inner.send_complete();
+        self.dispatch(&effects);
+        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+    }
+
+    /// Signal that the last async operation (run_script, run_subagent, run_tool) failed.
+    ///
+    /// Fires the observer with the effects of the current state's `on failed` block.
+    pub fn send_failed(&mut self) -> JsValue {
+        let effects = self.inner.send_failed();
+        self.dispatch(&effects);
+        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
     }
 
     /// Return the state graph as { states, transitions, current }.

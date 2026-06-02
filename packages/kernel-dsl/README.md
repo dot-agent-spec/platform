@@ -1,6 +1,6 @@
 # dot-agent-kernel
 
-Execution engine for the `.agent` / `.flow` DSL, written in Rust and compiled to **WebAssembly**. Implements a Finite State Machine (FSM) that interprets `.flow` files according to the full dot-agent-spec, running entirely in-memory on the client side (browser or Node.js).
+Execution engine for the **.agent DSL** (`.description` and `.behavior` files), written in Rust and compiled to **WebAssembly**. Implements a Finite State Machine (FSM) that interprets `.behavior` files according to the full dot-agent-spec, running entirely in-memory on the client side (browser or Node.js).
 
 ## Architecture
 
@@ -18,30 +18,31 @@ src/
     └── memory.rs       — MemoryStore: 4 domains (context/session/worksession/user)
 ```
 
-The parser is a **pure-Rust recursive descent parser** — no tree-sitter runtime dependency, fully compatible with `wasm32-unknown-unknown`. It is kept in sync with the canonical grammar at [`tree-sitter-agent/flow/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/flow/grammar.js).
+The parser is a **pure-Rust recursive descent parser** — no tree-sitter runtime dependency, fully compatible with `wasm32-unknown-unknown`. It is kept in sync with the canonical grammar at [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js).
 
 ## Supported constructs
 
-The parser and FSM cover the full `.flow` DSL:
+The parser and FSM cover the full `.agent DSL`:
 
 | Construct | Example |
 |-----------|---------|
 | State | `state responsive` |
 | Goal / Guide / Teach | `goal "text"` |
-| Interact | `interact` / `interact requiring "text"` |
-| Inline intent | `on intent "planning" next planning` |
+| Interact | `interact` |
+| Inline intent | `on intent "planning" transition to planning` |
 | Block intent | `on intent "search"` + indented block |
-| Escape / Fallback | `on escape` / `on fallback` + block |
+| Offtopic / Fallback | `on offtopic` / `on fallback` + block |
 | Global event | `on event "session.ended"` + block |
 | Memory assign | `set context.phase = "planning"` |
 | Compound assign | `+=` / `-=` across all domains |
 | Conditional | `if session.ready == true` + optional `else` |
-| Transition | `next planning` |
-| Run | `run script "file.js" silent` / `run subagent "agent.flow" in background` |
+| Transition | `transition to planning` |
+| Run | `run script "file.js" silent` / `run subagent "agent.behavior" in background` |
 | Temporal | `after 3 prompts guide "…"` |
 | Parallel | `parallel` + block |
 | UI | `apply css "…"` / `remove html "…"` |
-| Merge | `merge "other.flow"` (recorded in AST, resolved by external runtime) |
+| Merge | `merge "other.behavior"` (recorded in AST, resolved by external runtime) |
+| Async completion | `on complete` / `on failed` + block |
 
 ## Build
 
@@ -64,17 +65,21 @@ All methods return a **JSON array of `Effect` objects**, letting JS react to flo
 ```typescript
 const engine = new FlowEngine();
 
-// Load a .flow file and receive the entry effects of the first state
-const effects = engine.load_flow(flowText);
-// → [{ type: "show_goal", text: "…" }, { type: "request_interact" }]
+// Load a .behavior file and receive the entry effects of the first state
+const effects = engine.load_flow(behaviorText);
+// → [{ type: "goal", text: "…" }, { type: "request_interact" }]
 
 // Dispatch an intent (name classified by the LLM layer)
 engine.send_intent("planning");
 
 // Flow handlers
-engine.send_escape();
+engine.send_offtopic();
 engine.send_fallback();
 engine.send_event("session.ended");
+
+// Async operation completion
+engine.send_complete();
+engine.send_failed();
 
 // Temporal triggers — call once per processed prompt
 engine.tick_prompt();
@@ -96,9 +101,9 @@ engine.get_graph();
 
 ```typescript
 type Effect =
-  | { type: "show_goal";        text: string }
-  | { type: "show_guide";       text: string }
-  | { type: "show_teach";       text: string }
+  | { type: "goal";             text: string }
+  | { type: "guide";            text: string }
+  | { type: "teach";            text: string }
   | { type: "request_interact"; requiring: string | null }
   | { type: "transition";       from: string; to: string }
   | { type: "run_script";       target: string; label: string | null; silent: boolean }

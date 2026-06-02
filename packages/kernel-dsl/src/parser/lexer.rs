@@ -24,7 +24,8 @@ pub enum Token {
     KwMerge,
     KwState,
     KwOn,
-    KwNext,
+    KwTransition,
+    KwTo,
     KwIf,
     KwElse,
     KwAfter,
@@ -42,7 +43,7 @@ pub enum Token {
 
     // on-subtypes
     KwIntent,
-    KwEscape,
+    KwOfftopic,
     KwFallback,
     KwEvent,
     KwComplete,
@@ -57,8 +58,7 @@ pub enum Token {
     KwBackground,
     KwEach,
 
-    // interact/after modifiers
-    KwRequiring,
+    // after modifiers
     KwPrompts,
 
     // apply/remove kinds
@@ -251,7 +251,8 @@ fn keyword_or_ident(word: &str) -> Token {
         "merge"      => Token::KwMerge,
         "state"      => Token::KwState,
         "on"         => Token::KwOn,
-        "next"       => Token::KwNext,
+        "transition" => Token::KwTransition,
+        "to"         => Token::KwTo,
         "if"         => Token::KwIf,
         "else"       => Token::KwElse,
         "after"      => Token::KwAfter,
@@ -265,7 +266,7 @@ fn keyword_or_ident(word: &str) -> Token {
         "apply"      => Token::KwApply,
         "remove"     => Token::KwRemove,
         "intent"     => Token::KwIntent,
-        "escape"     => Token::KwEscape,
+        "offtopic"   => Token::KwOfftopic,
         "fallback"   => Token::KwFallback,
         "event"      => Token::KwEvent,
         "complete"   => Token::KwComplete,
@@ -277,7 +278,6 @@ fn keyword_or_ident(word: &str) -> Token {
         "in"         => Token::KwIn,
         "background" => Token::KwBackground,
         "each"       => Token::KwEach,
-        "requiring"  => Token::KwRequiring,
         "prompts"    => Token::KwPrompts,
         "css"        => Token::KwCss,
         "html"       => Token::KwHtml,
