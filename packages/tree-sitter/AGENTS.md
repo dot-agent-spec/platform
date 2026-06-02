@@ -1,4 +1,4 @@
-# tree-sitter-agent — Agent Guidelines
+# tree-sitter — Agent Guidelines
 
 AI collaboration guide for maintaining and evolving the Tree-sitter grammars for the Agent DSL.
 
@@ -6,14 +6,14 @@ AI collaboration guide for maintaining and evolving the Tree-sitter grammars for
 
 ## What this package is
 
-`tree-sitter-agent` provides the **canonical grammar source** for the two file formats of the Agent DSL:
+`tree-sitter` provides the **canonical grammar source** for the two file formats of the Agent DSL:
 
 | Grammar | Covers | Located in |
 |---------|--------|------------|
 | Root `grammar.js` | `.description` manifests and `.type` declarations | `grammar.js`, `src/` |
 | `behavior/grammar.js` | `.behavior` behavior files | `behavior/grammar.js`, `behavior/src/` |
 
-Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. The language specification lives in [`language.md`](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md); this package is the executable implementation of that spec.
+Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. The language specification lives in [`language.md`](https://github.com/dot-agent-spec/dot-agent-spec/blob/main/dsl/language.md); this package is the executable implementation of that spec.
 
 ---
 
@@ -125,7 +125,7 @@ on intent "confirmed" transition to next_state
 3. Regenerate: `npx tree-sitter generate`
 4. Add a corpus test case in `test/corpus/` illustrating the new syntax
 5. Update `queries/highlights.scm` with appropriate capture names
-6. If this represents a spec change, update [`language.md`](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) in the `dot-agent` repo
+6. If this represents a spec change, update [`language.md`](https://github.com/dot-agent-spec/dot-agent-spec/blob/main/dsl/language.md) in the `dot-agent` repo
 
 ---
 
@@ -163,8 +163,8 @@ The Apache 2.0 header text:
 
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) |
-| Example agent files | [examples/](https://github.com/daniloborges/dot-agent/tree/main/examples) |
-| VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
-| Language server (LSP) | [language-server](https://github.com/daniloborges/language-server) |
-| WASM execution engine | [dot-agent-kernel](https://github.com/daniloborges/dot-agent-kernel) |
+| Language specification | [language.md](https://github.com/dot-agent-spec/dot-agent-spec/blob/main/dsl/language.md) |
+| Example agent files | [examples/](https://github.com/dot-agent-spec/dot-agent-spec/tree/main/examples) |
+| VS Code extension | [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) |
+| Language server (LSP) | [language-server](https://github.com/dot-agent-spec/language-server) |
+| WASM execution engine | [dot-agent-kernel](https://github.com/dot-agent-spec/dot-agent-kernel) |

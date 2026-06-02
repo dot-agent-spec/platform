@@ -1,5 +1,5 @@
 {
-  "name": "@dot-agent/tree-sitter-agent",
+  "name": "@dot-agent/tree-sitter",
   "version": "0.2.0",
   "description": "Tree-sitter grammars for the Agent DSL (.description / .type / .behavior)",
   "main": "index.js",
@@ -18,11 +18,11 @@
   "author": "Danilo Borges <contato@daniloborg.es>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daniloborges/tree-sitter-agent.git"
+    "url": "https://github.com/dot-agent-spec/tree-sitter.git"
   },
-  "homepage": "https://github.com/daniloborges/tree-sitter-agent#readme",
+  "homepage": "https://github.com/dot-agent-spec/tree-sitter#readme",
   "bugs": {
-    "url": "https://github.com/daniloborges/tree-sitter-agent/issues"
+    "url": "https://github.com/dot-agent-spec/tree-sitter/issues"
   },
   "keywords": ["tree-sitter", "agent", "dsl", "parser", "grammar"],
   "scripts": {

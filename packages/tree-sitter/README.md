@@ -1,8 +1,8 @@
-# tree-sitter-agent
+# tree-sitter
 
 Tree-sitter grammars for the Agent DSL — `.description` manifests, `.type` declarations, and `.behavior` behavior files.
 
-Part of the [dot-agent](https://github.com/daniloborges/dot-agent) ecosystem.
+Part of the [dot-agent](https://github.com/dot-agent-spec/dot-agent) ecosystem.
 
 ---
 
@@ -21,14 +21,14 @@ Part of the [dot-agent](https://github.com/daniloborges/dot-agent) ecosystem.
 
 **Neovim** — use `nvim-treesitter`. Add the parser path to your `parser-install-dir` or use the local build directly.
 
-**VS Code** — install the [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) extension. Tree-sitter here powers diagnostics via the [language server](https://github.com/daniloborges/language-server); the extension also bundles a `.tmLanguage.json` for syntax highlighting.
+**VS Code** — install the [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) extension. Tree-sitter here powers diagnostics via the [language server](https://github.com/dot-agent-spec/language-server); the extension also bundles a `.tmLanguage.json` for syntax highlighting.
 
 ---
 
 ## Package structure
 
 ```
-tree-sitter-agent/
+tree-sitter/
 ├── index.js              ← entry point — exports WASM paths
 ├── grammar.js            ← .description / .type grammar
 ├── tree-sitter.json      ← grammar scope declarations
@@ -73,7 +73,7 @@ Re-run `generate` every time you edit `grammar.js`. See [CONTRIBUTING.md](CONTRI
 The package ships pre-compiled WebAssembly parsers for use in JavaScript environments (browser, Node.js, Deno):
 
 ```js
-const { agentWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter-agent');
+const { agentWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter');
 // agentWasmPath    → absolute path to dist/tree-sitter-agent.wasm
 // behaviorWasmPath → absolute path to dist/tree-sitter-behavior.wasm
 ```
@@ -125,11 +125,11 @@ npx tree-sitter test --filter "type simples"
 
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/daniloborges/dot-agent/blob/main/dsl/language.md) |
-| Example agent files | [examples/](https://github.com/daniloborges/dot-agent/tree/main/examples) |
-| VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
-| Language server (LSP) | [language-server](https://github.com/daniloborges/language-server) |
-| WASM execution engine | [dot-agent-kernel](https://github.com/daniloborges/dot-agent-kernel) |
+| Language specification | [language.md](https://github.com/dot-agent-spec/dot-agent/blob/main/dsl/language.md) |
+| Example agent files | [examples/](https://github.com/dot-agent-spec/dot-agent/tree/main/examples) |
+| VS Code extension | [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) |
+| Language server (LSP) | [language-server](https://github.com/dot-agent-spec/language-server) |
+| WASM execution engine | [dot-agent-kernel](https://github.com/dot-agent-spec/dot-agent-kernel) |
 
 ---
 

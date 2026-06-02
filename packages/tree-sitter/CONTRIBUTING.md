@@ -1,4 +1,4 @@
-# Contributing to tree-sitter-agent
+# Contributing to tree-sitter
 
 ---
 
@@ -136,4 +136,4 @@ This creates `~/.config/tree-sitter/config.json`. Add the **parent directory** o
 }
 ```
 
-Tree-sitter finds `tree-sitter-agent` inside that directory because `package.json` declares `"name": "tree-sitter-agent"`.
+Tree-sitter finds `tree-sitter-agent` inside that directory because `package.json` declares `"name": "tree-sitter"`.
