@@ -20,7 +20,7 @@ const { LanguageClient, TransportKind } = require('vscode-languageclient/node');
 
 // ─── Graph helpers ────────────────────────────────────────────────────────────
 
-function parseFlowForGraph(text) {
+function parseBehaviorForGraph(text) {
     const states = [];
     const transitions = [];
     const entryPoints = [];
@@ -35,7 +35,7 @@ function parseFlowForGraph(text) {
         const eventM = seg.match(/^on\s+event\s+"([^"]+)"/);
         if (stateM) {
             const from = stateM[1];
-            const nextRe = /\bnext\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/g;
+            const nextRe = /\btransition\s+to\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/g;
             let n;
             while ((n = nextRe.exec(seg)) !== null) {
                 if (!transitions.find(t => t.from === from && t.to === n[1])) {
@@ -99,7 +99,7 @@ let client;
 
 function activate(context) {
     // ── Language Client (LSP) ───────────────────────────────────────────────
-    const serverModule = context.asAbsolutePath(path.join('node_modules', 'agent-dsl-language-server', 'server.js'));
+    const serverModule = context.asAbsolutePath(path.join('node_modules', '@dot-agent', 'language-server', 'server.js'));
     client = new LanguageClient(
         'agentDsl',
         'Agent & Flow DSL Language Server',
@@ -110,7 +110,7 @@ function activate(context) {
         {
             documentSelector: [
                 { scheme: 'file', language: 'agent' },
-                { scheme: 'file', language: 'flow' },
+                { scheme: 'file', language: 'behavior' },
             ],
         }
     );
@@ -121,7 +121,7 @@ function activate(context) {
     context.subscriptions.push(statusBar);
 
     function updateStatusBar(editor) {
-        if (!editor || editor.document.languageId !== 'flow') { statusBar.hide(); return; }
+        if (!editor || editor.document.languageId !== 'behavior') { statusBar.hide(); return; }
         const text = editor.document.getText();
         const offset = editor.document.offsetAt(editor.selection.active);
         const before = text.slice(0, offset);
@@ -133,7 +133,7 @@ function activate(context) {
         }
         if (stateName) {
             statusBar.text = `$(symbol-class) ${stateName}`;
-            statusBar.tooltip = `Current flow state: ${stateName}`;
+            statusBar.tooltip = `Current behavior state: ${stateName}`;
             statusBar.show();
         } else {
             statusBar.hide();
@@ -150,26 +150,26 @@ function activate(context) {
     let graphPanel = null;
 
     function refreshGraph(text) {
-        if (graphPanel) graphPanel.webview.html = getGraphHtml(generateMermaid(parseFlowForGraph(text)));
+        if (graphPanel) graphPanel.webview.html = getGraphHtml(generateMermaid(parseBehaviorForGraph(text)));
     }
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('flow.openGraph', () => {
+        vscode.commands.registerCommand('behavior.openGraph', () => {
             const editor = vscode.window.activeTextEditor;
-            if (!editor || editor.document.languageId !== 'flow') {
-                vscode.window.showWarningMessage('Open a .flow file to view its graph.');
+            if (!editor || editor.document.languageId !== 'behavior') {
+                vscode.window.showWarningMessage('Open a .behavior file to view its graph.');
                 return;
             }
             if (graphPanel) {
                 graphPanel.reveal(vscode.ViewColumn.Beside);
             } else {
-                graphPanel = vscode.window.createWebviewPanel('flowGraph', 'Flow Graph', vscode.ViewColumn.Beside, { enableScripts: true });
+                graphPanel = vscode.window.createWebviewPanel('behaviorGraph', 'Behavior Graph', vscode.ViewColumn.Beside, { enableScripts: true });
                 graphPanel.onDidDispose(() => { graphPanel = null; }, null, context.subscriptions);
             }
             refreshGraph(editor.document.getText());
         }),
         vscode.workspace.onDidSaveTextDocument(doc => {
-            if (doc.languageId === 'flow') refreshGraph(doc.getText());
+            if (doc.languageId === 'behavior') refreshGraph(doc.getText());
         })
     );
 }

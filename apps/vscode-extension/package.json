@@ -1,27 +1,28 @@
 {
-  "name": "agent-dsl-syntax",
-  "displayName": "Agent & Flow DSL",
-  "description": "Syntax highlighting, hover docs, and snippets for .agent and .flow DSL files",
-  "version": "1.4.0",
-  "publisher": "entelekheia",
+  "name": "vscode-dot-agent",
+  "displayName": ".agent DSL",
+  "description": "Syntax highlighting, hover docs, and snippets for .agent DSL files",
+  "version": "0.2.0",
+  "publisher": "dot-agent",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daniloborges/vscode-dot-agent"
+    "url": "https://github.com/dot-agent-spec/vscode-dot-agent"
   },
   "main": "./extension.js",
   "activationEvents": [
     "onLanguage:agent",
-    "onLanguage:flow"
+    "onLanguage:behavior"
   ],
   "engines": {
     "vscode": "^1.74.0"
   },
   "scripts": {
     "package": "vsce package",
-    "install-ext": "code --install-extension agent-dsl-syntax-*.vsix"
+    "install-ext": "code --install-extension vscode-dot-agent-*.vsix"
   },
   "dependencies": {
-    "agent-dsl-language-server": "github:daniloborges/language-server",
+    "@dot-agent/language-server": "^0.2.0",
+    "@dot-agent/tree-sitter": "^0.2.0",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
@@ -30,20 +31,21 @@
   "categories": [
     "Programming Languages"
   ],
+  "icon": "dot-agent-icon.png",
   "contributes": {
     "commands": [
       {
-        "command": "flow.openGraph",
-        "title": "Flow: Open Graph",
-        "category": "Flow",
+        "command": "behavior.openGraph",
+        "title": "Behavior: Open Graph",
+        "category": "Behavior",
         "icon": "$(type-hierarchy)"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "flow.openGraph",
-          "when": "resourceExtname == .flow",
+          "command": "behavior.openGraph",
+          "when": "resourceExtname == .behavior",
           "group": "navigation"
         }
       ]
@@ -56,7 +58,8 @@
           "agent"
         ],
         "extensions": [
-          ".agent"
+          ".description",
+          ".type"
         ],
         "configuration": "./language-configuration.json",
         "icon": {
@@ -65,31 +68,31 @@
         }
       },
       {
-        "id": "flow",
+        "id": "behavior",
         "aliases": [
-          "Flow",
-          "flow"
+          "Behavior",
+          "behavior"
         ],
         "extensions": [
-          ".flow"
+          ".behavior"
         ],
-        "configuration": "./flow-language-configuration.json",
+        "configuration": "./behavior-language-configuration.json",
         "icon": {
-          "light": "./flow-icon-light.svg",
-          "dark": "./flow-icon.svg"
+          "light": "./behavior-icon-light.svg",
+          "dark": "./behavior-icon.svg"
         }
       }
     ],
     "grammars": [
       {
         "language": "agent",
-        "scopeName": "source.agent",
+        "scopeName": "source.description",
         "path": "./agent.tmLanguage.json"
       },
       {
-        "language": "flow",
-        "scopeName": "source.flow",
-        "path": "./flow.tmLanguage.json"
+        "language": "behavior",
+        "scopeName": "source.behavior",
+        "path": "./behavior.tmLanguage.json"
       }
     ],
     "snippets": [
@@ -98,8 +101,8 @@
         "path": "./snippets.json"
       },
       {
-        "language": "flow",
-        "path": "./flow-snippets.json"
+        "language": "behavior",
+        "path": "./behavior-snippets.json"
       }
     ]
   }

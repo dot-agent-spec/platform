@@ -24,7 +24,7 @@
     "offSide": true
   },
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(state|on event|on intent|if|else|after|parallel)\\b.*$",
+    "increaseIndentPattern": "^\\s*(state|on event|on intent|if|else|on offtopic|after|parallel)\\b.*$",
     "decreaseIndentPattern": "^\\s*$"
   }
 }

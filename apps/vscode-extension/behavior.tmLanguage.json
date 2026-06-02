@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Flow DSL",
-  "scopeName": "source.flow",
+  "name": "Behavior DSL",
+  "scopeName": "source.behavior",
   "patterns": [
     { "include": "#comments" },
     { "include": "#strings" },
@@ -20,16 +20,16 @@
   ],
   "repository": {
     "comments": {
-      "name": "comment.line.double-slash.flow",
+      "name": "comment.line.double-slash.behavior",
       "match": "//.*$"
     },
     "strings": {
-      "name": "string.quoted.double.flow",
+      "name": "string.quoted.double.behavior",
       "begin": "\"",
       "end": "\"",
       "patterns": [
         {
-          "name": "constant.character.escape.flow",
+          "name": "constant.character.escape.behavior",
           "match": "\\\\."
         }
       ]
@@ -37,66 +37,66 @@
     "stateDecl": {
       "match": "^\\s*(state)\\s+([a-zA-Z_][a-zA-Z0-9_.\\-]*)",
       "captures": {
-        "1": { "name": "keyword.control.flow" },
-        "2": { "name": "entity.name.type.flow" }
+        "1": { "name": "keyword.control.behavior" },
+        "2": { "name": "entity.name.type.behavior" }
       }
     },
     "mergeDecl": {
       "match": "^\\s*(merge)\\s+",
       "captures": {
-        "1": { "name": "keyword.control.flow" }
+        "1": { "name": "keyword.control.behavior" }
       }
     },
     "keywords": {
       "patterns": [
         {
-          "name": "keyword.control.flow",
-          "match": "\\b(merge|state|on|if|else|next|after|parallel|run|guide|teach|goal|interact|set|apply|remove)\\b"
+          "name": "keyword.control.behavior",
+          "match": "\\b(merge|state|on|if|else|transition|after|parallel|run|guide|teach|goal|interact|set|apply|remove)\\b"
         }
       ]
     },
     "keywordOperators": {
       "patterns": [
         {
-          "name": "keyword.operator.flow",
-          "match": "\\b(script|subagent|tool|silent|background|each|event|intent|escape|fallback|complete|failed|requiring|prompts|css|html|video|in)\\b"
+          "name": "keyword.operator.behavior",
+          "match": "\\b(script|subagent|tool|silent|background|each|event|intent|offtopic|fallback|complete|failed|requiring|prompts|css|html|video|in|to)\\b"
         }
       ]
     },
     "memoryDomains": {
       "patterns": [
         {
-          "name": "variable.language.flow",
+          "name": "variable.language.behavior",
           "match": "\\b(context|session|worksession|user)\\b"
         }
       ]
     },
     "comparisonOperators": {
-      "name": "keyword.operator.comparison.flow",
+      "name": "keyword.operator.comparison.behavior",
       "match": "==|!=|>=|<=|>|<"
     },
     "assignmentOperators": {
-      "name": "keyword.operator.assignment.flow",
+      "name": "keyword.operator.assignment.behavior",
       "match": "\\+=|-=|(?<![=!<>])=(?!=)"
     },
     "logicalOperators": {
-      "name": "keyword.operator.logical.flow",
+      "name": "keyword.operator.logical.behavior",
       "match": "\\b(and|or)\\b"
     },
     "booleans": {
-      "name": "constant.language.boolean.flow",
+      "name": "constant.language.boolean.behavior",
       "match": "\\b(true|false)\\b"
     },
     "nullLiteral": {
-      "name": "constant.language.null.flow",
+      "name": "constant.language.null.behavior",
       "match": "\\bnull\\b"
     },
     "numbers": {
-      "name": "constant.numeric.flow",
+      "name": "constant.numeric.behavior",
       "match": "-?[0-9]+(\\.[0-9]+)?"
     },
     "identifiers": {
-      "name": "variable.other.flow",
+      "name": "variable.other.behavior",
       "match": "\\b[a-zA-Z_][a-zA-Z0-9_\\-.]*\\b"
     }
   }

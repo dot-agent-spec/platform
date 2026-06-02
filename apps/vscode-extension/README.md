@@ -1,6 +1,6 @@
-# Agent & Flow DSL — VS Code Extension
+# .agent DSL — VS Code Extension
 
-Full IDE support for the **Agent DSL** (`.agent`) and **Flow DSL** (`.flow`) languages used to define autonomous agents and their behavioral state machines.
+Full IDE support for the **.agent DSL** (`.description`, `.type`, `.behavior`) used to define autonomous agents and their behavioral state machines.
 
 ---
 
@@ -27,36 +27,36 @@ Context-aware suggestions as you type:
 
 | Context | Suggestions |
 |---|---|
-| `next ` | All state names declared in the file |
+| `transition to ` | All state names declared in the file |
 | `set ` | Memory domains: `context.`, `session.`, `worksession.`, `user.` |
 | `run ` | `script`, `subagent`, `tool` |
-| `on ` | `event`, `intent`, `escape`, `fallback`, `complete`, `failed` |
-| Line start (unindented) in `.flow` | Top-level keywords: `state`, `merge`, `on event`, … |
-| Line start (indented) in `.flow` | Block keywords: `guide`, `interact`, `next`, `if`, `parallel`, … |
+| `on ` | `event`, `intent`, `offtopic`, `fallback`, `complete`, `failed` |
+| Line start (unindented) in `.behavior` | Top-level keywords: `state`, `merge`, `on event`, … |
+| Line start (indented) in `.behavior` | Block keywords: `guide`, `interact`, `transition`, `if`, `parallel`, … |
 | Line start (unindented) in `.agent` | Manifest keywords: `agent`, `input`, `output`, `type`, … |
 | Indented inside `input`/`output`/`requires`/`capabilities` | Custom types declared in the file |
 
 ### Go-to-Definition
-- **`.flow`** — Ctrl/Cmd+Click on a state name to jump to its `state` declaration.
+- **`.behavior`** — Ctrl/Cmd+Click on a state name to jump to its `state` declaration.
 - **`.agent`** — Ctrl/Cmd+Click on a type name to jump to its `type` declaration.
 
 ### Find All References
 Right-click → "Find All References" on a state or type name to list every occurrence across the file.
 
 ### Rename Symbol (F2)
-- **`.flow`** — Rename a state and all `next` references update automatically.
+- **`.behavior`** — Rename a state and all `transition` references update automatically.
 - **`.agent`** — Rename a type and all references in `input`/`output`/`requires`/`capabilities` update automatically.
 
 ### Document Links
 File references become clickable links — Ctrl/Cmd+Click to open the target file:
-- **`.flow`** — `run script "file.js"`, `run flow "file.flow"`, `guide "file"`, `teach "file"`, `apply css "file"`, etc.
-- **`.agent`** — `behavior file.flow`, `schema file.json`
+- **`.behavior`** — `run script "file.js"`, `run behavior "file.behavior"`, `guide "file"`, `teach "file"`, `apply css "file"`, etc.
+- **`.agent`** — `behavior file.behavior`, `schema file.json`
 
 ### Linting / Diagnostics
 
-**`.flow` files:**
-- **Dangling transition** — `next` pointing to an undeclared state → error (or warning if it looks like an external reference with a dot).
-- **Dead-end interact** — `interact` with no `next` or `on intent/escape` → warning ("will trap the agent").
+**`.behavior` files:**
+- **Dangling transition** — `transition to` pointing to an undeclared state → error (or warning if it looks like an external reference with a dot).
+- **Dead-end interact** — `interact` with no `transition` or `on intent/offtopic` → warning ("will trap the agent").
 
 **`.agent` files:**
 - **Deprecated keywords** — flags obsolete keywords (`do`, `server`, `author`, `version`, etc.) as errors.
@@ -71,7 +71,7 @@ Lightbulb on a diagnostic:
 
 ### Outline (Document Symbols)
 The Outline panel shows:
-- **`.flow`** — states (class icon) and global event observers (`on event: name`).
+- **`.behavior`** — states (class icon) and global event observers (`on event: name`).
 - **`.agent`** — agent declarations and type declarations.
 
 ### Workspace Symbols
@@ -109,7 +109,7 @@ license MIT
 description
   A brief description of what this agent does.
 
-behavior main.flow
+behavior main.behavior
 
 input
   UserMessage "The user's message"
@@ -126,27 +126,27 @@ type UserMessage
   schema schemas/user-message.json
 ```
 
-### `.flow` — Behavioral Flow
+### `.behavior` — Behavioral Flow
 
 ```
 on event "start"
-  next greeting
+  transition to greeting
 
 state greeting
   guide "Welcome! How can I help you today?"
   interact
   on intent "book meeting"
-    next booking
-  on escape
+    transition to booking
+  on offtopic
     guide "Are you sure you want to exit?"
     interact
 
 state booking
   run subagent "BookingAgent"
   on complete
-    next confirmation
+    transition to confirmation
   on failed
-    next greeting
+    transition to greeting
 
 state confirmation
   guide "Your meeting has been booked."
@@ -158,7 +158,7 @@ state confirmation
 
 | Prefix | Description |
 |---|---|
-| `flow` | Scaffold a minimal flow file |
+| `behavior` | Scaffold a minimal behavior file |
 | `state` | State declaration with guide and intent |
 | `on event` | Top-level event trigger |
 | `on intent` | Inline intent trigger |
@@ -166,10 +166,10 @@ state confirmation
 | `run script` / `run subagent` / `run tool` | Run statements |
 | `set` | Memory variable assignment with domain picker |
 | `if` / `ifelse` | Conditional statements |
-| `merge` | Include another flow file |
+| `merge` | Include another behavior file |
 | `after` | Temporal trigger after N prompts |
 | `parallel` | Parallel execution with handlers |
-| `on escape` / `on fallback` | Special state handlers |
+| `on offtopic` / `on fallback` | Special state handlers |
 | `agent` | Full agent declaration scaffold |
 | `type` | Custom type declaration |
 
@@ -180,7 +180,7 @@ state confirmation
 Install from the `.vsix` file:
 
 ```bash
-code --install-extension agent-dsl-syntax-1.4.0.vsix
+code --install-extension vscode-dot-agent-0.2.0.vsix
 ```
 
 Or build from source:

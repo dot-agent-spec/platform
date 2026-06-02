@@ -1,14 +1,14 @@
 {
-  "Flow File": {
-    "prefix": "flow",
+  "Behavior File": {
+    "prefix": "behavior",
     "body": [
       "on event \"${1:start}\"",
-      "  next ${2:initial}",
+      "  transition to ${2:initial}",
       "",
       "state ${2:initial}",
       "  guide \"${3:Welcome message}\"",
       "  interact",
-      "  on intent \"${4:done}\" next ${5:end}",
+      "  on intent \"${4:done}\" transition to${5:end}",
       "",
       "state ${5:end}",
       "  guide \"${6:Goodbye}\""
@@ -21,7 +21,7 @@
       "state ${1:name}",
       "  guide \"${2:}\"",
       "  interact",
-      "  on intent \"${3:intent}\" next ${4:next_state}"
+      "  on intent \"${3:intent}\" transition to${4:next_state}"
     ],
     "description": "Declare a new state"
   },
@@ -29,14 +29,14 @@
     "prefix": "on event",
     "body": [
       "on event \"${1:event_name}\"",
-      "  next ${2:initial_state}"
+      "  transition to${2:initial_state}"
     ],
     "description": "Top-level event trigger"
   },
   "Intent Trigger": {
     "prefix": "on intent",
     "body": [
-      "on intent \"${1:intent text}\" next ${2:state_name}"
+      "on intent \"${1:intent text}\" transition to${2:state_name}"
     ],
     "description": "Intent trigger (inline transition)"
   },
@@ -97,9 +97,9 @@
   "Merge File": {
     "prefix": "merge",
     "body": [
-      "merge \"${1:file.flow}\""
+      "merge \"${1:file.behavior}\""
     ],
-    "description": "Merge another flow file (preamble)"
+    "description": "Merge another behavior file (preamble)"
   },
   "After Prompts": {
     "prefix": "after",
@@ -122,14 +122,14 @@
     ],
     "description": "Parallel execution with completion handlers"
   },
-  "On Escape": {
-    "prefix": "on escape",
+  "On Offtopic": {
+    "prefix": "on offtopic",
     "body": [
-      "on escape",
+      "on offtopic",
       "  guide \"${1:Are you sure you want to exit?}\"",
       "  interact"
     ],
-    "description": "Escape / cancel handler"
+    "description": "Offtopic handler"
   },
   "On Fallback": {
     "prefix": "on fallback",
