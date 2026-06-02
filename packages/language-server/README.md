@@ -1,21 +1,21 @@
 # Agent DSL Language Server
 
-A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/) server for the **Agent DSL** (`.agent`) and **Flow DSL** (`.flow`) file formats. Shared by the VS Code and Zed extensions.
+A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/) server for the **.agent DSL** (`.description`, `.type`, `.behavior`) files. Shared by the VS Code and Zed extensions.
 
 ## Features
 
-| Capability | `.agent` | `.flow` |
+| Capability | `.agent` | `.behavior` |
 |---|---|---|
 | **Hover** | Keyword documentation | Keyword documentation |
 | **Completion** | Manifest keywords, custom types | Keywords, state names, memory domains (`context.`, `session.`, …) |
-| **Diagnostics** | Deprecated keywords, strict block lint, undeclared types | Dangling `next` transitions, dead-end `interact` |
-| **Go-to-Definition** | Type name → `type` declaration | `next stateName` → `state` declaration |
-| **Find References** | All uses of a type | All `next` references to a state |
-| **Rename** | Type and its references | State and all `next` references |
+| **Diagnostics** | Deprecated keywords, strict block lint, undeclared types | Dangling `transition` targets, dead-end `interact` |
+| **Go-to-Definition** | Type name → `type` declaration | `transition to stateName` → `state` declaration |
+| **Find References** | All uses of a type | All `transition` references to a state |
+| **Rename** | Type and its references | State and all `transition` references |
 | **Document Symbols** | Agents, types | States, `on event` observers |
 | **Formatting** | 0 / 2-space indentation | 0 / 2 / 4-space indentation by block depth |
 
-> The VS Code extension adds two capabilities on top: **Flow Graph** (Mermaid state diagram WebView) and **status bar** (current state indicator). Those are VS Code-specific and live in [`extension.js`](https://github.com/daniloborges/vscode-dot-agent/blob/main/extension.js).
+> The VS Code extension adds two capabilities on top: **Behavior Graph** (Mermaid state diagram WebView) and **status bar** (current state indicator). Those are VS Code-specific and live in [`extension.js`](https://github.com/daniloborges/vscode-dot-agent/blob/main/extension.js).
 
 ## Architecture
 
@@ -84,7 +84,7 @@ if not configs.agent_dsl then
   configs.agent_dsl = {
     default_config = {
       cmd = { 'node', '/path/to/language-server/server.js', '--stdio' },
-      filetypes = { 'agent', 'flow' },
+      filetypes = { 'agent', 'behavior' },
       root_dir = lspconfig.util.root_pattern('.git'),
     },
   }
@@ -101,7 +101,7 @@ name = "agent"
 language-servers = ["agent-dsl-lsp"]
 
 [[language]]
-name = "flow"
+name = "behavior"
 language-servers = ["agent-dsl-lsp"]
 
 [language-server.agent-dsl-lsp]
@@ -146,8 +146,8 @@ node -e "
 const { initParsers, parse, nodesOfType } = require('./parser');
 (async () => {
   await initParsers();
-  const text = require('fs').readFileSync('../examples/doctor/doctor.flow', 'utf8');
-  const tree = parse('f', 'flow', text, 1);
+  const text = require('fs').readFileSync('../examples/doctor/doctor.behavior', 'utf8');
+  const tree = parse('f', 'behavior', text, 1);
   console.log(nodesOfType(tree, 'state_decl').map(n => n.childForFieldName('name').text));
 })();
 "
@@ -158,9 +158,9 @@ const { initParsers, parse } = require('./parser');
 const { diagnose } = require('./features/diagnostics');
 (async () => {
   await initParsers();
-  const text = 'state greeting\n  interact\n  next missing\n';
-  const tree = parse('f', 'flow', text, 1);
-  console.log(diagnose('flow', tree, text));
+  const text = 'state greeting\n  interact\n  transition to missing\n';
+  const tree = parse('f', 'behavior', text, 1);
+  console.log(diagnose('behavior', tree, text));
 })();
 "
 ```

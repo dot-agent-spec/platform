@@ -30,7 +30,7 @@ function provideRenameEdits(langId, tree, text, uri, position, newName) {
         edits.push({ range: nodeToRange(node), newText: newName });
     }
 
-    if (langId === 'flow') {
+    if (langId === 'behavior') {
         // Rename state declarations
         for (const n of nodesOfType(tree, 'state_decl')) {
             const nameNode = n.childForFieldName('name');

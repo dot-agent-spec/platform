@@ -16,10 +16,10 @@
 
 'use strict';
 
-const BLOCK_HEADERS = /^(on\s+(intent|escape|fallback|complete|failed)|if|else|after|parallel)\b/;
+const BLOCK_HEADERS = /^(on\s+(intent|offtopic|fallback|complete|failed)|if|else|after|parallel)\b/;
 const TOP_LEVEL_LINE = /^(state|merge)\s|^on\s+event\b/;
 
-function formatFlow(text) {
+function formatBehavior(text) {
     const edits = [];
     const lines = text.split('\n');
     let mode = 'PREAMBLE'; // PREAMBLE | STATE_BODY | NESTED_BODY
@@ -72,7 +72,7 @@ function formatAgent(text) {
 }
 
 function format(langId, text) {
-    if (langId === 'flow') return formatFlow(text);
+    if (langId === 'behavior') return formatBehavior(text);
     if (langId === 'agent') return formatAgent(text);
     return [];
 }

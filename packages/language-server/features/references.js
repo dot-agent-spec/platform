@@ -30,7 +30,7 @@ function provideReferences(langId, tree, text, uri, position) {
         locations.push({ uri, range: nodeToRange(node) });
     }
 
-    if (langId === 'flow') {
+    if (langId === 'behavior') {
         // Declaration
         for (const n of nodesOfType(tree, 'state_decl')) {
             const nameNode = n.childForFieldName('name');

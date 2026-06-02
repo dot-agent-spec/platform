@@ -1,12 +1,12 @@
 # Agent DSL Language Server — Agent Guidelines
 
-AI collaboration guide for maintaining and evolving the LSP server for `.agent` and `.flow` files.
+AI collaboration guide for maintaining and evolving the LSP server for `.agent DSL` files.
 
 ---
 
 ## What this package is
 
-A standalone [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) server that provides all IDE intelligence for the Agent DSL. It speaks LSP over `stdio` and is shared by the VS Code extension, Zed, Neovim, Helix, and any other LSP-capable editor. The server is intentionally editor-agnostic — no VS Code APIs, no Electron, no DOM.
+A standalone [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) server that provides all IDE intelligence for the .agent DSL. It speaks LSP over `stdio` and is shared by the VS Code extension, Zed, Neovim, Helix, and any other LSP-capable editor. The server is intentionally editor-agnostic — no VS Code APIs, no Electron, no DOM.
 
 All structural analysis is performed on **tree-sitter ASTs** (not regex). `parser.js` owns the WASM parser lifecycle, document cache, and the helper functions that feature modules use to traverse parse trees.
 
@@ -63,16 +63,16 @@ Add shared helpers here — never duplicate tree traversal logic across feature 
 
 ## Key node types
 
-### `.flow` grammar
+### `.behavior` grammar
 
 | Node type | Represents | Useful fields |
 |-----------|-----------|---------------|
 | `state_decl` | `state name block` | `name` (path) |
 | `trigger_decl` | `on event "name" block` | `event` (quoted_string) |
 | `merge_decl` | `merge "file"` | `path` (quoted_string) |
-| `transition_stmt` | `next stateName` | `state` (path) |
-| `intent_trigger` | `on intent "text" (next state \| block)` | `intent`, `state` (inline only), `block` |
-| `escape_stmt` | `on escape block` | `block` |
+| `transition_stmt` | `transition to stateName` | `state` (path) |
+| `intent_trigger` | `on intent "text" (transition to state \| block)` | `intent`, `state` (inline only), `block` |
+| `offtopic_stmt` | `on offtopic block` | `block` |
 | `run_stmt` | `run type "target" …` | `run_type`, `target` |
 | `interact_stmt` | `interact [requiring "text"]` | — |
 
@@ -82,12 +82,12 @@ Add shared helpers here — never duplicate tree traversal logic across feature 
 |-----------|-----------|---------------|
 | `agent_decl` | `agent Name …` | `name` (agent_name) |
 | `type_decl` | `type Name …` | `name` (identifier) |
-| `behavior_block` | `behavior file.flow` | `file` (bare_string) |
+| `behavior_block` | `behavior file.behavior` | `file` (bare_string) |
 | `schema_prop` | `schema file.json` | `file` (filename) |
 | `type_ref` | `TypeName` or `ns.TypeName` | first named child = identifier |
 | `input_block` / `output_block` / `requires_block` / `capabilities_block` | strict blocks | contain `typed_item`, `type_reference`, `cap_item` |
 
-> **Known limitation:** `on escape next X` and `on fallback next X` in inline form (no block indent) parse as ERROR nodes in the current grammar. Those transitions are not captured by references/rename/diagnostics. Fix requires updating `escape_stmt` and `fallback_stmt` in `flow/grammar.js` to support the inline form.
+> **Known limitation:** `on offtopic transition to X` and `on fallback transition to X` in inline form (no block indent) parse as ERROR nodes in the current grammar. Those transitions are not captured by references/rename/diagnostics. Fix requires updating `offtopic_stmt` and `fallback_stmt` in `behavior/grammar.js` to support the inline form.
 
 ---
 
@@ -96,9 +96,9 @@ Add shared helpers here — never duplicate tree traversal logic across feature 
 Production dependencies:
 - `vscode-languageserver` and `vscode-languageserver-textdocument` — LSP protocol implementation
 - `web-tree-sitter` — WASM-based tree-sitter runtime
-- `@dot-agent/tree-sitter-agent` — Agent and Flow grammar WASM binaries
+- `@dot-agent/tree-sitter` — Agent and Flow grammar WASM binaries
 
-Do not add framework dependencies, bundlers, or anything that requires a build step on the language-server side. The server must start with a bare `node server.js --stdio` once the WASM binaries are in `@dot-agent/tree-sitter-agent/dist/`.
+Do not add framework dependencies, bundlers, or anything that requires a build step on the language-server side. The server must start with a bare `node server.js --stdio` once the WASM binaries are in `@dot-agent/tree-sitter/dist/`.
 
 The grammar WASM binaries are built by running `npm run build` in the `tree-sitter-agent` package (requires Emscripten). When published to npm, `dist/` is included in the package and no build is needed.
 

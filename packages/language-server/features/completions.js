@@ -19,8 +19,8 @@
 const { CompletionItemKind } = require('vscode-languageserver');
 const { nodesOfType, positionToOffset, getContextNode } = require('../parser');
 
-const FLOW_TOP_KW   = ['state', 'merge', 'on event', 'on intent', 'on escape', 'on fallback'];
-const FLOW_BLOCK_KW = ['guide', 'teach', 'goal', 'interact', 'run', 'next', 'set', 'if', 'else', 'after', 'parallel', 'apply', 'remove', 'on intent', 'on escape', 'on fallback', 'on complete', 'on failed'];
+const BEHAVIOR_TOP_KW   = ['state', 'merge', 'on event', 'on intent', 'on offtopic', 'on fallback'];
+const BEHAVIOR_BLOCK_KW = ['guide', 'teach', 'goal', 'interact', 'run', 'transition', 'set', 'if', 'else', 'after', 'parallel', 'apply', 'remove', 'on intent', 'on offtopic', 'on fallback', 'on complete', 'on failed'];
 const AGENT_TOP_KW  = ['agent', 'domain', 'license', 'terms', 'privacy', 'description', 'behavior', 'requires', 'input', 'capabilities', 'output', 'type', 'concept', 'schema'];
 const STRICT_BLOCKS = new Set(['input_block', 'output_block', 'requires_block', 'capabilities_block']);
 
@@ -43,9 +43,9 @@ function provideCompletions(langId, tree, text, position) {
     const line = lines[position.line] || '';
     const before = line.slice(0, position.character);
 
-    if (langId === 'flow') {
+    if (langId === 'behavior') {
         // Keyword-specific completions: use prefix regex (reliable while typing)
-        if (/\bnext\s+\S*$/.test(before)) {
+        if (/\btransition\s+to\s+\S*$/.test(before)) {
             return nodesOfType(tree, 'state_decl')
                 .map(n => n.childForFieldName('name')?.text)
                 .filter(Boolean)
@@ -59,7 +59,7 @@ function provideCompletions(langId, tree, text, position) {
             return ['script', 'subagent', 'tool'].map(kw);
         }
         if (/\bon\s+\S*$/.test(before)) {
-            return ['event', 'intent', 'escape', 'fallback', 'complete', 'failed'].map(kw);
+            return ['event', 'intent', 'offtopic', 'fallback', 'complete', 'failed'].map(kw);
         }
 
         // Context-aware: top-level vs. inside a block
@@ -67,9 +67,9 @@ function provideCompletions(langId, tree, text, position) {
             const offset = positionToOffset(text, position.line, position.character);
             const ctx = getContextNode(tree, offset);
             const inBlock = !!nearestAncestor(ctx, ['block']);
-            return (inBlock ? FLOW_BLOCK_KW : FLOW_TOP_KW).map(kw);
+            return (inBlock ? BEHAVIOR_BLOCK_KW : BEHAVIOR_TOP_KW).map(kw);
         }
-        return (/^\s/.test(line) ? FLOW_BLOCK_KW : FLOW_TOP_KW).map(kw);
+        return (/^\s/.test(line) ? BEHAVIOR_BLOCK_KW : BEHAVIOR_TOP_KW).map(kw);
     }
 
     if (langId === 'agent') {

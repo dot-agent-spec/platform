@@ -116,7 +116,7 @@ function diagnoseFlow(tree) {
                     ? `State '${target}' is not defined locally (assuming external flow reference).`
                     : `State '${target}' is not defined in this file.`,
                 severity: external ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
-                source: 'flow-dsl',
+                source: 'behavior-dsl',
             });
         }
     }
@@ -139,14 +139,14 @@ function diagnoseFlow(tree) {
 
         const hasNext   = ancestor.descendantsOfType('transition_stmt').length > 0;
         const hasIntent = ancestor.descendantsOfType('intent_trigger').length > 0;
-        const hasEscape = ancestor.descendantsOfType('escape_stmt').length > 0;
+        const hasOfftopic = ancestor.descendantsOfType('offtopic_stmt').length > 0;
 
-        if (!hasNext && !hasIntent && !hasEscape) {
+        if (!hasNext && !hasIntent && !hasOfftopic) {
             diagnostics.push({
                 range: nodeToRange(interactNode),
-                message: "This state calls interact but has no 'next' or 'on intent/escape'. This will trap the agent.",
+                message: "This state calls interact but has no 'transition' or 'on intent/offtopic'. This will trap the agent.",
                 severity: DiagnosticSeverity.Warning,
-                source: 'flow-dsl',
+                source: 'behavior-dsl',
             });
         }
     }
@@ -157,7 +157,7 @@ function diagnoseFlow(tree) {
 function diagnose(langId, tree, text) {
     if (!tree) return [];
     if (langId === 'agent') return diagnoseAgent(tree, text);
-    if (langId === 'flow')  return diagnoseFlow(tree);
+    if (langId === 'behavior')  return diagnoseFlow(tree);
     return [];
 }
 

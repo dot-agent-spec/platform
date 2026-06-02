@@ -25,7 +25,7 @@ function provideDocumentSymbols(langId, tree) {
     if (!tree) return [];
     const symbols = [];
 
-    if (langId === 'flow') {
+    if (langId === 'behavior') {
         for (const node of nodesOfType(tree, 'state_decl')) {
             const nameNode = node.childForFieldName('name');
             if (!nameNode) continue;

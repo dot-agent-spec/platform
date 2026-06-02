@@ -26,7 +26,7 @@ function provideDefinition(langId, tree, text, uri, position) {
 
     let targetNode = null;
 
-    if (langId === 'flow') {
+    if (langId === 'behavior') {
         targetNode = nodesOfType(tree, 'state_decl')
             .find(n => n.childForFieldName('name')?.text === word);
     } else if (langId === 'agent') {

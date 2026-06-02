@@ -52,7 +52,7 @@ function provideDocumentLinks(langId, tree, docUri) {
         }
     }
 
-    if (langId === 'flow') {
+    if (langId === 'behavior') {
         for (const node of nodesOfType(tree, 'merge_decl')) {
             const pathNode = node.childForFieldName('path');
             if (pathNode) addLink(pathNode, pathNode.text);

@@ -1,7 +1,7 @@
 {
   "name": "@dot-agent/language-server",
   "version": "0.2.0",
-  "description": "LSP server for Agent DSL (.agent) and Flow DSL (.flow) files",
+  "description": "LSP server for .agent DSL files",
   "license": "Apache-2.0",
   "author": "Danilo Borges <contato@daniloborg.es>",
   "repository": {
@@ -24,7 +24,7 @@
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
     "web-tree-sitter": "^0.25.0",
-    "@dot-agent/tree-sitter-agent": "file:../tree-sitter-agent"
+    "@dot-agent/tree-sitter": "file:../tree-sitter-agent"
   },
   "publishConfig": {
     "access": "public"

@@ -25,8 +25,8 @@ const AGENT_DOCS = {
     'terms':        '**`terms url`**\n\nLink to the terms of service.',
     'privacy':      '**`privacy url`**\n\nLink to the privacy policy.',
     'description':  '**`description`**\n\nA brief description of the agent, used by the Runtime for semantic indexing.',
-    'behavior':     '**`behavior file.flow`**\n\nThe `.flow` file that manages the state and transitions of this agent.',
-    'requires':     '**`requires Type`**\n\nTypes (native or custom) that the Runtime must ensure exist in context before triggering the `.flow`.',
+    'behavior':     '**`behavior file.behavior`**\n\nThe `.behavior` file that manages the state and transitions of this agent.',
+    'requires':     '**`requires Type`**\n\nTypes (native or custom) that the Runtime must ensure exist in context before triggering the `.behavior`.',
     'input':        '**`input Type`**\n\nThe input data types expected for this agent to operate.',
     'capabilities': '**`capabilities Action`**\n\nThe Actions or capabilities this agent can execute. Also acts as a Sandboxing Contract.',
     'output':       '**`output Type`**\n\nThe data type this agent returns.',
@@ -35,10 +35,10 @@ const AGENT_DOCS = {
     'schema':       '**`schema file.json`**\n\nA JSON schema file for this type.',
 };
 
-const FLOW_DOCS = {
-    'merge':       '**`merge "file.flow"`**\n\nIncludes another `.flow` file. Must appear before any `state` or `on event` declarations (preamble-only, eager loading).',
+const BEHAVIOR_DOCS = {
+    'merge':       '**`merge "file.behavior"`**\n\nIncludes another `.behavior` file. Must appear before any `state` or `on event` declarations (preamble-only, eager loading).',
     'state':       '**`state name`**\n\nDeclares a named state. States contain the logic that runs while the agent is in that state.',
-    'on':          '**`on event|intent|escape|fallback|complete|failed`**\n\nBinds a handler to a trigger. Top-level: `on event`. Inside a state: `on intent`, `on escape`, `on fallback`. After parallel: `on complete`, `on failed`.',
+    'on':          '**`on event|intent|offtopic|fallback|complete|failed`**\n\nBinds a handler to a trigger. Top-level: `on event`. Inside a state: `on intent`, `on offtopic`, `on fallback`. After parallel: `on complete`, `on failed`.',
     'run':         '**`run script|subagent|tool "target"`**\n\nExecutes a script, subagent, or tool. Accepts optional modifiers: `silent`, `in background`, `each collection`.',
     'guide':       '**`guide "text"`**\n\nInjects a system-level instruction into the conversation context, shaping the agent\'s persona or approach without being visible as a reply.',
     'teach':       '**`teach "text"`**\n\nAdds a fact or constraint to the agent\'s working knowledge for the duration of this state.',
@@ -49,7 +49,7 @@ const FLOW_DOCS = {
     'session':     '**`session`** memory domain — persists for the user\'s current session.',
     'worksession': '**`worksession`** memory domain — persists across a task-oriented work session (isolated per task).',
     'user':        '**`user`** memory domain — persists across sessions for a given user.',
-    'next':        '**`next state`**\n\nTransitions immediately to the named state.',
+    'transition':  '**`transition to state`**\n\nTransitions immediately to the named state.',
     'if':          '**`if condition`**\n\nConditional execution. Condition can use `==`, `!=`, `>`, `<`, `>=`, `<=`, `and`, `or`.',
     'else':        '**`else`**\n\nAlternative branch of an `if` statement.',
     'after':       '**`after N prompts`**\n\n[Experimental] Executes a block after N user prompts have occurred in this state.',
@@ -70,7 +70,7 @@ function provideHover(langId, text, position) {
     const word = line.slice(start, end);
     if (!word) return null;
 
-    const docs = langId === 'agent' ? AGENT_DOCS : FLOW_DOCS;
+    const docs = langId === 'agent' ? AGENT_DOCS : BEHAVIOR_DOCS;
     const doc = docs[word];
     if (!doc) return null;
 
