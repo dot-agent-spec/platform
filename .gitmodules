@@ -1,18 +1,18 @@
 [submodule "org-spec"]
 	path = org-spec
 	url = https://github.com/dot-agent-spec/.github.git
-[submodule "dsl/tree-sitter-agent"]
-	path = dsl/tree-sitter-agent
-	url = https://github.com/daniloborges/dot-agent-tree-sitter.git
-[submodule "DSL/zed-agent/grammars/agent"]
+[submodule "dsl/tree-sitter"]
+	path = dsl/tree-sitter
+	url = https://github.com/dot-agent-spec/tree-sitter.git
+[submodule "dsl/zed-agent/grammars/agent"]
 	path = dsl/zed-agent/grammars/agent
-	url = https://github.com/daniloborges/dot-agent-tree-sitter.git
+	url = https://github.com/dot-agent-spec/tree-sitter.git
 [submodule "dsl/language-server"]
 	path = dsl/language-server
-	url = git@github.com:daniloborges/language-server.git
-[submodule "dsl/vscode-extension"]
-	path = dsl/vscode-extension
-	url = git@github.com:daniloborges/vscode-dot-agent.git
-[submodule "dsl/dot-agent-kernel"]
-	path = dsl/dot-agent-kernel
-	url = git@github.com:daniloborges/dot-agent-kernel.git
+	url = https://github.com/dot-agent-spec/language-server.git
+[submodule "dsl/vscode-dot-agent"]
+	path = dsl/vscode-dot-agent
+	url = git@github.com:dot-agent-spec/vscode-dot-agent.git
+[submodule "dsl/kernel-dsl"]
+	path = dsl/kernel-dsl
+	url = git@github.com:dot-agent-spec/kernel-dsl.git
