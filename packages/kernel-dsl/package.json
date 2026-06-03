@@ -53,8 +53,8 @@
     "node": ">=16.0.0"
   },
   "scripts": {
-    "build": "wasm-pack build --target bundler",
-    "build:release": "wasm-pack build --target bundler --release",
+    "build": "./scripts/build-wasm.sh",
+    "build:release": "RELEASE=true ./scripts/build-wasm.sh",
     "patch": "node -e \"const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel-dsl';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')\"",
     "prepublishOnly": "npm run build:release && npm run patch"
   },

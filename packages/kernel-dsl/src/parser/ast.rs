@@ -12,53 +12,107 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct BehaviorFile {
+    #[serde(default, rename = "merges")]
     pub merges: Vec<String>,
+    #[serde(default, rename = "global_triggers")]
     pub global_triggers: Vec<TriggerDecl>,
+    #[serde(default, rename = "states")]
     pub states: Vec<StateDef>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct TriggerDecl {
     pub event: String,
     pub body: Vec<Statement>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct StateDef {
     pub name: String,
     pub body: Vec<Statement>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Statement {
-    Goal(String),
-    Guide(String),
-    Teach(String),
+    #[serde(rename = "goal_stmt")]
+    Goal { text: String },
+    #[serde(rename = "guide_stmt")]
+    Guide { text: String },
+    #[serde(rename = "teach_stmt")]
+    Teach { text: String },
+    #[serde(rename = "interact_stmt")]
     Interact,
-    Transition(String),
+    #[serde(rename = "transition_stmt")]
+    Transition {
+        #[serde(rename = "state")]
+        target: String,
+    },
+    #[serde(rename = "intent_trigger")]
     OnIntent { intent: String, body: IntentBody },
-    OnOfftopic(Vec<Statement>),
-    OnFallback(Vec<Statement>),
+    #[serde(rename = "offtopic_stmt")]
+    OnOfftopic { body: Vec<Statement> },
+    #[serde(rename = "fallback_stmt")]
+    OnFallback { body: Vec<Statement> },
+    #[serde(rename = "after_stmt")]
     After { prompts: u32, body: Vec<Statement> },
+    #[serde(rename = "run_stmt")]
     Run(RunStmt),
-    Set { path: MemoryPath, op: AssignOp, value: Expr },
-    If { condition: Condition, then_body: Vec<Statement>, else_body: Option<Vec<Statement>> },
-    Apply { kind: MediaKind, value: String },
-    Remove { kind: MediaKind, value: String },
+    #[serde(rename = "memory_stmt")]
+    Set {
+        #[serde(rename = "target")]
+        path: MemoryPath,
+        #[serde(rename = "op")]
+        op: AssignOp,
+        #[serde(rename = "value")]
+        value: Expr
+    },
+    #[serde(rename = "conditional_stmt")]
+    If {
+        condition: Condition,
+        #[serde(rename = "then")]
+        then_body: Vec<Statement>,
+        #[serde(rename = "else")]
+        else_body: Option<Vec<Statement>>
+    },
+    #[serde(rename = "apply_stmt")]
+    Apply {
+        #[serde(rename = "target")]
+        kind: MediaKind,
+        #[serde(rename = "text")]
+        value: String,
+    },
+    #[serde(rename = "remove_stmt")]
+    Remove {
+        #[serde(rename = "target")]
+        kind: MediaKind,
+        #[serde(rename = "text")]
+        value: String,
+    },
+    #[serde(rename = "parallel_stmt")]
     Parallel(Vec<Statement>),
-    OnComplete(Vec<Statement>),
-    OnFailed(Vec<Statement>),
+    #[serde(rename = "on_complete_stmt")]
+    OnComplete { body: Vec<Statement> },
+    #[serde(rename = "on_failed_stmt")]
+    OnFailed { body: Vec<Statement> },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum IntentBody {
     Next(String),
     Block(Vec<Statement>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct RunStmt {
     pub kind: RunKind,
     pub target: String,
@@ -67,13 +121,15 @@ pub struct RunStmt {
     pub each: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct MemoryPath {
     pub domain: MemoryDomain,
     pub key: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MemoryDomain {
     Context,
     Session,
@@ -92,61 +148,78 @@ impl MemoryDomain {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RunKind {
     Script,
     Subagent,
     Tool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RunModifier {
     Silent,
     Background,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AssignOp {
+    #[serde(rename = "=")]
     Assign,
+    #[serde(rename = "+=")]
     AddAssign,
+    #[serde(rename = "-=")]
     SubAssign,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MediaKind {
     Css,
     Html,
     Video,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Condition {
     pub parts: Vec<(Option<LogicalOp>, Expr)>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LogicalOp {
     And,
     Or,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Expr {
     Value(Value),
     Compare { left: Value, op: CompareOp, right: Value },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum CompareOp {
+    #[serde(rename = "==")]
     Eq,
+    #[serde(rename = "!=")]
     Ne,
+    #[serde(rename = ">")]
     Gt,
+    #[serde(rename = "<")]
     Lt,
+    #[serde(rename = ">=")]
     Gte,
+    #[serde(rename = "<=")]
     Lte,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Value {
     Str(String),
     Number(f64),

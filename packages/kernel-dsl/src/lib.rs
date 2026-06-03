@@ -14,7 +14,7 @@
 
 mod effect;
 mod engine;
-mod parser;
+pub mod parser;
 
 use engine::AgentDSLKernel as Inner;
 use js_sys::Function;
