@@ -1,8 +1,8 @@
-# dot-agent DSL & Tree-sitter
+# .agent DSL & Tree-sitter
 
 Canonical grammars and specification for the .agent DSL ecosystem — `.description` manifests, `.type` declarations, and `.behavior` files.
 
-Part of the [dot-agent](https://github.com/dot-agent-spec/dot-agent) ecosystem.
+Part of the [dot-agent](https://github.com/dot-agent-spec) ecosystem.
 
 ---
 

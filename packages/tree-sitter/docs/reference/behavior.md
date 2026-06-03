@@ -1,152 +1,72 @@
 # The Behavior (.behavior)
 
-The `.behavior` file defines the agent's logic, state machine, and interaction flow.
+The `.behavior` file defines an agent's logic through a deterministic state machine.
 
-## 1. Runtime vs. User Scope
+## 1. Scope & Standard States
 
-`.behavior` divides responsibility between what the engine enforces and what the agent developer declares.
+The Runtime enforces a boundary between managed infrastructure and agent-defined logic.
 
-**Closed scope (managed by the Runtime, not writable by the user):**
-- `compaction_threshold` — local context window management
-- `permissions` — access control to filesystem, network, MCP servers
-- Built-in variables: `session.is_first_time`, `session.prompt_count`
-- Native states: `online`, `offline`, `ended`
+### 1.1 Runtime Scope (Managed)
+Systemic variables and states handled by the engine:
+- **Variables**: `session.is_first_time`, `session.prompt_count`.
+- **Infrastructure**: `compaction_threshold`, sandbox permissions.
+- **Native States**: `online`, `offline`, `ended`.
 
-**Declarative scope (written in `.behavior`):**
-- Overriding `init`, `onboarding`, and the default `responsive` state
-- Creating arbitrary business states (e.g., `phases.planning`)
-- Deterministic orchestration: tools, subagents, scripts, conditional evaluation
+### 1.2 Declarative Scope (Customizable)
+Developers can create arbitrary states or override standard entry points:
+- **Standard States**: `init`, `onboarding`, and the default `responsive` state.
+- **Business States**: Custom states like `phases.planning` or `reservation`.
 
 ## 2. Memory Domains
 
-`.behavior` tracks state across four semantic scopes:
+Memory is scoped into four domains with distinct lifetimes:
 
-| Domain | Lifetime | Use |
+| Domain | Lifetime | Use Case |
 |---|---|---|
-| `context` | Current LLM turn | Active working memory for the model |
-| `session` | Current conversation thread | Cross-turn conversation state |
-| `worksession` | Current work unit | Task-scoped data |
-| `user` | Long-term, persistent | User preferences and history |
+| `context` | Current turn | Active working memory for the LLM. |
+| `session` | Conversation thread | Persistent data across turns in a thread. |
+| `worksession` | Work unit | Data scoped to a specific task or objective. |
+| `user` | Permanent | Long-term user preferences and history. |
 
-```flow
-set context.active_phase   = "planning"   // cleared after this turn
-set session.has_context    = true         // cleared when thread closes
-set worksession.phase      = "review"     // cleared when work unit ends
-set user.language          = "pt-br"      // persists across all conversations
-```
+## 2. State Anatomy
 
-## 3. Flow Composition via `merge`
+Every state follows one of two rigid structures to ensure predictability.
 
-`.behavior` files can include states from other `.behavior` files using `merge`:
+### 2.1 Oriented State (LLM Interaction)
+Guides the LLM before releasing it to generate a response.
+- **Structure**: `goal?` → `guide?` → `teach*` → `interact` → `handler+`
+- **Keywords**:
+  - `goal "..."`: Objective injected into message context.
+  - `guide "..."`: Behavioral instructions in message context.
+  - `teach "..."`: Injected into LLM's reusable cache (not context).
+  - `interact`: Mandatory; awaits LLM response and dispatches to a handler.
 
-```flow
-// preamble — before any state declaration
-merge "phases/planning.behavior"
-merge "phases/review.behavior"
+### 2.2 Setup State (Orchestration Only)
+Pure orchestration without LLM interaction. orientation and interaction keywords are **forbidden**.
+- **Actions**: `run`, `set`, `apply`, `remove`, `transition`, `if`, `after`, `parallel`.
 
-state responsive
-  interact
-  on intent "planning" transition to phases.planning.start
-  on intent "review"   transition to phases.review.start
-```
+## 3. Flow Control
 
-`merge` is **preamble-only**: it must appear at the top of the file, before any `state` declaration. It is resolved at compile time (eager). All states from the merged file enter the **same flat namespace** as if they had been written inline — there is no state hierarchy at runtime.
+### 3.1 Handlers (Post-Interaction)
+Handlers route the LLM's response. They can be **inline** or use a **block**.
 
-## 4. State Anatomy
+| Trigger | Description |
+|---|---|
+| `on intent "..."` | Matches LLM-interpreted user intent. |
+| `on fallback` | Triggered if actions/subagents fail or are unavailable. |
+| `on offtopic` | Triggered if user conversation drifts from the state's goal. |
 
-Every `.behavior` state is one of two types: **oriented** (with LLM interaction) or **setup** (pure orchestration).
+### 3.2 Actions & Composition
+- **`run <type> <target> [label] [modifiers]`**: Types: `script`, `subagent`, `tool`. Modifiers: `silent`, `in background`.
+- **`apply/remove <target> <file>`**: Modifies UI. Targets: `css`, `html`, `video`.
+- **`merge "path"`**: Preamble only. Imports states from another file into the flat namespace.
 
-### Oriented State
+## 4. Design Principles
 
-An oriented state guides the LLM before releasing it to respond. The structure is strict:
+- **Flat Hierarchy**: No nested states. Use `merge` for composition.
+- **Procedural Guards**: `if/else` logic lives inside states, not as entry predicates.
+- **Entry-Only Actions**: No "exit actions"; the LLM is stateless across turns.
+- **Global Observers**: Use `on event` at the top level for background signals.
 
-```flow
-state car_search
-  goal "Help the user find available cars"
-  guide "Ask about destination, dates, and vehicle preferences."
-  teach "premium_features.md"
-  interact
-  on intent "select_car" transition to reservation
-  on fallback
-    transition to responsive
-```
-
-**Semantics:**
-
-- **`goal "..."`** — injected into the **message context**: the objective the LLM should accomplish.
-- **`guide "..."`** — injected into the **message context**: behavioral instructions for this interaction.
-- **`teach "..."`** — fills the LLM's **reusable cache** (e.g., markdown knowledge files). Persistent across turns for this state.
-- **`interact`** — mandatory after orientation; releases LLM control to generate a response.
-- **`handler+` (≥1 required)** — `on intent`, `on fallback`, `on offtopic` after interact. Prevents FSM deadlock.
-
-### Setup State
-
-A setup state performs pure orchestration without LLM interaction:
-
-```flow
-state prepare_data
-  run script "fetch_available_cars.sh"
-  set context.cars = payload
-  transition to car_search
-```
-
-**No keywords inside setup states:** `goal`, `guide`, `teach`, `interact` are forbidden. Only actions: `run`, `set`, `apply`, `remove`, `transition`, and control flow (`if`, `after`, `parallel`).
-
-## 5. Handler Statements
-
-Handlers are the **case statements** of the state machine. They execute *after* `interact` to route the LLM's response.
-
-| Handler | Trigger | Must provide |
-|---|---|---|
-| `on intent "phrase"` | LLM-interpreted user intent matching the phrase | A block or `transition to` |
-| `on fallback` | Runtime cannot resolve required actions | A block or `transition to` |
-| `on offtopic` | User conversation drifts from current task | A block or `transition to` |
-
-Handlers can be inline for simple transitions:
-```flow
-on intent "confirm" transition to payment
-on fallback transition to support
-```
-Or use a block for multiple actions:
-```flow
-on intent "retry"
-  set session.retries += 1
-  transition to retry_state
-```
-
-## 6. Actions
-
-### Run
-Executes a script, subagent, or tool. Supports optional labels for UI display and modifiers for execution mode.
-
-```flow
-run script "process.sh" "Processing data..."
-run subagent "analyst" silent
-run tool "search" in background
-```
-
-### UI Manipulation
-The `apply` and `remove` statements allow the agent to modify the UI environment:
-
-```flow
-state show_results
-  apply html "results_table.html"
-  apply css "styles.css"
-  interact
-  on intent "close"
-    remove html "results_table.html"
-    transition to responsive
-```
-
-Supported targets: `css`, `html`, `video`.
-
-## 7. Design Philosophy
-
-- **Flat states only — no hierarchical nesting.**
-- **Procedural guards — not declarative.** `if / else` inside a state.
-- **Entry actions only — no exit actions.**
-- **Global observers replace orthogonal states.** `on event` at top level.
-
-## 8. IDE Tooling
-
-Any IDE or tooling implementing `.behavior` support **must** resolve file paths in string literals that follow standard actions (e.g., `merge`, `run script`, `guide`, `teach`). These should be rendered as clickable document links.
+## 5. Tooling Requirements
+IDE support **must** resolve file paths in `merge`, `run`, `guide`, and `teach` as clickable links relative to the workspace root.

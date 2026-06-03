@@ -1,44 +1,43 @@
-# Type System and Namespaces
+# Type System & Namespaces
 
-## 1. Custom Types
+The .agent DSL uses explicit type contracts to ensure deterministic data flow between agents.
 
-Whenever an agent uses data that doesn't exist in Schema.org, the type must be declared with `type`. The declaration is a **hard contract** for the Runtime — the LLM never attempts to infer the structure of a custom type.
+## 1. Custom Type Declaration
+
+Custom types are defined using the `type` keyword. These act as hard contracts—the Runtime never infers structure.
 
 ```
 type BankStatement
-  concept https://www.wikidata.org/wiki/Q806653 ("Bank account statement")
+  concept https://www.wikidata.org/wiki/Q806653 ("Bank statement")
   account: Person      "Account holder"
   transactions: [Transaction]
-  balance: Number
-  status: Enum(active, closed, suspended)
-  avatar?: ImageObject "Holder photo (optional)"
+  status: Enum(active, closed)
+  avatar?: ImageObject
 ```
 
-**Keywords inside `type`:**
+### 1.1 Keywords & Properties
 
 | Keyword | Function |
 |---|---|
-| `concept` | Wikidata or Schema.org URL anchoring semantic meaning globally. |
-| `schema` | (Optional) Strict JSON Schema file for validation: `schema bankstatement.json` |
+| **`concept`** | Semantic URI (Wikidata/Schema.org) + optional parenthesized label. |
+| **`schema`** | (Optional) Path to a JSON Schema file for strict validation. |
 
-**Property value forms:**
+### 1.2 Property Forms
 
-| Form | Example | Semantics |
+| Form | Syntax | Description |
 |---|---|---|
-| Simple reference | `account: Person` | Single type |
-| Array | `transactions: [Transaction]` | Typed list |
-| Enum | `status: Enum(active, closed)` | Closed set of literals |
-| Optional | `avatar?: ImageObject` | `?` marks the field as optional |
-| With description | `account: Person "Holder"` | Quoted string documents the property |
+| **Simple** | `name: Type` | Single value reference. |
+| **Array** | `name: [Type]` | Ordered list of types. |
+| **Enum** | `name: Enum(a, b)` | Fixed set of literal values. |
+| **Optional** | `name?: Type` | Marks the property as optional via `?`. |
+| **Doc** | `name: Type "desc"` | Quoted string for property documentation. |
 
 ## 2. Namespace Resolution
 
-Types without a namespace are resolved by the Runtime in the following precedence order:
+Types are resolved using **absolute shadowing** in the following precedence:
 
-1. **Custom** — `type` declarations in the agent's own package (absolute precedence)
-2. **Standard Library** — `std.*` (pre-defined types in the Spec)
-3. **Global** — Schema.org / Wikidata
+1. **Local**: `type` declarations within the agent's own package.
+2. **Standard Library**: Built-in types prefixed with `std.*`.
+3. **Global**: Implicitly resolved via Schema.org or Wikidata if no local/std match exists.
 
-The local scope has **absolute shadowing**: if a `type Prompt` exists locally, it takes priority over `std.Prompt` automatically, preventing third-party updates from breaking the agent.
-
-*Example:* The type `Prompt` is referenced. If a local `type Prompt` exists → uses local. Otherwise, the Runtime resolves `std.Prompt`.
+> **Note**: A local `type Prompt` will always shadow `std.Prompt`, ensuring that third-party updates to the standard library do not break existing agent logic.
