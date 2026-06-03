@@ -13,7 +13,7 @@ AI collaboration guide for maintaining and evolving the Tree-sitter grammars for
 | Root `grammar.js` | `.description` manifests and `.type` declarations | `grammar.js`, `src/` |
 | `behavior/grammar.js` | `.behavior` behavior files | `behavior/grammar.js`, `behavior/src/` |
 
-Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. The language specification lives in [`language.md`](https://github.com/dot-agent-spec/dot-agent-spec/blob/main/dsl/language.md); this package is the executable implementation of that spec.
+Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. The language specification lives in [`language.md`](language.md); this package is the executable implementation of that spec.
 
 ---
 
@@ -93,13 +93,39 @@ is intentional — items must **not** consume their own trailing newline because
 ### "on" disambiguation in `.behavior`
 
 ```
-on event "..."   → trigger_decl   (top-level)
-on intent "..."  → intent_trigger  (inside block)
-on offtopic      → offtopic_stmt   (inside block)
-on fallback      → fallback_stmt   (inside block)
-on complete      → parallel_trigger (inside block)
-on failed        → parallel_trigger (inside block)
+on event "..."        → trigger_decl                 (top-level, uses generic block)
+on intent "..."       → intent_trigger               (inside oriented_state_body, uses handler_block)
+on offtopic           → offtopic_stmt                (inside oriented_state_body, uses handler_block)
+on fallback           → fallback_stmt                (inside oriented_state_body, uses handler_block)
+on complete           → parallel_trigger_restricted (inside handler_block, uses restricted_block)
+on failed             → parallel_trigger_restricted (inside handler_block, uses restricted_block)
 ```
+
+### State body types
+
+Two distinct state structures enforce correctness:
+
+**`oriented_state_body`** — LLM-interactive state:
+- Order: `goal?` → `guide?` → `teach*` → `interact` → `handler+` (repeat1)
+- `interact` is mandatory; handlers (≥1) are mandatory — guarantees FSM never deadlocks
+- `goal`/`guide` → injected into LLM message context (semantic orientation)
+- `teach` → fills LLM reusable cache (knowledge base), not message context
+- Handlers use `handler_block` (restricted: only actions, no orientation)
+
+**`setup_state_body`** — orchestration-only state:
+- Sequence of actions: `run`, `set`, `apply`, `remove`, `transition`, `if`, `after`, `parallel`
+- No orientation: no `goal`, `guide`, `teach`
+- No interaction: no `interact`, no handlers
+
+**`handler_block`** — restricted block inside handlers:
+- Allowed: `run`, `set`, `apply`, `remove`, `transition`, `if`, `after`, `parallel`
+- Forbidden: `goal`, `guide`, `teach`, `interact`, nested handlers
+
+**`restricted_block`** — equivalent to `handler_block`:
+- Used in `if`/`after`/`parallel` when inside handler or setup contexts
+- Ensures no orientation keywords leak into conditional logic
+
+Note: Generic `block` still exists for `trigger_decl` (top-level `on event`), where all statement types are permitted.
 
 ### State transitions
 
@@ -125,7 +151,7 @@ on intent "confirmed" transition to next_state
 3. Regenerate: `npx tree-sitter generate`
 4. Add a corpus test case in `test/corpus/` illustrating the new syntax
 5. Update `queries/highlights.scm` with appropriate capture names
-6. If this represents a spec change, update [`language.md`](https://github.com/dot-agent-spec/dot-agent-spec/blob/main/dsl/language.md) in the `dot-agent` repo
+6. If this represents a spec change, update [`language.md`](language.md)
 
 ---
 
@@ -163,7 +189,7 @@ The Apache 2.0 header text:
 
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/dot-agent-spec/dot-agent-spec/blob/main/dsl/language.md) |
+| Language specification | [language.md](language.md) |
 | Example agent files | [examples/](https://github.com/dot-agent-spec/dot-agent-spec/tree/main/examples) |
 | VS Code extension | [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) |
 | Language server (LSP) | [language-server](https://github.com/dot-agent-spec/language-server) |

@@ -125,7 +125,7 @@ npx tree-sitter test --filter "type simples"
 
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/dot-agent-spec/dot-agent/blob/main/dsl/language.md) |
+| Language specification | [language.md](language.md) |
 | Example agent files | [examples/](https://github.com/dot-agent-spec/dot-agent/tree/main/examples) |
 | VS Code extension | [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) |
 | Language server (LSP) | [language-server](https://github.com/dot-agent-spec/language-server) |
