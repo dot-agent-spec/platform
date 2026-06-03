@@ -25,11 +25,32 @@ Never put parser or FSM logic in `lib.rs`. Never expose internal structs directl
 
 ## Dependency constraints
 
-`wasm32-unknown-unknown` has **no `libc`, no filesystem, no threads**. Runtime dependencies must be WASM-compatible: `wasm-bindgen`, `serde`, `serde-wasm-bindgen`, `js-sys`. Before adding to `Cargo.toml`, verify WASM support.
+`wasm32-wasip1` has **no `libc`, no filesystem, no threads**. Runtime dependencies must be WASM-compatible: `wasm-bindgen`, `serde`, `serde-wasm-bindgen`, `js-sys`. Before adding to `Cargo.toml`, verify WASM support.
 
 **Build-only dependencies** (in `[build-dependencies]`) are exempt — they run on the host during compilation. Currently: `dot-agent-tree-sitter`, `serde_json` (for codegen). Do not add WASM-incompatible crates to runtime `[dependencies]`.
 
 - **Prohibited in `[dependencies]`**: `std::fs`, `std::net`, threads, libc-dependent crates, C FFI without WASM shims
+
+## WASM Runtime & JavaScript Shim
+
+The WASM binary is compiled with `wasm32-wasip1`, which embeds:
+- Tree-sitter (C library)
+- Rust runtime checks (UB Sanitizer)
+- Rust standard library interfaces
+
+This requires **31 JavaScript stub functions** provided by the `index.js` shim. See [`WASM_SHIM_ARCHITECTURE.md`](./WASM_SHIM_ARCHITECTURE.md) for the complete list and how to extend them.
+
+### Key Points
+
+1. **Do not call C FFI directly**: Tree-sitter is already compiled in; use its Rust bindings.
+2. **Shim functions are auto-discovered**: If you add a new runtime function, run:
+   ```bash
+   npm run build
+   node scripts/discover-wasm-imports.js
+   ```
+   and update `index.js` with the discovered functions.
+3. **The shim is minimal**: Current implementations are no-ops (`return 0`). Future enhancements can provide real implementations (time, environment, random bytes).
+4. **Post-build patching is automatic**: After `npm run build`, `scripts/patch-wasm-bindgen.js` removes direct WASM imports to avoid bundler errors. Do not delete this script.
 
 ## Keeping in sync with the spec
 

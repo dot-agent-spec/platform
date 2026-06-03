@@ -37,6 +37,8 @@
   ],
   "files": [
     "index.js",
+    "scripts/discover-wasm-imports.js",
+    "scripts/patch-wasm-bindgen.js",
     "pkg/dot_agent_kernel_dsl.js",
     "pkg/dot_agent_kernel_dsl.d.ts",
     "pkg/dot_agent_kernel_dsl_bg.wasm",
@@ -53,12 +55,14 @@
     "node": ">=16.0.0"
   },
   "scripts": {
-    "build": "./scripts/build-wasm.sh",
-    "build:release": "RELEASE=true ./scripts/build-wasm.sh",
+    "build": "./scripts/build-wasm.sh && node scripts/patch-wasm-bindgen.js",
+    "build:release": "RELEASE=true ./scripts/build-wasm.sh && node scripts/patch-wasm-bindgen.js",
     "patch": "node -e \"const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel-dsl';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')\"",
     "prepublishOnly": "npm run build:release && npm run patch"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
   }
 }
