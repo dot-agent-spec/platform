@@ -17,3 +17,6 @@ pub fn language_agent() -> Language {
 pub fn language_behavior() -> Language {
     unsafe { Language::from_raw(tree_sitter_behavior()) }
 }
+
+/// The content of the behavior grammar node types as a JSON string.
+pub const NODE_TYPES_BEHAVIOR: &str = include_str!("../../../behavior/src/node-types.json");

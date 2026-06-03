@@ -12,6 +12,7 @@ include = [
     "src/tree_sitter/*.h",
     "behavior/src/*.c",
     "behavior/src/tree_sitter/*.h",
+    "behavior/src/node-types.json",
     "bindings/rust/**",
     "build.rs",
     "Cargo.toml",
