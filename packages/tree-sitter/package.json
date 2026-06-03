@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/tree-sitter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)",
   "main": "index.js",
   "files": [
