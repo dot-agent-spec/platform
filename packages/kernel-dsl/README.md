@@ -2,6 +2,110 @@
 
 Execution engine for the **agent behavior DSL** (`.description` and `.behavior` files), written in Rust and compiled to **WebAssembly**. Implements a Finite State Machine (FSM) that interprets `.behavior` files according to the full dot-agent-spec, running entirely in-memory on the client side (browser or Node.js).
 
+## Quick Start
+
+### Installation
+
+```bash
+npm install @dot-agent/kernel-dsl
+```
+
+### Basic Usage
+
+```javascript
+import { AgentDSLKernel, init } from '@dot-agent/kernel-dsl';
+
+// Initialize WASM once
+await init();
+
+// Create kernel instance
+const kernel = new AgentDSLKernel();
+
+// Load behavior DSL
+const behavior = `
+state welcome
+  goal "Help the user"
+  interact
+  on intent "help" transition to helping
+
+state helping
+  goal "Provide assistance"
+`;
+
+kernel.load_behavior(behavior);
+
+// Get current state
+console.log(kernel.get_current_state()); // "welcome"
+
+// Listen to state changes and effects
+kernel.observe((effect) => {
+  console.log('Effect:', effect);
+  
+  switch (effect.type) {
+    case 'goal':
+      console.log('Goal:', effect.text);
+      break;
+    case 'transition':
+      console.log('Transitioned to:', effect.to);
+      break;
+  }
+});
+
+// Send intents
+kernel.send_intent("help");
+
+// Get state graph
+const graph = kernel.get_graph();
+console.log('States:', graph.states);
+console.log('Transitions:', graph.transitions);
+```
+
+### React Integration
+
+```typescript
+import { AgentDSLKernel, init } from '@dot-agent/kernel-dsl';
+import { useEffect, useState } from 'react';
+
+export function AgentPanel() {
+  const [engine, setEngine] = useState<AgentDSLKernel | null>(null);
+  const [currentState, setCurrentState] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      await init();
+      const kernel = new AgentDSLKernel();
+      
+      kernel.observe((effect) => {
+        if (effect.type === 'transition') {
+          setCurrentState(effect.to);
+        }
+      });
+
+      setEngine(kernel);
+    })();
+  }, []);
+
+  if (!engine) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <p>Current State: {currentState}</p>
+      <button onClick={() => engine.send_intent('help')}>Help</button>
+    </div>
+  );
+}
+```
+
+## WASM Runtime Requirements
+
+The kernel-dsl WASM binary requires a complete runtime environment. See [`WASM_SHIM_ARCHITECTURE.md`](./WASM_SHIM_ARCHITECTURE.md) for:
+- Why a shim is necessary
+- Complete list of 31 required functions
+- How to extend implementations (time, random, environment)
+- Post-build patching process
+
+**Note**: Initialization is handled automatically by the `init()` function. No manual setup needed.
+
 ## Architecture
 
 ```
