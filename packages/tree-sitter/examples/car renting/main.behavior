@@ -1,0 +1,45 @@
+// Escape global: identificado pelo LLM quando o usuário abandona
+// explicitamente a tarefa atual. Perguntas off-topic não contam.
+on escape
+  guide "User has abandoned the current task. Return to start."
+  transition to responsive
+
+// Estado de entrada — puro roteador
+state responsive
+  interact
+  on intent "search_cars"   transition to car_search
+  on intent "start_booking" transition to car_reservation
+  on intent "goodbye"       transition to completed
+  on fallback
+    guide "Didn't understand. Offer to search cars or start a booking." //error
+
+// Busca de carros
+state car_search
+  goal SearchAction "Help the user find available cars"
+  guide "Ask about destination, dates, and vehicle preferences.
+         Present matching options with prices."
+  interact
+  on intent "select_car" with CarOptions
+    transition to car_reservation
+  on intent "goodbye" transition to completed
+  on fallback
+    guide "Ask the user to clarify their search preferences."
+
+// Reserva — entry point do BookingAction
+state car_reservation
+  goal BookingAction "Collect all reservation details"
+  guide "Ask for pickup location, dropoff location, dates,
+         and confirm the selected car. Confirm all details
+         before finalizing."
+  interact
+  on intent "confirm_booking" with BookingConfirmation
+    complete BookingAction
+    transition to completed
+  on fallback
+    guide "Some details are missing. Ask for the remaining information."
+
+// Fim de sessão
+state completed
+  goal "Close the session gracefully"
+  guide "Thank the user. Summarize the booking if one was made."
+  run tool "session.close" silent

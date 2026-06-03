@@ -13,7 +13,38 @@ AI collaboration guide for maintaining and evolving the Tree-sitter grammars for
 | Root `grammar.js` | `.description` manifests and `.type` declarations | `grammar.js`, `src/` |
 | `behavior/grammar.js` | `.behavior` behavior files | `behavior/grammar.js`, `behavior/src/` |
 
-Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. The language specification lives in [`language.md`](language.md); this package is the executable implementation of that spec.
+Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. The language specification lives in [`docs/`](docs/); this package is the executable implementation of that spec.
+
+---
+
+## Repository Organization & Versioning
+
+To ensure scalability and consistency between the language specification and its implementation, we follow a dual-versioning strategy.
+
+### 1. Dual-Versioning Strategy
+- **Language Specification:** Versioned independently as a standard (e.g., `1.0.0-draft`). Changes to keywords, syntax rules, or semantic behavior bump this version.
+- **Tree-sitter Parser:** Follows Semantic Versioning (SemVer) in `package.json`.
+  - **MAJOR:** Breaking changes to the parser API or removal of supported language features.
+  - **MINOR:** Support for new language features or significant parser improvements.
+  - **PATCH:** Bug fixes in token recognition or internal parser logic.
+
+**Git Tagging Convention:**
+- Use `spec-vX.Y` for language specification milestones.
+- Use `vX.Y.Z` for parser releases (npm releases).
+
+### 2. Documentation Structure (Diátaxis)
+Documentation is organized in the `/docs` folder:
+- `/docs/reference`: Information-oriented (Syntax, Keywords, Types).
+- `/docs/concepts`: Understanding-oriented (Architecture, Design Principles).
+- `/docs/tutorials`: Learning-oriented (Step-by-step guides).
+- `/docs/guides`: Task-oriented (How-to guides for specific use cases).
+- `/examples`: Executable code snippets (Canonical examples of the DSL).
+
+### 3. Agent Mandates for Updates
+When making changes to the codebase, agents MUST follow these rules:
+- **Sync Rule:** Any change to `grammar.js` or `behavior/grammar.js` MUST be accompanied by a corresponding update in the `/docs/reference` documentation.
+- **Verification Rule:** After any change, run `npm run build` and `npx tree-sitter test` (and `npm run test-behavior`) to ensure the implementation is still valid.
+- **Changelog Rule:** Record changes in `CHANGELOG.md` (create it if missing), clearly distinguishing between **Language** changes and **Parser/Tooling** changes.
 
 ---
 

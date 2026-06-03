@@ -222,10 +222,20 @@
     "fields": {
       "block": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "handler_block",
+            "named": true
+          }
+        ]
+      },
+      "state": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "path",
             "named": true
           }
         ]
@@ -446,10 +456,20 @@
     "fields": {
       "block": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "handler_block",
+            "named": true
+          }
+        ]
+      },
+      "state": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "path",
             "named": true
           }
         ]

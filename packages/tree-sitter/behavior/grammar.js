@@ -275,8 +275,20 @@ module.exports = grammar({
       ),
     ),
 
-    offtopic_stmt: $ => seq('on', 'offtopic', field('block', $.handler_block)),
-    fallback_stmt: $ => seq('on', 'fallback', field('block', $.handler_block)),
+    offtopic_stmt: $ => seq(
+      'on', 'offtopic',
+      choice(
+        seq('transition', 'to', field('state', $.path), optional($._newline)),
+        field('block', $.handler_block),
+      ),
+    ),
+    fallback_stmt: $ => seq(
+      'on', 'fallback',
+      choice(
+        seq('transition', 'to', field('state', $.path), optional($._newline)),
+        field('block', $.handler_block),
+      ),
+    ),
 
     // ================================================================
     // HANDLER_BLOCK (actions allowed in handlers)

@@ -1,0 +1,42 @@
+// mickey.flow
+// Content generation workflow — routes to image, avatar, or speech generation.
+
+state init
+  next responsive
+
+state responsive
+  interact
+  on intent "generate_image"  next generate
+  on intent "generate_avatar" next generate_avatar
+  on intent "generate_speech" next generate_speech
+  on escape                   next responsive
+
+state generate
+  goal "Generate an image of Mickey Mouse from the text prompt."
+  run tool "ImageGen.Create" context.prompt
+  on complete
+    set context.result = results
+    next responsive
+  on failed
+    guide "Image generation failed. Please try a different prompt."
+    next responsive
+
+state generate_avatar
+  goal "Generate an avatar with Mickey Mouse ears."
+  run tool "ImageGen.CreateAvatar" context.prompt
+  on complete
+    set context.result = results
+    next responsive
+  on failed
+    guide "Avatar generation failed."
+    next responsive
+
+state generate_speech
+  goal "Synthesize speech in Mickey Mouse's voice."
+  run tool "Speech.Synthesize" context.prompt
+  on complete
+    set context.result = results
+    next responsive
+  on failed
+    guide "Speech synthesis failed."
+    next responsive

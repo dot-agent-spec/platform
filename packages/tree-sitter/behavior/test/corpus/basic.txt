@@ -153,3 +153,24 @@ state phases.planning.start
       (intent_trigger
         intent: (quoted_string)
         state: (path (identifier) (identifier) (identifier))))))
+
+================================================================================
+inline offtopic and fallback handlers
+================================================================================
+
+state conversational
+  interact
+  on offtopic transition to responsive
+  on fallback transition to support
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    name: (path (identifier))
+    (oriented_state_body
+      (interact_stmt)
+      (offtopic_stmt
+        state: (path (identifier)))
+      (fallback_stmt
+        state: (path (identifier))))))

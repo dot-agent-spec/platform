@@ -1,0 +1,14 @@
+agent Doctor
+  domain health.example.com
+  license MIT
+  terms https://health.example.com/terms
+  privacy https://health.example.com/privacy
+
+description
+  Um especialista em análise clínica e emissão de diagnósticos
+
+behavior doctor.flow
+requires Prontuario
+input Patient, MedicalCondition
+capabilities DiagnoseAction
+output Prescription
