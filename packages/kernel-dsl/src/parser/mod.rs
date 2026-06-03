@@ -55,7 +55,7 @@ pub fn parse_behavior(text: &str) -> Result<ast::BehaviorFile, ParseError> {
             if col_num > line_text.len() + 1 {
                 // Error is beyond line end — likely a structural error
                 format!(
-                    "Syntax error in behavior file\n\nCheck that:\n  - All states have required handlers (on fallback, on offtopic, or on intent)\n  - Oriented states follow: goal? guide? teach* interact handler+\n  - Setup states have: run/set/transition (no interact needed)"
+                    "Syntax error in behavior file\n\nCheck that:\n  - Oriented states follow: goal? guide? teach* interact\n  - interact must contain: on intent \"...\" / on offtopic handlers\n  - Setup states use: run/set/transition (no interact needed)"
                 )
             } else {
                 let caret = format!("{}^", " ".repeat(if col_num > 1 { col_num - 1 } else { 0 }));
@@ -200,7 +200,7 @@ fn node_to_value(node: Node, source: &str) -> Value {
                 map.insert("body".to_string(), json!(body_stmts));
             }
         }
-        "parallel_trigger" | "parallel_trigger_restricted" => {
+        "parallel_trigger" => {
             // Read event field (choice of 'complete' or 'failed')
             if let Some(event_node) = node.child_by_field_name("event") {
                 let event_text = &source[event_node.byte_range()];
