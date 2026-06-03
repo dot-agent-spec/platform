@@ -52,12 +52,6 @@ impl AgentDSLKernel {
         }
     }
 
-    pub fn send_fallback(&mut self) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.send_fallback(&mut self.memory),
-            None => vec![],
-        }
-    }
 
     pub fn send_event(&mut self, event: &str) -> Vec<Effect> {
         match &mut self.fsm {

@@ -66,13 +66,13 @@ impl Fsm {
                 Statement::Goal { .. }
                 | Statement::Guide { .. }
                 | Statement::Teach { .. }
-                | Statement::Interact
+                | Statement::Interact { .. }
                 | Statement::Run(_)
                 | Statement::Set { .. }
                 | Statement::If { .. }
                 | Statement::Apply { .. }
                 | Statement::Remove { .. }
-                | Statement::Parallel(_) => {
+                | Statement::Parallel { .. } => {
                     effects.extend(self.exec_single(stmt, mem));
                 }
                 // handlers and transition are not auto-executed at entry
@@ -117,17 +117,6 @@ impl Fsm {
         vec![]
     }
 
-    pub fn send_fallback(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
-        let name = self.current_state.clone();
-        if let Some(state) = self.states.get(&name).cloned() {
-            for stmt in &state.body {
-                if let Statement::OnFallback { body: stmts } = stmt {
-                    return self.exec_statements(stmts, mem);
-                }
-            }
-        }
-        vec![]
-    }
 
     pub fn send_event(&mut self, event: &str, mem: &mut MemoryStore) -> Vec<Effect> {
         let mut effects = Vec::new();
@@ -209,8 +198,8 @@ impl Fsm {
 
             Statement::Teach { text } => vec![Effect::Teach { text: text.clone() }],
 
-            Statement::Interact => {
-                vec![Effect::RequestInteract { requiring: None }]
+            Statement::Interact { handlers: _ } => {
+                vec![Effect::RequestInteract]
             }
 
             Statement::Transition { target } => {
@@ -286,14 +275,13 @@ impl Fsm {
                 }]
             }
 
-            Statement::Parallel(stmts) => {
+            Statement::Parallel { body, on_complete: _, on_failed: _ } => {
                 // Parallel tasks — execute sequentially for now (WASM is single-threaded).
-                self.exec_statements(stmts, mem)
+                self.exec_statements(body, mem)
             }
 
             Statement::OnIntent { .. }
             | Statement::OnOfftopic { .. }
-            | Statement::OnFallback { .. }
             | Statement::OnComplete { .. }
             | Statement::OnFailed { .. }
             | Statement::After { .. } => {
@@ -377,13 +365,9 @@ fn collect_transitions(from: &str, stmts: &[Statement], out: &mut Vec<GraphTrans
                     });
                 }
             }
-            Statement::OnOfftopic { body: stmts } | Statement::OnFallback { body: stmts } => {
+            Statement::OnOfftopic { body: stmts } => {
                 if let Some(to) = find_transition_in_block(stmts) {
-                    let label = if matches!(stmt, Statement::OnOfftopic { .. }) {
-                        "offtopic".into()
-                    } else {
-                        "fallback".into()
-                    };
+                    let label = "offtopic".to_string();
                     out.push(GraphTransition { from: from.to_string(), to, label });
                 }
             }

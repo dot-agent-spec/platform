@@ -95,13 +95,6 @@ impl AgentDSLKernel {
     }
 
     /// Signal that the runtime could not resolve the current action.
-    ///
-    /// Fires the observer with the effects of the current state's `on fallback` block.
-    pub fn send_fallback(&mut self) -> JsValue {
-        let effects = self.inner.send_fallback();
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
-    }
 
     /// Dispatch a named global event (e.g. "session.ended", "script.done").
     ///

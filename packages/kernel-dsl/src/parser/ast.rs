@@ -49,7 +49,10 @@ pub enum Statement {
     #[serde(rename = "teach_stmt")]
     Teach { text: String },
     #[serde(rename = "interact_stmt")]
-    Interact,
+    Interact {
+        #[serde(default)]
+        handlers: Vec<Statement>,
+    },
     #[serde(rename = "transition_stmt")]
     Transition {
         #[serde(rename = "state")]
@@ -59,8 +62,6 @@ pub enum Statement {
     OnIntent { intent: String, body: IntentBody },
     #[serde(rename = "offtopic_stmt")]
     OnOfftopic { body: Vec<Statement> },
-    #[serde(rename = "fallback_stmt")]
-    OnFallback { body: Vec<Statement> },
     #[serde(rename = "after_stmt")]
     After { prompts: u32, body: Vec<Statement> },
     #[serde(rename = "run_stmt")]
@@ -97,7 +98,13 @@ pub enum Statement {
         value: String,
     },
     #[serde(rename = "parallel_stmt")]
-    Parallel(Vec<Statement>),
+    Parallel {
+        body: Vec<Statement>,
+        #[serde(default)]
+        on_complete: Option<Vec<Statement>>,
+        #[serde(default)]
+        on_failed: Option<Vec<Statement>>,
+    },
     #[serde(rename = "on_complete_stmt")]
     OnComplete { body: Vec<Statement> },
     #[serde(rename = "on_failed_stmt")]
@@ -119,6 +126,8 @@ pub struct RunStmt {
     pub label: Option<String>,
     pub modifier: Option<RunModifier>,
     pub each: Option<String>,
+    #[serde(default)]
+    pub on_failed: Option<Vec<Statement>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

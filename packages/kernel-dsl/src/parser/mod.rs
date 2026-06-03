@@ -22,6 +22,19 @@ include!(concat!(env!("OUT_DIR"), "/node_kinds.rs"));
 #[derive(Debug)]
 pub struct ParseError(pub String);
 
+fn find_first_error(node: Node) -> Option<Node> {
+    if node.is_error() || node.is_missing() {
+        return Some(node);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if let Some(err) = find_first_error(child) {
+            return Some(err);
+        }
+    }
+    None
+}
+
 pub fn parse_behavior(text: &str) -> Result<ast::BehaviorFile, ParseError> {
     let mut parser = Parser::new();
     parser.set_language(&dot_agent_tree_sitter::language_behavior())
@@ -32,7 +45,29 @@ pub fn parse_behavior(text: &str) -> Result<ast::BehaviorFile, ParseError> {
 
     let root_node = tree.root_node();
     if root_node.has_error() {
-        return Err(ParseError("Syntax error in behavior file".to_string()));
+        let message = if let Some(err_node) = find_first_error(root_node) {
+            let pos = err_node.start_position();
+            let line_num = pos.row + 1;
+            let col_num = pos.column + 1;
+            let line_text = text.lines().nth(pos.row).unwrap_or("");
+
+            // Validate that the error position is within the line bounds
+            if col_num > line_text.len() + 1 {
+                // Error is beyond line end — likely a structural error
+                format!(
+                    "Syntax error in behavior file\n\nCheck that:\n  - All states have required handlers (on fallback, on offtopic, or on intent)\n  - Oriented states follow: goal? guide? teach* interact handler+\n  - Setup states have: run/set/transition (no interact needed)"
+                )
+            } else {
+                let caret = format!("{}^", " ".repeat(if col_num > 1 { col_num - 1 } else { 0 }));
+                format!(
+                    "Syntax error at line {}, column {}:\n  {}\n  {}",
+                    line_num, col_num, line_text, caret
+                )
+            }
+        } else {
+            "Syntax error in behavior file".to_string()
+        };
+        return Err(ParseError(message));
     }
 
     let value = node_to_value(root_node, text);
@@ -115,6 +150,21 @@ fn node_to_value(node: Node, source: &str) -> Value {
         return Value::Object(map);
     }
 
+    // Special handling for interact_stmt: extract handlers as children
+    if kind == "interact_stmt" {
+        let mut handlers = Vec::new();
+        let mut cursor = node.walk();
+        for child in node.named_children(&mut cursor) {
+            if child.kind() == "intent_trigger" || child.kind() == "offtopic_stmt" {
+                handlers.push(node_to_value(child, source));
+            }
+        }
+        let mut map = Map::new();
+        map.insert("type".to_string(), json!("interact_stmt"));
+        map.insert("handlers".to_string(), json!(handlers));
+        return Value::Object(map);
+    }
+
     let mut map = Map::new();
     let mut type_name = kind.to_string();
 
@@ -138,21 +188,6 @@ fn node_to_value(node: Node, source: &str) -> Value {
         "offtopic_stmt" => {
             if let Some(state_node) = node.child_by_field_name("state") {
                 // inline form: on offtopic transition to X
-                // Emit as array with a Transition statement
-                let target_str = &source[state_node.byte_range()];
-                let transition = json!({
-                    "type": "transition_stmt",
-                    "state": target_str
-                });
-                map.insert("body".to_string(), json!(vec![transition]));
-            } else if let Some(block_node) = node.child_by_field_name("block") {
-                let body_stmts = extract_handler_block_statements(block_node, source);
-                map.insert("body".to_string(), json!(body_stmts));
-            }
-        }
-        "fallback_stmt" => {
-            if let Some(state_node) = node.child_by_field_name("state") {
-                // inline form: on fallback transition to X
                 // Emit as array with a Transition statement
                 let target_str = &source[state_node.byte_range()];
                 let transition = json!({

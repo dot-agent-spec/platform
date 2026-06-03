@@ -20,7 +20,7 @@ pub enum Effect {
     Goal { text: String },
     Guide { text: String },
     Teach { text: String },
-    RequestInteract { requiring: Option<String> },
+    RequestInteract,
     Transition { from: String, to: String },
     RunScript { target: String, label: Option<String>, silent: bool },
     RunSubagent { target: String, label: Option<String>, background: bool },
