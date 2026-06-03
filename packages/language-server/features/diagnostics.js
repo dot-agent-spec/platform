@@ -74,6 +74,7 @@ function diagnoseFlow(tree) {
     const diagnostics = [];
 
     // ── Rule 1: Dangling transitions ──────────────────────────────────────────
+    // Collect all defined state names (from both oriented_state_body and setup_state_body)
     const definedStates = new Set(
         nodesOfType(tree, 'state_decl')
             .map(n => n.childForFieldName('name')?.text)
@@ -100,26 +101,38 @@ function diagnoseFlow(tree) {
         checkTransitionTarget(n.childForFieldName('state'));
     }
     for (const n of nodesOfType(tree, 'intent_trigger')) {
-        // inline form: on intent "..." next <state>
+        // inline form: on intent "..." transition to <state>
+        checkTransitionTarget(n.childForFieldName('state'));
+    }
+    for (const n of nodesOfType(tree, 'fallback_stmt')) {
+        // inline form: on fallback transition to <state>
+        checkTransitionTarget(n.childForFieldName('state'));
+    }
+    for (const n of nodesOfType(tree, 'offtopic_stmt')) {
+        // inline form: on offtopic transition to <state>
         checkTransitionTarget(n.childForFieldName('state'));
     }
 
-    // ── Rule 2: Dead-end interact ─────────────────────────────────────────────
+    // ── Rule 2: Dead-end interact (now redundant but kept for safety) ────────────
+    // With the new grammar, oriented_state_body requires repeat1(handlers),
+    // so dead-end interact is structurally impossible. But kept for edge cases.
     for (const interactNode of nodesOfType(tree, 'interact_stmt')) {
         let ancestor = interactNode.parent;
-        while (ancestor && ancestor.type !== 'state_decl') {
+        while (ancestor && ancestor.type !== 'oriented_state_body' && ancestor.type !== 'state_decl') {
             ancestor = ancestor.parent;
         }
         if (!ancestor) continue;
 
-        const hasNext   = ancestor.descendantsOfType('transition_stmt').length > 0;
-        const hasIntent = ancestor.descendantsOfType('intent_trigger').length > 0;
-        const hasOfftopic = ancestor.descendantsOfType('offtopic_stmt').length > 0;
+        // With new grammar: oriented_state_body always has handlers after interact (repeat1)
+        // So this check should never trigger, but kept for robustness
+        const hasHandlers = ancestor.descendantsOfType('intent_trigger').length +
+                           ancestor.descendantsOfType('fallback_stmt').length +
+                           ancestor.descendantsOfType('offtopic_stmt').length > 0;
 
-        if (!hasNext && !hasIntent && !hasOfftopic) {
+        if (!hasHandlers) {
             diagnostics.push({
                 range: nodeToRange(interactNode),
-                message: "This state calls interact but has no 'transition' or 'on intent/offtopic'. This will trap the agent.",
+                message: "This state calls interact but has no handlers (on intent/fallback/offtopic). This will trap the agent.",
                 severity: DiagnosticSeverity.Warning,
                 source: 'behavior-dsl',
             });

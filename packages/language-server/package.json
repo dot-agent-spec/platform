@@ -12,7 +12,13 @@
   "bugs": {
     "url": "https://github.com/dot-agent-spec/language-server/issues"
   },
-  "keywords": ["lsp", "language-server", "agent", "dsl", "flow"],
+  "keywords": [
+    "lsp",
+    "language-server",
+    "agent",
+    "dsl",
+    "flow"
+  ],
   "main": "server.js",
   "engines": {
     "node": ">=18"
@@ -21,10 +27,10 @@
     "start": "node server.js --stdio"
   },
   "dependencies": {
+    "@dot-agent/tree-sitter": "^0.3.2",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12",
-    "web-tree-sitter": "^0.25.0",
-    "@dot-agent/tree-sitter": "^0.2.1"
+    "web-tree-sitter": "^0.25.10"
   },
   "publishConfig": {
     "access": "public"
