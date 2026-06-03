@@ -13,659 +13,232 @@
 // limitations under the License.
 
 pub mod ast;
-pub mod lexer;
 
-use ast::*;
-use lexer::{tokenize, Token};
+use tree_sitter::{Parser, Node};
+use serde_json::{Value, json, Map};
+
+include!(concat!(env!("OUT_DIR"), "/node_kinds.rs"));
 
 #[derive(Debug)]
 pub struct ParseError(pub String);
 
-impl ParseError {
-    fn new(msg: impl Into<String>) -> Self {
-        ParseError(msg.into())
+pub fn parse_behavior(text: &str) -> Result<ast::BehaviorFile, ParseError> {
+    let mut parser = Parser::new();
+    parser.set_language(&dot_agent_tree_sitter::language_behavior())
+        .map_err(|_| ParseError("Failed to load behavior language".to_string()))?;
+
+    let tree = parser.parse(text, None)
+        .ok_or_else(|| ParseError("Failed to parse behavior".to_string()))?;
+
+    let root_node = tree.root_node();
+    if root_node.has_error() {
+        return Err(ParseError("Syntax error in behavior file".to_string()));
     }
+
+    let value = node_to_value(root_node, text);
+    serde_json::from_value(value)
+        .map_err(|e| ParseError(format!("Failed to map tree to AST: {}", e)))
 }
 
-struct Parser {
-    tokens: Vec<Token>,
-    pos: usize,
-}
+fn node_to_value(node: Node, source: &str) -> Value {
+    let kind = node.kind();
 
-impl Parser {
-    fn new(tokens: Vec<Token>) -> Self {
-        Parser { tokens, pos: 0 }
-    }
-
-    fn peek(&self) -> &Token {
-        self.tokens.get(self.pos).unwrap_or(&Token::Eof)
-    }
-
-    fn peek_at(&self, offset: usize) -> &Token {
-        self.tokens.get(self.pos + offset).unwrap_or(&Token::Eof)
-    }
-
-    fn advance(&mut self) -> &Token {
-        let t = self.tokens.get(self.pos).unwrap_or(&Token::Eof);
-        self.pos += 1;
-        t
-    }
-
-    fn skip_newlines(&mut self) {
-        while matches!(self.peek(), Token::Newline) {
-            self.advance();
+    if node.child_count() == 0 || kind == "identifier" || kind == "quoted_string" || kind == "number_literal" || kind == "path" {
+        let text = &source[node.byte_range()];
+        if kind == "quoted_string" && text.starts_with('"') && text.ends_with('"') {
+            return json!(text[1..text.len()-1].to_string());
         }
+        return json!(text);
     }
 
-    fn expect_newline(&mut self) {
-        while matches!(self.peek(), Token::Newline) {
-            self.advance();
-        }
-    }
+    // Special handling for state_decl: flatten oriented/setup_state_body into body field
+    // NOTE: state_decl is a wrapper, NOT a Statement variant — don't add "type" tag
+    if kind == "state_decl" {
+        let mut map = Map::new();
 
-    fn at_eof(&self) -> bool {
-        matches!(self.peek(), Token::Eof)
-    }
-
-    fn is_domain(tok: &Token) -> bool {
-        matches!(
-            tok,
-            Token::KwContext | Token::KwSession | Token::KwWorksession | Token::KwUser
-        )
-    }
-
-    fn token_to_domain(tok: &Token) -> Option<MemoryDomain> {
-        match tok {
-            Token::KwContext    => Some(MemoryDomain::Context),
-            Token::KwSession    => Some(MemoryDomain::Session),
-            Token::KwWorksession => Some(MemoryDomain::WorkSession),
-            Token::KwUser       => Some(MemoryDomain::User),
-            _ => None,
-        }
-    }
-
-    // Parse a dotted path starting from current position.
-    // Accepts Ident tokens and domain keywords as path segments separated by Dot.
-    fn parse_path(&mut self) -> String {
-        let mut parts = Vec::new();
-        parts.push(self.parse_ident_or_keyword_as_string());
-        while matches!(self.peek(), Token::Dot) {
-            self.advance(); // consume Dot
-            parts.push(self.parse_ident_or_keyword_as_string());
-        }
-        parts.join(".")
-    }
-
-    // Consume and stringify the current token as an identifier segment.
-    // Accepts Ident and any keyword that can appear in a dotted path.
-    fn parse_ident_or_keyword_as_string(&mut self) -> String {
-        let tok = self.advance().clone();
-        match tok {
-            Token::Ident(s)      => s,
-            Token::KwContext     => "context".into(),
-            Token::KwSession     => "session".into(),
-            Token::KwWorksession => "worksession".into(),
-            Token::KwUser        => "user".into(),
-            Token::KwScript      => "script".into(),
-            Token::KwSubagent    => "subagent".into(),
-            Token::KwTool        => "tool".into(),
-            Token::KwState       => "state".into(),
-            Token::KwOn          => "on".into(),
-            Token::KwTo          => "to".into(),
-            Token::KwGoal        => "goal".into(),
-            Token::KwGuide       => "guide".into(),
-            Token::KwTeach       => "teach".into(),
-            Token::KwRun         => "run".into(),
-            Token::KwSet         => "set".into(),
-            Token::KwComplete    => "complete".into(),
-            Token::KwFailed      => "failed".into(),
-            other => format!("{:?}", other),
-        }
-    }
-
-    // Parse a value: Path, Str, Number, Bool, Null.
-    fn parse_value(&mut self) -> Value {
-        match self.peek().clone() {
-            Token::Str(s) => { self.advance(); Value::Str(s) }
-            Token::Number(n) => { self.advance(); Value::Number(n) }
-            Token::KwTrue => { self.advance(); Value::Bool(true) }
-            Token::KwFalse => { self.advance(); Value::Bool(false) }
-            Token::KwNull => { self.advance(); Value::Null }
-            _ => {
-                // treat as path (ident or domain.key)
-                Value::Path(self.parse_path())
-            }
-        }
-    }
-
-    // Parse comparison op from current position.
-    fn parse_compare_op(&mut self) -> Option<CompareOp> {
-        let op = match self.peek() {
-            Token::Eq  => Some(CompareOp::Eq),
-            Token::Ne  => Some(CompareOp::Ne),
-            Token::Gt  => Some(CompareOp::Gt),
-            Token::Lt  => Some(CompareOp::Lt),
-            Token::Gte => Some(CompareOp::Gte),
-            Token::Lte => Some(CompareOp::Lte),
-            _ => None,
-        };
-        if op.is_some() { self.advance(); }
-        op
-    }
-
-    // Parse a single expression (value optionally followed by compare op + value).
-    fn parse_expr(&mut self) -> Expr {
-        let left = self.parse_value();
-        if let Some(op) = self.parse_compare_op() {
-            let right = self.parse_value();
-            Expr::Compare { left, op, right }
-        } else {
-            Expr::Value(left)
-        }
-    }
-
-    // Parse a condition: expr (and|or expr)*.
-    // Stops at Newline or Indent.
-    fn parse_condition(&mut self) -> Condition {
-        let mut parts: Vec<(Option<LogicalOp>, Expr)> = Vec::new();
-        parts.push((None, self.parse_expr()));
-
-        loop {
-            match self.peek() {
-                Token::KwAnd => {
-                    self.advance();
-                    parts.push((Some(LogicalOp::And), self.parse_expr()));
-                }
-                Token::KwOr => {
-                    self.advance();
-                    parts.push((Some(LogicalOp::Or), self.parse_expr()));
-                }
-                _ => break,
-            }
+        if let Some(name_node) = node.child_by_field_name("name") {
+            map.insert("name".to_string(), node_to_value(name_node, source));
         }
 
-        Condition { parts }
-    }
-
-    // Parse assign op.
-    fn parse_assign_op(&mut self) -> Result<AssignOp, ParseError> {
-        match self.peek() {
-            Token::Assign    => { self.advance(); Ok(AssignOp::Assign) }
-            Token::AddAssign => { self.advance(); Ok(AssignOp::AddAssign) }
-            Token::SubAssign => { self.advance(); Ok(AssignOp::SubAssign) }
-            other => Err(ParseError::new(format!(
-                "expected assignment operator, got {:?}", other
-            ))),
-        }
-    }
-
-    // Parse an indented block of statements.
-    // Expects Indent, reads until matching Dedent.
-    fn parse_block(&mut self) -> Result<Vec<Statement>, ParseError> {
-        if !matches!(self.peek(), Token::Indent) {
-            return Err(ParseError::new("expected indented block"));
-        }
-        self.advance(); // consume Indent
-
-        let mut stmts = Vec::new();
-        loop {
-            self.skip_newlines();
-            if matches!(self.peek(), Token::Dedent | Token::Eof) {
-                break;
-            }
-            stmts.push(self.parse_statement()?);
-        }
-
-        if matches!(self.peek(), Token::Dedent) {
-            self.advance(); // consume Dedent
-        }
-
-        Ok(stmts)
-    }
-
-    // Parse a run statement: run script|subagent|tool "target" ["label"] [silent|in background] [each path]
-    fn parse_run(&mut self) -> Result<Statement, ParseError> {
-        let kind = match self.peek() {
-            Token::KwScript   => { self.advance(); RunKind::Script }
-            Token::KwSubagent => { self.advance(); RunKind::Subagent }
-            Token::KwTool     => { self.advance(); RunKind::Tool }
-            other => return Err(ParseError::new(format!(
-                "expected script|subagent|tool after run, got {:?}", other
-            ))),
-        };
-
-        let target = match self.peek().clone() {
-            Token::Str(s) => { self.advance(); s }
-            other => return Err(ParseError::new(format!(
-                "expected string target after run kind, got {:?}", other
-            ))),
-        };
-
-        // optional label string
-        let label = if let Token::Str(s) = self.peek().clone() {
-            self.advance();
-            Some(s)
-        } else {
-            None
-        };
-
-        // optional modifier: silent | in background
-        let modifier = match self.peek() {
-            Token::KwSilent => { self.advance(); Some(RunModifier::Silent) }
-            Token::KwIn => {
-                self.advance();
-                if matches!(self.peek(), Token::KwBackground) {
-                    self.advance();
-                    Some(RunModifier::Background)
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        };
-
-        // optional: each path (experimental)
-        let each = if matches!(self.peek(), Token::KwEach) {
-            self.advance();
-            Some(self.parse_path())
-        } else {
-            None
-        };
-
-        self.expect_newline();
-
-        Ok(Statement::Run(RunStmt { kind, target, label, modifier, each }))
-    }
-
-    // Parse set statement: set domain.key op expr
-    fn parse_set(&mut self) -> Result<Statement, ParseError> {
-        let domain = match Self::token_to_domain(self.peek()) {
-            Some(d) => { self.advance(); d }
-            None => return Err(ParseError::new(format!(
-                "expected memory domain (context|session|worksession|user), got {:?}",
-                self.peek()
-            ))),
-        };
-
-        if !matches!(self.peek(), Token::Dot) {
-            return Err(ParseError::new("expected '.' after memory domain"));
-        }
-        self.advance(); // consume Dot
-
-        // parse the key (may be dotted for nested keys)
-        let mut key_parts = vec![self.parse_ident_or_keyword_as_string()];
-        while matches!(self.peek(), Token::Dot) {
-            self.advance();
-            key_parts.push(self.parse_ident_or_keyword_as_string());
-        }
-        let key = key_parts.join(".");
-
-        let op = self.parse_assign_op()?;
-        let value = self.parse_expr();
-        self.expect_newline();
-
-        Ok(Statement::Set { path: MemoryPath { domain, key }, op, value })
-    }
-
-    // Parse on-variants: on intent|offtopic|fallback|event|complete|failed
-    fn parse_on(&mut self) -> Result<Statement, ParseError> {
-        match self.peek().clone() {
-            Token::KwIntent => {
-                self.advance();
-                let intent = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected intent string, got {:?}", other
-                    ))),
-                };
-                // inline form: on intent "X" transition to state
-                if matches!(self.peek(), Token::KwTransition) {
-                    self.advance();
-                    if !matches!(self.peek(), Token::KwTo) {
-                        return Err(ParseError::new("expected 'to' after 'transition'"));
-                    }
-                    self.advance();
-                    let target = self.parse_path();
-                    self.expect_newline();
-                    return Ok(Statement::OnIntent {
-                        intent,
-                        body: IntentBody::Next(target),
-                    });
-                }
-                // block form: on intent "X"\n  ...
-                self.expect_newline();
-                let body = self.parse_block()?;
-                Ok(Statement::OnIntent { intent, body: IntentBody::Block(body) })
-            }
-
-            Token::KwOfftopic => {
-                self.advance();
-                self.expect_newline();
-                let body = self.parse_block()?;
-                Ok(Statement::OnOfftopic(body))
-            }
-
-            Token::KwFallback => {
-                self.advance();
-                self.expect_newline();
-                let body = self.parse_block()?;
-                Ok(Statement::OnFallback(body))
-            }
-
-            Token::KwComplete => {
-                self.advance();
-                self.expect_newline();
-                let body = self.parse_block()?;
-                Ok(Statement::OnComplete(body))
-            }
-
-            Token::KwFailed => {
-                self.advance();
-                self.expect_newline();
-                let body = self.parse_block()?;
-                Ok(Statement::OnFailed(body))
-            }
-
-            // on event "name" block — handled at top level, but can appear in blocks too
-            Token::KwEvent => {
-                self.advance();
-                let event = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected event name string, got {:?}", other
-                    ))),
-                };
-                self.expect_newline();
-                let body = self.parse_block()?;
-                // Wrap as a special intent trigger matching the event name
-                Ok(Statement::OnIntent {
-                    intent: format!("event:{}", event),
-                    body: IntentBody::Block(body),
-                })
-            }
-
-            other => Err(ParseError::new(format!(
-                "expected intent|offtopic|fallback|event|complete|failed after on, got {:?}", other
-            ))),
-        }
-    }
-
-    // Parse if statement: if condition\n  block [else\n  block]
-    fn parse_if(&mut self) -> Result<Statement, ParseError> {
-        let condition = self.parse_condition();
-        self.expect_newline();
-        let then_body = self.parse_block()?;
-
-        let else_body = if matches!(self.peek(), Token::KwElse) {
-            self.advance();
-            self.expect_newline();
-            Some(self.parse_block()?)
-        } else {
-            None
-        };
-
-        Ok(Statement::If { condition, then_body, else_body })
-    }
-
-    // Parse after N prompts block
-    fn parse_after(&mut self) -> Result<Statement, ParseError> {
-        let prompts = match self.peek().clone() {
-            Token::Number(n) => { self.advance(); n as u32 }
-            other => return Err(ParseError::new(format!(
-                "expected number after 'after', got {:?}", other
-            ))),
-        };
-
-        if matches!(self.peek(), Token::KwPrompts) {
-            self.advance();
-        }
-        self.expect_newline();
-        let body = self.parse_block()?;
-
-        Ok(Statement::After { prompts, body })
-    }
-
-    // Parse a single statement (does not skip leading newlines).
-    fn parse_statement(&mut self) -> Result<Statement, ParseError> {
-        match self.peek().clone() {
-            Token::KwGoal => {
-                self.advance();
-                let text = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected string after goal, got {:?}", other
-                    ))),
-                };
-                self.expect_newline();
-                Ok(Statement::Goal(text))
-            }
-
-            Token::KwGuide => {
-                self.advance();
-                let text = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected string after guide, got {:?}", other
-                    ))),
-                };
-                self.expect_newline();
-                Ok(Statement::Guide(text))
-            }
-
-            Token::KwTeach => {
-                self.advance();
-                let text = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected string after teach, got {:?}", other
-                    ))),
-                };
-                self.expect_newline();
-                Ok(Statement::Teach(text))
-            }
-
-            Token::KwInteract => {
-                self.advance();
-                self.expect_newline();
-                Ok(Statement::Interact)
-            }
-
-            Token::KwTransition => {
-                self.advance();
-                if !matches!(self.peek(), Token::KwTo) {
-                    return Err(ParseError::new("expected 'to' after 'transition'"));
-                }
-                self.advance();
-                let target = self.parse_path();
-                self.expect_newline();
-                Ok(Statement::Transition(target))
-            }
-
-            Token::KwOn => {
-                self.advance();
-                self.parse_on()
-            }
-
-            Token::KwRun => {
-                self.advance();
-                self.parse_run()
-            }
-
-            Token::KwSet => {
-                self.advance();
-                self.parse_set()
-            }
-
-            Token::KwIf => {
-                self.advance();
-                self.parse_if()
-            }
-
-            Token::KwAfter => {
-                self.advance();
-                self.parse_after()
-            }
-
-            Token::KwParallel => {
-                self.advance();
-                self.expect_newline();
-                let body = self.parse_block()?;
-                Ok(Statement::Parallel(body))
-            }
-
-            Token::KwApply => {
-                self.advance();
-                let kind = match self.peek() {
-                    Token::KwCss   => { self.advance(); MediaKind::Css }
-                    Token::KwHtml  => { self.advance(); MediaKind::Html }
-                    Token::KwVideo => { self.advance(); MediaKind::Video }
-                    other => return Err(ParseError::new(format!(
-                        "expected css|html|video after apply, got {:?}", other
-                    ))),
-                };
-                let value = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected string after apply kind, got {:?}", other
-                    ))),
-                };
-                self.expect_newline();
-                Ok(Statement::Apply { kind, value })
-            }
-
-            Token::KwRemove => {
-                self.advance();
-                let kind = match self.peek() {
-                    Token::KwCss   => { self.advance(); MediaKind::Css }
-                    Token::KwHtml  => { self.advance(); MediaKind::Html }
-                    Token::KwVideo => { self.advance(); MediaKind::Video }
-                    other => return Err(ParseError::new(format!(
-                        "expected css|html|video after remove, got {:?}", other
-                    ))),
-                };
-                let value = match self.peek().clone() {
-                    Token::Str(s) => { self.advance(); s }
-                    other => return Err(ParseError::new(format!(
-                        "expected string after remove kind, got {:?}", other
-                    ))),
-                };
-                self.expect_newline();
-                Ok(Statement::Remove { kind, value })
-            }
-
-            // unknown token — skip the rest of the line to recover
-            other => {
-                let msg = format!("unexpected token in statement: {:?}", other);
-                // consume until newline to recover
-                while !matches!(self.peek(), Token::Newline | Token::Dedent | Token::Eof) {
-                    self.advance();
-                }
-                self.skip_newlines();
-                Err(ParseError::new(msg))
+        // Extract body statements from either oriented_state_body or setup_state_body
+        let mut body_statements = Vec::new();
+        let mut cursor = node.walk();
+        for child in node.named_children(&mut cursor) {
+            if child.kind() == "oriented_state_body" || child.kind() == "setup_state_body" {
+                body_statements.extend(extract_state_body_statements(child, source));
             }
         }
+        map.insert("body".to_string(), json!(body_statements));
+
+        return Value::Object(map);
     }
 
-    // Parse a global on event trigger at top level.
-    fn parse_global_trigger(&mut self) -> Result<TriggerDecl, ParseError> {
-        // already consumed 'on'
-        if !matches!(self.peek(), Token::KwEvent) {
-            return Err(ParseError::new("expected 'event' after top-level 'on'"));
-        }
-        self.advance();
-
-        let event = match self.peek().clone() {
-            Token::Str(s) => { self.advance(); s }
-            other => return Err(ParseError::new(format!(
-                "expected event name string, got {:?}", other
-            ))),
-        };
-
-        self.expect_newline();
-        let body = self.parse_block()?;
-        Ok(TriggerDecl { event, body })
-    }
-
-    fn parse_state(&mut self) -> Result<StateDef, ParseError> {
-        // already consumed 'state'
-        let name = self.parse_path();
-        self.expect_newline();
-
-        let body = if matches!(self.peek(), Token::Indent) {
-            self.parse_block()?
-        } else {
-            Vec::new()
-        };
-
-        Ok(StateDef { name, body })
-    }
-
-    fn parse_behavior_file(&mut self) -> Result<BehaviorFile, ParseError> {
-        let mut merges = Vec::new();
-        let mut global_triggers = Vec::new();
+    if kind == "behavior_file" {
+        let mut map = Map::new();
         let mut states = Vec::new();
+        let mut global_triggers = Vec::new();
+        let mut merges = Vec::new();
 
-        loop {
-            self.skip_newlines();
-            if self.at_eof() { break; }
-
-            match self.peek().clone() {
-                Token::KwMerge => {
-                    self.advance();
-                    match self.peek().clone() {
-                        Token::Str(s) => { self.advance(); merges.push(s); }
-                        _ => {}
-                    }
-                    self.expect_newline();
-                }
-
-                Token::KwOn => {
-                    self.advance();
-                    // check if this is a global 'on event' or something else
-                    if matches!(self.peek(), Token::KwEvent) {
-                        match self.parse_global_trigger() {
-                            Ok(trigger) => global_triggers.push(trigger),
-                            Err(_) => { self.skip_to_next_top_level(); }
-                        }
-                    } else {
-                        // unexpected at top level — skip
-                        self.skip_to_next_top_level();
+        let mut cursor = node.walk();
+        for child in node.named_children(&mut cursor) {
+            match child.kind() {
+                "state_decl" => states.push(node_to_value(child, source)),
+                "trigger_decl" => global_triggers.push(node_to_value(child, source)),
+                "merge_decl" => {
+                    if let Some(p) = child.child_by_field_name("path") {
+                        merges.push(node_to_value(p, source));
                     }
                 }
-
-                Token::KwState => {
-                    self.advance();
-                    match self.parse_state() {
-                        Ok(state) => states.push(state),
-                        Err(_) => { self.skip_to_next_top_level(); }
-                    }
-                }
-
-                _ => {
-                    // unknown top-level token — skip line
-                    while !matches!(self.peek(), Token::Newline | Token::Eof) {
-                        self.advance();
-                    }
-                }
+                _ => {}
             }
         }
-
-        Ok(BehaviorFile { merges, global_triggers, states })
+        map.insert("states".to_string(), json!(states));
+        map.insert("global_triggers".to_string(), json!(global_triggers));
+        map.insert("merges".to_string(), json!(merges));
+        return Value::Object(map);
     }
 
-    // Skip tokens until we reach a top-level state/on/merge declaration (no leading indent).
-    fn skip_to_next_top_level(&mut self) {
-        while !self.at_eof() {
-            if matches!(self.peek(), Token::KwState | Token::KwMerge | Token::KwOn) {
-                break;
+    // Special handling for trigger_decl: also not a Statement variant
+    if kind == "trigger_decl" {
+        let mut map = Map::new();
+
+        if let Some(event_node) = node.child_by_field_name("event") {
+            map.insert("event".to_string(), node_to_value(event_node, source));
+        }
+
+        let mut body_statements = Vec::new();
+        if let Some(block_node) = node.child_by_field_name("block") {
+            body_statements.extend(extract_handler_block_statements(block_node, source));
+        }
+        map.insert("body".to_string(), json!(body_statements));
+
+        return Value::Object(map);
+    }
+
+    let mut map = Map::new();
+    let mut type_name = kind.to_string();
+
+    // Special handling for handlers with inline shorthand or event field
+    match kind {
+        "intent_trigger" => {
+            if let Some(intent_node) = node.child_by_field_name("intent") {
+                map.insert("intent".to_string(), node_to_value(intent_node, source));
             }
-            self.advance();
+
+            if let Some(state_node) = node.child_by_field_name("state") {
+                // inline form: on intent "..." transition to X
+                let state_val = node_to_value(state_node, source);
+                map.insert("body".to_string(), state_val);
+            } else if let Some(block_node) = node.child_by_field_name("block") {
+                // block form: on intent "..." {...}
+                let body_stmts = extract_handler_block_statements(block_node, source);
+                map.insert("body".to_string(), json!(body_stmts));
+            }
+        }
+        "offtopic_stmt" => {
+            if let Some(state_node) = node.child_by_field_name("state") {
+                // inline form: on offtopic transition to X
+                // Emit as array with a Transition statement
+                let target_str = &source[state_node.byte_range()];
+                let transition = json!({
+                    "type": "transition_stmt",
+                    "state": target_str
+                });
+                map.insert("body".to_string(), json!(vec![transition]));
+            } else if let Some(block_node) = node.child_by_field_name("block") {
+                let body_stmts = extract_handler_block_statements(block_node, source);
+                map.insert("body".to_string(), json!(body_stmts));
+            }
+        }
+        "fallback_stmt" => {
+            if let Some(state_node) = node.child_by_field_name("state") {
+                // inline form: on fallback transition to X
+                // Emit as array with a Transition statement
+                let target_str = &source[state_node.byte_range()];
+                let transition = json!({
+                    "type": "transition_stmt",
+                    "state": target_str
+                });
+                map.insert("body".to_string(), json!(vec![transition]));
+            } else if let Some(block_node) = node.child_by_field_name("block") {
+                let body_stmts = extract_handler_block_statements(block_node, source);
+                map.insert("body".to_string(), json!(body_stmts));
+            }
+        }
+        "parallel_trigger" | "parallel_trigger_restricted" => {
+            // Read event field (choice of 'complete' or 'failed')
+            if let Some(event_node) = node.child_by_field_name("event") {
+                let event_text = &source[event_node.byte_range()];
+                type_name = if event_text == "complete" {
+                    "on_complete_stmt".to_string()
+                } else {
+                    "on_failed_stmt".to_string()
+                };
+            }
+
+            if let Some(block_node) = node.child_by_field_name("block") {
+                let body_stmts = extract_handler_block_statements(block_node, source);
+                map.insert("body".to_string(), json!(body_stmts));
+            }
+        }
+        _ => {
+            // Generic handling: iterate all children and extract field names
+            let mut cursor = node.walk();
+            let mut unnamed_children = Vec::new();
+            let mut child_idx = 0;
+
+            for child in node.children(&mut cursor) {
+                if child.is_extra() {
+                    child_idx += 1;
+                    continue;
+                }
+
+                // field_name_for_child expects the index among ALL children (including unnamed)
+                let field_name = node.field_name_for_child(child_idx as u32).map(|s| s.to_string());
+                if let Some(fname) = field_name {
+                    map.insert(fname, node_to_value(child, source));
+                } else if child.is_named() {
+                    unnamed_children.push(node_to_value(child, source));
+                }
+
+                child_idx += 1;
+            }
+
+            // Add unnamed named children to "body" if they exist and the node is a block-like
+            if !unnamed_children.is_empty()
+                && (kind.ends_with("_body") || kind == "block" || kind.ends_with("_block"))
+            {
+                map.insert("body".to_string(), json!(unnamed_children));
+            }
         }
     }
+
+    map.insert("type".to_string(), json!(type_name));
+    Value::Object(map)
 }
 
-pub fn parse_behavior(text: &str) -> Result<BehaviorFile, ParseError> {
-    let tokens = tokenize(text);
-    let mut parser = Parser::new(tokens);
-    parser.parse_behavior_file()
+fn extract_state_body_statements(body_node: Node, source: &str) -> Vec<Value> {
+    let mut stmts = Vec::new();
+    let mut cursor = body_node.walk();
+
+    for child in body_node.named_children(&mut cursor) {
+        if is_state_body_kind(child.kind()) {
+            stmts.push(node_to_value(child, source));
+        }
+    }
+
+    stmts
+}
+
+fn extract_handler_block_statements(block_node: Node, source: &str) -> Vec<Value> {
+    let mut stmts = Vec::new();
+    let mut cursor = block_node.walk();
+
+    for child in block_node.named_children(&mut cursor) {
+        if is_handler_block_kind(child.kind()) {
+            stmts.push(node_to_value(child, source));
+        }
+    }
+
+    stmts
 }
