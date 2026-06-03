@@ -1,0 +1,27 @@
+[package]
+name = "dot-agent-tree-sitter"
+version = "0.2.1"
+authors = ["Danilo Borges <contato@daniloborg.es>"]
+description = "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)"
+license = "Apache-2.0"
+repository = "https://github.com/dot-agent-spec/tree-sitter"
+edition = "2021"
+build = "build.rs"
+include = [
+    "src/*.c",
+    "src/tree_sitter/*.h",
+    "behavior/src/*.c",
+    "behavior/src/tree_sitter/*.h",
+    "bindings/rust/**",
+    "build.rs",
+    "Cargo.toml",
+]
+
+[lib]
+path = "bindings/rust/src/lib.rs"
+
+[dependencies]
+tree-sitter = "0.25"
+
+[build-dependencies]
+cc = "1"

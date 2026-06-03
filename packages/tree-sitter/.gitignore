@@ -1,13 +1,2 @@
-node_modules/
-build/
-prebuilds/
-dist/
-*.dylib
-
-# tree-sitter generated files
-src/grammar.json
-src/node-types.json
-src/parser.c
-src/tree_sitter/
-
-.DS_Store
+/target/
+Cargo.lock
