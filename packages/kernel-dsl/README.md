@@ -136,7 +136,7 @@ The parser and FSM cover the full `.agent DSL`:
 | Interact | `interact` |
 | Inline intent | `on intent "planning" transition to planning` |
 | Block intent | `on intent "search"` + indented block |
-| Offtopic / Fallback | `on offtopic` / `on fallback` + block |
+| Offtopic | `on offtopic` + block |
 | Global event | `on event "session.ended"` + block |
 | Memory assign | `set context.phase = "planning"` |
 | Compound assign | `+=` / `-=` across all domains |
@@ -179,7 +179,6 @@ engine.send_intent("planning");
 
 // Flow handlers
 engine.send_offtopic();
-engine.send_fallback();
 engine.send_event("session.ended");
 
 // Async operation completion
@@ -209,7 +208,7 @@ type Effect =
   | { type: "goal";             text: string }
   | { type: "guide";            text: string }
   | { type: "teach";            text: string }
-  | { type: "request_interact"; requiring: string | null }
+  | { type: "request_interact" }
   | { type: "transition";       from: string; to: string }
   | { type: "run_script";       target: string; label: string | null; silent: boolean }
   | { type: "run_subagent";     target: string; label: string | null; background: boolean }

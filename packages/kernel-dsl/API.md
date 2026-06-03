@@ -52,7 +52,7 @@ engine.observe((effect: Effect) => {
     case "goal":             handleGoal(effect.text); break;
     case "guide":            handleGuide(effect.text); break;
     case "teach":            handleTeach(effect.text); break;
-    case "request_interact": handleInteract(effect.requiring); break;
+    case "request_interact": handleInteract(); break;
     case "run_script":       handleScript(effect); break;
     case "run_subagent":     handleSubagent(effect); break;
     case "run_tool":         handleTool(effect); break;
@@ -100,7 +100,7 @@ state welcome
   on intent "continue" next setup
 `);
 // observer fires: goal → guide → request_interact
-// effects === [{ type: "goal", text: "…" }, { type: "guide", text: "…" }, { type: "request_interact", requiring: null }]
+// effects === [{ type: "goal", text: "…" }, { type: "guide", text: "…" }, { type: "request_interact" }]
 ```
 
 On parse error, fires and returns `[{ type: "parse_error", message: "…" }]`.
@@ -120,16 +120,6 @@ const effects = engine.send_intent("continue");
 If no handler matches, returns `[]` and the state does not change.
 
 **The valid intents for the current state are available via `get_valid_intents()`** — pass them to the LLM classifier as the allowed output set.
-
----
-
-### `send_fallback(): Effect[]`
-
-Fires the current state's `on fallback` block. Call when the runtime cannot fulfil a required action (e.g. a tool call fails, a subagent is unavailable).
-
-```typescript
-engine.send_fallback();
-```
 
 ---
 
@@ -262,17 +252,15 @@ case "teach":
 
 ---
 
-### `{ type: "request_interact", requiring: string | null }`
+### `{ type: "request_interact" }`
 
 **What it is:** The flow has reached an interactive state and is waiting for user input.
 
-**What JS must do:** Enable the input UI and wait for the user's next message. If `requiring` is non-null, it's a constraint on what the user must provide (e.g. `"a file upload"`, `"a yes/no answer"`).
-
-After receiving user input, classify it with the LLM using `get_valid_intents()` as the allowed set, then call `send_intent(classifiedIntent)`.
+**What JS must do:** Enable the input UI and wait for the user's next message. After receiving user input, classify it with the LLM using `get_valid_intents()` as the allowed set, then call `send_intent(classifiedIntent)`.
 
 ```typescript
 case "request_interact":
-  ui.enableInput({ hint: effect.requiring });
+  ui.enableInput();
   break;
 ```
 
@@ -291,7 +279,7 @@ case "run_script":
     await mod.default({ engine, memory: engine.get_memory() });
     engine.send_event("script.done");
   } catch {
-    engine.send_fallback();
+    engine.send_failed();
   }
   break;
 ```
@@ -415,7 +403,7 @@ interface AgentDSLKernelHandlers {
   goal(text: string): void;
   guide(text: string): void;
   teach(text: string): Promise<void> | void;
-  requestInteract(requiring: string | null): void;
+  requestInteract(): void;
   runScript(target: string, label: string | null, silent: boolean): Promise<void>;
   runSubagent(target: string, label: string | null, background: boolean): Promise<void>;
   runTool(target: string, label: string | null): Promise<void>;
@@ -450,7 +438,7 @@ export function useAgentDSLKernel(handlers: AgentDSLKernelHandlers) {
           case "goal":             handlers.goal(effect.text); break;
           case "guide":            handlers.guide(effect.text); break;
           case "teach":            handlers.teach(effect.text); break;
-          case "request_interact": handlers.requestInteract(effect.requiring); break;
+          case "request_interact": handlers.requestInteract(); break;
           case "run_script":       handlers.runScript(effect.target, effect.label, effect.silent); break;
           case "run_subagent":     handlers.runSubagent(effect.target, effect.label, effect.background); break;
           case "run_tool":         handlers.runTool(effect.target, effect.label); break;
