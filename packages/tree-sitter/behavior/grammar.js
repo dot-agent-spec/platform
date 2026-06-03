@@ -19,20 +19,25 @@
 // Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
 // scanner in src/scanner.c — same algorithm as the agent grammar.
 //
+// State structure (v2: rigid types):
+//   - oriented_state_body: goal? → guide? → teach* → interact → handler+
+//     LLM-active state: goal/guide orient context, teach fills cache
+//   - setup_state_body: repeat1(setup_action_stmt)
+//     Pure setup: run/set/transition without interact
+//   - Handlers (on intent/fallback/offtopic) = switch cases: no goal/guide/teach/interact
+//
 // Statement termination:
 //   Simple statements end with optional($._newline).
-//   Compound statements (those containing a $.block) end with their
+//   Compound statements (those containing a block) end with their
 //   block's $._dedent — no trailing newline needed.
-//   This lets repeat1($.statement) inside $.block work without an
-//   explicit separator, even when simple and compound statements mix.
 //
 // "on" disambiguation:
-//   on event "..."   → trigger_decl  (top-level)
-//   on intent "..."  → intent_trigger (inside block)
-//   on offtopic      → offtopic_stmt  (inside block)
-//   on fallback      → fallback_stmt (inside block)
-//   on complete      → parallel_trigger (inside block)
-//   on failed        → parallel_trigger (inside block)
+//   on event "..."   → trigger_decl  (top-level, uses $.block)
+//   on intent "..."  → intent_trigger (inside state, uses $.handler_block)
+//   on offtopic      → offtopic_stmt  (inside state, uses $.handler_block)
+//   on fallback      → fallback_stmt (inside state, uses $.handler_block)
+//   on complete      → parallel_trigger (inside handler, uses $.handler_block)
+//   on failed        → parallel_trigger (inside handler, uses $.handler_block)
 
 module.exports = grammar({
   name: 'behavior',
@@ -77,12 +82,65 @@ module.exports = grammar({
       $.block,
     ),
 
-    // state name block
+    // state name body
+    // Two types of state bodies:
+    //   1. oriented_state_body: goal? → guide? → teach* → interact → handler+
+    //   2. setup_state_body: repeat1(setup_action_stmt)
     state_decl: $ => seq(
       'state',
       field('name', $.path),
-      $.block,
+      choice(
+        $.oriented_state_body,
+        $.setup_state_body,
+      ),
     ),
+
+    // ================================================================
+    // STATE TYPE 1: Oriented (with interact + handlers)
+    // ================================================================
+    // goal? guide? teach* interact handler+
+    // Order is strict: goal and guide orient LLM context, teach fills cache,
+    // interact releases LLM for response, handlers route the reply.
+    // FSM is guaranteed: repeat1(handler) ensures no deadlock.
+
+    oriented_state_body: $ => seq(
+      $._indent,
+      optional($.goal_stmt),
+      optional($.guide_stmt),
+      repeat($.teach_stmt),
+      $.interact_stmt,
+      repeat1(choice(
+        $.intent_trigger,
+        $.fallback_stmt,
+        $.offtopic_stmt,
+        $.temporal_restricted_stmt,
+        $.parallel_restricted_stmt,
+        $.parallel_trigger_restricted,
+      )),
+      $._dedent,
+    ),
+
+    // ================================================================
+    // STATE TYPE 2: Setup (no interact, pure action)
+    // ================================================================
+    // Just action statements: run, set, transition, if, etc.
+    // No orientation (no goal/guide/teach).
+
+    setup_state_body: $ => seq(
+      $._indent,
+      repeat1(choice(
+        $.memory_stmt,
+        $.run_stmt,
+        $.apply_stmt,
+        $.remove_stmt,
+        $.transition_stmt,
+        $.conditional_restricted_stmt,
+        $.temporal_restricted_stmt,
+        $.parallel_restricted_stmt,
+      )),
+      $._dedent,
+    ),
+
 
     // ----------------------------------------------------------------
     // Block
@@ -199,17 +257,110 @@ module.exports = grammar({
 
     ui_target: $ => choice('css', 'html', 'video'),
 
-    // ----------------------------------------------------------------
-    // Control flow
-    // ----------------------------------------------------------------
+    // ================================================================
+    // HANDLERS (inside oriented states — switch cases)
+    // ================================================================
+    // These are the routing statements after interact.
+    // on intent | on fallback | on offtopic | on complete | on failed
+    // Each one is a "case" in the state machine switch.
+    // Inside handlers: NO goal, guide, teach, interact. Just actions.
 
-    // if condition block [else block]
-    conditional_stmt: $ => seq(
+    // on intent "text" (transition to state | handler_block)
+    intent_trigger: $ => seq(
+      'on', 'intent',
+      field('intent', $.quoted_string),
+      choice(
+        seq('transition', 'to', field('state', $.path), optional($._newline)), // inline
+        field('block', $.handler_block),                                        // handler block form
+      ),
+    ),
+
+    offtopic_stmt: $ => seq('on', 'offtopic', field('block', $.handler_block)),
+    fallback_stmt: $ => seq('on', 'fallback', field('block', $.handler_block)),
+
+    // ================================================================
+    // HANDLER_BLOCK (actions allowed in handlers)
+    // ================================================================
+    // Like $.block but restricted: no goal/guide/teach/interact.
+    // Allowed: run, set, apply, remove, transition, if, after, parallel
+
+    handler_block: $ => seq(
+      $._indent,
+      repeat1(choice(
+        $.memory_stmt,
+        $.run_stmt,
+        $.apply_stmt,
+        $.remove_stmt,
+        $.transition_stmt,
+        $.conditional_restricted_stmt,
+        $.temporal_restricted_stmt,
+        $.parallel_restricted_stmt,
+        $.parallel_trigger_restricted,
+      )),
+      $._dedent,
+    ),
+
+    // ================================================================
+    // RESTRICTED COMPOUND STATEMENTS
+    // ================================================================
+    // Variants of if/after/parallel that use handler_block/restricted_block
+    // instead of the generic block. These are used in:
+    //   - setup_state_body
+    //   - handler_block
+    //   - nested within restricted blocks themselves
+
+    // if condition restricted_block [else restricted_block]
+    // Used: in setup states, in handlers, in nested restricted blocks
+    conditional_restricted_stmt: $ => seq(
       'if',
       field('condition', $.condition),
-      field('then', $.block),
-      optional(seq('else', field('else', $.block))),
+      field('then', $.restricted_block),
+      optional(seq('else', field('else', $.restricted_block))),
     ),
+
+    // after N prompts restricted_block
+    temporal_restricted_stmt: $ => seq(
+      'after',
+      field('count', $.number_literal),
+      'prompts',
+      field('block', $.restricted_block),
+    ),
+
+    // parallel restricted_block
+    parallel_restricted_stmt: $ => seq(
+      'parallel',
+      field('block', $.restricted_block),
+    ),
+
+    // on complete restricted_block | on failed restricted_block
+    parallel_trigger_restricted: $ => seq(
+      'on',
+      field('event', choice('complete', 'failed')),
+      field('block', $.restricted_block),
+    ),
+
+    // restricted_block: used in all restricted contexts (setup/handler/nested)
+    // Allows: memory, run, apply, remove, transition, if, after, parallel
+    // Excludes: goal, guide, teach, interact
+    restricted_block: $ => seq(
+      $._indent,
+      repeat1(choice(
+        $.memory_stmt,
+        $.run_stmt,
+        $.apply_stmt,
+        $.remove_stmt,
+        $.transition_stmt,
+        $.conditional_restricted_stmt,
+        $.temporal_restricted_stmt,
+        $.parallel_restricted_stmt,
+        $.parallel_trigger_restricted,
+      )),
+      $._dedent,
+    ),
+
+    // ================================================================
+    // CONTROL FLOW (used in top-level trigger_decl only)
+    // ================================================================
 
     // transition to state_name
     transition_stmt: $ => seq(
@@ -218,23 +369,23 @@ module.exports = grammar({
       optional($._newline),
     ),
 
-    // on intent "text" (transition to state | block)
-    intent_trigger: $ => seq(
-      'on', 'intent',
-      field('intent', $.quoted_string),
-      choice(
-        seq('transition', 'to', field('state', $.path), optional($._newline)), // inline
-        field('block', $.block),                                                // block form
-      ),
+    // ================================================================
+    // TEMPORAL & PARALLEL (generic versions for top-level)
+    // ================================================================
+    // These are only used in top-level on event handlers (trigger_decl),
+    // which use the generic $.block. Inside states, use restricted variants.
+
+    // if condition block [else block]
+    // Used only in trigger_decl (top-level events)
+    conditional_stmt: $ => seq(
+      'if',
+      field('condition', $.condition),
+      field('then', $.block),
+      optional(seq('else', field('else', $.block))),
     ),
 
-    offtopic_stmt: $ => seq('on', 'offtopic', field('block', $.block)),
-    fallback_stmt: $ => seq('on', 'fallback', field('block', $.block)),
-
-    // ----------------------------------------------------------------
-    // Temporal [experimental]
-    // ----------------------------------------------------------------
-
+    // after N prompts block
+    // Used only in trigger_decl
     temporal_stmt: $ => seq(
       'after',
       field('count', $.number_literal),
@@ -242,17 +393,15 @@ module.exports = grammar({
       field('block', $.block),
     ),
 
-    // ----------------------------------------------------------------
-    // Parallel [experimental]
-    // ----------------------------------------------------------------
-
+    // parallel block
+    // Used only in trigger_decl
     parallel_stmt: $ => seq(
       'parallel',
       field('block', $.block),
     ),
 
     // on complete block | on failed block
-    // Appears after parallel_stmt at the same indentation level
+    // Used only in trigger_decl (top-level)
     parallel_trigger: $ => seq(
       'on',
       field('event', choice('complete', 'failed')),

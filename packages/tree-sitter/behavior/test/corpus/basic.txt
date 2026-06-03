@@ -12,72 +12,12 @@ merge "phases/review.behavior"
   (merge_decl path: (quoted_string)))
 
 ================================================================================
-state simples com interact
+oriented state mínimo (só interact + handler)
 ================================================================================
 
 state responsive
-  interact
-
---------------------------------------------------------------------------------
-
-(behavior_file
-  (state_decl
-    name: (path (identifier))
-    (block
-      (statement
-        (interact_stmt)))))
-
-================================================================================
-state com intent trigger inline
-================================================================================
-
-state responsive
-  interact
-  on intent "planning" transition to planning
-
---------------------------------------------------------------------------------
-
-(behavior_file
-  (state_decl
-    name: (path (identifier))
-    (block
-      (statement (interact_stmt))
-      (statement
-        (intent_trigger
-          intent: (quoted_string)
-          state: (path (identifier)))))))
-
-================================================================================
-state com on offtopic
-================================================================================
-
-state responsive
-  interact
-  on offtopic
-    guide "Voltando ao início."
-    transition to responsive
-
---------------------------------------------------------------------------------
-
-(behavior_file
-  (state_decl
-    name: (path (identifier))
-    (block
-      (statement (interact_stmt))
-      (statement
-        (offtopic_stmt
-          block: (block
-            (statement (guide_stmt text: (quoted_string)))
-            (statement (transition_stmt state: (path (identifier))))))))))
-
-================================================================================
-state com on fallback
-================================================================================
-
-state review
   interact
   on fallback
-    guide "Revisão indisponível."
     transition to responsive
 
 --------------------------------------------------------------------------------
@@ -85,100 +25,94 @@ state review
 (behavior_file
   (state_decl
     name: (path (identifier))
-    (block
-      (statement (interact_stmt))
-      (statement
-        (fallback_stmt
-          block: (block
-            (statement (guide_stmt text: (quoted_string)))
-            (statement (transition_stmt state: (path (identifier))))))))))
+    (oriented_state_body
+      (interact_stmt)
+      (fallback_stmt
+        block: (handler_block
+          (transition_stmt state: (path (identifier))))))))
+
+
 
 ================================================================================
-memory assignment com domain
+oriented state completo (goal + guide + teach + interact + handlers)
 ================================================================================
 
-state init
-  set context.active_phase = "planning"
-  set worksession.phase = "review"
-  set user.language = "pt-br"
+state car_search
+  goal "Find available cars"
+  guide "Ask about preferences."
+  teach "premium_features.md"
+  interact
+  on intent "select" transition to reservation
+  on fallback
+    transition to responsive
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
     name: (path (identifier))
-    (block
-      (statement
-        (memory_stmt
-          target: (memory_target domain: (memory_domain) var: (identifier))
-          op: (assignment_op)
-          value: (expression (value (quoted_string)))))
-      (statement
-        (memory_stmt
-          target: (memory_target domain: (memory_domain) var: (identifier))
-          op: (assignment_op)
-          value: (expression (value (quoted_string)))))
-      (statement
-        (memory_stmt
-          target: (memory_target domain: (memory_domain) var: (identifier))
-          op: (assignment_op)
-          value: (expression (value (quoted_string))))))))
+    (oriented_state_body
+      (goal_stmt text: (quoted_string))
+      (guide_stmt text: (quoted_string))
+      (teach_stmt text: (quoted_string))
+      (interact_stmt)
+      (intent_trigger
+        intent: (quoted_string)
+        state: (path (identifier)))
+      (fallback_stmt
+        block: (handler_block
+          (transition_stmt state: (path (identifier))))))))
+
+
 
 ================================================================================
-run simples
+setup state (actions + transition, no interact)
 ================================================================================
 
-state execute
-  run script "build.sh" silent
-  run subagent "Reviewer"
-  run tool "search" "query"
+state prepare_data
+  run script "fetch.sh"
+  set context.cars = "options"
+  transition to car_search
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
     name: (path (identifier))
-    (block
-      (statement
-        (run_stmt
-          run_type: (run_type)
-          target: (quoted_string)
-          (run_modifier)))
-      (statement
-        (run_stmt
-          run_type: (run_type)
-          target: (quoted_string)))
-      (statement
-        (run_stmt
-          run_type: (run_type)
-          target: (quoted_string)
-          label: (quoted_string))))))
+    (setup_state_body
+      (run_stmt run_type: (run_type) target: (quoted_string))
+      (memory_stmt
+        target: (memory_target domain: (memory_domain) var: (identifier))
+        op: (assignment_op)
+        value: (expression (value (quoted_string))))
+      (transition_stmt state: (path (identifier))))))
 
 ================================================================================
-conditional simples
+valid: setup state with conditional
 ================================================================================
 
 state check
   if session.has_context == true
     transition to proceed
-  transition to fallback
+  else
+    transition to fallback
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
     name: (path (identifier))
-    (block
-      (statement
-        (conditional_stmt
-          condition: (condition
-            (expression
-              left: (value (path (identifier) (identifier)))
-              op: (comparison_op)
-              right: (value (boolean_literal))))
-          then: (block
-            (statement (transition_stmt state: (path (identifier)))))))
-      (statement (transition_stmt state: (path (identifier)))))))
+    (setup_state_body
+      (conditional_restricted_stmt
+        condition: (condition
+          (expression
+            left: (value (path (identifier) (identifier)))
+            op: (comparison_op)
+            right: (value (boolean_literal))))
+        then: (restricted_block
+          (transition_stmt state: (path (identifier))))
+        else: (restricted_block
+          (transition_stmt state: (path (identifier))))))))
 
 ================================================================================
 global trigger com event
@@ -200,18 +134,22 @@ on event "session.ended"
           (run_modifier))))))
 
 ================================================================================
-state com dotted path name
+state com dotted path name (oriented)
 ================================================================================
 
 state phases.planning.start
-  guide "Iniciando planejamento."
-  transition to phases.review.start
+  goal "Start planning"
+  interact
+  on intent "next" transition to phases.planning.end
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
     name: (path (identifier) (identifier) (identifier))
-    (block
-      (statement (guide_stmt text: (quoted_string)))
-      (statement (transition_stmt state: (path (identifier) (identifier) (identifier)))))))
+    (oriented_state_body
+      (goal_stmt text: (quoted_string))
+      (interact_stmt)
+      (intent_trigger
+        intent: (quoted_string)
+        state: (path (identifier) (identifier) (identifier))))))

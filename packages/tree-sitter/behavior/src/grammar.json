@@ -85,8 +85,150 @@
           }
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "oriented_state_body"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "setup_state_body"
+            }
+          ]
+        }
+      ]
+    },
+    "oriented_state_body": {
+      "type": "SEQ",
+      "members": [
+        {
           "type": "SYMBOL",
-          "name": "block"
+          "name": "_indent"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "goal_stmt"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "guide_stmt"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "teach_stmt"
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "interact_stmt"
+        },
+        {
+          "type": "REPEAT1",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "intent_trigger"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "fallback_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "offtopic_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "temporal_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_trigger_restricted"
+              }
+            ]
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_dedent"
+        }
+      ]
+    },
+    "setup_state_body": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_indent"
+        },
+        {
+          "type": "REPEAT1",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "memory_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "run_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "apply_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "remove_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "transition_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "conditional_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "temporal_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_restricted_stmt"
+              }
+            ]
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_dedent"
         }
       ]
     },
@@ -620,89 +762,6 @@
         }
       ]
     },
-    "conditional_stmt": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "if"
-        },
-        {
-          "type": "FIELD",
-          "name": "condition",
-          "content": {
-            "type": "SYMBOL",
-            "name": "condition"
-          }
-        },
-        {
-          "type": "FIELD",
-          "name": "then",
-          "content": {
-            "type": "SYMBOL",
-            "name": "block"
-          }
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "STRING",
-                  "value": "else"
-                },
-                {
-                  "type": "FIELD",
-                  "name": "else",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "block"
-                  }
-                }
-              ]
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
-    },
-    "transition_stmt": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "transition"
-        },
-        {
-          "type": "STRING",
-          "value": "to"
-        },
-        {
-          "type": "FIELD",
-          "name": "state",
-          "content": {
-            "type": "SYMBOL",
-            "name": "path"
-          }
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "_newline"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
-    },
     "intent_trigger": {
       "type": "SEQ",
       "members": [
@@ -763,7 +822,7 @@
               "name": "block",
               "content": {
                 "type": "SYMBOL",
-                "name": "block"
+                "name": "handler_block"
               }
             }
           ]
@@ -786,7 +845,7 @@
           "name": "block",
           "content": {
             "type": "SYMBOL",
-            "name": "block"
+            "name": "handler_block"
           }
         }
       ]
@@ -807,8 +866,335 @@
           "name": "block",
           "content": {
             "type": "SYMBOL",
+            "name": "handler_block"
+          }
+        }
+      ]
+    },
+    "handler_block": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_indent"
+        },
+        {
+          "type": "REPEAT1",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "memory_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "run_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "apply_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "remove_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "transition_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "conditional_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "temporal_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_trigger_restricted"
+              }
+            ]
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_dedent"
+        }
+      ]
+    },
+    "conditional_restricted_stmt": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "if"
+        },
+        {
+          "type": "FIELD",
+          "name": "condition",
+          "content": {
+            "type": "SYMBOL",
+            "name": "condition"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "then",
+          "content": {
+            "type": "SYMBOL",
+            "name": "restricted_block"
+          }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "else"
+                },
+                {
+                  "type": "FIELD",
+                  "name": "else",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "restricted_block"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        }
+      ]
+    },
+    "temporal_restricted_stmt": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "after"
+        },
+        {
+          "type": "FIELD",
+          "name": "count",
+          "content": {
+            "type": "SYMBOL",
+            "name": "number_literal"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "prompts"
+        },
+        {
+          "type": "FIELD",
+          "name": "block",
+          "content": {
+            "type": "SYMBOL",
+            "name": "restricted_block"
+          }
+        }
+      ]
+    },
+    "parallel_restricted_stmt": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "parallel"
+        },
+        {
+          "type": "FIELD",
+          "name": "block",
+          "content": {
+            "type": "SYMBOL",
+            "name": "restricted_block"
+          }
+        }
+      ]
+    },
+    "parallel_trigger_restricted": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "on"
+        },
+        {
+          "type": "FIELD",
+          "name": "event",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "complete"
+              },
+              {
+                "type": "STRING",
+                "value": "failed"
+              }
+            ]
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "block",
+          "content": {
+            "type": "SYMBOL",
+            "name": "restricted_block"
+          }
+        }
+      ]
+    },
+    "restricted_block": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_indent"
+        },
+        {
+          "type": "REPEAT1",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "memory_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "run_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "apply_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "remove_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "transition_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "conditional_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "temporal_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_restricted_stmt"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "parallel_trigger_restricted"
+              }
+            ]
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_dedent"
+        }
+      ]
+    },
+    "transition_stmt": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "transition"
+        },
+        {
+          "type": "STRING",
+          "value": "to"
+        },
+        {
+          "type": "FIELD",
+          "name": "state",
+          "content": {
+            "type": "SYMBOL",
+            "name": "path"
+          }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_newline"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        }
+      ]
+    },
+    "conditional_stmt": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "if"
+        },
+        {
+          "type": "FIELD",
+          "name": "condition",
+          "content": {
+            "type": "SYMBOL",
+            "name": "condition"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "then",
+          "content": {
+            "type": "SYMBOL",
             "name": "block"
           }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "else"
+                },
+                {
+                  "type": "FIELD",
+                  "name": "else",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "block"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         }
       ]
     },

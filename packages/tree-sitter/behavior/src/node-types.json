@@ -99,6 +99,42 @@
     }
   },
   {
+    "type": "conditional_restricted_stmt",
+    "named": true,
+    "fields": {
+      "condition": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "condition",
+            "named": true
+          }
+        ]
+      },
+      "else": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "restricted_block",
+            "named": true
+          }
+        ]
+      },
+      "then": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "restricted_block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "conditional_stmt",
     "named": true,
     "fields": {
@@ -189,7 +225,7 @@
         "required": true,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
             "named": true
           }
         ]
@@ -229,6 +265,53 @@
     }
   },
   {
+    "type": "handler_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "apply_stmt",
+          "named": true
+        },
+        {
+          "type": "conditional_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "memory_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_trigger_restricted",
+          "named": true
+        },
+        {
+          "type": "remove_stmt",
+          "named": true
+        },
+        {
+          "type": "run_stmt",
+          "named": true
+        },
+        {
+          "type": "temporal_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "intent_trigger",
     "named": true,
     "fields": {
@@ -237,7 +320,7 @@
         "required": false,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
             "named": true
           }
         ]
@@ -366,7 +449,74 @@
         "required": true,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "oriented_state_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "fallback_stmt",
+          "named": true
+        },
+        {
+          "type": "goal_stmt",
+          "named": true
+        },
+        {
+          "type": "guide_stmt",
+          "named": true
+        },
+        {
+          "type": "intent_trigger",
+          "named": true
+        },
+        {
+          "type": "interact_stmt",
+          "named": true
+        },
+        {
+          "type": "offtopic_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_trigger_restricted",
+          "named": true
+        },
+        {
+          "type": "teach_stmt",
+          "named": true
+        },
+        {
+          "type": "temporal_restricted_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "parallel_restricted_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "restricted_block",
             "named": true
           }
         ]
@@ -399,6 +549,36 @@
         "types": [
           {
             "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "event": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "complete",
+            "named": false
+          },
+          {
+            "type": "failed",
+            "named": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "parallel_trigger_restricted",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "restricted_block",
             "named": true
           }
         ]
@@ -458,6 +638,53 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "restricted_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "apply_stmt",
+          "named": true
+        },
+        {
+          "type": "conditional_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "memory_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_trigger_restricted",
+          "named": true
+        },
+        {
+          "type": "remove_stmt",
+          "named": true
+        },
+        {
+          "type": "run_stmt",
+          "named": true
+        },
+        {
+          "type": "temporal_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -527,6 +754,49 @@
     "fields": {}
   },
   {
+    "type": "setup_state_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "apply_stmt",
+          "named": true
+        },
+        {
+          "type": "conditional_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "memory_stmt",
+          "named": true
+        },
+        {
+          "type": "parallel_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "remove_stmt",
+          "named": true
+        },
+        {
+          "type": "run_stmt",
+          "named": true
+        },
+        {
+          "type": "temporal_restricted_stmt",
+          "named": true
+        },
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "state_decl",
     "named": true,
     "fields": {
@@ -546,7 +816,11 @@
       "required": true,
       "types": [
         {
-          "type": "block",
+          "type": "oriented_state_body",
+          "named": true
+        },
+        {
+          "type": "setup_state_body",
           "named": true
         }
       ]
@@ -637,6 +911,32 @@
         "types": [
           {
             "type": "quoted_string",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "temporal_restricted_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "restricted_block",
+            "named": true
+          }
+        ]
+      },
+      "count": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "number_literal",
             "named": true
           }
         ]
