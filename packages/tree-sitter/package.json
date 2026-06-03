@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/tree-sitter",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)",
   "main": "index.js",
   "files": [
@@ -25,19 +25,25 @@
   "bugs": {
     "url": "https://github.com/dot-agent-spec/tree-sitter/issues"
   },
-  "keywords": ["tree-sitter", "agent", "dsl", "parser", "grammar"],
+  "keywords": [
+    "tree-sitter",
+    "agent",
+    "dsl",
+    "parser",
+    "grammar"
+  ],
   "scripts": {
-    "generate":           "tree-sitter generate",
-    "generate-behavior":  "cd behavior && npx tree-sitter generate",
-    "test":               "tree-sitter test",
-    "test-behavior":      "cd behavior && npx tree-sitter test",
-    "parse":              "tree-sitter parse",
-    "clean":              "node scripts/clean.js",
-    "prebuild":           "npm run clean",
-    "build:wasm-agent":    "tree-sitter build --wasm . && mv tree-sitter-agent.wasm dist/",
+    "generate": "tree-sitter generate",
+    "generate-behavior": "cd behavior && npx tree-sitter generate",
+    "test": "tree-sitter test",
+    "test-behavior": "cd behavior && npx tree-sitter test",
+    "parse": "tree-sitter parse",
+    "clean": "node scripts/clean.js",
+    "prebuild": "npm run clean",
+    "build:wasm-agent": "tree-sitter build --wasm . && mv tree-sitter-agent.wasm dist/",
     "build:wasm-behavior": "cd behavior && tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
-    "build":              "npm run build:wasm-agent && npm run build:wasm-behavior",
-    "prepublishOnly":     "npm run build"
+    "build": "npm run build:wasm-agent && npm run build:wasm-behavior",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "tree-sitter-cli": "^0.25.0"
@@ -45,11 +51,16 @@
   "tree-sitter": [
     {
       "scope": "source.description",
-      "file-types": ["description", "type"]
+      "file-types": [
+        "description",
+        "type"
+      ]
     },
     {
       "scope": "source.behavior",
-      "file-types": ["behavior"]
+      "file-types": [
+        "behavior"
+      ]
     }
   ],
   "publishConfig": {
