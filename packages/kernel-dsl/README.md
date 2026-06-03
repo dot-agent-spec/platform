@@ -1,6 +1,6 @@
-# dot-agent-kernel
+# @dot-agent/kernel-dsl
 
-Execution engine for the **.agent DSL** (`.description` and `.behavior` files), written in Rust and compiled to **WebAssembly**. Implements a Finite State Machine (FSM) that interprets `.behavior` files according to the full dot-agent-spec, running entirely in-memory on the client side (browser or Node.js).
+Execution engine for the **agent behavior DSL** (`.description` and `.behavior` files), written in Rust and compiled to **WebAssembly**. Implements a Finite State Machine (FSM) that interprets `.behavior` files according to the full dot-agent-spec, running entirely in-memory on the client side (browser or Node.js).
 
 ## Architecture
 
@@ -9,11 +9,11 @@ src/
 ├── lib.rs              — Public WASM API (#[wasm_bindgen], no business logic)
 ├── effect.rs           — Effect enum + MemValue (serialized return types for JS)
 ├── parser/
-│   ├── mod.rs          — parse_flow(text) → FlowFile (recursive descent)
+│   ├── mod.rs          — parse_behavior(text) → BehaviorFile (recursive descent)
 │   ├── lexer.rs        — Tokenizer with indentation tracking (INDENT/DEDENT)
-│   └── ast.rs          — AST types (FlowFile, StateDef, Statement, …)
+│   └── ast.rs          — AST types (BehaviorFile, StateDef, Statement, …)
 └── engine/
-    ├── mod.rs          — FlowEngine: orchestrates parser + FSM + memory
+    ├── mod.rs          — AgentDSLKernel: orchestrates parser + FSM + memory
     ├── fsm.rs          — State execution, intent dispatch, conditionals, get_graph()
     └── memory.rs       — MemoryStore: 4 domains (context/session/worksession/user)
 ```
@@ -49,13 +49,13 @@ The parser and FSM cover the full `.agent DSL`:
 ```bash
 rustup target add wasm32-unknown-unknown
 cargo install wasm-pack
-wasm-pack build --target web --out-dir pkg
+wasm-pack build --target bundler
 ```
 
-The generated `pkg/` directory can be consumed by any JS project as a local package:
+The generated `pkg/` directory is consumed via the package root:
 
 ```bash
-npm install file:../dot-agent-kernel/pkg
+npm install @dot-agent/kernel-dsl
 ```
 
 ## API
@@ -63,10 +63,10 @@ npm install file:../dot-agent-kernel/pkg
 All methods return a **JSON array of `Effect` objects**, letting JS react to flow actions without polling.
 
 ```typescript
-const engine = new FlowEngine();
+const engine = new AgentDSLKernel();
 
 // Load a .behavior file and receive the entry effects of the first state
-const effects = engine.load_flow(behaviorText);
+const effects = engine.load_behavior(behaviorText);
 // → [{ type: "goal", text: "…" }, { type: "request_interact" }]
 
 // Dispatch an intent (name classified by the LLM layer)
@@ -124,12 +124,10 @@ For the full API reference — all effect types, handler implementation examples
 ### Dynamic import (Next.js / SSR)
 
 ```javascript
-import("dot-agent-kernel").then(module => {
-  module.default().then(() => {
-    const engine = new module.FlowEngine();
-    const effects = engine.load_flow(flowText);
-    console.log(effects);
-  });
+import("@dot-agent/kernel-dsl").then(module => {
+  const engine = new module.AgentDSLKernel();
+  const effects = engine.load_behavior(behaviorText);
+  console.log(effects);
 });
 ```
 

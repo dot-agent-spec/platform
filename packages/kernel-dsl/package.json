@@ -1,0 +1,64 @@
+{
+  "name": "@dot-agent/kernel-dsl",
+  "version": "0.1.0",
+  "description": "WASM kernel for parsing and executing the agent behavior DSL",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./pkg/dot_agent_kernel_dsl.d.ts",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es"
+    }
+  ],
+  "homepage": "https://github.com/dot-agent-spec/kernel-dsl",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/kernel-dsl"
+  },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/kernel-dsl/issues"
+  },
+  "keywords": [
+    "wasm",
+    "agent",
+    "dsl",
+    "behavior",
+    "fsm",
+    "state-machine",
+    "parser",
+    "webassembly"
+  ],
+  "files": [
+    "index.js",
+    "pkg/dot_agent_kernel_dsl.js",
+    "pkg/dot_agent_kernel_dsl.d.ts",
+    "pkg/dot_agent_kernel_dsl_bg.wasm",
+    "pkg/dot_agent_kernel_dsl_bg.wasm.d.ts",
+    "pkg/package.json"
+  ],
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./pkg/dot_agent_kernel_dsl.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "build": "wasm-pack build --target bundler",
+    "build:release": "wasm-pack build --target bundler --release",
+    "patch": "node -e \"const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel-dsl';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')\"",
+    "prepublishOnly": "npm run build:release && npm run patch"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -29,9 +29,9 @@ pub struct Fsm {
 }
 
 impl Fsm {
-    pub fn new(flow: FlowFile) -> Self {
-        let state_order: Vec<String> = flow.states.iter().map(|s| s.name.clone()).collect();
-        let states: HashMap<String, StateDef> = flow
+    pub fn new(behavior: BehaviorFile) -> Self {
+        let state_order: Vec<String> = behavior.states.iter().map(|s| s.name.clone()).collect();
+        let states: HashMap<String, StateDef> = behavior
             .states
             .into_iter()
             .map(|s| (s.name.clone(), s))
@@ -42,7 +42,7 @@ impl Fsm {
         Fsm {
             state_order,
             states,
-            global_triggers: flow.global_triggers,
+            global_triggers: behavior.global_triggers,
             current_state: initial,
             prompt_count: 0,
         }

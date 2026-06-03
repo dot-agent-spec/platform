@@ -20,19 +20,19 @@ use crate::parser::{self, ParseError};
 use fsm::Fsm;
 use memory::MemoryStore;
 
-pub struct FlowEngine {
+pub struct AgentDSLKernel {
     fsm: Option<Fsm>,
     memory: MemoryStore,
 }
 
-impl FlowEngine {
+impl AgentDSLKernel {
     pub fn new() -> Self {
-        FlowEngine { fsm: None, memory: MemoryStore::new() }
+        AgentDSLKernel { fsm: None, memory: MemoryStore::new() }
     }
 
-    pub fn load_flow(&mut self, text: &str) -> Result<Vec<Effect>, ParseError> {
-        let flow_file = parser::parse_flow(text)?;
-        let mut fsm = Fsm::new(flow_file);
+    pub fn load_behavior(&mut self, text: &str) -> Result<Vec<Effect>, ParseError> {
+        let behavior_file = parser::parse_behavior(text)?;
+        let mut fsm = Fsm::new(behavior_file);
         let effects = fsm.enter_current_state(&mut self.memory);
         self.fsm = Some(fsm);
         Ok(effects)

@@ -16,19 +16,19 @@ mod effect;
 mod engine;
 mod parser;
 
-use engine::FlowEngine as Inner;
+use engine::AgentDSLKernel as Inner;
 use js_sys::Function;
 use wasm_bindgen::prelude::*;
 
 use crate::effect::{Effect, MemValue};
 
 #[wasm_bindgen]
-pub struct FlowEngine {
+pub struct AgentDSLKernel {
     inner: Inner,
     observer: Option<Function>,
 }
 
-impl FlowEngine {
+impl AgentDSLKernel {
     /// Call the registered observer once for each effect.
     fn dispatch(&self, effects: &[Effect]) {
         if let Some(ref cb) = self.observer {
@@ -42,10 +42,10 @@ impl FlowEngine {
 }
 
 #[wasm_bindgen]
-impl FlowEngine {
+impl AgentDSLKernel {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> FlowEngine {
-        FlowEngine { inner: Inner::new(), observer: None }
+    pub fn new() -> AgentDSLKernel {
+        AgentDSLKernel { inner: Inner::new(), observer: None }
     }
 
     /// Register a callback that WASM will call once per Effect as they are produced.
@@ -60,13 +60,13 @@ impl FlowEngine {
         self.observer = Some(callback);
     }
 
-    /// Parse and load a .flow DSL text.
+    /// Parse and load a .behavior DSL text.
     ///
     /// Fires the observer for each entry effect of the first state (typically goal +
     /// request_interact). Also returns the effects array for imperative call sites.
     /// On parse error, fires and returns a single ParseError effect.
-    pub fn load_flow(&mut self, text: &str) -> JsValue {
-        let effects = match self.inner.load_flow(text) {
+    pub fn load_behavior(&mut self, text: &str) -> JsValue {
+        let effects = match self.inner.load_behavior(text) {
             Ok(fx) => fx,
             Err(e) => vec![Effect::ParseError { message: e.0 }],
         };

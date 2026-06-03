@@ -1,6 +1,6 @@
-# dot-agent-kernel — Agent Guidelines
+# @dot-agent/kernel-dsl — Agent Guidelines
 
-AI collaboration guide for maintaining and evolving the `dot-agent-kernel` Rust/WASM execution engine.
+AI collaboration guide for maintaining and evolving the `@dot-agent/kernel-dsl` Rust/WASM execution engine.
 
 ## Context
 
@@ -16,10 +16,10 @@ AI collaboration guide for maintaining and evolving the `dot-agent-kernel` Rust/
 | `src/effect.rs` | `Effect` enum and `MemValue` — serialized types returned to JS |
 | `src/parser/ast.rs` | AST types — mirror the grammar in [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js) |
 | `src/parser/lexer.rs` | Tokenizer with indentation stack (INDENT/DEDENT), all DSL keywords |
-| `src/parser/mod.rs` | Recursive descent parser — `parse_flow(text) → FlowFile` |
+| `src/parser/mod.rs` | Recursive descent parser — `parse_behavior(text) → BehaviorFile` |
 | `src/engine/memory.rs` | `MemoryStore` — 4 domains, `get`/`set` with `AssignOp`, snapshot |
 | `src/engine/fsm.rs` | `Fsm` — executes statements, dispatches intents/offtopic/event/tick/complete/failed |
-| `src/engine/mod.rs` | `FlowEngine` — orchestrates parser + Fsm + MemoryStore |
+| `src/engine/mod.rs` | `AgentDSLKernel` — orchestrates parser + Fsm + MemoryStore |
 
 Never put parser or FSM logic in `lib.rs`. Never expose internal structs directly via `#[wasm_bindgen]` — serialize with `serde_wasm_bindgen::to_value` instead.
 

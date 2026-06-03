@@ -1,18 +1,21 @@
 [package]
-name = "dot-agent-kernel"
+name = "dot-agent-kernel-dsl"
 version = "0.1.0"
 edition = "2021"
-description = "WASM kernel for parsing and validating Agent DSL"
+description = "WebAssembly kernel for parsing and executing agent behavior DSL with deterministic FSM orchestration"
 license = "Apache-2.0"
 authors = ["Danilo Borges <contato@daniloborg.es>"]
 repository = "https://github.com/dot-agent-spec/kernel-dsl"
 homepage = "https://github.com/dot-agent-spec/kernel-dsl"
-keywords = ["wasm", "agent", "dsl", "parser"]
+documentation = "https://github.com/dot-agent-spec/kernel-dsl#readme"
+readme = "README.md"
+keywords = ["wasm", "agent", "dsl", "parser", "fsm", "state-machine"]
 categories = ["wasm", "parser-implementations"]
+exclude = ["pkg/", "target/", ".github/", "*.wasm"]
 
 [package.metadata.scripts]
 build   = "wasm-pack build --target bundler"
-patch   = """node -e "const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')" """
+patch   = """node -e "const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel-dsl';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')" """
 release = "cargo run-script build && cargo run-script patch"
 
 [lib]

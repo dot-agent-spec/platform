@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #[derive(Debug, Clone)]
-pub struct FlowFile {
+pub struct BehaviorFile {
     pub merges: Vec<String>,
     pub global_triggers: Vec<TriggerDecl>,
     pub states: Vec<StateDef>,

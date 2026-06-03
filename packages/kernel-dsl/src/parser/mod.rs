@@ -600,7 +600,7 @@ impl Parser {
         Ok(StateDef { name, body })
     }
 
-    fn parse_flow_file(&mut self) -> Result<FlowFile, ParseError> {
+    fn parse_behavior_file(&mut self) -> Result<BehaviorFile, ParseError> {
         let mut merges = Vec::new();
         let mut global_triggers = Vec::new();
         let mut states = Vec::new();
@@ -650,7 +650,7 @@ impl Parser {
             }
         }
 
-        Ok(FlowFile { merges, global_triggers, states })
+        Ok(BehaviorFile { merges, global_triggers, states })
     }
 
     // Skip tokens until we reach a top-level state/on/merge declaration (no leading indent).
@@ -664,8 +664,8 @@ impl Parser {
     }
 }
 
-pub fn parse_flow(text: &str) -> Result<FlowFile, ParseError> {
+pub fn parse_behavior(text: &str) -> Result<BehaviorFile, ParseError> {
     let tokens = tokenize(text);
     let mut parser = Parser::new(tokens);
-    parser.parse_flow_file()
+    parser.parse_behavior_file()
 }

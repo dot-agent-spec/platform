@@ -1,4 +1,4 @@
-# dot-agent-kernel — API Reference
+# @dot-agent/kernel-dsl — API Reference
 
 ← Back to [README.md](README.md) for architecture overview and build instructions.
 
@@ -10,11 +10,11 @@ The kernel works like a native WebAssembly module with an **import object**: JS 
 ┌─────────────────────────────────────────────────────────┐
 │                    JS / LLM Runtime                     │
 │                                                         │
-│  load_flow()  send_intent()  send_event()  tick_prompt()│
+│  load_behavior() send_intent() send_event() tick_prompt()│
 │       │              │             │             │       │
 │       ▼              ▼             ▼             ▼       │
 │  ┌─────────────────────────────────────────────────┐    │
-│  │            dot-agent-kernel (WASM)              │    │
+│  │           @dot-agent/kernel-dsl (WASM)          │    │
 │  │                    FSM                          │    │
 │  └─────────────────────────────────────────────────┘    │
 │       │              │             │             │       │
@@ -42,10 +42,10 @@ Without handling the **LLM directives** and **execution** categories, a loaded f
 
 ## Observer setup
 
-Register before loading any flow. The observer is the equivalent of the `importObject` in a raw `WebAssembly.instantiateStreaming` call:
+Register before loading any behavior. The observer is the equivalent of the `importObject` in a raw `WebAssembly.instantiateStreaming` call:
 
 ```typescript
-const engine = new FlowEngine();
+const engine = new AgentDSLKernel();
 
 engine.observe((effect: Effect) => {
   switch (effect.type) {
@@ -71,9 +71,9 @@ engine.observe((effect: Effect) => {
 
 ## JS → WASM (exports)
 
-### `new FlowEngine()`
+### `new AgentDSLKernel()`
 
-Instantiates the engine with no loaded flow. Register an observer before calling `load_flow`.
+Instantiates the engine with no loaded flow. Register an observer before calling `load_behavior`.
 
 ---
 
@@ -87,12 +87,12 @@ engine.observe((effect) => { /* handle each effect */ });
 
 ---
 
-### `load_flow(text: string): Effect[]`
+### `load_behavior(text: string): Effect[]`
 
 Parses a `.flow` DSL string and initializes the FSM to the first declared state. Fires the observer with the entry effects of that state (typically `goal` + `request_interact`).
 
 ```typescript
-const effects = engine.load_flow(`
+const effects = engine.load_behavior(`
 state welcome
   goal "Help the user get started"
   guide "You are an onboarding assistant."
@@ -314,7 +314,7 @@ If `silent` is `true`, suppress any UI output the script might produce.
 
 **What it is:** Spawn a sub-agent defined by the `.flow` or `.agent` file at `target`.
 
-**What JS must do:** Instantiate a new `FlowEngine` with the referenced flow (or delegate to the agent runtime), run it to completion, and notify the parent FSM:
+**What JS must do:** Instantiate a new `AgentDSLKernel` with the referenced flow (or delegate to the agent runtime), run it to completion, and notify the parent FSM:
 
 ```typescript
 case "run_subagent":
@@ -421,7 +421,7 @@ type GraphInfo = {
   current: string;
 };
 
-interface FlowEngineHandlers {
+interface AgentDSLKernelHandlers {
   goal(text: string): void;
   guide(text: string): void;
   teach(text: string): Promise<void> | void;
@@ -445,15 +445,15 @@ interface FlowEngineHandlers {
 ```typescript
 import { useRef, useEffect, useCallback } from "react";
 
-export function useFlowEngine(handlers: FlowEngineHandlers) {
-  const engineRef = useRef<import("dot-agent-kernel").FlowEngine | null>(null);
+export function useAgentDSLKernel(handlers: AgentDSLKernelHandlers) {
+  const engineRef = useRef<import("dot-agent-kernel").AgentDSLKernel | null>(null);
 
   useEffect(() => {
-    let engine: import("dot-agent-kernel").FlowEngine;
+    let engine: import("dot-agent-kernel").AgentDSLKernel;
 
     import("dot-agent-kernel").then(async (mod) => {
       await mod.default();
-      engine = new mod.FlowEngine();
+      engine = new mod.AgentDSLKernel();
 
       engine.observe((effect: Effect) => {
         switch (effect.type) {
@@ -479,7 +479,7 @@ export function useFlowEngine(handlers: FlowEngineHandlers) {
     return () => { engine?.free(); };
   }, []);
 
-  const loadFlow  = useCallback((text: string) => engineRef.current?.load_flow(text), []);
+  const loadFlow  = useCallback((text: string) => engineRef.current?.load_behavior(text), []);
   const sendIntent = useCallback((i: string)  => engineRef.current?.send_intent(i), []);
   const sendEvent  = useCallback((e: string)  => engineRef.current?.send_event(e), []);
   const tickPrompt = useCallback(()           => engineRef.current?.tick_prompt(), []);
