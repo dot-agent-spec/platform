@@ -2,7 +2,7 @@
   "name": "vscode-dot-agent",
   "displayName": ".agent DSL",
   "description": "Syntax highlighting, hover docs, and snippets for .agent DSL files",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "dot-agent",
   "repository": {
     "type": "git",
@@ -21,8 +21,8 @@
     "install-ext": "code --install-extension vscode-dot-agent-*.vsix"
   },
   "dependencies": {
-    "@dot-agent/language-server": "^0.2.0",
-    "@dot-agent/tree-sitter": "^0.2.0",
+    "@dot-agent/language-server": "^0.3.1",
+    "@dot-agent/tree-sitter": "^0.3.2",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {

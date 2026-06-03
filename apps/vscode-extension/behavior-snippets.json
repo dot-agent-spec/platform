@@ -8,10 +8,12 @@
       "state ${2:initial}",
       "  guide \"${3:Welcome message}\"",
       "  interact",
-      "  on intent \"${4:done}\" transition to${5:end}",
+      "  on intent \"${4:done}\" transition to ${5:end}",
       "",
       "state ${5:end}",
-      "  guide \"${6:Goodbye}\""
+      "  guide \"${6:Goodbye}\"",
+      "  interact",
+      "  on fallback transition to ${2:initial}"
     ],
     "description": "Scaffold a minimal flow file"
   },
@@ -126,8 +128,7 @@
     "prefix": "on offtopic",
     "body": [
       "on offtopic",
-      "  guide \"${1:Are you sure you want to exit?}\"",
-      "  interact"
+      "  transition to ${1:current_state}"
     ],
     "description": "Offtopic handler"
   },
@@ -135,8 +136,7 @@
     "prefix": "on fallback",
     "body": [
       "on fallback",
-      "  guide \"${1:I didn't understand. Please try again.}\"",
-      "  interact"
+      "  transition to ${1:current_state}"
     ],
     "description": "Fallback handler for unrecognised intents"
   }

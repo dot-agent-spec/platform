@@ -59,7 +59,7 @@
       "patterns": [
         {
           "name": "keyword.operator.behavior",
-          "match": "\\b(script|subagent|tool|silent|background|each|event|intent|offtopic|fallback|complete|failed|requiring|prompts|css|html|video|in|to)\\b"
+          "match": "\\b(script|subagent|tool|silent|background|each|event|intent|offtopic|fallback|complete|failed|prompts|css|html|video|in|to)\\b"
         }
       ]
     },
