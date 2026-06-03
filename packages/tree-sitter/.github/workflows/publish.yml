@@ -28,4 +28,4 @@ jobs:
         run: npm run generate && npm run generate-behavior
 
       - name: Publish package to npm
-        run: npm publish --provenance --access public
+        run: npm publish
