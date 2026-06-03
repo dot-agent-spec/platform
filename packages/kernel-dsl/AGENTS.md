@@ -14,32 +14,43 @@ AI collaboration guide for maintaining and evolving the `@dot-agent/kernel-dsl` 
 |------|---------------|
 | `src/lib.rs` | WASM bindings only (`#[wasm_bindgen]`) — no business logic |
 | `src/effect.rs` | `Effect` enum and `MemValue` — serialized types returned to JS |
-| `src/parser/ast.rs` | AST types — mirror the grammar in [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js) |
-| `src/parser/lexer.rs` | Tokenizer with indentation stack (INDENT/DEDENT), all DSL keywords |
-| `src/parser/mod.rs` | Recursive descent parser — `parse_behavior(text) → BehaviorFile` |
+| `src/parser/ast.rs` | AST types — mirror the grammar in [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js) with serde |
+| `src/parser/mod.rs` | Tree-sitter-based parser — `parse_behavior(text) → BehaviorFile`, converts CST to AST |
 | `src/engine/memory.rs` | `MemoryStore` — 4 domains, `get`/`set` with `AssignOp`, snapshot |
 | `src/engine/fsm.rs` | `Fsm` — executes statements, dispatches intents/offtopic/event/tick/complete/failed |
 | `src/engine/mod.rs` | `AgentDSLKernel` — orchestrates parser + Fsm + MemoryStore |
+| `build.rs` | Code generation — extracts node kinds from tree-sitter `node-types.json` |
 
 Never put parser or FSM logic in `lib.rs`. Never expose internal structs directly via `#[wasm_bindgen]` — serialize with `serde_wasm_bindgen::to_value` instead.
 
 ## Dependency constraints
 
-`wasm32-unknown-unknown` has **no `libc`, no filesystem, no threads**. The current dependencies (`wasm-bindgen`, `serde`, `serde-wasm-bindgen`, `js-sys`) are sufficient. Before adding any new crate to `Cargo.toml`, verify it explicitly supports this target. In particular:
+`wasm32-unknown-unknown` has **no `libc`, no filesystem, no threads**. Runtime dependencies must be WASM-compatible: `wasm-bindgen`, `serde`, `serde-wasm-bindgen`, `js-sys`. Before adding to `Cargo.toml`, verify WASM support.
 
-- **tree-sitter** (Rust crate): does not support `wasm32-unknown-unknown` — do not add
-- **serde_json**: not needed — use `MemValue` / `serde_wasm_bindgen` instead
-- Any crate using `std::fs`, `std::net`, threads, or C FFI: prohibited
+**Build-only dependencies** (in `[build-dependencies]`) are exempt — they run on the host during compilation. Currently: `dot-agent-tree-sitter`, `serde_json` (for codegen). Do not add WASM-incompatible crates to runtime `[dependencies]`.
+
+- **Prohibited in `[dependencies]`**: `std::fs`, `std::net`, threads, libc-dependent crates, C FFI without WASM shims
 
 ## Keeping in sync with the spec
 
-The parser in `src/parser/` must stay in sync with [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js). When the tree-sitter grammar changes:
+The parser uses tree-sitter, so the grammar is in [`dot-agent-tree-sitter/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js). Sync is **semi-automatic**:
 
-1. Update `src/parser/ast.rs` with new types or variants
-2. Update `src/parser/lexer.rs` with new keywords
-3. Update `src/parser/mod.rs` with new parsing rules
-4. Update `src/engine/fsm.rs` to execute the new construct
-5. Update `src/effect.rs` if the construct produces new effect types
+### When tree-sitter grammar changes:
+
+1. **Build-time only**: `build.rs` auto-extracts node kinds from `node-types.json`
+   - List filtering in `extract_state_body_statements`, `extract_handler_block_statements` auto-updates
+   - No manual edits needed for simple statements
+
+2. **Manual edits required** (semantic changes):
+   - `src/parser/ast.rs`: add new Statement enum variants, serde rename tags to match grammar node kinds
+   - `src/parser/mod.rs`: special handling for new nodes with semantic logic (inline shorthand, field splits, etc.)
+   - `src/engine/fsm.rs`: execute new statement types
+   - `src/effect.rs`: new effect types if the construct produces new side effects
+
+3. **Sync process**:
+   - Update `dot-agent-tree-sitter` crate version in `Cargo.toml`
+   - Run `cargo update && cargo build`
+   - Codegen updates automatically; add manual semantic handlers as needed
 
 ## WASM → JS boundary
 

@@ -89,7 +89,7 @@ engine.observe((effect) => { /* handle each effect */ });
 
 ### `load_behavior(text: string): Effect[]`
 
-Parses a `.flow` DSL string and initializes the FSM to the first declared state. Fires the observer with the entry effects of that state (typically `goal` + `request_interact`).
+Parses a `.behavior` DSL string and initializes the FSM to the first declared state. Fires the observer with the entry effects of that state (typically `goal` + `request_interact`).
 
 ```typescript
 const effects = engine.load_behavior(`
@@ -120,16 +120,6 @@ const effects = engine.send_intent("continue");
 If no handler matches, returns `[]` and the state does not change.
 
 **The valid intents for the current state are available via `get_valid_intents()`** — pass them to the LLM classifier as the allowed output set.
-
----
-
-### `send_escape(): Effect[]`
-
-Fires the current state's `on escape` block. Call when the user explicitly breaks out of the current flow (e.g. types `/exit`, presses Escape, or navigates away).
-
-```typescript
-engine.send_escape();
-```
 
 ---
 

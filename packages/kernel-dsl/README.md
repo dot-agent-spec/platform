@@ -9,16 +9,17 @@ src/
 ├── lib.rs              — Public WASM API (#[wasm_bindgen], no business logic)
 ├── effect.rs           — Effect enum + MemValue (serialized return types for JS)
 ├── parser/
-│   ├── mod.rs          — parse_behavior(text) → BehaviorFile (recursive descent)
-│   ├── lexer.rs        — Tokenizer with indentation tracking (INDENT/DEDENT)
-│   └── ast.rs          — AST types (BehaviorFile, StateDef, Statement, …)
+│   ├── mod.rs          — parse_behavior(text) → BehaviorFile via tree-sitter
+│   └── ast.rs          — AST types (BehaviorFile, StateDef, Statement, …) with serde
 └── engine/
     ├── mod.rs          — AgentDSLKernel: orchestrates parser + FSM + memory
     ├── fsm.rs          — State execution, intent dispatch, conditionals, get_graph()
     └── memory.rs       — MemoryStore: 4 domains (context/session/worksession/user)
+
+build.rs               — Code generation: extracts node kinds from tree-sitter grammar
 ```
 
-The parser is a **pure-Rust recursive descent parser** — no tree-sitter runtime dependency, fully compatible with `wasm32-unknown-unknown`. It is kept in sync with the canonical grammar at [`tree-sitter-agent/behavior/grammar.js`](https://github.com/daniloborges/dot-agent-tree-sitter/blob/main/behavior/grammar.js).
+The parser uses **tree-sitter** for robust parsing. The grammar is maintained in the [`dot-agent-tree-sitter`](https://github.com/daniloborges/dot-agent-tree-sitter) crate. `build.rs` automatically extracts node kinds from `tree-sitter/node-types.json` to keep parsing logic in sync with the grammar — when the grammar changes, simply update the tree-sitter crate version and rebuild.
 
 ## Supported constructs
 
