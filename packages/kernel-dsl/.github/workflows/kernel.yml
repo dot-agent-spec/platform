@@ -1,12 +1,6 @@
-name: Build and Publish Kernel
+name: Publish Kernel
 
 on:
-  push:
-    paths:
-      - 'kernel-dsl/**'
-  pull_request:
-    paths:
-      - 'kernel-dsl/**'
   release:
     types: [published]
 
@@ -15,44 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24.x'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Setup Zig
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.13.0
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-wasip1
-
-      - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Kernel
-        run: |
-          export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
-          export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
-          export AR_wasm32_wasip1="zig ar"
-          npm run build
-
   publish:
-    needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
     steps:
       - uses: actions/checkout@v4
 
@@ -73,14 +31,32 @@ jobs:
           targets: wasm32-wasip1
 
       - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version "=0.2.122" --locked
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and publish
+      - name: Build release
         run: |
           export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
           export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
           export AR_wasm32_wasip1="zig ar"
-          npm run build:release && npm publish
+          npm run build:release
+
+      - name: Verify build artifacts
+        run: |
+          for f in index.js \
+                    scripts/discover-wasm-imports.js \
+                    scripts/patch-wasm-bindgen.js \
+                    pkg/dot_agent_kernel_dsl.js \
+                    pkg/dot_agent_kernel_dsl.d.ts \
+                    pkg/dot_agent_kernel_dsl_bg.js \
+                    pkg/dot_agent_kernel_dsl_bg.wasm \
+                    pkg/dot_agent_kernel_dsl_bg.wasm.d.ts \
+                    pkg/package.json; do
+            [ -f "$f" ] || { echo "MISSING: $f"; exit 1; }
+          done
+          echo "All artifacts present."
+
+      - name: Publish
+        run: npm publish --provenance
