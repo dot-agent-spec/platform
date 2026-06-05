@@ -2,6 +2,28 @@
   "name": "@dot-agent/cli",
   "version": "1.0.1",
   "license": "Apache-2.0",
+  "description": "CLI toolkit for building, packaging, and executing deterministic FSM-based agents",
+  "keywords": [
+    "agent",
+    "cli",
+    "fsm",
+    "deterministic",
+    "specification",
+    "workflow"
+  ],
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "homepage": "https://dot-agent.ai",
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/dot-agent-cli/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/daniloborges"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/dot-agent-cli"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
