@@ -40,14 +40,14 @@ jobs:
         run: cargo install wasm-bindgen-cli
 
       - name: Install dependencies
-        run: cd kernel-dsl && npm ci
+        run: npm ci
 
       - name: Build Kernel
         run: |
           export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
           export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
           export AR_wasm32_wasip1="zig ar"
-          cd kernel-dsl && npm run build
+          npm run build
 
   publish:
     needs: build
@@ -76,11 +76,11 @@ jobs:
         run: cargo install wasm-bindgen-cli
 
       - name: Install dependencies
-        run: cd kernel-dsl && npm ci
+        run: npm ci
 
       - name: Build and publish
         run: |
           export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
           export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
           export AR_wasm32_wasip1="zig ar"
-          cd kernel-dsl && npm run build:release && npm run patch && npm publish
+          npm run build:release && npm run patch && npm publish
