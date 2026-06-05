@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "Apache-2.0",
   "description": "CLI toolkit for building, packaging, and executing deterministic FSM-based agents",
   "keywords": [
