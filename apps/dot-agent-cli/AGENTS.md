@@ -75,6 +75,18 @@ When adding a new agent, use this format:
 
 ---
 
+## Publishing
+
+Publishing to npm happens automatically via GitHub Actions (`.github/workflows/`) when a GitHub Release is published.
+**Do not run `npm publish` manually.**
+
+Steps to release a new version:
+1. Bump `version` in `package.json`
+2. Commit and push
+3. Create a GitHub Release — the workflow runs `npm ci`, `npm run build`, `npm test`, and publishes to npm
+
+---
+
 ## Absolute Rules
 
 **License headers are mandatory on every source file.** Before committing any `.ts`, `.tsx`, `.js`, or `.jsx` file you must ensure the correct header is present at the very top of the file:

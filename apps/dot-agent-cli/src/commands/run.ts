@@ -79,9 +79,9 @@ export async function run(options: RunOptions): Promise<AgentContext> {
           send_complete: () => {},
           send_event: () => {},
           send_failed: () => {},
-          send_fallback: () => {},
           send_intent: () => {},
           send_offtopic: () => {},
+          set_memory: () => {},
           tick_prompt: () => {},
           free: () => {},
         }
@@ -151,9 +151,9 @@ export async function run(options: RunOptions): Promise<AgentContext> {
           send_complete: () => {},
           send_event: () => {},
           send_failed: () => {},
-          send_fallback: () => {},
           send_intent: () => {},
           send_offtopic: () => {},
+          set_memory: () => {},
           tick_prompt: () => {},
           free: () => {},
         }

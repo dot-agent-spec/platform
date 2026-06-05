@@ -24,9 +24,9 @@ declare module '@dot-agent/kernel-dsl' {
     send_complete(): any
     send_event(event: string): any
     send_failed(): any
-    send_fallback(): any
     send_intent(intent: string): any
     send_offtopic(): any
+    set_memory(domain: string, key: string, value_json: string): void
     tick_prompt(): any
     free(): void
   }
