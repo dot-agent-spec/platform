@@ -42,10 +42,10 @@ Se `load_behavior()` retorna `parse_error` effect, o lint mapeia para E006.
 
 O `dot-agent` expõe dois pontos de entrada com a mesma base de código:
 
-| Ponto de entrada | Quem usa | Como |
-|---|---|---|
-| `index.ts` (API JS) | Electron / app | `import { run, pack, unpack, init } from 'dot-agent'` |
-| `cli.ts` (bin) | Terminal / npx | `npx dot-agent <comando>` |
+| Ponto de entrada | Quem usa | Como | Status |
+|---|---|---|---|
+| `index.ts` (API JS) | Electron / app | `import { run, pack, unpack, init } from 'dot-agent'` | ✅ Implementado |
+| `cli.ts` (bin) | Terminal / npx | `npx dot-agent <comando>` | ✅ Implementado |
 
 O `cli.ts` é um wrapper fino: parse de args → chama a mesma função de `index.ts`.
 
@@ -292,7 +292,7 @@ export function run(options: RunOptions): Promise<AgentContext>
 
 ---
 
-### `dot-agent init`
+### ✅ `dot-agent init`
 
 Gera o scaffold completo do projeto.  
 Não é interativo na V1 — o desenvolvedor edita os arquivos gerados.
@@ -376,7 +376,7 @@ state responsive
 
 ---
 
-### `dot-agent pack`
+### ✅ `dot-agent pack`
 
 Valida a DSL e empacota os fontes em um arquivo `.agent` (ZIP).
 
@@ -466,7 +466,7 @@ Pack aborted.
 
 ---
 
-### `dot-agent unpack`
+### ✅ `dot-agent unpack`
 
 Extrai um `.agent` e restaura os fontes.
 
@@ -507,7 +507,7 @@ interface UnpackResult {
 
 ---
 
-### `dot-agent run`
+### ✅ `dot-agent run`
 
 Carrega um `.agent` (ou pasta de fontes) e retorna o `AgentContext`.
 
