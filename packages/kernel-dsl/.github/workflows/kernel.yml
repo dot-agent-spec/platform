@@ -83,4 +83,4 @@ jobs:
           export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
           export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
           export AR_wasm32_wasip1="zig ar"
-          npm run build:release && npm run patch && npm publish
+          npm run build:release && npm publish
