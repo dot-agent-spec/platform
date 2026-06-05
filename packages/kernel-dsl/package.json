@@ -41,6 +41,7 @@
     "scripts/patch-wasm-bindgen.js",
     "pkg/dot_agent_kernel_dsl.js",
     "pkg/dot_agent_kernel_dsl.d.ts",
+    "pkg/dot_agent_kernel_dsl_bg.js",
     "pkg/dot_agent_kernel_dsl_bg.wasm",
     "pkg/dot_agent_kernel_dsl_bg.wasm.d.ts",
     "pkg/package.json"

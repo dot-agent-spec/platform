@@ -104,6 +104,16 @@ wasm-pack build --target web --out-dir pkg
 - **Generated files in `pkg/`**: no header — overwritten on every `wasm-pack build`.
 - **No NOTICE file**: no third-party source is distributed in this repo. Cargo dependencies are resolved at build time only.
 
+## Publishing
+
+Publishing to npm happens automatically via GitHub Actions (`.github/workflows/`) when a GitHub Release is published.
+**Do not run `npm publish` manually.**
+
+Steps to release a new version:
+1. Bump `version` in `package.json`
+2. Commit and push
+3. Create a GitHub Release — the workflow builds the WASM, patches the JS bindings, and publishes to npm
+
 ## Key references
 
 | Resource | Link |

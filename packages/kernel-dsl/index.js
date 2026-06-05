@@ -65,8 +65,8 @@ export class AgentDSLKernel {
   send_complete() { return this._kernel.send_complete(); }
   send_event(event) { return this._kernel.send_event(event); }
   send_failed() { return this._kernel.send_failed(); }
-  send_fallback() { return this._kernel.send_fallback(); }
   send_intent(intent) { return this._kernel.send_intent(intent); }
+  set_memory(domain, key, value_json) { return this._kernel.set_memory(domain, key, value_json); }
   send_offtopic() { return this._kernel.send_offtopic(); }
   tick_prompt() { return this._kernel.tick_prompt(); }
   free() { return this._kernel.free(); }
