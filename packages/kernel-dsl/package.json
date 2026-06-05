@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/kernel-dsl",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WASM kernel for parsing and executing the agent behavior DSL",
   "type": "module",
   "main": "./index.js",
@@ -64,6 +64,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
