@@ -53,6 +53,7 @@
   },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
+    "prepublishOnly": "npm run build && npm run test",
     "build": "tsup",
     "test": "vitest run",
     "dev": "tsup --watch"
