@@ -14,7 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { createRequire } from 'module'
 import { init, pack, unpack, run } from './index.js'
+
+const require = createRequire(import.meta.url)
+const { version } = require('../package.json')
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -93,7 +97,7 @@ async function main() {
       const context = await run({ source })
       formatSuccess(`Agent loaded: ${context.id}`)
     } else {
-      console.log(`dot-agent CLI v1.0.0
+      console.log(`dot-agent CLI v${version}
 
 Usage:
   dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]
