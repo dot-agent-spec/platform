@@ -56,10 +56,9 @@
   },
   "scripts": {
     "build": "./scripts/build-wasm.sh && node scripts/patch-wasm-bindgen.js",
-    "build:release": "RELEASE=true ./scripts/build-wasm.sh && node scripts/patch-wasm-bindgen.js",
-    "patch": "node -e \"const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/kernel-dsl';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')\"",
+    "build:release": "RELEASE=true ./scripts/build-wasm.sh && node scripts/patch-wasm-bindgen.js && node scripts/create-pkg-manifest.js",
     "test:node": "node --test tests/node-compat.test.js",
-    "prepublishOnly": "npm run build:release && npm run patch"
+    "prepublishOnly": "npm run build:release"
   },
   "publishConfig": {
     "access": "public"
