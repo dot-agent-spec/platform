@@ -1,6 +1,7 @@
 {
-  "name": "dot-agent",
+  "name": "@dot-agent/cli",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,18 +18,19 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@dot-agent/kernel-dsl": "^0.1.1",
     "@dot-agent/tree-sitter": "^0.3.2",
-    "@dot-agent/kernel-dsl": "file:../dsl/kernel-dsl",
     "jszip": "^3.10.1",
     "web-tree-sitter": "^0.25.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "vitest": "^1.6.0",
     "@types/node": "^20.0.0",
-    "tsup": "^8.0.0"
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "build": "tsup",
     "test": "vitest run",
     "dev": "tsup --watch"

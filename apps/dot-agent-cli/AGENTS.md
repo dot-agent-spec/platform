@@ -75,6 +75,15 @@ When adding a new agent, use this format:
 
 ---
 
+## Absolute Rules
+
+**License headers are mandatory on every source file.** Before committing any `.ts`, `.tsx`, `.js`, or `.jsx` file you must ensure the correct header is present at the very top of the file:
+- **New file** (all files in this project): full Apache 2.0 header, sole copyright Danilo Borges 2026.
+
+The pre-commit hook (`scripts/ensure-license-headers.sh`, registered in `.githooks/pre-commit` via `git config core.hooksPath`) applies the headers automatically and re-stages patched files. After cloning the repository, run `npm install` to activate the hook. If you add a file programmatically and bypass the hook, inject the header manually before staging. Never remove or alter existing copyright notices.
+
+---
+
 ## Orchestration Rules
 
 When composing agents that have dependencies:
