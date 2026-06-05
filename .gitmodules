@@ -16,3 +16,6 @@
 [submodule "dsl/kernel-dsl"]
 	path = dsl/kernel-dsl
 	url = git@github.com:dot-agent-spec/kernel-dsl.git
+[submodule "dot-agent-cli"]
+	path = dot-agent-cli
+	url = https://github.com/dot-agent-spec/dot-agent-cli.git
