@@ -1,4 +1,4 @@
-name: Build Kernel
+name: Build and Publish Kernel
 
 on:
   push:
@@ -7,12 +7,24 @@ on:
   pull_request:
     paths:
       - 'kernel-dsl/**'
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Setup Zig
         uses: goto-bus-stop/setup-zig@v2
@@ -22,14 +34,53 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: wasm32-wasip1
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Install dependencies
+        run: cd kernel-dsl && npm ci
 
       - name: Build Kernel
         run: |
-          export CC_wasm32_unknown_unknown="zig cc -target wasm32-wasi"
-          export CXX_wasm32_unknown_unknown="zig c++ -target wasm32-wasi"
-          export AR_wasm32_unknown_unknown="zig ar"
+          export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
+          export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
+          export AR_wasm32_wasip1="zig ar"
           cd kernel-dsl && npm run build
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Install dependencies
+        run: cd kernel-dsl && npm ci
+
+      - name: Build and publish
+        run: |
+          export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
+          export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
+          export AR_wasm32_wasip1="zig ar"
+          cd kernel-dsl && npm run build:release && npm run patch && npm publish

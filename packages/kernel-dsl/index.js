@@ -77,20 +77,32 @@ export async function init() {
 
   try {
     const bgModule = await import('./pkg/dot_agent_kernel_dsl_bg.js');
-    const wasmPath = new URL('./pkg/dot_agent_kernel_dsl_bg.wasm', import.meta.url);
-    const wasmResponse = await fetch(wasmPath);
-    const wasmBuffer = await wasmResponse.arrayBuffer();
-    
+
+    // Load WASM buffer: fetch in browser, fs.readFile in Node.js
+    let wasmBuffer;
+    if (typeof window !== 'undefined') {
+      // Browser environment
+      const wasmPath = new URL('./pkg/dot_agent_kernel_dsl_bg.wasm', import.meta.url);
+      const wasmResponse = await fetch(wasmPath);
+      wasmBuffer = await wasmResponse.arrayBuffer();
+    } else {
+      // Node.js environment
+      const { readFile } = await import('node:fs/promises');
+      const { fileURLToPath } = await import('node:url');
+      const wasmPath = fileURLToPath(new URL('./pkg/dot_agent_kernel_dsl_bg.wasm', import.meta.url));
+      wasmBuffer = await readFile(wasmPath);
+    }
+
     const importObject = {
       env: wasiShim,
       wasi_snapshot_preview1: wasiShim,
       './dot_agent_kernel_dsl_bg.js': { ...bgModule }
     };
-    
+
     const wasmModule = await WebAssembly.instantiate(wasmBuffer, importObject);
     bgModule.__wbg_set_wasm(wasmModule.instance.exports);
     _module = await import('./pkg/dot_agent_kernel_dsl.js');
-    
+
     _initialized = true;
   } catch (err) {
     console.error('Failed to initialize wasm:', err);
