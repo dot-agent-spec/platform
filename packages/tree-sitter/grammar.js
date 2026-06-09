@@ -19,7 +19,7 @@
 // Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
 // scanner in src/scanner.c — Tree-sitter has no native indent support.
 //
-// Structural decision (following examples, not original EBNF):
+// Structural decision:
 //   - agent metadata (domain, license, terms, privacy) is indented under `agent`
 //   - semantic blocks (description, behavior, requires, input, capabilities, output)
 //     are top-level statements that implicitly belong to the preceding agent
@@ -30,9 +30,16 @@
 //   This is necessary because the scanner emits DEDENT (not NEWLINE) for the
 //   \n that follows the last item — so items must NOT consume their own newline.
 
-module.exports = grammar({
-  name: 'agent',
 
+// Evolution to v1.0.0-release:
+//   (in progress) - Indentation limits (_indent / _dedent) removed to optimize AI-generation stability.
+//   - Structural focus shifted entirely to declarative keywords and explicit newlines.
+//   - Strict separation of ontological routing: 'category' (Wikidata) vs 'concept' (Schema.org).
+
+module.exports = grammar({
+  name: 'dot-agent',
+
+  // TODO: Remove indentation level, the language should focus on keywords. 
   // External tokens produced by src/scanner.c
   externals: $ => [
     $._newline,   // \n where next line has SAME indentation level
@@ -60,12 +67,6 @@ module.exports = grammar({
     statement: $ => choice(
       $.agent_decl,
       $.type_decl,
-      $.description_block,
-      $.behavior_block,
-      $.requires_block,
-      $.input_block,
-      $.capabilities_block,
-      $.output_block,
     ),
 
     // ----------------------------------------------------------------
@@ -81,16 +82,15 @@ module.exports = grammar({
     agent_decl: $ => seq(
       'agent',
       field('name', $.agent_name),
-      choice(
-        // No metadata block — just a name line
-        $._newline,
-        // Metadata block — sep-by pattern (items separated by _newline)
-        seq(
-          $._indent,
-          $.agent_meta, repeat(seq($._newline, $.agent_meta)),
-          $._dedent,
-        ),
-      ),
+      $._newline,
+      repeat1(seq($.agent_meta, $._newline)),
+      optional(field('description', $.description_block)),
+      optional(field('persona', $.persona_block)),
+      optional(field('behavior', $.behavior_block)),
+      optional(field('capabilities', $.capabilities_block)),
+      optional(field('requires', $.requires_block)),
+      optional(field('input', $.input_block)),
+      optional(field('output', $.output_block)),
     ),
 
     // Supports single-word (Doctor) and multi-word (Mickey Mouse) names
@@ -106,21 +106,32 @@ module.exports = grammar({
     agent_meta_key: $ => choice('domain', 'license', 'terms', 'privacy'),
 
     // ----------------------------------------------------------------
-    // Semantic Blocks  (top-level per examples)
+    // Semantic & Cognitive Capability Blocks
     // ----------------------------------------------------------------
 
     description_block: $ => seq(
       'description',
-      $._indent,
-      $.text_content, repeat(seq($._newline, $.text_content)),
-      $._dedent,
+      $._newline,
+      field('content', $.description_content),
+      $._blank_line,
+    ),
+    description_content: $ => repeat1(
+      seq($.text_content, $._newline),
     ),
 
-    // Free-form text line — external tokens (_indent/_dedent/_newline) already
+    // Free-form text line — external tokens (_newline) already
     // take automatic priority over regular tokens; no prec(-1) needed.
     // Without it, same-prec ties are broken by match length, so text_content
     // (whole line) beats identifier (single word), fixing accented chars.
     text_content: $ => token(/[^\n\r]+/),
+
+    _blank_line: $ => prec(2, $._newline),
+
+    persona_block: $ => seq(
+      'persona',
+      field('file', $.bare_string),
+      $._newline,
+    ),
 
     behavior_block: $ => seq(
       'behavior',
@@ -135,9 +146,7 @@ module.exports = grammar({
         seq($.type_list, $._newline),
         // Multiline block
         seq(
-          $._indent,
           $.type_reference, repeat(seq($._newline, $.type_reference)),
-          $._dedent,
         ),
       ),
     ),
@@ -147,9 +156,7 @@ module.exports = grammar({
       choice(
         seq($.type_list, $._newline),
         seq(
-          $._indent,
           $.typed_item, repeat(seq($._newline, $.typed_item)),
-          $._dedent,
         ),
       ),
     ),
@@ -159,9 +166,7 @@ module.exports = grammar({
       choice(
         seq($.type_list, $._newline),
         seq(
-          $._indent,
           $.cap_item, repeat(seq($._newline, $.cap_item)),
-          $._dedent,
         ),
       ),
     ),
@@ -171,9 +176,7 @@ module.exports = grammar({
       choice(
         seq($.type_list, $._newline),
         seq(
-          $._indent,
           $.typed_item, repeat(seq($._newline, $.typed_item)),
-          $._dedent,
         ),
       ),
     ),
@@ -198,10 +201,18 @@ module.exports = grammar({
     ),
 
     // type_property does NOT consume trailing _newline (sep-by in type_decl)
-    type_property: $ => choice(
-      $.concept_prop,
-      $.schema_prop,
-      $.property_decl,
+    type_property: $ => seq(
+      $.category_prop,
+      optional($.concept_prop),
+      repeat1(
+        $.property_decl,
+      ),
+    ),
+    // TODO: Rever esses parenteses
+    category_prop: $ => seq(
+      'category',
+      field('uri', $.url),
+      optional(seq('(', field('label', $.bare_string), ')')),
     ),
 
     concept_prop: $ => seq(
@@ -210,18 +221,13 @@ module.exports = grammar({
       optional(seq('(', field('label', $.bare_string), ')')),
     ),
 
-    schema_prop: $ => seq(
-      'schema',
-      field('file', $.filename),
-    ),
-
     // name?: Type  "optional description"   (? before colon, TypeScript-style)
     property_decl: $ => seq(
-      field('name',                       $.identifier),
-      optional(field('optional_marker',   $.optional_marker)),
+      field('name', $.identifier),
+      optional(field('optional_marker', $.optional_marker)),
       ':',
-      field('type',                       $.type_value),
-      optional(field('description',       $.quoted_string)),
+      field('type', $.type_value),
+      optional(field('description', $.quoted_string)),
     ),
 
     optional_marker: $ => '?',
