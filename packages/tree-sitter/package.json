@@ -41,7 +41,7 @@
     "parse": "tree-sitter parse",
     "clean": "node scripts/clean.js",
     "prebuild": "npm run clean",
-    "build:wasm-agent": "tree-sitter build --wasm . && mv tree-sitter-agent.wasm dist/",
+    "build:wasm-agent": "tree-sitter build --wasm . && mv tree-sitter-dot_agent.wasm dist/",
     "build:wasm-behavior": "cd behavior && tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
     "build": "npm run build:wasm-agent && npm run build:wasm-behavior",
     "prepublishOnly": "npm run build"
