@@ -1,7 +1,7 @@
 {
   "grammars": [
     {
-      "name": "agent",
+      "name": "dot_agent",
       "scope": "source.description",
       "file-types": ["description", "type"],
       "highlights": "queries/highlights.scm"

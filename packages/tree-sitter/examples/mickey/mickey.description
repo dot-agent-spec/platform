@@ -4,8 +4,7 @@ agent Mickey Mouse
   terms https://disney.com/terms
   privacy https://disney.com/privacy
 
-// pq aqui o texto tá sem "" e no capability tem? 
-description
+description // pq aqui o texto tá sem "" e no capability tem?
   This agent generates images of Mickey Mouse based on a given text prompt and an optional image input. It can produce both a standard image of Mickey Mouse and an avatar with Mickey Mouse ears, along with metadata about the generation process.
 
 // === NOTA ARQUITETURAL: METADADOS & LICENÇA ===
@@ -26,17 +25,17 @@ behavior mickey.flow
 // A Runtime usará essa URN para baixar os endereços reais do Registry oficial.
 // ===============================================
 
-input std.Prompt, std.ImageObject
-
 capabilities
+  CreateAction "Generate images of Mickey Mouse based on text prompts"
+  CreateAction "Create avatars with Mickey Mouse ears"
+  custom.SpeechSynthesis "Transform text into speech with Mickey Mouse's voice"
   // === NOTA ARQUITETURAL: NAMESPACES & CAPABILITIES ===
   // O uso das Capabilities atua como o Header File (.h) e Contrato de Segurança.
   // Ações de criação de IP protegido rodam sob a restrição do domínio disney.com.
   // ====================================================
   // como ter esse lock? Agentes de IP rodariam localmente? que travas é possivel entrar na spec?
-  CreateAction "Generate images of Mickey Mouse based on text prompts"
-  CreateAction "Create avatars with Mickey Mouse ears"
-  custom.SpeechSynthesis "Transform text into speech with Mickey Mouse's voice"
+
+input std.Prompt, std.ImageObject
 
 output
   AvatarWithMickey
@@ -45,12 +44,16 @@ output
 
 // Tipos Customizados Locais
 type AvatarWithMickey
+  category https://www.wikidata.org/wiki/Q478798
   concept https://schema.org/ImageObject
   image: Avatar
 
 type AvatarWithEars
+  category https://www.wikidata.org/wiki/Q478798
   concept https://schema.org/ImageObject
   image: Avatar
 
 type Speech
+  category https://www.wikidata.org/wiki/Q11499
   concept https://schema.org/AudioObject
+  text: string

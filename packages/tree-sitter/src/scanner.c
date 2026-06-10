@@ -51,7 +51,7 @@ typedef struct {
 
 // ---- Tree-sitter lifecycle -------------------------------------------------
 
-void *tree_sitter_agent_external_scanner_create() {
+void *tree_sitter_dot_agent_external_scanner_create() {
   Scanner *s = calloc(1, sizeof(Scanner));
   s->stack[0] = 0;
   s->depth = 0;
@@ -59,13 +59,13 @@ void *tree_sitter_agent_external_scanner_create() {
   return s;
 }
 
-void tree_sitter_agent_external_scanner_destroy(void *payload) {
+void tree_sitter_dot_agent_external_scanner_destroy(void *payload) {
   free(payload);
 }
 
 // Serialize scanner state into Tree-sitter's incremental-parse cache.
 // Format: [depth, pending_dedents, stack[0]_lo, stack[0]_hi, ...]
-unsigned tree_sitter_agent_external_scanner_serialize(void *payload, char *buffer) {
+unsigned tree_sitter_dot_agent_external_scanner_serialize(void *payload, char *buffer) {
   Scanner *s = payload;
   buffer[0] = s->depth;
   buffer[1] = s->pending_dedents;
@@ -77,7 +77,7 @@ unsigned tree_sitter_agent_external_scanner_serialize(void *payload, char *buffe
   return offset;
 }
 
-void tree_sitter_agent_external_scanner_deserialize(void *payload, const char *buffer, unsigned n) {
+void tree_sitter_dot_agent_external_scanner_deserialize(void *payload, const char *buffer, unsigned n) {
   Scanner *s = payload;
   if (n < 2) return;
   s->depth = (uint8_t)buffer[0];
@@ -112,7 +112,7 @@ static uint16_t count_indent(TSLexer *lexer) {
 
 // ---- Main scan function ----------------------------------------------------
 
-bool tree_sitter_agent_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid) {
+bool tree_sitter_dot_agent_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid) {
   Scanner *s = payload;
 
   // 1. Drain any queued DEDENTs before looking at new input.

@@ -8,7 +8,7 @@ description
   Um especialista em análise clínica e emissão de diagnósticos
 
 behavior doctor.flow
+capabilities DiagnoseAction
 requires Prontuario
 input Patient, MedicalCondition
-capabilities DiagnoseAction
 output Prescription

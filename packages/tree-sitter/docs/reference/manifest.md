@@ -4,7 +4,7 @@ The `.description` manifest defines an agent's identity, public interface, and s
 
 ## 1. Syntax Overview
 
-The `agent` keyword defines the root node. Semantic blocks are top-level and implicitly belong to the preceding `agent`.
+The `agent` keyword defines the root node. All semantic blocks (`description`, `behavior`, `persona`, `requires`, `input`, `output`, `capabilities`) are optional fields nested directly inside the `agent` declaration.
 
 ```
 agent Analyst
@@ -25,8 +25,8 @@ output FinancialReport
 
 | Block | Function | Syntax Form |
 |---|---|---|
-| **`agent`** | Identity & Metadata | Indented key-value (`domain`, `license`, `terms`, `privacy`) |
-| **`description`** | Semantic Indexing | Indented text block |
+| **`agent`** | Identity & Metadata | Key-value lines (`domain`, `license`, `terms`, `privacy`), separated from blocks by a blank line |
+| **`description`** | Semantic Indexing | Text block following the `description` keyword |
 | **`behavior`** | Implementation Link | Inline: `behavior filename.behavior` |
 | **`requires`** | Context dependencies | Compact (inline) or Documented (block) |
 | **`input`** | Data requirements | Compact (inline) or Documented (block) |
