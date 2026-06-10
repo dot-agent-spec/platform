@@ -14,38 +14,17 @@
  * limitations under the License.
  */
 
-// grammar.js — Tree-sitter grammar for the .agent DSL (.description / .type)
-//
-// Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
-// scanner in src/scanner.c — Tree-sitter has no native indent support.
-//
-// Structural decision:
-//   - agent metadata (domain, license, terms, privacy) is indented under `agent`
-//   - semantic blocks (description, behavior, requires, input, capabilities, output)
-//     are top-level statements that implicitly belong to the preceding agent
-//
-// Sep-by pattern:
-//   Blocks use  seq(item, repeat(seq($._newline, item)), $._dedent)
-//   instead of  repeat1(seq(item, $._newline))
-//   This is necessary because the scanner emits DEDENT (not NEWLINE) for the
-//   \n that follows the last item — so items must NOT consume their own newline.
+// grammar.js — Tree-sitter grammar for the .agent DSL.
+// This file defines the manifest and type syntax used by .description and .type files.
 
-
-// Evolution to v1.0.0-release:
-//   (in progress) - Indentation limits (_indent / _dedent) removed to optimize AI-generation stability.
-//   - Structural focus shifted entirely to declarative keywords and explicit newlines.
-//   - Strict separation of ontological routing: 'category' (Wikidata) vs 'concept' (Schema.org).
+// Design notes for maintainers:
+//   - The grammar relies on explicit keywords and newline-driven structure instead of
+//     fragile indentation heuristics.
+//   - The `category` / `concept` split is the main semantic distinction for type metadata.
+//   - Comments in this file explain intent and structure; they do not change parsing behavior.
 
 module.exports = grammar({
-  name: 'dot-agent',
-
-  // TODO: Remove indentation level, the language should focus on keywords. 
-  // External tokens produced by src/scanner.c
-  externals: $ => [
-    $._newline,   // \n where next line has SAME indentation level
-    $._indent,    // \n where next line has MORE indentation (block opens)
-    $._dedent,    // \n where next line has LESS indentation (block closes)
-  ],
+  name: 'dot_agent',
 
   // Tokens silently skipped between grammar tokens
   extras: $ => [
@@ -69,6 +48,8 @@ module.exports = grammar({
       $.type_decl,
     ),
 
+    _newline: $ => /\r?\n/,
+
     // ----------------------------------------------------------------
     // Agent Declaration
     //
@@ -83,7 +64,10 @@ module.exports = grammar({
       'agent',
       field('name', $.agent_name),
       $._newline,
+
       repeat1(seq($.agent_meta, $._newline)),
+      $._newline, // Blank line separates metadata from optional blocks
+
       optional(field('description', $.description_block)),
       optional(field('persona', $.persona_block)),
       optional(field('behavior', $.behavior_block)),
@@ -106,85 +90,83 @@ module.exports = grammar({
     agent_meta_key: $ => choice('domain', 'license', 'terms', 'privacy'),
 
     // ----------------------------------------------------------------
-    // Semantic & Cognitive Capability Blocks
+    // Agent metadata and content blocks
     // ----------------------------------------------------------------
 
-    description_block: $ => seq(
+    description_block: $ => prec.right(seq(
       'description',
       $._newline,
       field('content', $.description_content),
-      $._blank_line,
-    ),
-    description_content: $ => repeat1(
-      seq($.text_content, $._newline),
+      repeat($._newline), // Allow blank lines in description
+    )),
+
+    description_content: $ => prec.left(1,
+      repeat1(
+        seq($.text_content, $._newline),
+      ),
     ),
 
-    // Free-form text line — external tokens (_newline) already
-    // take automatic priority over regular tokens; no prec(-1) needed.
-    // Without it, same-prec ties are broken by match length, so text_content
-    // (whole line) beats identifier (single word), fixing accented chars.
-    text_content: $ => token(/[^\n\r]+/),
+    // Free-form text line.
+    // The external `_newline` token already has higher priority than normal tokens,
+    // so this rule does not need an extra precedence override.
+    // This avoids incorrect tokenization of accented or non-ASCII text in descriptions.
+    text_content: $ => token(/[^\n\r\s][^\n\r]*/),
 
     _blank_line: $ => prec(2, $._newline),
 
-    persona_block: $ => seq(
+    persona_block: $ => prec.right(seq(
       'persona',
       field('file', $.bare_string),
-      $._newline,
-    ),
-
-    behavior_block: $ => seq(
+      repeat($._newline),
+    )),
+    
+    behavior_block: $ => prec.right(seq(
       'behavior',
       field('file', $.bare_string),
-      $._newline,
-    ),
+      repeat($._newline),
+    )),
 
-    requires_block: $ => seq(
+    requires_block: $ => prec.right(seq(
       'requires',
       choice(
-        // Inline: requires Prontuario, UserProfile
-        seq($.type_list, $._newline),
-        // Multiline block
-        seq(
-          $.type_reference, repeat(seq($._newline, $.type_reference)),
-        ),
+        seq($.req_item, $._newline),
+        seq($._newline, repeat1(seq($.req_item, $._newline)))
       ),
-    ),
+      repeat($._newline),
+    )),
 
-    input_block: $ => seq(
+    input_block: $ => prec.right(seq(
       'input',
       choice(
-        seq($.type_list, $._newline),
-        seq(
-          $.typed_item, repeat(seq($._newline, $.typed_item)),
-        ),
+        seq($._type_list_inline, $._newline), // Inline: input ExpenseLedger, Transaction
+        seq($._newline, $._type_list_multiline), // Multiline
       ),
-    ),
+      repeat($._newline),
+    )),
 
-    capabilities_block: $ => seq(
+    capabilities_block: $ => prec.right(seq(
       'capabilities',
       choice(
-        seq($.type_list, $._newline),
-        seq(
-          $.cap_item, repeat(seq($._newline, $.cap_item)),
-        ),
+        seq($.cap_item, $._newline),
+        seq($._newline, repeat1(seq($.cap_item, $._newline)))
       ),
-    ),
+      repeat($._newline),
+    )),
 
-    output_block: $ => seq(
+    output_block: $ => prec.right(seq(
       'output',
       choice(
-        seq($.type_list, $._newline),
-        seq(
-          $.typed_item, repeat(seq($._newline, $.typed_item)),
-        ),
+        seq($._type_list_inline, $._newline),
+        seq($._newline, $._type_list_multiline),
       ),
-    ),
+      repeat($._newline),
+    )),
 
     // ----------------------------------------------------------------
-    // Type Declaration
+    // Type declaration
     //
     //   type Prontuario
+    //     category https://...
     //     concept https://...
     //     patient: Person "Paciente que será atendido"
     //     exames: [Exam]
@@ -194,31 +176,27 @@ module.exports = grammar({
 
     type_decl: $ => seq(
       'type',
-      field('name', $.identifier),
-      $._indent,
-      $.type_property, repeat(seq($._newline, $.type_property)),
-      $._dedent,
+      field('name', $.identifier), $._newline,
+      $.category_prop, $._newline,
+      optional(seq($.concept_prop, $._newline)),
+      repeat1(seq($.property_decl, choice($._newline, '\0'))),
     ),
 
-    // type_property does NOT consume trailing _newline (sep-by in type_decl)
-    type_property: $ => seq(
-      $.category_prop,
-      optional($.concept_prop),
-      repeat1(
-        $.property_decl,
-      ),
-    ),
-    // TODO: Rever esses parenteses
+    // The optional label in parentheses keeps the URI and a human-readable alias together.
+    // Design verdict:
+    //   - Type "Text" reads as a public contract or interface.
+    //   - URI (Text) reads as an internal ontology documentation note.
+    //   - Quoted text after a type may be shown to users.
     category_prop: $ => seq(
       'category',
       field('uri', $.url),
-      optional(seq('(', field('label', $.bare_string), ')')),
+      optional(seq('(', field('label', $.ontology_label), ')')),
     ),
 
     concept_prop: $ => seq(
       'concept',
       field('uri', $.url),
-      optional(seq('(', field('label', $.bare_string), ')')),
+      optional(seq('(', field('label', $.ontology_label), ')')),
     ),
 
     // name?: Type  "optional description"   (? before colon, TypeScript-style)
@@ -233,42 +211,54 @@ module.exports = grammar({
     optional_marker: $ => '?',
 
     // ----------------------------------------------------------------
-    // Type Values  (grammar.md + extensions from review)
+    // Type values and composed forms
     // ----------------------------------------------------------------
 
     type_value: $ => choice(
-      $.type_ref,                                     // Person | std.Prompt
-      seq('[', $.type_ref, ']'),                      // [Transaction]
-      seq('Enum', '(', sep1($.identifier, ','), ')'), // Enum(low, medium, high)
+      $.type_reference,                                         // Person | std.Prompt
+      $.primitive_type,                                   // string | number | boolean
+      seq($.primitive_type, '(', $.type_annotation, ')'), // string(maxLength: 100)
+      seq('[', $.type_reference, ']'),                          // [Transaction]
+      seq('Enum', '(', sep1($.identifier, ','), ')'),     // Enum(low, medium, high)
     ),
 
-    // Namespace-qualified or bare: Identifier | ns.Identifier
-    type_ref: $ => seq(
+    primitive_type: $ => choice(
+      'string',
+      'number',
+      'boolean',
+      'text',
+      'date',
+      'datetime',
+      'url',
+    ),
+
+    type_annotation: $ => /[^)]*/,
+
+    // Supports both bare and namespace-qualified names: Identifier | ns.Identifier.
+    type_reference: $ => seq(
       $.identifier,
       optional(seq('.', $.identifier)),
     ),
 
     // ----------------------------------------------------------------
-    // Lists and Items
+    // Inline and multiline list helpers
     // ----------------------------------------------------------------
 
-    type_list: $ => sep1($.type_reference, ','),
+    _type_list_inline: $ => sep1($.type_reference, ','), // e.g. input ExpenseLedger, Transaction
 
-    // type_reference: TypeRef (optional annotation)
-    //   e.g.  std.Prompt (A textual medical history)
-    type_reference: $ => seq(
-      $.type_ref,
-      optional(seq('(', field('annotation', $.quoted_string), ')')),
-    ),
+    _type_list_multiline: $ => repeat1(seq($.typed_item, $._newline)),
 
-    // Item in an input/output block — no trailing newline (sep-by handles it)
-    typed_item: $ => seq(
-      $.type_reference,
-      optional($.quoted_string),
-    ),
+    // Annotated reference form used in lists and metadata blocks.
+    // Example: Avatar "Avatar image for user"
+    typed_item: $ => $._annotated_reference,
 
     // Item in a capabilities block — same structure, named for clarity
-    cap_item: $ => seq(
+    cap_item: $ => $._annotated_reference,
+
+    // Item in a requirements block — same structure, named for clarity
+    req_item: $ => $._annotated_reference, 
+
+    _annotated_reference: $ => seq(
       $.type_reference,
       optional($.quoted_string),
     ),
@@ -290,6 +280,8 @@ module.exports = grammar({
 
     // Matches filenames with one or more dots: doctor.behavior, health.example.com
     filename: $ => /[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+/,
+    
+    ontology_label: $ => token(/[^)]+/),
 
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_-]*/,
 
