@@ -11,12 +11,12 @@ description
 
 behavior main.flow
 
-input std.Prompt
-
 capabilities
   SearchAction "Search for available cars based on user preferences"
   BookingAction "Book a car rental based on user selection"
   custom.PaymentProcessing "Process payments securely for car rentals"
+
+input std.Prompt
 
 output
   CarOptions
@@ -24,11 +24,13 @@ output
 
 // Tipos locais do agente
 type CarOptions
+  category https://www.wikidata.org/wiki/Q21010853
   concept https://schema.org/Offer
   car: Car
   price: Price
 
 type BookingConfirmation
+  category https://www.wikidata.org/wiki/Q1916816
   concept https://schema.org/Reservation
   reservationId: string
   car: Car
@@ -38,11 +40,13 @@ type BookingConfirmation
   dropoffDate: string
 
 type Car
+  category https://www.wikidata.org/wiki/Q1420
   concept https://schema.org/Product
   make: string
   model: string
 
 type Price
+  category https://www.wikidata.org/wiki/Q160151
   concept https://schema.org/PriceSpecification
   amount: number
   currency: string

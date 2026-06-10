@@ -1,12 +1,13 @@
 ================================================================================
-type simples com concept e label
+type simples com category e concept
 ================================================================================
 
 type Prontuario
-  concept https://www.wikidata.org/wiki/Q251648 (EHR)
+  category https://www.wikidata.org/wiki/Q251648 (EHR)
+  concept https://www.wikidata.org/wiki/Q251648
   patient: Person "Paciente que será atendido"
-  symptoms: Text
-  timestamp: DateTime
+  symptoms: text
+  timestamp: datetime
 
 --------------------------------------------------------------------------------
 
@@ -14,33 +15,35 @@ type Prontuario
   (statement
     (type_decl
       name: (identifier)
-      (type_property
-        (concept_prop
-          uri: (url)
-          label: (bare_string (identifier))))
-      (type_property
-        (property_decl
-          name: (identifier)
-          type: (type_value (type_ref (identifier)))
-          description: (quoted_string)))
-      (type_property
-        (property_decl
-          name: (identifier)
-          type: (type_value (type_ref (identifier)))))
-      (type_property
-        (property_decl
-          name: (identifier)
-          type: (type_value (type_ref (identifier))))))))
+      (category_prop
+        uri: (url)
+        label: (ontology_label))
+      (concept_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier)))
+        description: (quoted_string))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type)))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
 
 ================================================================================
 type com array
 ================================================================================
 
 type BankStatement
-  concept https://www.wikidata.org/wiki/Q806653
+  category https://www.wikidata.org/wiki/Q806653
   account: Person
   transactions: [Transaction]
-  balance: Number
+  balance: number
 
 --------------------------------------------------------------------------------
 
@@ -48,19 +51,31 @@ type BankStatement
   (statement
     (type_decl
       name: (identifier)
-      (type_property (concept_prop uri: (url)))
-      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
-      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
-      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))))))))
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier))))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier))))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
 
 ================================================================================
 type com Enum
 ================================================================================
 
 type MedicalAlert
-  concept https://schema.org/MedicalCondition
+  category https://schema.org/MedicalCondition
   severity: Enum(low, medium, high)
-  active: Boolean
+  active: boolean
 
 --------------------------------------------------------------------------------
 
@@ -68,18 +83,27 @@ type MedicalAlert
   (statement
     (type_decl
       name: (identifier)
-      (type_property (concept_prop uri: (url)))
-      (type_property (property_decl name: (identifier) type: (type_value (identifier) (identifier) (identifier))))
-      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier))))))))
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (identifier)
+          (identifier)
+          (identifier)))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
 
 ================================================================================
 type com propriedade opcional
 ================================================================================
 
 type AvatarWithMickey
-  concept https://schema.org/ImageObject
+  category https://schema.org/ImageObject
   image: Avatar
-  caption?: Text "Legenda opcional"
+  caption?: text "Legenda opcional"
 
 --------------------------------------------------------------------------------
 
@@ -87,20 +111,50 @@ type AvatarWithMickey
   (statement
     (type_decl
       name: (identifier)
-      (type_property (concept_prop uri: (url)))
-      (type_property (property_decl name: (identifier) type: (type_value (type_ref (identifier)))))
-      (type_property
-        (property_decl
-          name: (identifier)
-          optional_marker: (optional_marker)
-          type: (type_value (type_ref (identifier)))
-          description: (quoted_string))))))
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier))))
+      (property_decl
+        name: (identifier)
+        optional_marker: (optional_marker)
+        type: (type_value
+          (primitive_type))
+        description: (quoted_string)))))
 
 ================================================================================
-agent simples sem metadata
+type sem concept apenas category
+================================================================================
+
+type Prescription
+  category https://www.wikidata.org/wiki/Q656094
+  medication: string
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
+
+================================================================================
+agent com metadata completo e description
 ================================================================================
 
 agent Doctor
+  domain health.example.com
+  license MIT
+  terms https://health.example.com/terms
+  privacy https://health.example.com/privacy
 
 description
   Um especialista em análise clínica
@@ -114,68 +168,91 @@ output Prescription
 
 (manifest
   (statement
-    (agent_decl name: (agent_name (identifier))))
-  (statement
-    (description_block (text_content)))
-  (statement
-    (behavior_block file: (bare_string (filename))))
-  (statement
-    (requires_block (type_list (type_reference (type_ref (identifier))))))
-  (statement
-    (input_block (type_list
-      (type_reference (type_ref (identifier)))
-      (type_reference (type_ref (identifier))))))
-  (statement
-    (output_block (type_list (type_reference (type_ref (identifier)))))))
+    (agent_decl
+      name: (agent_name
+        (identifier))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (filename)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (identifier)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (url))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (url))
+      description: (description_block
+        content: (description_content
+          (text_content)))
+      behavior: (behavior_block
+        file: (bare_string
+          (filename)))
+      requires: (requires_block
+        (req_item
+          (type_reference
+            (identifier))))
+      input: (input_block
+        (type_reference
+          (identifier))
+        (type_reference
+          (identifier)))
+      output: (output_block
+        (type_reference
+          (identifier))))))
 
 ================================================================================
-agent com metadata completo
+capabilities multiline com descricoes
 ================================================================================
 
-agent Doctor
-  domain health.example.com
-  license MIT
-  terms https://health.example.com/terms
-  privacy https://health.example.com/privacy
+agent Mickey Mouse
+  domain disney.com
+  license Copyright
 
-behavior doctor.behavior
+capabilities
+  CreateAction "Generate images of Mickey Mouse"
+  custom.SpeechSynthesis "Transform text into speech"
 
 --------------------------------------------------------------------------------
 
 (manifest
   (statement
     (agent_decl
-      name: (agent_name (identifier))
-      (agent_meta key: (agent_meta_key) value: (bare_string (filename)))
-      (agent_meta key: (agent_meta_key) value: (bare_string (identifier)))
-      (agent_meta key: (agent_meta_key) value: (url))
-      (agent_meta key: (agent_meta_key) value: (url))))
-  (statement
-    (behavior_block file: (bare_string (filename)))))
+      name: (agent_name
+        (identifier)
+        (identifier))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (filename)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (identifier)))
+      capabilities: (capabilities_block
+        (cap_item
+          (type_reference
+            (identifier))
+          (quoted_string))
+        (cap_item
+          (type_reference
+            (identifier)
+            (identifier))
+          (quoted_string))))))
 
 ================================================================================
-capabilities multiline com descrições
+type com primitive_type e annotation
 ================================================================================
 
-capabilities
-  CreateAction "Generate images of Mickey Mouse"
-  SearchAction "Fetch external financial rates"
-
---------------------------------------------------------------------------------
-
-(manifest
-  (statement
-    (capabilities_block
-      (cap_item (type_reference (type_ref (identifier))) (quoted_string))
-      (cap_item (type_reference (type_ref (identifier))) (quoted_string)))))
-
-================================================================================
-type com schema
-================================================================================
-
-type Prescription
-  concept https://www.wikidata.org/wiki/Q656094
-  schema prescription.json
+type ExpenseLedger
+  category https://wikidata.org/wiki/Q3874057
+  concept https://schema.org/FinancialProduct
+  ledger_id: string(template "LED-9999-AA")
+  total_amount: number "Valor total"
+  is_audited: boolean
 
 --------------------------------------------------------------------------------
 
@@ -183,5 +260,21 @@ type Prescription
   (statement
     (type_decl
       name: (identifier)
-      (type_property (concept_prop uri: (url)))
-      (type_property (schema_prop file: (filename))))))
+      (category_prop
+        uri: (url))
+      (concept_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type)
+          (type_annotation)))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))
+        description: (quoted_string))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))

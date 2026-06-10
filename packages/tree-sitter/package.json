@@ -28,6 +28,7 @@
   "keywords": [
     "tree-sitter",
     "agent",
+    "dot-agent",
     "dsl",
     "parser",
     "grammar"
@@ -46,7 +47,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "tree-sitter-cli": "^0.25.0"
+    "tree-sitter-cli": "^0.25.10"
   },
   "tree-sitter": [
     {

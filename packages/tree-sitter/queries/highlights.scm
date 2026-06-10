@@ -14,37 +14,45 @@
 "type"         @keyword
 "description"  @keyword
 "behavior"     @keyword
+"persona"      @keyword
 "requires"     @keyword
 "input"        @keyword
 "capabilities" @keyword
 "output"       @keyword
 "concept"      @keyword
-"schema"       @keyword
+"category"     @keyword
 "domain"       @keyword
 "license"      @keyword
 "terms"        @keyword
 "privacy"      @keyword
-"Enum"         @keyword.operator
 
 ; ----------------------------------------------------------------
-; Declarations — names get type.definition
+; Declarations
 ; ----------------------------------------------------------------
 
-(agent_decl name: (agent_name (identifier) @type.definition))
+(agent_decl name: (agent_name) @type.definition)
 
 (type_decl name: (identifier) @type.definition)
 
 ; ----------------------------------------------------------------
-; Type references — wherever a type name is used (not defined)
+; Type references & Primitives
 ; ----------------------------------------------------------------
 
-(type_ref (identifier) @type)
+; Primitives (string, number, boolean, etc)
+(primitive_type) @type.builtin
 
-; Namespace prefix (std. in std.Prompt)  → dimmed
-(type_ref
+; Standard type references
+(type_reference (identifier) @type)
+
+; Namespace prefix (e.g., std in std.Prompt).
+; This pattern naturally overrides the simple one above for the first identifier.
+(type_reference
   (identifier) @namespace
   "."
   (identifier) @type)
+
+; Type annotations: string(template "...")
+(type_annotation) @attribute
 
 ; ----------------------------------------------------------------
 ; Properties inside a type block
@@ -52,28 +60,33 @@
 
 (property_decl name: (identifier) @property)
 
-; Optional marker
+; Optional marker (?)
 (optional_marker) @operator
 
-; Colon separator in property_decl
+; Colon separator
 ":" @punctuation.delimiter
 
 ; ----------------------------------------------------------------
 ; Enum values
 ; ----------------------------------------------------------------
 
-(type_value
-  "Enum" @keyword.operator
-  "(" @punctuation.bracket
-  (identifier) @constant.builtin
-  ")" @punctuation.bracket)
+; Match "Enum" specifically as a builtin type
+(type_value "Enum" @type.builtin)
+
+; Match ANY identifier inside an Enum definition, regardless of commas
+(type_value 
+  "Enum"
+  (identifier) @constant.builtin)
 
 ; ----------------------------------------------------------------
-; Array brackets
+; Array brackets & Punctuation
 ; ----------------------------------------------------------------
 
 "[" @punctuation.bracket
 "]" @punctuation.bracket
+"(" @punctuation.bracket
+")" @punctuation.bracket
+"," @punctuation.delimiter
 
 ; ----------------------------------------------------------------
 ; Literals
@@ -89,25 +102,24 @@
 ; ----------------------------------------------------------------
 
 (agent_meta key: (agent_meta_key) @keyword value: (bare_string) @string.special)
+(agent_meta key: (agent_meta_key) @keyword value: (url) @string.special)
 
 ; ----------------------------------------------------------------
-; Concept URI — semantic anchor, highlight like a special string
+; Category / Concept URIs
 ; ----------------------------------------------------------------
+
+(category_prop uri: (url) @string.special)
+(category_prop label: (ontology_label) @comment)
 
 (concept_prop uri: (url) @string.special)
-(concept_prop label: (bare_string) @comment)
+(concept_prop label: (ontology_label) @comment)
 
 ; ----------------------------------------------------------------
-; Schema file reference
-; ----------------------------------------------------------------
-
-(schema_prop file: (filename) @string)
-
-; ----------------------------------------------------------------
-; Behavior file reference
+; File references
 ; ----------------------------------------------------------------
 
 (behavior_block file: (bare_string) @string)
+(persona_block file: (bare_string) @string)
 
 ; ----------------------------------------------------------------
 ; Comments

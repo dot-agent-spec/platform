@@ -8,7 +8,8 @@ Custom types are defined using the `type` keyword. These act as hard contractsâ€
 
 ```
 type BankStatement
-  concept https://www.wikidata.org/wiki/Q806653 ("Bank statement")
+  category https://www.wikidata.org/wiki/Q806653 (Bank statement)
+  concept https://schema.org/BankAccount
   account: Person      "Account holder"
   transactions: [Transaction]
   status: Enum(active, closed)
@@ -17,10 +18,10 @@ type BankStatement
 
 ### 1.1 Keywords & Properties
 
-| Keyword | Function |
-|---|---|
-| **`concept`** | Semantic URI (Wikidata/Schema.org) + optional parenthesized label. |
-| **`schema`** | (Optional) Path to a JSON Schema file for strict validation. |
+| Keyword | Required | Function |
+|---|---|---|
+| **`category`** | Yes | Primary semantic URI (Wikidata/Schema.org) + optional parenthesized label. |
+| **`concept`** | No | Secondary URI that refines the category with a more specific concept. |
 
 ### 1.2 Property Forms
 
