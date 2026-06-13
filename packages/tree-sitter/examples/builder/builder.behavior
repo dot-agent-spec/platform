@@ -5,6 +5,7 @@
 // generation phase is extracted via merge (too dense for .behavior — belongs in .run).
 
 merge "phases/generation.behavior"
+merge "phases/planning.behavior"
 
 on event "action_failed"
   set worksession.backlog_count += 1
