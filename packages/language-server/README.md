@@ -4,7 +4,7 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 
 ## Features
 
-| Capability | `.agent` | `.behavior` |
+| Capability | `.description` | `.behavior` |
 |---|---|---|
 | **Hover** | Keyword documentation | Keyword documentation |
 | **Completion** | Manifest keywords, custom types | Keywords, state names, memory domains (`context.`, `session.`, …) |
@@ -36,7 +36,7 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 
 The server speaks LSP over `stdio`. Each editor starts it as a subprocess and communicates via JSON-RPC messages.
 
-All structural analysis uses the **tree-sitter** parse trees from [`@dot-agent/tree-sitter-agent`](https://github.com/daniloborges/tree-sitter-agent). `parser.js` initializes the WASM-based parsers during `initialize` and maintains a per-document AST cache with incremental reparse.
+All structural analysis uses the **tree-sitter** parse trees from [`@dot-agent/tree-sitter`](https://github.com/dot-agent-spec/tree-sitter). `parser.js` initializes the WASM-based parsers during `initialize` and maintains a per-document AST cache with incremental reparse.
 
 ## Prerequisites
 
@@ -84,7 +84,7 @@ if not configs.agent_dsl then
   configs.agent_dsl = {
     default_config = {
       cmd = { 'node', '/path/to/language-server/server.js', '--stdio' },
-      filetypes = { 'agent', 'behavior' },
+      filetypes = { 'description', 'behavior' },
       root_dir = lspconfig.util.root_pattern('.git'),
     },
   }
@@ -97,7 +97,7 @@ lspconfig.agent_dsl.setup {}
 
 ```toml
 [[language]]
-name = "agent"
+name = "description"
 language-servers = ["agent-dsl-lsp"]
 
 [[language]]
