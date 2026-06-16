@@ -601,21 +601,6 @@
     }
   },
   {
-    "type": "state_name",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "statement",
     "named": true,
     "fields": {},
@@ -965,6 +950,10 @@
   {
     "type": "state",
     "named": false
+  },
+  {
+    "type": "state_name",
+    "named": true
   },
   {
     "type": "subagent",

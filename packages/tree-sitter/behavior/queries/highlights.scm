@@ -97,7 +97,7 @@
 ; State and trigger declarations
 ; ----------------------------------------------------------------
 
-(state_decl name: (state_name (identifier) @type.definition))
+(state_decl name: (state_name) @type.definition)
 (trigger_decl event: (quoted_string) @string.special)
 
 ; ----------------------------------------------------------------
@@ -110,7 +110,7 @@
 ; Transitions
 ; ----------------------------------------------------------------
 
-(transition_stmt state: (state_name (identifier) @type))
+(transition_stmt state: (state_name) @type)
 
 ; ----------------------------------------------------------------
 ; Run statements

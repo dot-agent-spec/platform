@@ -359,9 +359,12 @@ module.exports = grammar({
     // Shared structures
     // ----------------------------------------------------------------
 
-    // Dotted path: identifier(.identifier)*
-    // Covers: state refs (phases.planning.start), scoped vars (context.files)
-    state_name: $ => seq($.identifier, repeat(seq('.', $.identifier))),
+    // Dotted path as a single token: name, name_underscore, dotted.path.ref
+    // Covers: state refs (phases.planning.start), scoped vars (context.files).
+    // Defined as a direct regex (not seq(identifier, repeat(...))) so the node span
+    // is the matched text only — the seq form made state_name absorb the leading
+    // space after the keyword (e.g. `state foo` yielded " foo").
+    state_name: $ => /[a-zA-Z_][a-zA-Z0-9_-]*(\.[a-zA-Z_][a-zA-Z0-9_-]*)*/,
 
 
     // ----------------------------------------------------------------

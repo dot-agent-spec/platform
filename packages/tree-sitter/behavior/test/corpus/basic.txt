@@ -13,8 +13,6 @@ merge "phases/review.behavior"
   (merge_decl
     path: (filename)))
 
-
-
 ================================================================================
 oriented state mínimo (goal + interact + handlers)
 ================================================================================
@@ -29,8 +27,7 @@ state responsive
 
 (behavior_file
   (state_decl
-    name: (state_name
-      (identifier))
+    name: (state_name)
     body: (state_body
       (oriented_state_body
         (goal_stmt
@@ -39,14 +36,10 @@ state responsive
         (intent_handler
           intent: (quoted_string)
           (transition_stmt
-            state: (state_name
-              (identifier))))
+            state: (state_name)))
         (offtopic_handler
           (transition_stmt
-            state: (state_name
-              (identifier))))))))
-
-
+            state: (state_name)))))))
 
 ================================================================================
 oriented state completo (goal + guide + teach + interact + handlers)
@@ -64,8 +57,7 @@ state car_search
 
 (behavior_file
   (state_decl
-    name: (state_name
-      (identifier))
+    name: (state_name)
     body: (state_body
       (oriented_state_body
         (goal_stmt
@@ -78,14 +70,10 @@ state car_search
         (intent_handler
           intent: (quoted_string)
           (transition_stmt
-            state: (state_name
-              (identifier))))
+            state: (state_name)))
         (offtopic_handler
           (transition_stmt
-            state: (state_name
-              (identifier))))))))
-
-
+            state: (state_name)))))))
 
 ================================================================================
 setup state (actions + transition, no interact)
@@ -100,8 +88,7 @@ state prepare_data
 
 (behavior_file
   (state_decl
-    name: (state_name
-      (identifier))
+    name: (state_name)
     body: (state_body
       (block
         (statement
@@ -119,10 +106,7 @@ state prepare_data
                 (with_quotes_string)))))
         (statement
           (transition_stmt
-            state: (state_name
-              (identifier))))))))
-
-
+            state: (state_name)))))))
 
 ================================================================================
 setup state with conditional
@@ -139,8 +123,7 @@ state check
 
 (behavior_file
   (state_decl
-    name: (state_name
-      (identifier))
+    name: (state_name)
     body: (state_body
       (block
         (statement
@@ -148,24 +131,18 @@ state check
             condition: (condition
               (expression
                 left: (value
-                  (state_name
-                    (identifier)
-                    (identifier)))
+                  (state_name))
                 op: (comparison_op)
                 right: (value
                   (boolean))))
             then: (block
               (statement
                 (transition_stmt
-                  state: (state_name
-                    (identifier)))))
+                  state: (state_name))))
             else: (block
               (statement
                 (transition_stmt
-                  state: (state_name
-                    (identifier)))))))))))
-
-
+                  state: (state_name))))))))))
 
 ================================================================================
 global trigger com event
@@ -185,8 +162,6 @@ on event "session.ended"
           type: (run_type)
           target: (quoted_string))))))
 
-
-
 ================================================================================
 state com dotted path name (oriented)
 ================================================================================
@@ -201,10 +176,7 @@ state phases.planning.start
 
 (behavior_file
   (state_decl
-    name: (state_name
-      (identifier)
-      (identifier)
-      (identifier))
+    name: (state_name)
     body: (state_body
       (oriented_state_body
         (goal_stmt
@@ -213,18 +185,10 @@ state phases.planning.start
         (intent_handler
           intent: (quoted_string)
           (transition_stmt
-            state: (state_name
-              (identifier)
-              (identifier)
-              (identifier))))
+            state: (state_name)))
         (offtopic_handler
           (transition_stmt
-            state: (state_name
-              (identifier)
-              (identifier)
-              (identifier))))))))
-
-
+            state: (state_name)))))))
 
 ================================================================================
 intent handler com block body
@@ -242,8 +206,7 @@ state conversational
 
 (behavior_file
   (state_decl
-    name: (state_name
-      (identifier))
+    name: (state_name)
     body: (state_body
       (oriented_state_body
         (goal_stmt
@@ -258,9 +221,7 @@ state conversational
                 target: (quoted_string)))
             (statement
               (transition_stmt
-                state: (state_name
-                  (identifier))))))
+                state: (state_name)))))
         (offtopic_handler
           (transition_stmt
-            state: (state_name
-              (identifier))))))))
+            state: (state_name)))))))
