@@ -18,30 +18,47 @@ state init
     transition to onboarding
   else
     transition to responsive
+  end
 
 state onboarding
   run script "scripts/detect-env.sh"
-  guide "phases/onboarding.md"
   goal "Collect user profile and understand their working environment."
+  guide "phases/onboarding.md"
   interact
   on intent "profile_complete"
     set user.has_profile = true
     set session.is_first_time = false
     transition to responsive
+
   on offtopic
     if user.is_frustrated
       if user.offtopic_count > 3
-        guide "phases/onboarding_frustrated.md"
+        transition to user_frustated
       else
-        guide "phases/onboarding_offtopic.md"
+        set user.offtopic_count += 1
+        run script "scripts/log_offtopic.sh"
         transition to onboarding 
-    
-      if user.offtopic_count > 5
-        guide "phases/onboarding_frustrated_escalation.md"
-      else
-        transition to onboarding
-    
-    else
-      guide "phases/onboarding_offtopic.md"
+      end
 
+      if user.offtopic_count > 5
+        transition to lets_chat
+      else
+        transition to responsive
+      end
+    else
+      set user.is_happy = true
+    end
     transition to responsive
+
+state responsive
+  goal "Assist the user with their immediate needs and questions."
+  guide "phases/responsive.md"
+  interact
+  on intent "need_assistance"
+    run script "scripts/assist_user.sh"
+    transition to responsive
+  on offtopic
+    transition to welcome
+  
+
+

@@ -8,7 +8,7 @@
         "required": true,
         "types": [
           {
-            "type": "with_quotes_string",
+            "type": "quoted_string",
             "named": true
           }
         ]
@@ -59,7 +59,7 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
         {
@@ -70,7 +70,7 @@
     }
   },
   {
-    "type": "boolean_literal",
+    "type": "boolean",
     "named": true,
     "fields": {}
   },
@@ -184,7 +184,7 @@
     "type": "failure_stmt",
     "named": true,
     "fields": {
-      "on_failure": {
+      "block": {
         "multiple": false,
         "required": true,
         "types": [
@@ -229,12 +229,47 @@
     }
   },
   {
-    "type": "intent_trigger",
+    "type": "handler_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "apply_stmt",
+          "named": true
+        },
+        {
+          "type": "conditional_stmt",
+          "named": true
+        },
+        {
+          "type": "memory_stmt",
+          "named": true
+        },
+        {
+          "type": "remove_stmt",
+          "named": true
+        },
+        {
+          "type": "run_stmt",
+          "named": true
+        },
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "intent_handler",
     "named": true,
     "fields": {
       "block": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "block",
@@ -252,12 +287,17 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
     }
-  },
-  {
-    "type": "interact_stmt",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "logical_op",
@@ -348,12 +388,12 @@
     }
   },
   {
-    "type": "offtopic_stmt",
+    "type": "offtopic_handler",
     "named": true,
     "fields": {
       "block": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "block",
@@ -361,6 +401,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -380,7 +430,7 @@
           "named": true
         },
         {
-          "type": "intent_trigger",
+          "type": "intent_handler",
           "named": true
         },
         {
@@ -388,7 +438,7 @@
           "named": true
         },
         {
-          "type": "offtopic_stmt",
+          "type": "offtopic_handler",
           "named": true
         },
         {
@@ -407,7 +457,7 @@
         "required": true,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
             "named": true
           }
         ]
@@ -422,7 +472,7 @@
           "named": true
         },
         {
-          "type": "sucess_stmt",
+          "type": "success_stmt",
           "named": true
         }
       ]
@@ -437,7 +487,7 @@
         "required": true,
         "types": [
           {
-            "type": "with_quotes_string",
+            "type": "quoted_string",
             "named": true
           }
         ]
@@ -468,22 +518,22 @@
           }
         ]
       },
-      "run_type": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "run_type",
-            "named": true
-          }
-        ]
-      },
       "target": {
         "multiple": false,
         "required": true,
         "types": [
           {
             "type": "quoted_string",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "run_type",
             "named": true
           }
         ]
@@ -506,19 +556,34 @@
     "fields": {}
   },
   {
+    "type": "state_body",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "oriented_state_body",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "state_decl",
     "named": true,
     "fields": {
       "body": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "block",
-            "named": true
-          },
-          {
-            "type": "oriented_state_body",
+            "type": "state_body",
             "named": true
           }
         ]
@@ -528,7 +593,7 @@
         "required": true,
         "types": [
           {
-            "type": "state_name_string",
+            "type": "state_name",
             "named": true
           }
         ]
@@ -536,7 +601,7 @@
     }
   },
   {
-    "type": "state_name_string",
+    "type": "state_name",
     "named": true,
     "fields": {},
     "children": {
@@ -594,10 +659,10 @@
     }
   },
   {
-    "type": "sucess_stmt",
+    "type": "success_stmt",
     "named": true,
     "fields": {
-      "on_success": {
+      "block": {
         "multiple": false,
         "required": true,
         "types": [
@@ -634,7 +699,7 @@
         "required": true,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
             "named": true
           }
         ]
@@ -644,7 +709,7 @@
         "required": true,
         "types": [
           {
-            "type": "number_literal",
+            "type": "number",
             "named": true
           }
         ]
@@ -660,7 +725,7 @@
         "required": true,
         "types": [
           {
-            "type": "state_name_string",
+            "type": "state_name",
             "named": true
           }
         ]
@@ -702,19 +767,19 @@
       "required": true,
       "types": [
         {
-          "type": "boolean_literal",
+          "type": "boolean",
           "named": true
         },
         {
-          "type": "null_literal",
+          "type": "null",
           "named": true
         },
         {
-          "type": "number_literal",
+          "type": "number",
           "named": true
         },
         {
-          "type": "state_name_string",
+          "type": "state_name",
           "named": true
         },
         {
@@ -798,6 +863,10 @@
     "named": false
   },
   {
+    "type": "end",
+    "named": false
+  },
+  {
     "type": "event",
     "named": false
   },
@@ -834,19 +903,19 @@
     "named": false
   },
   {
-    "type": "interact",
-    "named": false
+    "type": "interact_stmt",
+    "named": true
   },
   {
     "type": "merge",
     "named": false
   },
   {
-    "type": "null_literal",
+    "type": "null",
     "named": true
   },
   {
-    "type": "number_literal",
+    "type": "number",
     "named": true
   },
   {
