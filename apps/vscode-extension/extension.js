@@ -109,7 +109,7 @@ function activate(context) {
         },
         {
             documentSelector: [
-                { scheme: 'file', language: 'agent' },
+                { scheme: 'file', language: 'description' },
                 { scheme: 'file', language: 'behavior' },
             ],
         }
@@ -117,7 +117,7 @@ function activate(context) {
     client.start();
 
     // ── Status Bar (VS Code-specific) ───────────────────────────────────────
-    const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    const statusBar = vscode.window.createStatusBarItem('dot-agent.behaviorState', vscode.StatusBarAlignment.Right, 100);
     context.subscriptions.push(statusBar);
 
     function updateStatusBar(editor) {

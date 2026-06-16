@@ -178,7 +178,7 @@ state confirmation
 Install from the `.vsix` file:
 
 ```bash
-code --install-extension vscode-dot-agent-0.2.0.vsix
+code --install-extension vscode-dot-agent-0.3.1.vsix
 ```
 
 Or build from source:
