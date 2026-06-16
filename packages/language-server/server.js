@@ -71,7 +71,7 @@ function getTree(doc) {
 
 function validate(doc) {
     const langId = doc.languageId;
-    if (langId !== 'agent' && langId !== 'behavior') return;
+    if (langId !== 'description' && langId !== 'behavior') return;
     const tree = getTree(doc);
     const diagnostics = diagnose(langId, tree, doc.getText());
     connection.sendDiagnostics({ uri: doc.uri, diagnostics });

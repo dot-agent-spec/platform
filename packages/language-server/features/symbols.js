@@ -49,7 +49,7 @@ function provideDocumentSymbols(langId, tree) {
         }
     }
 
-    if (langId === 'agent') {
+    if (langId === 'description') {
         for (const node of nodesOfType(tree, 'agent_decl')) {
             const nameNode = node.childForFieldName('name');
             if (!nameNode) continue;

@@ -41,12 +41,7 @@ function provideRenameEdits(langId, tree, text, uri, position, newName) {
             const stateNode = n.childForFieldName('state');
             if (stateNode?.text === oldName) addEdit(stateNode);
         }
-        // Rename inline intent handler targets
-        for (const n of nodesOfType(tree, 'intent_trigger')) {
-            const stateNode = n.childForFieldName('state');
-            if (stateNode?.text === oldName) addEdit(stateNode);
-        }
-    } else if (langId === 'agent') {
+    } else if (langId === 'description') {
         // Rename type declarations
         for (const n of nodesOfType(tree, 'type_decl')) {
             const nameNode = n.childForFieldName('name');

@@ -16,7 +16,7 @@
 
 'use strict';
 
-const BLOCK_HEADERS = /^(on\s+(intent|offtopic|fallback|complete|failed)|if|else|after|parallel)\b/;
+const BLOCK_HEADERS = /^(on\s+(intent|offtopic|failure|success)|if|else|after|parallel)\b/;
 const TOP_LEVEL_LINE = /^(state|merge)\s|^on\s+event\b/;
 
 function formatBehavior(text) {
@@ -39,7 +39,12 @@ function formatBehavior(text) {
             if (BLOCK_HEADERS.test(trimmed)) mode = 'NESTED_BODY';
             expectedIndent = 2;
         } else {
-            expectedIndent = BLOCK_HEADERS.test(trimmed) ? 2 : 4;
+            if (/^end\b/.test(trimmed)) {
+                mode = 'STATE_BODY';
+                expectedIndent = 2;
+            } else {
+                expectedIndent = BLOCK_HEADERS.test(trimmed) ? 2 : 4;
+            }
         }
 
         const actualIndent = raw.length - raw.trimStart().length;
@@ -53,7 +58,7 @@ function formatBehavior(text) {
     return edits;
 }
 
-function formatAgent(text) {
+function formatDescription(text) {
     const edits = [];
     const lines = text.split('\n');
     for (let i = 0; i < lines.length; i++) {
@@ -73,7 +78,7 @@ function formatAgent(text) {
 
 function format(langId, text) {
     if (langId === 'behavior') return formatBehavior(text);
-    if (langId === 'agent') return formatAgent(text);
+    if (langId === 'description') return formatDescription(text);
     return [];
 }
 

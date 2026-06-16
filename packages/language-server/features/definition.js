@@ -29,7 +29,7 @@ function provideDefinition(langId, tree, text, uri, position) {
     if (langId === 'behavior') {
         targetNode = nodesOfType(tree, 'state_decl')
             .find(n => n.childForFieldName('name')?.text === word);
-    } else if (langId === 'agent') {
+    } else if (langId === 'description') {
         if (!/^[A-Z]/.test(word) && !word.includes('.')) return null;
         targetNode = nodesOfType(tree, 'type_decl')
             .find(n => n.childForFieldName('name')?.text === word);

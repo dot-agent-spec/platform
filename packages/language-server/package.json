@@ -27,10 +27,10 @@
     "start": "node server.js --stdio"
   },
   "dependencies": {
-    "@dot-agent/tree-sitter": "^0.3.2",
-    "vscode-languageserver": "^9.0.1",
+    "@dot-agent/tree-sitter": "^0.3.4",
+    "vscode-languageserver": "^10.0.0",
     "vscode-languageserver-textdocument": "^1.0.12",
-    "web-tree-sitter": "^0.25.10"
+    "web-tree-sitter": "^0.26.9"
   },
   "publishConfig": {
     "access": "public"

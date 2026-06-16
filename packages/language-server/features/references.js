@@ -41,12 +41,7 @@ function provideReferences(langId, tree, text, uri, position) {
             const stateNode = n.childForFieldName('state');
             if (stateNode?.text === word) add(stateNode);
         }
-        // Inline intent handlers: on intent "..." next <state>
-        for (const n of nodesOfType(tree, 'intent_trigger')) {
-            const stateNode = n.childForFieldName('state');
-            if (stateNode?.text === word) add(stateNode);
-        }
-    } else if (langId === 'agent') {
+    } else if (langId === 'description') {
         // Declaration
         for (const n of nodesOfType(tree, 'type_decl')) {
             const nameNode = n.childForFieldName('name');

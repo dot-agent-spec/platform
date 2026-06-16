@@ -19,9 +19,9 @@
 const { CompletionItemKind } = require('vscode-languageserver');
 const { nodesOfType, positionToOffset, getContextNode } = require('../parser');
 
-const BEHAVIOR_TOP_KW   = ['state', 'merge', 'on event', 'on intent', 'on offtopic', 'on fallback'];
-const BEHAVIOR_BLOCK_KW = ['guide', 'teach', 'goal', 'interact', 'run', 'transition', 'set', 'if', 'else', 'after', 'parallel', 'apply', 'remove', 'on intent', 'on offtopic', 'on fallback', 'on complete', 'on failed'];
-const AGENT_TOP_KW  = ['agent', 'domain', 'license', 'terms', 'privacy', 'description', 'behavior', 'requires', 'input', 'capabilities', 'output', 'type', 'concept', 'schema'];
+const BEHAVIOR_TOP_KW   = ['state', 'merge', 'on event', 'on intent', 'on offtopic'];
+const BEHAVIOR_BLOCK_KW = ['guide', 'teach', 'goal', 'interact', 'run', 'transition', 'set', 'if', 'else', 'end', 'after', 'parallel', 'apply', 'remove', 'on intent', 'on offtopic', 'on failure', 'on success'];
+const DESCRIPTION_TOP_KW  = ['agent', 'domain', 'license', 'terms', 'privacy', 'description', 'behavior', 'requires', 'input', 'capabilities', 'output', 'type', 'concept'];
 const STRICT_BLOCKS = new Set(['input_block', 'output_block', 'requires_block', 'capabilities_block']);
 
 function kw(label) {
@@ -59,7 +59,7 @@ function provideCompletions(langId, tree, text, position) {
             return ['script', 'subagent', 'tool'].map(kw);
         }
         if (/\bon\s+\S*$/.test(before)) {
-            return ['event', 'intent', 'offtopic', 'fallback', 'complete', 'failed'].map(kw);
+            return ['event', 'intent', 'offtopic', 'failure', 'success'].map(kw);
         }
 
         // Context-aware: top-level vs. inside a block
@@ -72,9 +72,9 @@ function provideCompletions(langId, tree, text, position) {
         return (/^\s/.test(line) ? BEHAVIOR_BLOCK_KW : BEHAVIOR_TOP_KW).map(kw);
     }
 
-    if (langId === 'agent') {
+    if (langId === 'description') {
         if (!/^\s/.test(line)) {
-            return AGENT_TOP_KW.map(kw);
+            return DESCRIPTION_TOP_KW.map(kw);
         }
 
         // Inside a strict block → suggest declared types

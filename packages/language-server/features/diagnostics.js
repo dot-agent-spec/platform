@@ -26,7 +26,7 @@ const STRICT_BLOCK_TYPES = {
     capabilities_block: 'capabilities',
 };
 
-function diagnoseAgent(tree, text) {
+function diagnoseDescription(tree, text) {
     const diagnostics = [];
 
     // ── Strict block validation ───────────────────────────────────────────────
@@ -44,7 +44,7 @@ function diagnoseAgent(tree, text) {
                     range: nodeToRange(errorNode),
                     message: `Syntax error in '${blockName}' block. Expected: Type or Type "Description", or compact: Type1, Type2.`,
                     severity: DiagnosticSeverity.Error,
-                    source: 'agent-dsl',
+                    source: 'description-dsl',
                 });
             }
 
@@ -59,7 +59,7 @@ function diagnoseAgent(tree, text) {
                             range: nodeToRange(idNode),
                             message: `Type '${typeName}' is not declared in this file (assuming native or external).`,
                             severity: DiagnosticSeverity.Warning,
-                            source: 'agent-dsl',
+                            source: 'description-dsl',
                         });
                     }
                 }
@@ -70,7 +70,7 @@ function diagnoseAgent(tree, text) {
     return diagnostics;
 }
 
-function diagnoseFlow(tree) {
+function diagnoseBehavior(tree) {
     const diagnostics = [];
 
     // ── Rule 1: Dangling transitions ──────────────────────────────────────────
@@ -100,18 +100,6 @@ function diagnoseFlow(tree) {
     for (const n of nodesOfType(tree, 'transition_stmt')) {
         checkTransitionTarget(n.childForFieldName('state'));
     }
-    for (const n of nodesOfType(tree, 'intent_trigger')) {
-        // inline form: on intent "..." transition to <state>
-        checkTransitionTarget(n.childForFieldName('state'));
-    }
-    for (const n of nodesOfType(tree, 'fallback_stmt')) {
-        // inline form: on fallback transition to <state>
-        checkTransitionTarget(n.childForFieldName('state'));
-    }
-    for (const n of nodesOfType(tree, 'offtopic_stmt')) {
-        // inline form: on offtopic transition to <state>
-        checkTransitionTarget(n.childForFieldName('state'));
-    }
 
     // ── Rule 2: Dead-end interact (now redundant but kept for safety) ────────────
     // With the new grammar, oriented_state_body requires repeat1(handlers),
@@ -125,14 +113,13 @@ function diagnoseFlow(tree) {
 
         // With new grammar: oriented_state_body always has handlers after interact (repeat1)
         // So this check should never trigger, but kept for robustness
-        const hasHandlers = ancestor.descendantsOfType('intent_trigger').length +
-                           ancestor.descendantsOfType('fallback_stmt').length +
-                           ancestor.descendantsOfType('offtopic_stmt').length > 0;
+        const hasHandlers = ancestor.descendantsOfType('intent_handler').length +
+                           ancestor.descendantsOfType('offtopic_handler').length > 0;
 
         if (!hasHandlers) {
             diagnostics.push({
                 range: nodeToRange(interactNode),
-                message: "This state calls interact but has no handlers (on intent/fallback/offtopic). This will trap the agent.",
+                message: "This state calls interact but has no handlers (on intent/offtopic). This will trap the agent.",
                 severity: DiagnosticSeverity.Warning,
                 source: 'behavior-dsl',
             });
@@ -144,8 +131,8 @@ function diagnoseFlow(tree) {
 
 function diagnose(langId, tree, text) {
     if (!tree) return [];
-    if (langId === 'agent') return diagnoseAgent(tree, text);
-    if (langId === 'behavior')  return diagnoseFlow(tree);
+    if (langId === 'description') return diagnoseDescription(tree, text);
+    if (langId === 'behavior')  return diagnoseBehavior(tree);
     return [];
 }
 

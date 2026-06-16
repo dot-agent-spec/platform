@@ -41,12 +41,8 @@ function provideDocumentLinks(langId, tree, docUri) {
         });
     }
 
-    if (langId === 'agent') {
+    if (langId === 'description') {
         for (const node of nodesOfType(tree, 'behavior_block')) {
-            const fileNode = node.childForFieldName('file');
-            if (fileNode) addLink(fileNode, fileNode.text);
-        }
-        for (const node of nodesOfType(tree, 'schema_prop')) {
             const fileNode = node.childForFieldName('file');
             if (fileNode) addLink(fileNode, fileNode.text);
         }
@@ -58,7 +54,7 @@ function provideDocumentLinks(langId, tree, docUri) {
             if (pathNode) addLink(pathNode, pathNode.text);
         }
         for (const node of nodesOfType(tree, 'run_stmt')) {
-            const runTypeNode = node.childForFieldName('run_type');
+            const runTypeNode = node.childForFieldName('type');
             if (runTypeNode?.text !== 'script') continue;
             const targetNode = node.childForFieldName('target');
             if (targetNode) addLink(targetNode, targetNode.text);

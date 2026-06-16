@@ -21,17 +21,17 @@ const { Parser, Language } = require('web-tree-sitter');
 const grammar = require('@dot-agent/tree-sitter');
 
 // path.resolve ensures absolute paths survive vsix packaging and cwd changes
-const AGENT_WASM = path.resolve(grammar.agentWasmPath);
+const DESCRIPTION_WASM = path.resolve(grammar.agentWasmPath);
 const BEHAVIOR_WASM  = path.resolve(grammar.behaviorWasmPath);
 
-let agentParser, behaviorParser;
+let descriptionParser, behaviorParser;
 
 async function initParsers() {
     await Parser.init();
-    const Agent = await Language.load(AGENT_WASM);
+    const DescriptionLang = await Language.load(DESCRIPTION_WASM);
     const Behavior  = await Language.load(BEHAVIOR_WASM);
-    agentParser = new Parser();
-    agentParser.setLanguage(Agent);
+    descriptionParser = new Parser();
+    descriptionParser.setLanguage(DescriptionLang);
     behaviorParser = new Parser();
     behaviorParser.setLanguage(Behavior);
 }
@@ -42,7 +42,7 @@ const cache = new Map();
 function parse(uri, langId, text, version) {
     const prev = cache.get(uri);
     if (prev?.version === version) return prev.tree;
-    const parser = langId === 'behavior' ? behaviorParser : agentParser;
+    const parser = langId === 'behavior' ? behaviorParser : descriptionParser;
     if (!parser) return null;
     const tree = parser.parse(text, prev?.tree);   // incremental reuse when possible
     cache.set(uri, { version, tree });
