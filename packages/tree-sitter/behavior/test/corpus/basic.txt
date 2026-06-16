@@ -8,28 +8,43 @@ merge "phases/review.behavior"
 --------------------------------------------------------------------------------
 
 (behavior_file
-  (merge_decl path: (quoted_string))
-  (merge_decl path: (quoted_string)))
+  (merge_decl
+    path: (filename))
+  (merge_decl
+    path: (filename)))
+
+
 
 ================================================================================
-oriented state mínimo (só interact + handler)
+oriented state mínimo (goal + interact + handlers)
 ================================================================================
 
 state responsive
+  goal "Help the user"
   interact
-  on fallback
-    transition to responsive
+  on intent "request" transition to responsive
+  on offtopic transition to responsive
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
-    name: (path (identifier))
-    (oriented_state_body
-      (interact_stmt)
-      (fallback_stmt
-        block: (handler_block
-          (transition_stmt state: (path (identifier))))))))
+    name: (state_name
+      (identifier))
+    body: (state_body
+      (oriented_state_body
+        (goal_stmt
+          text: (quoted_string))
+        (interact_stmt)
+        (intent_handler
+          intent: (quoted_string)
+          (transition_stmt
+            state: (state_name
+              (identifier))))
+        (offtopic_handler
+          (transition_stmt
+            state: (state_name
+              (identifier))))))))
 
 
 
@@ -39,29 +54,36 @@ oriented state completo (goal + guide + teach + interact + handlers)
 
 state car_search
   goal "Find available cars"
-  guide "Ask about preferences."
+  guide "car_guide.md"
   teach "premium_features.md"
   interact
   on intent "select" transition to reservation
-  on fallback
-    transition to responsive
+  on offtopic transition to responsive
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
-    name: (path (identifier))
-    (oriented_state_body
-      (goal_stmt text: (quoted_string))
-      (guide_stmt text: (quoted_string))
-      (teach_stmt text: (quoted_string))
-      (interact_stmt)
-      (intent_trigger
-        intent: (quoted_string)
-        state: (path (identifier)))
-      (fallback_stmt
-        block: (handler_block
-          (transition_stmt state: (path (identifier))))))))
+    name: (state_name
+      (identifier))
+    body: (state_body
+      (oriented_state_body
+        (goal_stmt
+          text: (quoted_string))
+        (guide_stmt
+          text: (quoted_string))
+        (teach_stmt
+          text: (filename))
+        (interact_stmt)
+        (intent_handler
+          intent: (quoted_string)
+          (transition_stmt
+            state: (state_name
+              (identifier))))
+        (offtopic_handler
+          (transition_stmt
+            state: (state_name
+              (identifier))))))))
 
 
 
@@ -78,17 +100,32 @@ state prepare_data
 
 (behavior_file
   (state_decl
-    name: (path (identifier))
-    (setup_state_body
-      (run_stmt run_type: (run_type) target: (quoted_string))
-      (memory_stmt
-        target: (memory_target domain: (memory_domain) var: (identifier))
-        op: (assignment_op)
-        value: (expression (value (quoted_string))))
-      (transition_stmt state: (path (identifier))))))
+    name: (state_name
+      (identifier))
+    body: (state_body
+      (block
+        (statement
+          (run_stmt
+            type: (run_type)
+            target: (quoted_string)))
+        (statement
+          (memory_stmt
+            target: (memory_target
+              domain: (memory_domain)
+              var: (identifier))
+            op: (assignment_op)
+            value: (expression
+              (value
+                (with_quotes_string)))))
+        (statement
+          (transition_stmt
+            state: (state_name
+              (identifier))))))))
+
+
 
 ================================================================================
-valid: setup state with conditional
+setup state with conditional
 ================================================================================
 
 state check
@@ -96,42 +133,59 @@ state check
     transition to proceed
   else
     transition to fallback
+  end
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
-    name: (path (identifier))
-    (setup_state_body
-      (conditional_restricted_stmt
-        condition: (condition
-          (expression
-            left: (value (path (identifier) (identifier)))
-            op: (comparison_op)
-            right: (value (boolean_literal))))
-        then: (restricted_block
-          (transition_stmt state: (path (identifier))))
-        else: (restricted_block
-          (transition_stmt state: (path (identifier))))))))
+    name: (state_name
+      (identifier))
+    body: (state_body
+      (block
+        (statement
+          (conditional_stmt
+            condition: (condition
+              (expression
+                left: (value
+                  (state_name
+                    (identifier)
+                    (identifier)))
+                op: (comparison_op)
+                right: (value
+                  (boolean))))
+            then: (block
+              (statement
+                (transition_stmt
+                  state: (state_name
+                    (identifier)))))
+            else: (block
+              (statement
+                (transition_stmt
+                  state: (state_name
+                    (identifier)))))))))))
+
+
 
 ================================================================================
 global trigger com event
 ================================================================================
 
 on event "session.ended"
-  run script "cleanup.sh" silent
+  run script "cleanup.sh"
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (trigger_decl
     event: (quoted_string)
-    (block
+    block: (block
       (statement
         (run_stmt
-          run_type: (run_type)
-          target: (quoted_string)
-          (run_modifier))))))
+          type: (run_type)
+          target: (quoted_string))))))
+
+
 
 ================================================================================
 state com dotted path name (oriented)
@@ -141,36 +195,72 @@ state phases.planning.start
   goal "Start planning"
   interact
   on intent "next" transition to phases.planning.end
+  on offtopic transition to phases.planning.start
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
-    name: (path (identifier) (identifier) (identifier))
-    (oriented_state_body
-      (goal_stmt text: (quoted_string))
-      (interact_stmt)
-      (intent_trigger
-        intent: (quoted_string)
-        state: (path (identifier) (identifier) (identifier))))))
+    name: (state_name
+      (identifier)
+      (identifier)
+      (identifier))
+    body: (state_body
+      (oriented_state_body
+        (goal_stmt
+          text: (quoted_string))
+        (interact_stmt)
+        (intent_handler
+          intent: (quoted_string)
+          (transition_stmt
+            state: (state_name
+              (identifier)
+              (identifier)
+              (identifier))))
+        (offtopic_handler
+          (transition_stmt
+            state: (state_name
+              (identifier)
+              (identifier)
+              (identifier))))))))
+
+
 
 ================================================================================
-inline offtopic and fallback handlers
+intent handler com block body
 ================================================================================
 
 state conversational
+  goal "Chat with the user"
   interact
+  on intent "help"
+    run script "log.sh"
+    transition to support
   on offtopic transition to responsive
-  on fallback transition to support
 
 --------------------------------------------------------------------------------
 
 (behavior_file
   (state_decl
-    name: (path (identifier))
-    (oriented_state_body
-      (interact_stmt)
-      (offtopic_stmt
-        state: (path (identifier)))
-      (fallback_stmt
-        state: (path (identifier))))))
+    name: (state_name
+      (identifier))
+    body: (state_body
+      (oriented_state_body
+        (goal_stmt
+          text: (quoted_string))
+        (interact_stmt)
+        (intent_handler
+          intent: (quoted_string)
+          block: (block
+            (statement
+              (run_stmt
+                type: (run_type)
+                target: (quoted_string)))
+            (statement
+              (transition_stmt
+                state: (state_name
+                  (identifier))))))
+        (offtopic_handler
+          (transition_stmt
+            state: (state_name
+              (identifier))))))))

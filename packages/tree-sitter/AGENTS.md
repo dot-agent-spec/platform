@@ -124,12 +124,11 @@ is intentional — items must **not** consume their own trailing newline because
 ### "on" disambiguation in `.behavior`
 
 ```
-on event "..."        → trigger_decl                 (top-level, uses generic block)
-on intent "..."       → intent_trigger               (inside oriented_state_body, uses handler_block)
-on offtopic           → offtopic_stmt                (inside oriented_state_body, uses handler_block)
-on fallback           → fallback_stmt                (inside oriented_state_body, uses handler_block)
-on complete           → parallel_trigger_restricted (inside handler_block, uses restricted_block)
-on failed             → parallel_trigger_restricted (inside handler_block, uses restricted_block)
+on event "..."        → trigger_decl      (top-level, uses generic block)
+on intent "..."       → intent_handler    (inside oriented_state_body)
+on offtopic           → offtopic_handler  (inside oriented_state_body)
+on failure            → failure_stmt      (inside run/apply/remove, uses block)
+on success            → success_stmt      (inside parallel only, uses block)
 ```
 
 ### State body types
@@ -137,26 +136,23 @@ on failed             → parallel_trigger_restricted (inside handler_block, use
 Two distinct state structures enforce correctness:
 
 **`oriented_state_body`** — LLM-interactive state:
-- Order: `goal?` → `guide?` → `teach*` → `interact` → `handler+` (repeat1)
-- `interact` is mandatory; handlers (≥1) are mandatory — guarantees FSM never deadlocks
+- Order: `goal` → `guide?` → `teach*` → `interact` → `handler+` (repeat1) → `offtopic_handler`
+- `goal` is mandatory; `guide` is optional; `interact` is mandatory
+- Handlers (≥1 intent + 1 offtopic) are mandatory — guarantees FSM never deadlocks
 - `goal`/`guide` → injected into LLM message context (semantic orientation)
 - `teach` → fills LLM reusable cache (knowledge base), not message context
-- Handlers use `handler_block` (restricted: only actions, no orientation)
 
-**`setup_state_body`** — orchestration-only state:
-- Sequence of actions: `run`, `set`, `apply`, `remove`, `transition`, `if`, `after`, `parallel`
-- No orientation: no `goal`, `guide`, `teach`
+**Setup state** — orchestration-only state:
+- `state_body` dispatches to setup via `repeat1(block)` followed by optional `oriented_state_body`
+- Actions: `run`, `set`, `apply`, `remove`, `transition`, `if`, `after`, `parallel`
+- No orientation keywords: no `goal`, `guide`, `teach`
 - No interaction: no `interact`, no handlers
 
-**`handler_block`** — restricted block inside handlers:
-- Allowed: `run`, `set`, `apply`, `remove`, `transition`, `if`, `after`, `parallel`
-- Forbidden: `goal`, `guide`, `teach`, `interact`, nested handlers
+**`handler_block`** — restricted block used inside `intent_handler`, `offtopic_handler`, `failure_stmt`, `success_stmt`:
+- Allowed: `run`, `set`, `apply`, `remove`, `transition`, `if`
+- Forbidden: `goal`, `guide`, `teach`, `interact`, `after`, `parallel`, nested handlers
 
-**`restricted_block`** — equivalent to `handler_block`:
-- Used in `if`/`after`/`parallel` when inside handler or setup contexts
-- Ensures no orientation keywords leak into conditional logic
-
-Note: Generic `block` still exists for `trigger_decl` (top-level `on event`), where all statement types are permitted.
+Note: Generic `block` is used in `trigger_decl` (top-level `on event`), where all statement types are permitted.
 
 ### State transitions
 

@@ -221,7 +221,7 @@
         "required": true,
         "types": [
           {
-            "type": "filename",
+            "type": "quoted_string",
             "named": true
           }
         ]

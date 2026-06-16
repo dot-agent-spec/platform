@@ -47,8 +47,7 @@ All list-based blocks (`input`, `output`, `requires`, `capabilities`) support tw
 
 - **Compact**: `input Patient, Doctor` (Comma-separated, no descriptions).
 - **Documented**: Indented block with optional quoted descriptions.
-  - `Type "description"`: For `input`, `output`, `capabilities`.
-  - `Type ("annotation")`: For `requires` (documents usage in this specific context).
+  - `Type "description"`: For `input`, `output`, `requires`, `capabilities`.
 
 ## 3. Security & Identity
 

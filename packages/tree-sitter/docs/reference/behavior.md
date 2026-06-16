@@ -34,11 +34,11 @@ Every state follows one of two rigid structures to ensure predictability.
 
 ### 2.1 Oriented State (LLM Interaction)
 Guides the LLM before releasing it to generate a response.
-- **Structure**: `goal?` → `guide?` → `teach*` → `interact` → `handler+`
+- **Structure**: `goal` → `guide?` → `teach*` → `interact` → `handler+`
 - **Keywords**:
-  - `goal "..."`: Objective injected into message context.
-  - `guide "..."`: Behavioral instructions in message context.
-  - `teach "..."`: Injected into LLM's reusable cache (not context).
+  - `goal "..."`: Objective injected into message context. Required.
+  - `guide "..."`: Behavioral instructions injected into message context; accepts inline text or a filepath. Optional.
+  - `teach "filename.md"`: File injected into LLM's reusable cache (not context). Optional; repeatable.
   - `interact`: Mandatory; awaits LLM response and dispatches to a handler.
 
 ### 2.2 Setup State (Orchestration Only)
@@ -53,12 +53,13 @@ Handlers route the LLM's response. They can be **inline** or use a **block**.
 | Trigger | Description |
 |---|---|
 | `on intent "..."` | Matches LLM-interpreted user intent. |
-| `on fallback` | Triggered if actions/subagents fail or are unavailable. |
 | `on offtopic` | Triggered if user conversation drifts from the state's goal. |
+| `on failure` | Triggered if a `run`, `apply`, or `remove` action fails. |
+| `on success` | Triggered after a successful `parallel` block (optional). |
 
 ### 3.2 Actions & Composition
-- **`run <type> <target> [label] [modifiers]`**: Types: `script`, `subagent`, `tool`. Modifiers: `silent`, `in background`.
-- **`apply/remove <target> <file>`**: Modifies UI. Targets: `css`, `html`, `video`.
+- **`run <type> "target" ["parameters"]`**: Types: `script`, `subagent`, `tool`.
+- **`apply/remove css "selector"`**: Modifies UI via CSS selector.
 - **`merge "path"`**: Preamble only. Imports states from another file into the flat namespace.
 
 ## 4. Design Principles

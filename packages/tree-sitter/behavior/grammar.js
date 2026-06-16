@@ -118,15 +118,13 @@ module.exports = grammar({
     // FSM is guaranteed: repeat1(handler) ensures no deadlock.
 
     oriented_state_body: $ => prec.right(seq(
-
       seq($.goal_stmt, $._end_stmt),
-      seq($.guide_stmt, $._end_stmt),
+      optional(seq($.guide_stmt, $._end_stmt)),
       repeat(seq($.teach_stmt, $._end_stmt)),
       seq($.interact_stmt, $._end_stmt),
       repeat1($.intent_handler),
       $.offtopic_handler,
     )),
-    //pode dar erro
 
 
     // ----------------------------------------------------------------
@@ -215,7 +213,7 @@ module.exports = grammar({
 
     goal_stmt: $ => seq('goal', '"', field('text', $.quoted_string), '"'),
 
-    guide_stmt: $ => seq('guide', '"', field('text', $.filename), '"'),
+    guide_stmt: $ => seq('guide', '"', field('text', $.quoted_string), '"'),
     teach_stmt: $ => seq('teach', '"', field('text', $.filename), '"'),
 
     interact_stmt: $ => 'interact',
