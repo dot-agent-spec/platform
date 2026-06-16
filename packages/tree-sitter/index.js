@@ -19,6 +19,6 @@
 const path = require('path');
 
 module.exports = {
-  agentWasmPath:    path.resolve(__dirname, 'dist', 'tree-sitter-agent.wasm'),
+  agentWasmPath:    path.resolve(__dirname, 'dist', 'tree-sitter-dot_agent.wasm'),
   behaviorWasmPath: path.resolve(__dirname, 'dist', 'tree-sitter-behavior.wasm'),
 };
