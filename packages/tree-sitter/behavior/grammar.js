@@ -1,52 +1,45 @@
 /*
- * Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 // behavior/grammar.js — Tree-sitter grammar for the .behavior DSL
 //
-// Indentation (INDENT / DEDENT / NEWLINE) is handled by the external
-// scanner in src/scanner.c — same algorithm as the agent grammar.
+// Keywords (not indentation) delimit structure. Newlines mark statement/block boundaries.
 //
-// State structure (v2: rigid types):
-//   - oriented_state_body: goal? → guide? → teach* → interact → handler+
-//     LLM-active state: goal/guide orient context, teach fills cache
-//   - setup_state_body: repeat1(setup_action_stmt)
-//     Pure setup: run/set/transition without interact
-//   - Handlers (on intent/fallback/offtopic) = switch cases: no goal/guide/teach/interact
+// State types:
+// - setup_state: setup_stmt+ (no interact)
+//   Actions: set, run, apply, remove, if, transition
+// - oriented_state: goal? guide? teach* interact intent+ offtopic
+//   Pre-interact: goal/guide/teach orient LLM context
+//   Post-interact: intent handlers route LLM reply, offtopic fallback
 //
-// Statement termination:
-//   Simple statements end with optional($._newline).
-//   Compound statements (those containing a block) end with their
-//   block's $._dedent — no trailing newline needed.
+// Blocks:
+// - handler_block: repeat1(stmt) — inside intent/offtopic/failure/success
+//   No trailing newlines; keywords mark boundaries
+// - statement: stmt $._newline — used in trigger_decl (top-level)
+//   Each statement requires trailing newline
 //
-// "on" disambiguation:
-//   on event "..."   → trigger_decl  (top-level, uses $.block)
-//   on intent "..."  → intent_trigger (inside state, uses $.handler_block)
-//   on offtopic      → offtopic_stmt  (inside state, uses $.handler_block)
-//   on fallback      → fallback_stmt (inside state, uses $.handler_block)
-//   on complete      → parallel_trigger (inside handler, uses $.handler_block)
-//   on failed        → parallel_trigger (inside handler, uses $.handler_block)
+// "on" forms:
+// - on event "..." block    → top-level trigger
+// - on intent "..." (inline | block)  → state handler (inline: transition; block: statements)
+// - on offtopic (inline | block)      → state handler
+// - on failure block        → error handler (for run/apply/remove)
+// - on success block        → success handler (for parallel only, optional)
 
 module.exports = grammar({
   name: 'behavior',
-
-  externals: $ => [
-    $._newline,   // \n where next line has SAME indentation level
-    $._indent,    // \n where next line has MORE indentation (block opens)
-    $._dedent,    // \n where next line has LESS indentation (block closes)
-  ],
 
   extras: $ => [
     /[ \t]/,
@@ -61,119 +54,115 @@ module.exports = grammar({
     // Top-level
     // ----------------------------------------------------------------
 
-    behavior_file: $ => repeat1(choice(
-      $._newline,      // blank lines between top-level declarations
-      $.merge_decl,
-      $.trigger_decl,
-      $.state_decl,
-    )),
+    behavior_file: $ => seq(
+      repeat($._newline),
+      repeat($.merge_decl),
+      repeat($.trigger_decl),
+      repeat($.state_decl),
+    ),
 
-    // merge "file.behavior"   — preamble only, enforced by runtime
+    _newline: $ => /\r?\n/,
+    _blank_line: $ => /[ \t]*\r?\n/,
+    _end_stmt: $ => prec.right(seq($._newline, repeat($._blank_line))),
+
+    // merge "file.behavior" — preamble only, enforced by runtime
     // Note: trailing _newline is handled by the $._newline alternative in flow_file
     merge_decl: $ => seq(
       'merge',
-      field('path', $.quoted_string),
+      '"',
+      field('path', $.filename),
+      '"',
+      $._end_stmt,
     ),
 
     // on event "name" block
     trigger_decl: $ => seq(
       'on', 'event',
-      field('event', $.quoted_string),
-      $.block,
+      '"', field('event', $.quoted_string), '"',
+      $._newline,
+      field('block', $.block),
+      repeat($._blank_line),
     ),
 
     // state name body
-    // Two types of state bodies:
-    //   1. oriented_state_body: goal? → guide? → teach* → interact → handler+
-    //   2. setup_state_body: repeat1(setup_action_stmt)
     state_decl: $ => seq(
       'state',
-      field('name', $.path),
-      choice(
-        $.oriented_state_body,
-        $.setup_state_body,
-      ),
+      field('name', $.state_name),
+      $._newline,
+      field('body', $.state_body),
+      repeat($._blank_line),
     ),
 
     // ================================================================
-    // STATE TYPE 1: Oriented (with interact + handlers)
+    // STATE BODY
+    // ================================================================
+    // Can be: setup-only, or setup + oriented, or just oriented
+    // Keywords (goal, guide, teach, interact, on intent, on offtopic) mark transition
+
+    state_body: $ => choice(
+       // Only oriented: goal/guide/teach/interact/handlers
+      $.oriented_state_body,
+      // Setup statements followed by optional oriented
+      prec.right(seq(
+        repeat1($.block),
+        optional($.oriented_state_body),
+      )),
+    ),
+
+    // ================================================================
+    // ORIENTED STATE (with interact + handlers)
     // ================================================================
     // goal? guide? teach* interact handler+
     // Order is strict: goal and guide orient LLM context, teach fills cache,
     // interact releases LLM for response, handlers route the reply.
     // FSM is guaranteed: repeat1(handler) ensures no deadlock.
 
-    oriented_state_body: $ => seq(
-      $._indent,
-      optional($.goal_stmt),
-      optional($.guide_stmt),
-      repeat($.teach_stmt),
-      $.interact_stmt,
-      repeat1(choice(
-        $.intent_trigger,
-        $.fallback_stmt,
-        $.offtopic_stmt,
-        $.temporal_restricted_stmt,
-        $.parallel_restricted_stmt,
-        $.parallel_trigger_restricted,
-      )),
-      $._dedent,
-    ),
-
-    // ================================================================
-    // STATE TYPE 2: Setup (no interact, pure action)
-    // ================================================================
-    // Just action statements: run, set, transition, if, etc.
-    // No orientation (no goal/guide/teach).
-
-    setup_state_body: $ => seq(
-      $._indent,
-      repeat1(choice(
-        $.memory_stmt,
-        $.run_stmt,
-        $.apply_stmt,
-        $.remove_stmt,
-        $.transition_stmt,
-        $.conditional_restricted_stmt,
-        $.temporal_restricted_stmt,
-        $.parallel_restricted_stmt,
-      )),
-      $._dedent,
-    ),
+    oriented_state_body: $ => prec.right(seq(
+      seq($.goal_stmt, $._end_stmt),
+      optional(seq($.guide_stmt, $._end_stmt)),
+      repeat(seq($.teach_stmt, $._end_stmt)),
+      seq($.interact_stmt, $._end_stmt),
+      repeat1($.intent_handler),
+      $.offtopic_handler,
+    )),
 
 
     // ----------------------------------------------------------------
     // Block
     //
     // Contains a sequence of statements. Simple statements terminate
-    // themselves with optional($._newline); compound statements end
-    // with their nested block's $._dedent. No separator between stmts.
+    // themselves with $._newline compound statements
     // ----------------------------------------------------------------
 
-    block: $ => seq(
-      $._indent,
-      repeat1($.statement),
-      $._dedent,
-    ),
+    // ================================================================
+    // BLOCKS & STATEMENTS
+    // ================================================================
+    // block: used in trigger_decl (top-level), statements need newlines
+    // handler_block: used in handlers/if/parallel, no trailing newlines
+
+    block: $ => prec.right(repeat1(
+      seq($.statement, optional($._end_stmt)),
+    )),
 
     statement: $ => choice(
       $.memory_stmt,
       $.run_stmt,
-      $.guide_stmt,
-      $.teach_stmt,
-      $.goal_stmt,
-      $.interact_stmt,
       $.apply_stmt,
       $.remove_stmt,
       $.conditional_stmt,
       $.transition_stmt,
-      $.intent_trigger,
-      $.offtopic_stmt,
-      $.fallback_stmt,
       $.temporal_stmt,
       $.parallel_stmt,
-      $.parallel_trigger,
     ),
+
+    handler_block: $ => prec.right(repeat1(choice(
+      $.memory_stmt,
+      $.run_stmt,
+      $.apply_stmt,
+      $.remove_stmt,
+      $.conditional_stmt,
+      $.transition_stmt,
+    ))),
 
     // ----------------------------------------------------------------
     // Memory
@@ -187,7 +176,6 @@ module.exports = grammar({
       field('target', $.memory_target),
       field('op', $.assignment_op),
       field('value', $.expression),
-      optional($._newline),
     ),
 
     assignment_op: $ => choice('=', '+=', '-='),
@@ -197,178 +185,99 @@ module.exports = grammar({
       field('var', $.identifier),
     ),
 
+    //TODO: Revise domains
     memory_domain: $ => choice('context', 'session', 'worksession', 'user'),
 
     // ----------------------------------------------------------------
     // Run
     // ----------------------------------------------------------------
 
-    // Normal: run script|subagent|tool "target" ["label"] [silent|in background]
-    // Batch:  run subagent "target" each context.files  [experimental]
-    run_stmt: $ => seq(
+    // Normal: run script|subagent|tool "target" "parameters"
+    // NOTE: Batch was removed until it proves necessary
+    // Batch: run subagent "target" each context.files [experimental]
+    run_stmt: $ => prec.right(seq(
       'run',
-      field('run_type', $.run_type),
-      field('target', $.quoted_string),
-      optional(field('label', $.quoted_string)),
-      choice(
-        seq('each', field('collection', $.path)), // batch form [experimental]
-        repeat($.run_modifier),                   // normal form (zero or more)
-      ),
-      optional($._newline),
-    ),
+      field('type', $.run_type),
+      '"', field('target', $.quoted_string), '"',
+      optional(seq(
+        '"', field('parameters', $.quoted_string), '"',
+      )),
+      optional($.failure_stmt),
+    )),
 
     run_type: $ => choice('script', 'subagent', 'tool'),
-
-    run_modifier: $ => choice(
-      'silent',
-      seq('in', 'background'),
-    ),
 
     // ----------------------------------------------------------------
     // Interaction
     // ----------------------------------------------------------------
 
-    guide_stmt: $ => seq('guide', field('text', $.quoted_string), optional($._newline)),
-    teach_stmt: $ => seq('teach', field('text', $.quoted_string), optional($._newline)),
-    goal_stmt:  $ => seq('goal',  field('text', $.quoted_string), optional($._newline)),
+    goal_stmt: $ => seq('goal', '"', field('text', $.quoted_string), '"'),
 
-    interact_stmt: $ => seq(
-      'interact',
-      optional($._newline),
-    ),
+    guide_stmt: $ => seq('guide', '"', field('text', $.quoted_string), '"'),
+    teach_stmt: $ => seq('teach', '"', field('text', $.filename), '"'),
+
+    interact_stmt: $ => 'interact',
 
     // ----------------------------------------------------------------
     // UI manipulation
     // ----------------------------------------------------------------
 
-    apply_stmt: $ => seq(
-      'apply',
-      field('target', $.ui_target),
-      field('text', $.quoted_string),
-      optional($._newline),
-    ),
+    apply_stmt: $ => prec.right(seq(
+      'apply', 'css',
+      '"', field('text', $.quoted_string), '"',
+      optional($.failure_stmt),
+    )),
 
-    remove_stmt: $ => seq(
-      'remove',
-      field('target', $.ui_target),
-      field('text', $.quoted_string),
-      optional($._newline),
-    ),
+    remove_stmt: $ => prec.right(seq(
+      'remove', 'css',
+      '"', field('text', $.quoted_string), '"',
+      optional($.failure_stmt),
+    )),
 
-    ui_target: $ => choice('css', 'html', 'video'),
+    // TODO: maybe expand to html, video, etc.
+    // for future genUI capabilities, but for now just CSS selectors for dynamic UI updates.
+    // ui_target: $ => choice('css', 'html', 'video'),
 
     // ================================================================
-    // HANDLERS (inside oriented states — switch cases)
+    // HANDLERS (inside oriented states)
     // ================================================================
     // These are the routing statements after interact.
-    // on intent | on fallback | on offtopic | on complete | on failed
-    // Each one is a "case" in the state machine switch.
+    // on intent | on offtopic
     // Inside handlers: NO goal, guide, teach, interact. Just actions.
 
-    // on intent "text" (transition to state | handler_block)
-    intent_trigger: $ => seq(
+    // on intent "text" (transition to state | block)
+    intent_handler: $ => seq(
       'on', 'intent',
-      field('intent', $.quoted_string),
+      '"', field('intent', $.quoted_string), '"',
       choice(
-        seq('transition', 'to', field('state', $.path), optional($._newline)), // inline
-        field('block', $.handler_block),                                        // handler block form
+        prec(2, $.transition_stmt),
+        prec(1, seq($._newline, field('block', $.block))),
       ),
     ),
 
-    offtopic_stmt: $ => seq(
+    // on offtopic (transition to state | block)
+    offtopic_handler: $ => seq(
       'on', 'offtopic',
       choice(
-        seq('transition', 'to', field('state', $.path), optional($._newline)),
-        field('block', $.handler_block),
-      ),
-    ),
-    fallback_stmt: $ => seq(
-      'on', 'fallback',
-      choice(
-        seq('transition', 'to', field('state', $.path), optional($._newline)),
-        field('block', $.handler_block),
+        prec(2, $.transition_stmt),
+        prec(1, seq($._newline, field('block', $.block))),
       ),
     ),
 
-    // ================================================================
-    // HANDLER_BLOCK (actions allowed in handlers)
-    // ================================================================
-    // Like $.block but restricted: no goal/guide/teach/interact.
-    // Allowed: run, set, apply, remove, transition, if, after, parallel
-
-    handler_block: $ => seq(
-      $._indent,
-      repeat1(choice(
-        $.memory_stmt,
-        $.run_stmt,
-        $.apply_stmt,
-        $.remove_stmt,
-        $.transition_stmt,
-        $.conditional_restricted_stmt,
-        $.temporal_restricted_stmt,
-        $.parallel_restricted_stmt,
-        $.parallel_trigger_restricted,
-      )),
-      $._dedent,
+    // on failure block
+    failure_stmt: $ => seq(
+      'on', 'failure',
+      $._newline,
+      field('block', $.block),
     ),
 
-    // ================================================================
-    // RESTRICTED COMPOUND STATEMENTS
-    // ================================================================
-    // Variants of if/after/parallel that use handler_block/restricted_block
-    // instead of the generic block. These are used in:
-    //   - setup_state_body
-    //   - handler_block
-    //   - nested within restricted blocks themselves
-
-    // if condition restricted_block [else restricted_block]
-    // Used: in setup states, in handlers, in nested restricted blocks
-    conditional_restricted_stmt: $ => seq(
-      'if',
-      field('condition', $.condition),
-      field('then', $.restricted_block),
-      optional(seq('else', field('else', $.restricted_block))),
+    // on success block (used in parallel only)
+    success_stmt: $ => seq(
+      'on', 'success',
+      $._newline,
+      field('block', $.block),
     ),
 
-    // after N prompts restricted_block
-    temporal_restricted_stmt: $ => seq(
-      'after',
-      field('count', $.number_literal),
-      'prompts',
-      field('block', $.restricted_block),
-    ),
-
-    // parallel restricted_block
-    parallel_restricted_stmt: $ => seq(
-      'parallel',
-      field('block', $.restricted_block),
-    ),
-
-    // on complete restricted_block | on failed restricted_block
-    parallel_trigger_restricted: $ => seq(
-      'on',
-      field('event', choice('complete', 'failed')),
-      field('block', $.restricted_block),
-    ),
-
-    // restricted_block: used in all restricted contexts (setup/handler/nested)
-    // Allows: memory, run, apply, remove, transition, if, after, parallel
-    // Excludes: goal, guide, teach, interact
-    restricted_block: $ => seq(
-      $._indent,
-      repeat1(choice(
-        $.memory_stmt,
-        $.run_stmt,
-        $.apply_stmt,
-        $.remove_stmt,
-        $.transition_stmt,
-        $.conditional_restricted_stmt,
-        $.temporal_restricted_stmt,
-        $.parallel_restricted_stmt,
-        $.parallel_trigger_restricted,
-      )),
-      $._dedent,
-    ),
 
     // ================================================================
     // CONTROL FLOW (used in top-level trigger_decl only)
@@ -377,8 +286,8 @@ module.exports = grammar({
     // transition to state_name
     transition_stmt: $ => seq(
       'transition', 'to',
-      field('state', $.path),
-      optional($._newline),
+      field('state', $.state_name),
+      $._newline
     ),
 
     // ================================================================
@@ -387,37 +296,35 @@ module.exports = grammar({
     // These are only used in top-level on event handlers (trigger_decl),
     // which use the generic $.block. Inside states, use restricted variants.
 
-    // if condition block [else block]
-    // Used only in trigger_decl (top-level events)
-    conditional_stmt: $ => seq(
+    // if condition block [else block] endif
+    conditional_stmt: $ => prec.right(seq(
       'if',
       field('condition', $.condition),
+      $._newline,
       field('then', $.block),
-      optional(seq('else', field('else', $.block))),
-    ),
+      optional(seq(
+        'else',
+        $._newline,
+        field('else', $.block),
+      )),
+      'end',
+    )),
 
     // after N prompts block
-    // Used only in trigger_decl
     temporal_stmt: $ => seq(
       'after',
-      field('count', $.number_literal),
+      field('count', $.number),
       'prompts',
-      field('block', $.block),
+      field('block', $.handler_block),
     ),
 
     // parallel block
-    // Used only in trigger_decl
+    // on success is optional; on failure is required
     parallel_stmt: $ => seq(
       'parallel',
-      field('block', $.block),
-    ),
-
-    // on complete block | on failed block
-    // Used only in trigger_decl (top-level)
-    parallel_trigger: $ => seq(
-      'on',
-      field('event', choice('complete', 'failed')),
-      field('block', $.block),
+      field('block', $.handler_block),
+      optional($.success_stmt),
+      $.failure_stmt,
     ),
 
     // ----------------------------------------------------------------
@@ -441,11 +348,11 @@ module.exports = grammar({
     comparison_op: $ => choice('==', '!=', '>', '<', '>=', '<='),
 
     value: $ => choice(
-      $.quoted_string,
-      $.number_literal,
-      $.boolean_literal,
-      $.null_literal,
-      $.path,       // identifiers and dotted refs: session.count, context.files
+      $.with_quotes_string,
+      $.number,
+      $.boolean,
+      $.null,
+      $.state_name, // identifiers and dotted refs: session.count, context.files
     ),
 
     // ----------------------------------------------------------------
@@ -454,16 +361,25 @@ module.exports = grammar({
 
     // Dotted path: identifier(.identifier)*
     // Covers: state refs (phases.planning.start), scoped vars (context.files)
-    path: $ => seq($.identifier, repeat(seq('.', $.identifier))),
+    state_name: $ => seq($.identifier, repeat(seq('.', $.identifier))),
+
 
     // ----------------------------------------------------------------
     // Primitives
     // ----------------------------------------------------------------
 
-    quoted_string:   $ => /"[^"\\]*(?:\\.[^"\\]*)*"/,
-    number_literal:  $ => token(/-?[0-9]+(\.[0-9]+)?/),
-    boolean_literal: $ => choice('true', 'false'),
-    null_literal:    $ => 'null',
+    with_quotes_string: $ => /"[^"\\]*(?:\\.[^"\\]*)*"/,
+
+    number: $ => token(/-?[0-9]+(\.[0-9]+)?/),
+
+    boolean: $ => choice('true', 'false'),
+
+    null: $ => 'null',
+
+    quoted_string: $ => /[^"\\]*(?:\\.[^"\\]*)*/,
+
+    // Matches filenames with one or more dots: doctor.behavior, health.example.com
+    filename: $ => /[^"\n]+/,
 
     // Identifiers in .behavior: same as .description (no dots — handled via path rule)
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_-]*/,

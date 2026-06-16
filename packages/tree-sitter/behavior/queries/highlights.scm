@@ -2,36 +2,32 @@
 ; Licensed under the Apache License, Version 2.0
 ; http://www.apache.org/licenses/LICENSE-2.0
 
-; flow/queries/highlights.scm — Tree-sitter highlight queries for the .behavior DSL
+; behavior/queries/highlights.scm — Tree-sitter highlight queries for the .behavior DSL
 
 ; ----------------------------------------------------------------
 ; Keywords — structural
 ; ----------------------------------------------------------------
 
-"merge"    @keyword
-"state"    @keyword
+"merge"  @keyword
+"state"  @keyword
 
 ; ----------------------------------------------------------------
 ; Keywords — run actions
 ; ----------------------------------------------------------------
 
-"run"        @keyword
-"script"     @keyword.operator
-"subagent"   @keyword.operator
-"tool"       @keyword.operator
-"silent"     @keyword.operator
-"in"         @keyword
-"background" @keyword.operator
-"each"       @keyword.operator
+"run"      @keyword
+"script"   @keyword.operator
+"subagent" @keyword.operator
+"tool"     @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — interaction
 ; ----------------------------------------------------------------
 
+"goal"      @keyword
 "guide"     @keyword
 "teach"     @keyword
-"goal"      @keyword
-"interact"  @keyword
+(interact_stmt) @keyword
 
 ; ----------------------------------------------------------------
 ; Keywords — memory
@@ -47,30 +43,30 @@
 ; Keywords — control flow
 ; ----------------------------------------------------------------
 
-"if"           @keyword
-"else"         @keyword
-"transition"   @keyword
-"to"           @keyword.operator
+"if"         @keyword
+"else"       @keyword
+"end"        @keyword
+"transition" @keyword
+"to"         @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — triggers
 ; ----------------------------------------------------------------
 
-"on"        @keyword
-"event"     @keyword.operator
-"intent"    @keyword.operator
-"offtopic"  @keyword.operator
-"fallback"  @keyword.operator
+"on"       @keyword
+"event"    @keyword.operator
+"intent"   @keyword.operator
+"offtopic" @keyword.operator
+"failure"  @keyword.operator
+"success"  @keyword.operator
 
 ; ----------------------------------------------------------------
-; Keywords — temporal / parallel [experimental]
+; Keywords — temporal / parallel
 ; ----------------------------------------------------------------
 
 "after"    @keyword
 "prompts"  @keyword.operator
 "parallel" @keyword
-"complete" @keyword.operator
-"failed"   @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — apply/remove
@@ -79,8 +75,14 @@
 "apply"  @keyword
 "remove" @keyword
 "css"    @keyword.operator
-"html"   @keyword.operator
-"video"  @keyword.operator
+
+; ----------------------------------------------------------------
+; Keywords — values
+; ----------------------------------------------------------------
+
+"true"  @boolean
+"false" @boolean
+(null)  @constant.builtin
 
 ; ----------------------------------------------------------------
 ; Memory operations
@@ -95,38 +97,35 @@
 ; State and trigger declarations
 ; ----------------------------------------------------------------
 
-(state_decl name: (path (identifier) @type.definition))
+(state_decl name: (state_name (identifier) @type.definition))
 (trigger_decl event: (quoted_string) @string.special)
 
 ; ----------------------------------------------------------------
-; Intent triggers
+; Intent handlers
 ; ----------------------------------------------------------------
 
-(intent_trigger intent: (quoted_string) @string.special)
-(intent_trigger state: (path (identifier) @type))
+(intent_handler intent: (quoted_string) @string.special)
 
 ; ----------------------------------------------------------------
 ; Transitions
 ; ----------------------------------------------------------------
 
-(transition_stmt state: (path (identifier) @type))
+(transition_stmt state: (state_name (identifier) @type))
 
 ; ----------------------------------------------------------------
 ; Run statements
 ; ----------------------------------------------------------------
 
 (run_stmt target: (quoted_string) @string)
-(run_stmt label: (quoted_string) @string)
-(run_stmt collection: (path (identifier) @variable))
+(run_stmt parameters: (quoted_string) @string)
 
 ; ----------------------------------------------------------------
 ; Literals
 ; ----------------------------------------------------------------
 
-(quoted_string)    @string
-(number_literal)   @number
-(boolean_literal)  @boolean
-(null_literal)     @constant.builtin
+(quoted_string)      @string
+(with_quotes_string) @string
+(number)             @number
 
 ; ----------------------------------------------------------------
 ; Comparison and logical operators
@@ -145,4 +144,4 @@
 ; Merge paths
 ; ----------------------------------------------------------------
 
-(merge_decl path: (quoted_string) @string.special)
+(merge_decl path: (filename) @string.special)

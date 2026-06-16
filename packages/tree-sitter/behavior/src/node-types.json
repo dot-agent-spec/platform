@@ -3,16 +3,6 @@
     "type": "apply_stmt",
     "named": true,
     "fields": {
-      "target": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "ui_target",
-            "named": true
-          }
-        ]
-      },
       "text": {
         "multiple": false,
         "required": true,
@@ -23,6 +13,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "failure_stmt",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -70,7 +70,7 @@
     }
   },
   {
-    "type": "boolean_literal",
+    "type": "boolean",
     "named": true,
     "fields": {}
   },
@@ -96,42 +96,6 @@
           "named": true
         }
       ]
-    }
-  },
-  {
-    "type": "conditional_restricted_stmt",
-    "named": true,
-    "fields": {
-      "condition": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "condition",
-            "named": true
-          }
-        ]
-      },
-      "else": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "restricted_block",
-            "named": true
-          }
-        ]
-      },
-      "then": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "restricted_block",
-            "named": true
-          }
-        ]
-      }
     }
   },
   {
@@ -217,25 +181,15 @@
     }
   },
   {
-    "type": "fallback_stmt",
+    "type": "failure_stmt",
     "named": true,
     "fields": {
       "block": {
         "multiple": false,
-        "required": false,
+        "required": true,
         "types": [
           {
-            "type": "handler_block",
-            "named": true
-          }
-        ]
-      },
-      "state": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "path",
+            "type": "block",
             "named": true
           }
         ]
@@ -287,19 +241,11 @@
           "named": true
         },
         {
-          "type": "conditional_restricted_stmt",
+          "type": "conditional_stmt",
           "named": true
         },
         {
           "type": "memory_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_trigger_restricted",
           "named": true
         },
         {
@@ -311,10 +257,6 @@
           "named": true
         },
         {
-          "type": "temporal_restricted_stmt",
-          "named": true
-        },
-        {
           "type": "transition_stmt",
           "named": true
         }
@@ -322,7 +264,7 @@
     }
   },
   {
-    "type": "intent_trigger",
+    "type": "intent_handler",
     "named": true,
     "fields": {
       "block": {
@@ -330,7 +272,7 @@
         "required": false,
         "types": [
           {
-            "type": "handler_block",
+            "type": "block",
             "named": true
           }
         ]
@@ -344,23 +286,18 @@
             "named": true
           }
         ]
-      },
-      "state": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "path",
-            "named": true
-          }
-        ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
     }
-  },
-  {
-    "type": "interact_stmt",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "logical_op",
@@ -443,7 +380,7 @@
         "required": true,
         "types": [
           {
-            "type": "quoted_string",
+            "type": "filename",
             "named": true
           }
         ]
@@ -451,7 +388,7 @@
     }
   },
   {
-    "type": "offtopic_stmt",
+    "type": "offtopic_handler",
     "named": true,
     "fields": {
       "block": {
@@ -459,21 +396,21 @@
         "required": false,
         "types": [
           {
-            "type": "handler_block",
-            "named": true
-          }
-        ]
-      },
-      "state": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "path",
+            "type": "block",
             "named": true
           }
         ]
       }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "transition_stmt",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -485,10 +422,6 @@
       "required": true,
       "types": [
         {
-          "type": "fallback_stmt",
-          "named": true
-        },
-        {
           "type": "goal_stmt",
           "named": true
         },
@@ -497,7 +430,7 @@
           "named": true
         },
         {
-          "type": "intent_trigger",
+          "type": "intent_handler",
           "named": true
         },
         {
@@ -505,42 +438,14 @@
           "named": true
         },
         {
-          "type": "offtopic_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_trigger_restricted",
+          "type": "offtopic_handler",
           "named": true
         },
         {
           "type": "teach_stmt",
           "named": true
-        },
-        {
-          "type": "temporal_restricted_stmt",
-          "named": true
         }
       ]
-    }
-  },
-  {
-    "type": "parallel_restricted_stmt",
-    "named": true,
-    "fields": {
-      "block": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "restricted_block",
-            "named": true
-          }
-        ]
-      }
     }
   },
   {
@@ -552,83 +457,22 @@
         "required": true,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
             "named": true
           }
         ]
       }
-    }
-  },
-  {
-    "type": "parallel_trigger",
-    "named": true,
-    "fields": {
-      "block": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "block",
-            "named": true
-          }
-        ]
-      },
-      "event": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "complete",
-            "named": false
-          },
-          {
-            "type": "failed",
-            "named": false
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "parallel_trigger_restricted",
-    "named": true,
-    "fields": {
-      "block": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "restricted_block",
-            "named": true
-          }
-        ]
-      },
-      "event": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "complete",
-            "named": false
-          },
-          {
-            "type": "failed",
-            "named": false
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "path",
-    "named": true,
-    "fields": {},
+    },
     "children": {
       "multiple": true,
       "required": true,
       "types": [
         {
-          "type": "identifier",
+          "type": "failure_stmt",
+          "named": true
+        },
+        {
+          "type": "success_stmt",
           "named": true
         }
       ]
@@ -638,115 +482,7 @@
     "type": "remove_stmt",
     "named": true,
     "fields": {
-      "target": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "ui_target",
-            "named": true
-          }
-        ]
-      },
       "text": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "quoted_string",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "restricted_block",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "apply_stmt",
-          "named": true
-        },
-        {
-          "type": "conditional_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "memory_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_trigger_restricted",
-          "named": true
-        },
-        {
-          "type": "remove_stmt",
-          "named": true
-        },
-        {
-          "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "temporal_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "transition_stmt",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "run_modifier",
-    "named": true,
-    "fields": {}
-  },
-  {
-    "type": "run_stmt",
-    "named": true,
-    "fields": {
-      "collection": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "path",
-            "named": true
-          }
-        ]
-      },
-      "label": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "quoted_string",
-            "named": true
-          }
-        ]
-      },
-      "run_type": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "run_type",
-            "named": true
-          }
-        ]
-      },
-      "target": {
         "multiple": false,
         "required": true,
         "types": [
@@ -758,11 +494,57 @@
       }
     },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": false,
       "types": [
         {
-          "type": "run_modifier",
+          "type": "failure_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "run_stmt",
+    "named": true,
+    "fields": {
+      "parameters": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      },
+      "target": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "quoted_string",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "run_type",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "failure_stmt",
           "named": true
         }
       ]
@@ -774,7 +556,7 @@
     "fields": {}
   },
   {
-    "type": "setup_state_body",
+    "type": "state_body",
     "named": true,
     "fields": {},
     "children": {
@@ -782,35 +564,11 @@
       "required": true,
       "types": [
         {
-          "type": "apply_stmt",
+          "type": "block",
           "named": true
         },
         {
-          "type": "conditional_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "memory_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "remove_stmt",
-          "named": true
-        },
-        {
-          "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "temporal_restricted_stmt",
-          "named": true
-        },
-        {
-          "type": "transition_stmt",
+          "type": "oriented_state_body",
           "named": true
         }
       ]
@@ -820,27 +578,38 @@
     "type": "state_decl",
     "named": true,
     "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "state_body",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "path",
+            "type": "state_name",
             "named": true
           }
         ]
       }
-    },
+    }
+  },
+  {
+    "type": "state_name",
+    "named": true,
+    "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
         {
-          "type": "oriented_state_body",
-          "named": true
-        },
-        {
-          "type": "setup_state_body",
+          "type": "identifier",
           "named": true
         }
       ]
@@ -863,39 +632,11 @@
           "named": true
         },
         {
-          "type": "fallback_stmt",
-          "named": true
-        },
-        {
-          "type": "goal_stmt",
-          "named": true
-        },
-        {
-          "type": "guide_stmt",
-          "named": true
-        },
-        {
-          "type": "intent_trigger",
-          "named": true
-        },
-        {
-          "type": "interact_stmt",
-          "named": true
-        },
-        {
           "type": "memory_stmt",
           "named": true
         },
         {
-          "type": "offtopic_stmt",
-          "named": true
-        },
-        {
           "type": "parallel_stmt",
-          "named": true
-        },
-        {
-          "type": "parallel_trigger",
           "named": true
         },
         {
@@ -904,10 +645,6 @@
         },
         {
           "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "teach_stmt",
           "named": true
         },
         {
@@ -922,6 +659,22 @@
     }
   },
   {
+    "type": "success_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "teach_stmt",
     "named": true,
     "fields": {
@@ -930,33 +683,7 @@
         "required": true,
         "types": [
           {
-            "type": "quoted_string",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "temporal_restricted_stmt",
-    "named": true,
-    "fields": {
-      "block": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "restricted_block",
-            "named": true
-          }
-        ]
-      },
-      "count": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "number_literal",
+            "type": "filename",
             "named": true
           }
         ]
@@ -972,7 +699,7 @@
         "required": true,
         "types": [
           {
-            "type": "block",
+            "type": "handler_block",
             "named": true
           }
         ]
@@ -982,7 +709,7 @@
         "required": true,
         "types": [
           {
-            "type": "number_literal",
+            "type": "number",
             "named": true
           }
         ]
@@ -998,7 +725,7 @@
         "required": true,
         "types": [
           {
-            "type": "path",
+            "type": "state_name",
             "named": true
           }
         ]
@@ -1009,6 +736,16 @@
     "type": "trigger_decl",
     "named": true,
     "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
       "event": {
         "multiple": false,
         "required": true,
@@ -1019,22 +756,7 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "block",
-          "named": true
-        }
-      ]
     }
-  },
-  {
-    "type": "ui_target",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "value",
@@ -1045,23 +767,23 @@
       "required": true,
       "types": [
         {
-          "type": "boolean_literal",
+          "type": "boolean",
           "named": true
         },
         {
-          "type": "null_literal",
+          "type": "null",
           "named": true
         },
         {
-          "type": "number_literal",
+          "type": "number",
           "named": true
         },
         {
-          "type": "path",
+          "type": "state_name",
           "named": true
         },
         {
-          "type": "quoted_string",
+          "type": "with_quotes_string",
           "named": true
         }
       ]
@@ -1069,6 +791,10 @@
   },
   {
     "type": "!=",
+    "named": false
+  },
+  {
+    "type": "\"",
     "named": false
   },
   {
@@ -1120,17 +846,9 @@
     "named": false
   },
   {
-    "type": "background",
-    "named": false
-  },
-  {
     "type": "comment",
     "named": true,
     "extra": true
-  },
-  {
-    "type": "complete",
-    "named": false
   },
   {
     "type": "context",
@@ -1141,11 +859,11 @@
     "named": false
   },
   {
-    "type": "each",
+    "type": "else",
     "named": false
   },
   {
-    "type": "else",
+    "type": "end",
     "named": false
   },
   {
@@ -1153,11 +871,7 @@
     "named": false
   },
   {
-    "type": "failed",
-    "named": false
-  },
-  {
-    "type": "fallback",
+    "type": "failure",
     "named": false
   },
   {
@@ -1165,15 +879,15 @@
     "named": false
   },
   {
+    "type": "filename",
+    "named": true
+  },
+  {
     "type": "goal",
     "named": false
   },
   {
     "type": "guide",
-    "named": false
-  },
-  {
-    "type": "html",
     "named": false
   },
   {
@@ -1185,27 +899,23 @@
     "named": false
   },
   {
-    "type": "in",
-    "named": false
-  },
-  {
     "type": "intent",
     "named": false
   },
   {
-    "type": "interact",
-    "named": false
+    "type": "interact_stmt",
+    "named": true
   },
   {
     "type": "merge",
     "named": false
   },
   {
-    "type": "null_literal",
+    "type": "null",
     "named": true
   },
   {
-    "type": "number_literal",
+    "type": "number",
     "named": true
   },
   {
@@ -1253,15 +963,15 @@
     "named": false
   },
   {
-    "type": "silent",
-    "named": false
-  },
-  {
     "type": "state",
     "named": false
   },
   {
     "type": "subagent",
+    "named": false
+  },
+  {
+    "type": "success",
     "named": false
   },
   {
@@ -1289,8 +999,8 @@
     "named": false
   },
   {
-    "type": "video",
-    "named": false
+    "type": "with_quotes_string",
+    "named": true
   },
   {
     "type": "worksession",

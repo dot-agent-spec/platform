@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Language (Spec 1.0.0-draft)
+- **Changed**: Oriented state structure is now `goal` → `guide?` → `teach*` → `interact` → `handler+`: `goal` is required, `guide` is optional.
+- **Changed**: `guide` accepts inline text or a filepath; `teach` accepts filepaths only.
+- **Changed**: `on fallback` removed; error handling split into `on failure` (for `run`/`apply`/`remove`) and `on success` (for `parallel`).
+- **Changed**: `run` syntax is now `run <type> "target" ["parameters"]` — `[label]` and modifiers (`silent`, `in background`) removed.
+- **Changed**: `apply`/`remove` support `css` only; `html` and `video` targets removed.
+
+### Parser
+- **Fixed**: `guide_stmt` in `oriented_state_body` wrapped in `optional()` to match spec intent.
+- **Updated**: `behavior/queries/highlights.scm` synced with current node types — removed stale keywords (`silent`, `in`, `background`, `each`, `fallback`, `complete`, `failed`, `html`, `video`); fixed node type references (`interact_stmt` node, `null` named node, `state_name`, `intent_handler`).
+- **Updated**: `behavior/test/corpus/basic.txt` rewritten for current grammar (all 8 cases).
+
 ---
 
 ## [0.3.3] - 2026-06-10
