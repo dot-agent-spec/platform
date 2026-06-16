@@ -20,7 +20,7 @@
       "patterns": [
         {
           "name": "keyword.control.agent",
-          "match": "^\\s*(agent|description|behavior|requires|input|capabilities|output|type|concept|schema|domain|license|terms|privacy)\\b"
+          "match": "^\\s*(agent|description|behavior|persona|requires|input|capabilities|output|type|category|concept|domain|license|terms|privacy)\\b"
         }
       ]
     },
