@@ -17,8 +17,8 @@
     "install-ext": "code --install-extension vscode-dot-agent-*.vsix"
   },
   "dependencies": {
-    "@dot-agent/language-server": "^0.4.0",
-    "@dot-agent/tree-sitter": "^0.3.4",
+    "@dot-agent/language-server": "^0.4.1",
+    "@dot-agent/tree-sitter": "^0.3.6",
     "vscode-languageclient": "^10.0.0"
   },
   "devDependencies": {

@@ -20,37 +20,6 @@ const { LanguageClient, TransportKind } = require('vscode-languageclient/node');
 
 // ─── Graph helpers ────────────────────────────────────────────────────────────
 
-function parseBehaviorForGraph(text) {
-    const states = [];
-    const transitions = [];
-    const entryPoints = [];
-
-    const stateRe = /^state\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/gm;
-    let m;
-    while ((m = stateRe.exec(text)) !== null) states.push(m[1]);
-
-    const segments = text.split(/(?=^(?:state|on\s+event)\s)/m);
-    for (const seg of segments) {
-        const stateM = seg.match(/^state\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/);
-        const eventM = seg.match(/^on\s+event\s+"([^"]+)"/);
-        if (stateM) {
-            const from = stateM[1];
-            const nextRe = /\btransition\s+to\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/g;
-            let n;
-            while ((n = nextRe.exec(seg)) !== null) {
-                if (!transitions.find(t => t.from === from && t.to === n[1])) {
-                    transitions.push({ from, to: n[1] });
-                }
-            }
-        } else if (eventM) {
-            const n = seg.match(/\bnext\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/);
-            if (n) entryPoints.push({ event: eventM[1], to: n[1] });
-        }
-    }
-
-    return { states, transitions, entryPoints };
-}
-
 function generateMermaid(parsed) {
     const lines = ['stateDiagram-v2'];
     for (const ep of parsed.entryPoints) {
@@ -120,24 +89,22 @@ function activate(context) {
     const statusBar = vscode.window.createStatusBarItem('dot-agent.behaviorState', vscode.StatusBarAlignment.Right, 100);
     context.subscriptions.push(statusBar);
 
-    function updateStatusBar(editor) {
+    async function updateStatusBar(editor) {
         if (!editor || editor.document.languageId !== 'behavior') { statusBar.hide(); return; }
-        const text = editor.document.getText();
-        const offset = editor.document.offsetAt(editor.selection.active);
-        const before = text.slice(0, offset);
-        const lines = before.split('\n').reverse();
-        let stateName = null;
-        for (const line of lines) {
-            const mm = line.match(/^state\s+([a-zA-Z_][a-zA-Z0-9_.\-]*)/);
-            if (mm) { stateName = mm[1]; break; }
-        }
-        if (stateName) {
-            statusBar.text = `$(symbol-class) ${stateName}`;
-            statusBar.tooltip = `Current behavior state: ${stateName}`;
-            statusBar.show();
-        } else {
-            statusBar.hide();
-        }
+        try {
+            const position = editor.selection.active;
+            const stateName = await client.sendRequest('agent/currentState', {
+                uri: editor.document.uri.toString(),
+                position: { line: position.line, character: position.character },
+            });
+            if (stateName) {
+                statusBar.text = `$(symbol-class) ${stateName}`;
+                statusBar.tooltip = `Current behavior state: ${stateName}`;
+                statusBar.show();
+            } else {
+                statusBar.hide();
+            }
+        } catch { statusBar.hide(); }
     }
 
     if (vscode.window.activeTextEditor) updateStatusBar(vscode.window.activeTextEditor);
@@ -149,8 +116,12 @@ function activate(context) {
     // ── Visual Graph Command (VS Code-specific) ─────────────────────────────
     let graphPanel = null;
 
-    function refreshGraph(text) {
-        if (graphPanel) graphPanel.webview.html = getGraphHtml(generateMermaid(parseBehaviorForGraph(text)));
+    async function refreshGraph(uri) {
+        if (!graphPanel) return;
+        try {
+            const graph = await client.sendRequest('agent/behaviorGraph', { uri });
+            if (graph) graphPanel.webview.html = getGraphHtml(generateMermaid(graph));
+        } catch { /* servidor ainda não pronto ou arquivo inválido */ }
     }
 
     context.subscriptions.push(
@@ -166,10 +137,10 @@ function activate(context) {
                 graphPanel = vscode.window.createWebviewPanel('behaviorGraph', 'Behavior Graph', vscode.ViewColumn.Beside, { enableScripts: true });
                 graphPanel.onDidDispose(() => { graphPanel = null; }, null, context.subscriptions);
             }
-            refreshGraph(editor.document.getText());
+            refreshGraph(editor.document.uri.toString());
         }),
         vscode.workspace.onDidSaveTextDocument(doc => {
-            if (doc.languageId === 'behavior') refreshGraph(doc.getText());
+            if (doc.languageId === 'behavior') refreshGraph(doc.uri.toString());
         })
     );
 }

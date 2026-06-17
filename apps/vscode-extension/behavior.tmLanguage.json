@@ -51,7 +51,7 @@
       "patterns": [
         {
           "name": "keyword.control.behavior",
-          "match": "\\b(merge|state|on|if|else|transition|after|parallel|run|guide|teach|goal|interact|set|apply|remove)\\b"
+          "match": "\\b(merge|state|on|if|else|end|transition|after|parallel|run|guide|teach|goal|interact|set|apply|remove)\\b"
         }
       ]
     },
@@ -59,7 +59,7 @@
       "patterns": [
         {
           "name": "keyword.operator.behavior",
-          "match": "\\b(script|subagent|tool|silent|background|each|event|intent|offtopic|fallback|complete|failed|prompts|css|html|video|in|to)\\b"
+          "match": "\\b(script|subagent|tool|event|intent|offtopic|prompts|css|to|failure|success)\\b"
         }
       ]
     },
