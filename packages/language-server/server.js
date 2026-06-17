@@ -25,7 +25,7 @@ const {
 } = require('vscode-languageserver/node');
 const { TextDocument } = require('vscode-languageserver-textdocument');
 
-const { initParsers, parse, evict } = require('./parser');
+const { initParsers, parse, evict, nodesOfType } = require('./parser');
 
 const { provideHover }          = require('./features/hover');
 const { provideCompletions }    = require('./features/completions');
@@ -36,6 +36,7 @@ const { provideReferences }     = require('./features/references');
 const { provideRenameEdits }    = require('./features/rename');
 const { format }                = require('./features/formatting');
 const { provideDocumentLinks }  = require('./features/links');
+const { extractBehaviorGraph }  = require('./features/graph');
 
 const connection = createConnection(ProposedFeatures.all);
 const documents  = new TextDocuments(TextDocument);
@@ -73,7 +74,7 @@ function validate(doc) {
     const langId = doc.languageId;
     if (langId !== 'description' && langId !== 'behavior') return;
     const tree = getTree(doc);
-    const diagnostics = diagnose(langId, tree, doc.getText());
+    const diagnostics = diagnose(langId, tree, doc.getText(), doc.uri);
     connection.sendDiagnostics({ uri: doc.uri, diagnostics });
 }
 
@@ -161,6 +162,33 @@ connection.onDocumentFormatting(({ textDocument }) => {
     const doc = documents.get(textDocument.uri);
     if (!doc) return [];
     return format(doc.languageId, doc.getText());
+});
+
+// ── Behavior Graph (custom request) ──────────────────────────────────────────
+
+connection.onRequest('agent/behaviorGraph', ({ uri }) => {
+    const doc = documents.get(uri);
+    if (!doc || doc.languageId !== 'behavior') return null;
+    const tree = getTree(doc);
+    return tree ? extractBehaviorGraph(tree) : null;
+});
+
+// ── Current State at Position (custom request) ────────────────────────────────
+
+connection.onRequest('agent/currentState', ({ uri, position }) => {
+    const doc = documents.get(uri);
+    if (!doc || doc.languageId !== 'behavior') return null;
+    const tree = getTree(doc);
+    if (!tree) return null;
+    const line = position.line;
+    let result = null;
+    for (const node of nodesOfType(tree, 'state_decl')) {
+        if (node.startPosition.row > line) break;
+        if (node.startPosition.row <= line && node.endPosition.row >= line) {
+            result = node.childForFieldName('name')?.text ?? null;
+        }
+    }
+    return result;
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────

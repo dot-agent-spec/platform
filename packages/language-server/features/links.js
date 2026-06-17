@@ -20,6 +20,16 @@ const { fileURLToPath, pathToFileURL } = require('url');
 const path = require('path');
 const { nodesOfType, nodeToRange } = require('../parser');
 
+// Detecta se um nó bare_string representa um caminho de arquivo.
+// Usa o subtipo do tree-sitter (filename) como primeira fonte de verdade;
+// cai no regex do grammar.js como fallback para ambientes que não expõem subnós.
+// O padrão aceita: extensão simples (a.md), dupla (a.b.persona), longa (.behavior)
+// e exclui texto livre (que tem espaços/pontuação fora do charset).
+function isFilename(node) {
+    if (node.firstNamedChild?.type === 'filename') return true;
+    return /^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(node.text.replace(/^"|"$/g, ''));
+}
+
 function provideDocumentLinks(langId, tree, docUri) {
     if (!tree) return [];
 
@@ -32,8 +42,8 @@ function provideDocumentLinks(langId, tree, docUri) {
 
     const links = [];
 
-    function addLink(fileNode, rawText) {
-        const filename = rawText.replace(/^"|"$/g, '');   // strip optional quotes
+    function addFileLink(fileNode, rawText) {
+        const filename = rawText.replace(/^"|"$/g, '');
         if (!filename) return;
         links.push({
             range: nodeToRange(fileNode),
@@ -41,23 +51,41 @@ function provideDocumentLinks(langId, tree, docUri) {
         });
     }
 
+    function addUrlLink(uriNode) {
+        const url = uriNode.text.trim();
+        if (!url) return;
+        links.push({ range: nodeToRange(uriNode), target: url });
+    }
+
     if (langId === 'description') {
         for (const node of nodesOfType(tree, 'behavior_block')) {
             const fileNode = node.childForFieldName('file');
-            if (fileNode) addLink(fileNode, fileNode.text);
+            if (fileNode) addFileLink(fileNode, fileNode.text);
+        }
+        for (const node of nodesOfType(tree, 'persona_block')) {
+            const fileNode = node.childForFieldName('file');
+            if (fileNode && isFilename(fileNode)) addFileLink(fileNode, fileNode.text);
+        }
+        for (const node of nodesOfType(tree, 'category_prop')) {
+            const uriNode = node.childForFieldName('uri');
+            if (uriNode) addUrlLink(uriNode);
+        }
+        for (const node of nodesOfType(tree, 'concept_prop')) {
+            const uriNode = node.childForFieldName('uri');
+            if (uriNode) addUrlLink(uriNode);
         }
     }
 
     if (langId === 'behavior') {
         for (const node of nodesOfType(tree, 'merge_decl')) {
             const pathNode = node.childForFieldName('path');
-            if (pathNode) addLink(pathNode, pathNode.text);
+            if (pathNode) addFileLink(pathNode, pathNode.text);
         }
         for (const node of nodesOfType(tree, 'run_stmt')) {
             const runTypeNode = node.childForFieldName('type');
             if (runTypeNode?.text !== 'script') continue;
             const targetNode = node.childForFieldName('target');
-            if (targetNode) addLink(targetNode, targetNode.text);
+            if (targetNode) addFileLink(targetNode, targetNode.text);
         }
     }
 

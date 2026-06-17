@@ -16,7 +16,33 @@
 
 'use strict';
 
-const { nodesOfType, nodeToRange, wordAtPosition } = require('../parser');
+const fs = require('fs');
+const { fileURLToPath, pathToFileURL } = require('url');
+const path = require('path');
+const { nodesOfType, nodeToRange, wordAtPosition, parseText } = require('../parser');
+
+// Busca recursiva de state_decl em arquivos mergeados.
+// visited (Set<absPath>) evita loops em grafos de merge circulares.
+function findStateInMerges(tree, docDir, word, visited = new Set()) {
+    for (const mergeNode of nodesOfType(tree, 'merge_decl')) {
+        const pathNode = mergeNode.childForFieldName('path');
+        if (!pathNode) continue;
+        const filename = pathNode.text.replace(/^"|"$/g, '');
+        const absPath = path.resolve(docDir, filename);
+        if (visited.has(absPath)) continue;
+        visited.add(absPath);
+        let mergedText;
+        try { mergedText = fs.readFileSync(absPath, 'utf8'); } catch { continue; }
+        const mergedTree = parseText('behavior', mergedText);
+        if (!mergedTree) continue;
+        const found = nodesOfType(mergedTree, 'state_decl')
+            .find(n => n.childForFieldName('name')?.text === word);
+        if (found) return { uri: pathToFileURL(absPath).toString(), range: nodeToRange(found) };
+        const sub = findStateInMerges(mergedTree, path.dirname(absPath), word, visited);
+        if (sub) return sub;
+    }
+    return null;
+}
 
 function provideDefinition(langId, tree, text, uri, position) {
     if (!tree) return null;
@@ -24,19 +50,25 @@ function provideDefinition(langId, tree, text, uri, position) {
     const { word } = wordAtPosition(text, position.line, position.character);
     if (!word) return null;
 
-    let targetNode = null;
-
     if (langId === 'behavior') {
-        targetNode = nodesOfType(tree, 'state_decl')
+        const local = nodesOfType(tree, 'state_decl')
             .find(n => n.childForFieldName('name')?.text === word);
-    } else if (langId === 'description') {
-        if (!/^[A-Z]/.test(word) && !word.includes('.')) return null;
-        targetNode = nodesOfType(tree, 'type_decl')
-            .find(n => n.childForFieldName('name')?.text === word);
+        if (local) return { uri, range: nodeToRange(local) };
+        try {
+            const docDir = path.dirname(fileURLToPath(uri));
+            return findStateInMerges(tree, docDir, word) ?? null;
+        } catch { return null; }
     }
 
-    if (!targetNode) return null;
-    return { uri, range: nodeToRange(targetNode) };
+    if (langId === 'description') {
+        if (!/^[A-Z]/.test(word) && !word.includes('.')) return null;
+        const targetNode = nodesOfType(tree, 'type_decl')
+            .find(n => n.childForFieldName('name')?.text === word);
+        if (!targetNode) return null;
+        return { uri, range: nodeToRange(targetNode) };
+    }
+
+    return null;
 }
 
 module.exports = { provideDefinition };

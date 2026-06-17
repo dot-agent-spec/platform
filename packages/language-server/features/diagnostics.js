@@ -16,8 +16,11 @@
 
 'use strict';
 
+const fs = require('fs');
+const { fileURLToPath } = require('url');
+const path = require('path');
 const { DiagnosticSeverity } = require('vscode-languageserver');
-const { nodesOfType, nodeToRange } = require('../parser');
+const { nodesOfType, nodeToRange, parseText } = require('../parser');
 
 const STRICT_BLOCK_TYPES = {
     input_block:        'input',
@@ -70,16 +73,86 @@ function diagnoseDescription(tree, text) {
     return diagnostics;
 }
 
-function diagnoseBehavior(tree) {
+// Coleta recursivamente todos os state names declarados nos arquivos mergeados.
+// visited (Set<absPath>) evita loops em grafos de merge circulares.
+function collectMergedStates(tree, docDir, definedStates, visited = new Set()) {
+    for (const mergeNode of nodesOfType(tree, 'merge_decl')) {
+        const pathNode = mergeNode.childForFieldName('path');
+        if (!pathNode) continue;
+        const filename = pathNode.text.replace(/^"|"$/g, '');
+        const absPath = path.resolve(docDir, filename);
+        if (visited.has(absPath)) continue;
+        visited.add(absPath);
+        let mergedText;
+        try { mergedText = fs.readFileSync(absPath, 'utf8'); } catch { continue; }
+        const mergedTree = parseText('behavior', mergedText);
+        if (!mergedTree) continue;
+        nodesOfType(mergedTree, 'state_decl').forEach(n => {
+            const name = n.childForFieldName('name')?.text;
+            if (name) definedStates.add(name);
+        });
+        collectMergedStates(mergedTree, path.dirname(absPath), definedStates, visited);
+    }
+}
+
+// Coleta erros de sintaxe (nós ERROR e MISSING) para que a causa real apareça
+// sublinhada no editor, e não apenas o efeito colateral (ex.: "state not defined").
+// Reporta apenas o ERROR mais externo de cada ramo, e tokens MISSING (ex.: falta 'to').
+function collectSyntaxErrors(root, diagnostics) {
+    const seen = new Set();
+
+    function push(node, message) {
+        const key = `${node.startIndex}:${node.endIndex}:${message}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        diagnostics.push({
+            range: nodeToRange(node),
+            message,
+            severity: DiagnosticSeverity.Error,
+            source: 'behavior-dsl',
+        });
+    }
+
+    function walk(node) {
+        if (node.isMissing) {
+            push(node, `Syntax error: missing '${node.type}'.`);
+            return;
+        }
+        if (node.type === 'ERROR') {
+            // Reporta o ERROR mais profundo (folha) para apontar o token preciso,
+            // em vez do span externo que pode embrulhar o bloco inteiro.
+            const hasNestedError = node.descendantsOfType('ERROR').some(e => e.id !== node.id);
+            if (!hasNestedError) {
+                const snippet = node.text.replace(/\s+/g, ' ').trim().slice(0, 40);
+                push(node, snippet ? `Syntax error near '${snippet}'.` : 'Syntax error.');
+                return;
+            }
+            // tem ERROR aninhado → desce para reportar o(s) mais específico(s)
+        }
+        for (const child of node.children) walk(child);
+    }
+
+    walk(root);
+}
+
+function diagnoseBehavior(tree, docUri) {
     const diagnostics = [];
 
+    // ── Rule 0: Syntax errors (ERROR / MISSING nodes) ─────────────────────────
+    collectSyntaxErrors(tree.rootNode, diagnostics);
+
     // ── Rule 1: Dangling transitions ──────────────────────────────────────────
-    // Collect all defined state names (from both oriented_state_body and setup_state_body)
     const definedStates = new Set(
         nodesOfType(tree, 'state_decl')
             .map(n => n.childForFieldName('name')?.text)
             .filter(Boolean)
     );
+
+    // Enriquecer com estados de arquivos mergeados (recursivo, anti-loop)
+    try {
+        const docDir = path.dirname(fileURLToPath(docUri));
+        collectMergedStates(tree, docDir, definedStates);
+    } catch { /* URI inválida ou sem acesso — diagnostica apenas com estados locais */ }
 
     function checkTransitionTarget(stateNode) {
         if (!stateNode) return;
@@ -129,10 +202,10 @@ function diagnoseBehavior(tree) {
     return diagnostics;
 }
 
-function diagnose(langId, tree, text) {
+function diagnose(langId, tree, text, uri) {
     if (!tree) return [];
     if (langId === 'description') return diagnoseDescription(tree, text);
-    if (langId === 'behavior')  return diagnoseBehavior(tree);
+    if (langId === 'behavior')  return diagnoseBehavior(tree, uri);
     return [];
 }
 

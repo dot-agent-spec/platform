@@ -53,6 +53,12 @@ function evict(uri) {
     cache.delete(uri);
 }
 
+function parseText(langId, text) {
+    const parser = langId === 'behavior' ? behaviorParser : descriptionParser;
+    if (!parser) return null;
+    return parser.parse(text);
+}
+
 // ── AST helpers ──────────────────────────────────────────────────────────────
 
 function nodesOfType(tree, type) {
@@ -116,6 +122,7 @@ function getContextNode(tree, offset) {
 module.exports = {
     initParsers,
     parse,
+    parseText,
     evict,
     nodesOfType,
     nodeAtOffset,
