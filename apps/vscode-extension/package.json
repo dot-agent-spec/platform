@@ -2,7 +2,7 @@
   "name": "vscode-dot-agent",
   "displayName": ".agent DSL",
   "description": "Syntax highlighting, hover docs, and snippets for .agent DSL files",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "dot-agent",
   "repository": {
     "type": "git",
