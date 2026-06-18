@@ -2,20 +2,20 @@
 	path = org-spec
 	url = https://github.com/dot-agent-spec/.github.git
 [submodule "dsl/tree-sitter"]
-	path = dsl/tree-sitter
+	path = packages/tree-sitter
 	url = https://github.com/dot-agent-spec/tree-sitter.git
 [submodule "dsl/zed-agent/grammars/agent"]
-	path = dsl/zed-agent/grammars/agent
+	path = apps/zed-agent/grammars/agent
 	url = https://github.com/dot-agent-spec/tree-sitter.git
 [submodule "dsl/language-server"]
-	path = dsl/language-server
+	path = packages/language-server
 	url = https://github.com/dot-agent-spec/language-server.git
 [submodule "dsl/vscode-dot-agent"]
-	path = dsl/vscode-dot-agent
+	path = apps/vscode-extension
 	url = git@github.com:dot-agent-spec/vscode-dot-agent.git
 [submodule "dsl/kernel-dsl"]
-	path = dsl/kernel-dsl
+	path = packages/kernel-dsl
 	url = git@github.com:dot-agent-spec/kernel-dsl.git
 [submodule "dot-agent-cli"]
-	path = dot-agent-cli
+	path = apps/dot-agent-cli
 	url = https://github.com/dot-agent-spec/dot-agent-cli.git
