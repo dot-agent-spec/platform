@@ -19,8 +19,8 @@ import type { LangId, FSMDefinition } from './types.js'
 import bpInit, { parse as bpParse, get_graph } from '@dot-agent/behavior-parser'
 
 const require = createRequire(import.meta.url)
-const { agentWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter') as {
-  agentWasmPath: string
+const { descriptionWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter') as {
+  descriptionWasmPath: string
   behaviorWasmPath: string
 }
 
@@ -46,7 +46,7 @@ export function getBehaviorScxml(text: string): string {
 export async function initParsers(): Promise<void> {
   if (_initialized) return
   await Parser.init()
-  const descriptionLang = await Language.load(agentWasmPath)
+  const descriptionLang = await Language.load(descriptionWasmPath)
   const behaviorLang = await Language.load(behaviorWasmPath)
   _descriptionParser = new Parser()
   _descriptionParser.setLanguage(descriptionLang)

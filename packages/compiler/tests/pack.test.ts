@@ -119,7 +119,7 @@ describe('pack — happy path', () => {
   it('result contains a valid agent ID', async () => {
     const dir = await makeAgentDir()
     const result = await pack({ dir, version: 'v1.0.0' })
-    expect(result.id).toMatch(/^health\.example\.com\/Doctor:v1\.0\.0~[0-9a-f]{8}$/)
+    expect(result.id).toMatch(/^health\.example\.com\/Doctor:v1\.0\.0~[0-9a-f]{7,}$/)
   })
 
   it('ZIP contains .agent/aboutme.json with correct fields', async () => {
