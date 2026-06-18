@@ -64,6 +64,18 @@ Tests the **rlib** target. All unit tests live in `#[cfg(test)]` modules inside 
 | `build.rs` | Generates `node_kinds.rs` predicates at build time from the grammar JSON. | Update when grammar node categories change. |
 | `index.js` | WASM loader (Node.js + browser). | Fix initialization or environment detection. |
 
+## Known Quirks
+
+### Trailing newline normalization
+
+`parse_behavior()` always appends `\n` to the input before passing it to tree-sitter if the text does not already end with one.
+
+**Why:** The behavior grammar uses newlines as statement terminators. When a file does not end with `\n`, tree-sitter inserts a `MISSING _newline` node, which causes `has_error = true` even on otherwise valid input. The JS binding (`npx tree-sitter parse`) is tolerant of this; the Rust binding is not. This is a known tree-sitter behavior (tree-sitter#1200, tree-sitter-bash#15).
+
+The normalization is transparent to callers — it does not affect the returned AST.
+
+---
+
 ## Critical Grammar Quirk: intent_trigger Siblings
 
 In the current grammar, `intent_trigger` and `offtopic_stmt` nodes appear as **direct siblings** in the state body, not as children of the `interact_stmt` node. This means a parsed state body looks like:
