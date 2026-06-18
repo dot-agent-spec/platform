@@ -46,9 +46,9 @@ dependencies = [
 
 [[package]]
 name = "dot-agent-tree-sitter"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "061bf9063d89fb9cb1c49dd6c8c92b235888f3f4c0a57226015608146c5b4b32"
+checksum = "105e182d589ac8dede0540388f1d6989f13a4ed10d329d9ee4feb2fa941afac4"
 dependencies = [
  "cc",
  "tree-sitter",
