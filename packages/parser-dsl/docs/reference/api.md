@@ -8,9 +8,9 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
-# behavior-parser — API Reference
+# parser-dsl — API Reference
 
-This document covers the WASM-exported API, the `FSMDefinition` JSON type, SCXML output format, and error handling. For the Rust AST types used when linking as an `rlib`, see [`ast.md`](ast.md).
+This document covers the WASM-exported API, the `BehaviorFile` and `DescriptionFile` JSON types, SCXML output format, and error handling. For the Rust AST types used when linking as an `rlib`, see [`ast.md`](ast.md).
 
 ---
 
@@ -23,29 +23,52 @@ All functions are pure and stateless. Each call parses the source text from scra
 Initializes the WASM module. Must be called once before any other function. Safe to call multiple times (no-op after first call).
 
 ```typescript
-import init from '@dot-agent/behavior-parser';
+import init from '@dot-agent/parser-dsl';
 await init();
 ```
 
 ---
 
-### `parse(text: string): string`
+### `parse_behavior(text: string): string`
 
 Parses `.behavior` source text and returns a JSON envelope:
 
 | Outcome | Return value |
 |---|---|
-| Success | `{ "ok": FSMDefinition }` |
+| Success | `{ "ok": BehaviorFile }` |
 | Parse error | `{ "error": "..." }` |
 
 ```typescript
-const result = JSON.parse(parse(src));
+const result = JSON.parse(parse_behavior(src));
 
 if ('error' in result) {
   // result.error: string — human-readable parse error message
 } else {
-  // result.ok: FSMDefinition
-  const fsm = result.ok;
+  // result.ok: BehaviorFile
+  const bf = result.ok;
+}
+```
+
+---
+
+### `parse_description(text: string): string`
+
+Parses `.description` source text and returns a JSON envelope:
+
+| Outcome | Return value |
+|---|---|
+| Success | `{ "ok": DescriptionFile }` |
+| Parse error | `{ "error": "..." }` |
+
+```typescript
+const result = JSON.parse(parse_description(src));
+
+if ('error' in result) {
+  // result.error: string
+} else {
+  // result.ok: DescriptionFile
+  const df = result.ok;
+  console.log(df.agent.name, df.capabilities);
 }
 ```
 
@@ -53,7 +76,7 @@ if ('error' in result) {
 
 ### `get_graph(text: string): string`
 
-Generates a W3C SCXML document from the behavior source. See [Section 3](#3-scxml-output) for the output format.
+Generates a W3C SCXML document from `.behavior` source. See [Section 3](#3-scxml-output) for the output format.
 
 Returns an empty string on parse error (does not throw).
 
@@ -87,14 +110,14 @@ Returns `"[]"` if the state is not found, has no `interact` block, or the source
 
 ---
 
-## 2. FSMDefinition
+## 2. BehaviorFile
 
-`FSMDefinition` is the JSON representation of a parsed `.behavior` file. It is the stable interchange type between the behavior-parser and its consumers.
+`BehaviorFile` is the JSON representation of a parsed `.behavior` file. It is the stable interchange type between the parser and its consumers.
 
 ### TypeScript interface
 
 ```typescript
-interface FSMDefinition {
+interface BehaviorFile {
   merges: string[];                // merge "other.behavior" declarations (resolved externally)
   global_triggers: TriggerDecl[];  // on event "..." blocks at file scope
   states: StateDef[];
@@ -113,22 +136,10 @@ interface StateDef {
 // Statement is a discriminated union on the "type" field.
 // See Section 4 for all variants.
 type Statement =
-  | GoalStmt
-  | GuideStmt
-  | TeachStmt
-  | InteractStmt
-  | TransitionStmt
-  | IntentTrigger
-  | OfftopicStmt
-  | AfterStmt
-  | RunStmt
-  | MemoryStmt
-  | ConditionalStmt
-  | ApplyStmt
-  | RemoveStmt
-  | ParallelStmt
-  | OnCompleteStmt
-  | OnFailedStmt;
+  | GoalStmt | GuideStmt | TeachStmt
+  | InteractStmt | TransitionStmt | IntentTrigger | OfftopicStmt | AfterStmt
+  | RunStmt | MemoryStmt | ConditionalStmt
+  | ApplyStmt | RemoveStmt | ParallelStmt | OnCompleteStmt | OnFailedStmt;
 ```
 
 ### Full example
@@ -154,17 +165,99 @@ type Statement =
           { "type": "transition_stmt", "state": "farewell" }
         ]}
       ]
-    },
+    }
+  ]
+}
+```
+
+---
+
+## 3. DescriptionFile
+
+`DescriptionFile` is the JSON representation of a parsed `.description` file. Produced by `parse_description()`; consumed by the compiler to populate `aboutme.json` and generate `types.json`.
+
+### TypeScript interface
+
+```typescript
+interface DescriptionFile {
+  agent: AgentDecl;
+  description?: string;
+  persona?: string;       // file reference, e.g. "SOUL.md"
+  behavior?: string;      // file reference, e.g. "agent.behavior"
+  requires: AnnotatedRef[];
+  input: AnnotatedRef[];
+  capabilities: AnnotatedRef[];
+  output: AnnotatedRef[];
+  types: TypeDefinition[];
+}
+
+interface AgentDecl {
+  name: string;
+  domain?: string;
+  license?: string;
+  terms?: string;
+  privacy?: string;
+}
+
+interface AnnotatedRef {
+  name: string;
+  description?: string;
+}
+
+interface OntologyRef {
+  uri: string;
+  label?: string;
+}
+
+interface TypeDefinition {
+  name: string;
+  category: OntologyRef;
+  concept?: OntologyRef;
+  properties: PropertyDecl[];
+}
+
+interface PropertyDecl {
+  name: string;
+  type: PropertyType;
+  is_optional: boolean;
+  description?: string;
+}
+
+type PropertyType =
+  | { kind: 'primitive'; value: string }
+  | { kind: 'reference'; value: string }   // namespace.Name concatenated
+  | { kind: 'array';     value: PropertyType }
+  | { kind: 'enum';      value: string[] }
+```
+
+### Full example
+
+```json
+{
+  "agent": {
+    "name": "Doctor",
+    "domain": "health.example.com",
+    "license": "MIT",
+    "terms": null,
+    "privacy": null
+  },
+  "description": "Clinical diagnostic agent.",
+  "persona": "SOUL.md",
+  "behavior": null,
+  "capabilities": [
+    { "name": "TriagePatient", "description": "Initial patient triage" }
+  ],
+  "requires": [],
+  "input": [{ "name": "Patient", "description": null }],
+  "output": [{ "name": "Prescription", "description": null }],
+  "types": [
     {
-      "name": "helping",
-      "body": [
-        { "type": "goal_stmt", "text": "Provide targeted assistance" }
-      ]
-    },
-    {
-      "name": "farewell",
-      "body": [
-        { "type": "teach_stmt", "text": "Session complete" }
+      "name": "Patient",
+      "category": { "uri": "https://schema.org/Patient", "label": null },
+      "concept": null,
+      "properties": [
+        { "name": "name", "type": { "kind": "primitive", "value": "string" }, "is_optional": false, "description": null },
+        { "name": "dob",  "type": { "kind": "primitive", "value": "string" }, "is_optional": true,  "description": "Date of birth" }
       ]
     }
   ]
@@ -173,7 +266,7 @@ type Statement =
 
 ---
 
-## 3. SCXML Output
+## 4. SCXML Output
 
 `get_graph()` returns W3C SCXML ([spec](https://www.w3.org/TR/scxml/)).
 
@@ -182,7 +275,6 @@ type Statement =
 - The root `<scxml>` element sets `initial` to the first declared state.
 - States with no outgoing transitions are emitted as `<final id="..."/>`.
 - States with at least one outgoing transition are emitted as `<state id="...">` with `<transition>` children.
-- Transitions carry an `event` attribute when the trigger is named (intents, offtopic, after, complete, failed). Unconditional transitions (`transition to X`) emit `<transition target="X"/>` with no event.
 
 ### Event name mapping
 
@@ -195,27 +287,7 @@ type Statement =
 | `on failed` | `failed` |
 | `transition to X` | *(no event — unconditional)* |
 
-### Example
-
-For a `.behavior` with three states:
-
-```
-state welcome
-  goal "Welcome"
-  interact
-  on intent "help" transition to helping
-  on intent "bye" transition to farewell
-
-state helping
-  goal "Help"
-  interact
-  on intent "done" transition to welcome
-
-state farewell
-  goal "Goodbye"
-```
-
-`get_graph()` produces:
+### Example output
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -231,13 +303,11 @@ state farewell
 </scxml>
 ```
 
-**Static vs. runtime SCXML:** This output represents the static structure of the behavior, not the active execution state. The kernel's `get_graph()` method returns the same structure annotated with the current active state.
-
 ---
 
-## 4. Statement Variants
+## 5. Statement Variants
 
-All `Statement` objects use a `"type"` discriminant field. The table below lists each variant with its JSON type tag, fields, and DSL equivalent.
+All `Statement` objects use a `"type"` discriminant field.
 
 | JSON `type` | Fields | DSL form |
 |---|---|---|
@@ -260,19 +330,13 @@ All `Statement` objects use a `"type"` discriminant field. The table below lists
 
 ### IntentBody
 
-`intent_trigger.body` is either a string (inline `transition to` shorthand) or a `Statement[]` (block form):
+`intent_trigger.body` is either a string (inline `transition to` shorthand) or a `Statement[]`:
 
 ```typescript
 type IntentBody = string | Statement[];
 
-// Inline: "on intent "help" transition to helping"
-{ "type": "intent_trigger", "intent": "help", "body": "helping" }
-
-// Block: "on intent "help"\n  guide "Sure"\n  transition to helping"
-{ "type": "intent_trigger", "intent": "help", "body": [
-  { "type": "guide_stmt", "text": "Sure" },
-  { "type": "transition_stmt", "state": "helping" }
-]}
+// Inline: { "type": "intent_trigger", "intent": "help", "body": "helping" }
+// Block:  { "type": "intent_trigger", "intent": "help", "body": [ ... ] }
 ```
 
 ### RunStmt
@@ -282,22 +346,11 @@ interface RunStmt {
   type: "run_stmt";
   kind: "script" | "subagent" | "tool";
   target: string;
-  label: string | null;       // as "label"
+  label: string | null;
   modifier: "silent" | "background" | null;
-  each: string | null;        // each "domain.key"
+  each: string | null;
   on_failed: Statement[] | null;
 }
-```
-
-### MemoryPath and AssignOp
-
-```typescript
-interface MemoryPath {
-  domain: "context" | "session" | "worksession" | "user";
-  key: string;
-}
-
-type AssignOp = "=" | "+=" | "-=";
 ```
 
 ### Condition and Expr
@@ -306,37 +359,26 @@ type AssignOp = "=" | "+=" | "-=";
 interface Condition {
   parts: [LogicalOp | null, Expr][];
 }
-
 type LogicalOp = "and" | "or";
-
-type Expr =
-  | Value
-  | { left: Value; op: CompareOp; right: Value };
-
+type Expr = Value | { left: Value; op: CompareOp; right: Value };
 type CompareOp = "==" | "!=" | ">" | "<" | ">=" | "<=";
-
 type Value = string | number | boolean | null;
-// Note: memory path references (e.g. session.lang) are also serialized as strings.
 ```
 
 ---
 
-## 5. Input Normalization
+## 6. Input Normalization
 
-All functions normalize the source text before parsing: a trailing `\n` is appended if the input does not already end with one.
-
-This is transparent to callers and does not affect the returned AST or SCXML. It exists because the behavior grammar uses newlines as statement terminators — files without a trailing newline produce a `MISSING _newline` node in the tree-sitter CST, causing `has_error = true` on valid input. The JavaScript tree-sitter binding is tolerant of this; the Rust binding is not (tree-sitter#1200).
+All parse functions append `\n` to the input if it does not already end with one. This is transparent to callers and does not affect the returned AST. It exists because both grammars use newlines as statement terminators — files without a trailing newline produce a `MISSING _newline` node in tree-sitter, causing `has_error = true` on valid input (tree-sitter#1200).
 
 ---
 
-## 6. Error Format
+## 7. Error Format
 
-When `parse()` returns an error:
+When a parse function returns an error:
 
 ```json
-{ "error": "Parse error at line 3: unexpected token '}'" }
+{ "error": "Syntax error at line 3, column 1:\n  @@@ broken" }
 ```
 
-The error message is a human-readable string from the tree-sitter parser. It is not machine-parseable — do not rely on its format for programmatic error handling.
-
-All other functions (`get_graph`, `get_states`, `get_intents_for_state`) return empty/default values on parse error rather than propagating the error. Use `parse()` first when you need error details.
+The error message is human-readable. Do not rely on its format for programmatic error handling. All other functions (`get_graph`, `get_states`, `get_intents_for_state`) return empty/default values on parse error rather than propagating the error.

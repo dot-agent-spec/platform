@@ -586,3 +586,14 @@ state planning.next
         assert!(result.is_err(), "empty string should be a parse error");
     }
 }
+
+    #[test]
+    fn parse_fridge_logic() {
+        let src = include_str!("../../../examples/2. Recipe /src/fridge_logic.behavior");
+        let result = parse_behavior(src);
+        match &result {
+            Ok(bf) => println!("OK: {} states", bf.states.len()),
+            Err(e) => println!("ERR: {}", e.0),
+        }
+        assert!(result.is_ok(), "fridge_logic.behavior should parse without errors");
+    }

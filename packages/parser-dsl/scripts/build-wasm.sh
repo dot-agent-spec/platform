@@ -38,7 +38,7 @@ fi
 
 wasm-bindgen --target bundler \
     --out-dir ./pkg \
-    "./target/$TARGET/$PROFILE_DIR/dot_agent_behavior_parser.wasm"
+    "./target/$TARGET/$PROFILE_DIR/dot_agent_parser_dsl.wasm"
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}[ERROR] wasm-bindgen failed.${NC}"
@@ -52,7 +52,7 @@ if ! command -v wasi-stub &> /dev/null; then
     cargo install wasi-stub
 fi
 
-wasi-stub pkg/dot_agent_behavior_parser_bg.wasm -o pkg/dot_agent_behavior_parser_bg.wasm
+wasi-stub pkg/dot_agent_parser_dsl_bg.wasm -o pkg/dot_agent_parser_dsl_bg.wasm
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}[ERROR] wasi-stub failed.${NC}"
@@ -63,16 +63,16 @@ echo -e "${GREEN}[INFO] Patching wasm-bindgen output...${NC}"
 node -e "
 const fs = require('fs');
 // Remove auto-WASM import from main JS (causes issues with custom loading)
-const mainPath = './pkg/dot_agent_behavior_parser.js';
+const mainPath = './pkg/dot_agent_parser_dsl.js';
 let main = fs.readFileSync(mainPath, 'utf-8');
 main = main
-  .replace(/import \* as wasm from [\"']\.\/dot_agent_behavior_parser_bg\.wasm[\"'];?\\n/g, '')
-  .replace(/import { __wbg_set_wasm } from [\"']\.\/dot_agent_behavior_parser_bg\.js[\"'];?\\n/g, '')
+  .replace(/import \* as wasm from [\"']\.\/dot_agent_parser_dsl_bg\.wasm[\"'];?\\n/g, '')
+  .replace(/import { __wbg_set_wasm } from [\"']\.\/dot_agent_parser_dsl_bg\.js[\"'];?\\n/g, '')
   .replace(/^__wbg_set_wasm\(wasm\);\\n/m, '')
   .replace(/^wasm\.__wbindgen_start\(\);\\n/m, '');
 fs.writeFileSync(mainPath, main);
 // Fix stale Uint8Array cache after WASM memory.grow
-const bgPath = './pkg/dot_agent_behavior_parser_bg.js';
+const bgPath = './pkg/dot_agent_parser_dsl_bg.js';
 let bg = fs.readFileSync(bgPath, 'utf-8');
 const stale = 'if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {';
 const fresh = 'if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0 || cachedUint8ArrayMemory0.buffer !== wasm.memory.buffer) {';

@@ -8,9 +8,9 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
-# behavior-parser — AST Reference
+# parser-dsl — AST Reference
 
-This document describes the Rust types exported from `behavior_parser::ast`. It is intended for consumers that link behavior-parser as an `rlib` (currently: `kernel-dsl`, future: `sdk`).
+This document describes the Rust types exported from `dot_agent_parser_dsl::ast`. It is intended for consumers that link parser-dsl as an `rlib` (currently: `kernel-dsl`, future: `sdk`).
 
 For the JSON serialization of these types as seen from JavaScript, see [`api.md`](api.md).
 
@@ -301,17 +301,113 @@ Because of the above, `Interact { handlers }` currently always deserializes with
 
 ---
 
-## 6. Public API for rlib consumers
+## 6. Description AST Types
 
-The public surface available to Rust crates that depend on `dot-agent-behavior-parser`:
+Types produced by `parse_description()`. Used by the compiler to populate `aboutme.json` and generate `types.json`.
+
+### `DescriptionFile`
+
+Root of every parsed `.description` file.
+
+```rust
+pub struct DescriptionFile {
+    pub agent: AgentDecl,
+    pub description: Option<String>,
+    pub persona: Option<String>,       // file ref e.g. "SOUL.md"
+    pub behavior: Option<String>,      // file ref e.g. "agent.behavior"
+    pub requires: Vec<AnnotatedRef>,
+    pub input: Vec<AnnotatedRef>,
+    pub capabilities: Vec<AnnotatedRef>,
+    pub output: Vec<AnnotatedRef>,
+    pub types: Vec<TypeDefinition>,
+}
+```
+
+### `AgentDecl`
+
+```rust
+pub struct AgentDecl {
+    pub name: String,
+    pub domain: Option<String>,
+    pub license: Option<String>,
+    pub terms: Option<String>,
+    pub privacy: Option<String>,
+}
+```
+
+### `AnnotatedRef`
+
+Used for items in `requires`, `input`, `output`, and `capabilities` blocks. `description` is `None` for inline comma-separated lists (e.g. `input Foo, Bar`).
+
+```rust
+pub struct AnnotatedRef {
+    pub name: String,
+    pub description: Option<String>,
+}
+```
+
+### `OntologyRef`
+
+A URI with an optional human-readable label, from `category_prop` or `concept_prop` nodes.
+
+```rust
+pub struct OntologyRef {
+    pub uri: String,
+    pub label: Option<String>,
+}
+```
+
+### `TypeDefinition`
+
+```rust
+pub struct TypeDefinition {
+    pub name: String,
+    pub category: OntologyRef,
+    pub concept: Option<OntologyRef>,
+    pub properties: Vec<PropertyDecl>,
+}
+```
+
+### `PropertyDecl`
+
+```rust
+pub struct PropertyDecl {
+    pub name: String,
+    pub r#type: PropertyType,
+    pub is_optional: bool,
+    pub description: Option<String>,
+}
+```
+
+### `PropertyType`
+
+```rust
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum PropertyType {
+    Primitive(String),
+    // Namespace-qualified references (e.g. `std.Prompt`) are concatenated by the parser.
+    // Namespace resolution is handled by the compiler linter.
+    Reference(String),
+    Array(Box<PropertyType>),
+    Enum(Vec<String>),
+}
+```
+
+---
+
+## 7. Public API for rlib consumers
+
+The public surface available to Rust crates that depend on `dot-agent-parser-dsl`:
 
 ```rust
 // From lib.rs
 pub mod ast;
 pub use parser::{parse_behavior, ParseError};
+pub use description_parser::parse_description;
 
-// parse_behavior(text: &str) → Result<ast::BehaviorFile, ParseError>
+// parse_behavior(text: &str)    → Result<ast::BehaviorFile, ParseError>
+// parse_description(text: &str) → Result<ast::DescriptionFile, ParseError>
 // ParseError(pub String) — tuple struct wrapping the error message
 ```
 
-The `analysis` module is private (`mod analysis`). Its logic is only exposed via the four `#[wasm_bindgen]` functions. Rust consumers that need SCXML or state enumeration should call those functions through the WASM interface, or duplicate the analysis logic in their own crate.
+The `analysis` module is private (`mod analysis`). Its logic is only exposed via the `#[wasm_bindgen]` functions. Rust consumers that need SCXML or state enumeration should call those functions through the WASM interface, or duplicate the analysis logic in their own crate.

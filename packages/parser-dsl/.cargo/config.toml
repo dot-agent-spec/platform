@@ -1,0 +1,8 @@
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=-reference-types"]
+
+[env]
+CC_wasm32_wasip1 = "zig cc"
+CXX_wasm32_wasip1 = "zig c++"
+AR_wasm32_wasip1 = "zig ar"
+CFLAGS_wasm32_wasip1 = "-target wasm32-wasi"

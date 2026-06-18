@@ -1,7 +1,7 @@
 {
-  "name": "@dot-agent/behavior-parser",
+  "name": "@dot-agent/parser-dsl",
   "version": "0.1.0",
-  "description": "Shared behavior DSL parser and static analysis for dot-agent — parses .behavior files and provides FSM analysis utilities",
+  "description": "Unified DSL parser for dot-agent — parses .behavior and .description files using tree-sitter, providing structured ASTs for compiler, LSP, and runtime consumption",
   "type": "module",
   "main": "./index.js",
   "types": "./index.d.ts",
@@ -14,11 +14,11 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "pkg/dot_agent_behavior_parser.js",
-    "pkg/dot_agent_behavior_parser.d.ts",
-    "pkg/dot_agent_behavior_parser_bg.js",
-    "pkg/dot_agent_behavior_parser_bg.wasm",
-    "pkg/dot_agent_behavior_parser_bg.wasm.d.ts"
+    "pkg/dot_agent_parser_dsl.js",
+    "pkg/dot_agent_parser_dsl.d.ts",
+    "pkg/dot_agent_parser_dsl_bg.js",
+    "pkg/dot_agent_parser_dsl_bg.wasm",
+    "pkg/dot_agent_parser_dsl_bg.wasm.d.ts"
   ],
   "scripts": {
     "build": "RELEASE=true ./scripts/build-wasm.sh",

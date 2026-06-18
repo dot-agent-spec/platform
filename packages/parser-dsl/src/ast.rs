@@ -14,6 +14,78 @@
 
 use serde::{Deserialize, Serialize};
 
+// ── Description DSL types ─────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OntologyRef {
+    pub uri: String,
+    pub label: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentDecl {
+    pub name: String,
+    pub domain: Option<String>,
+    pub license: Option<String>,
+    pub terms: Option<String>,
+    pub privacy: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnnotatedRef {
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeDefinition {
+    pub name: String,
+    pub category: OntologyRef,
+    pub concept: Option<OntologyRef>,
+    pub properties: Vec<PropertyDecl>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PropertyDecl {
+    pub name: String,
+    pub r#type: PropertyType,
+    pub is_optional: bool,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum PropertyType {
+    Primitive(String),
+    // Namespace-qualified refs (e.g. std.Prompt) are concatenated by the parser.
+    Reference(String),
+    Array(Box<PropertyType>),
+    Enum(Vec<String>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct DescriptionFile {
+    pub agent: AgentDecl,
+    pub description: Option<String>,
+    /// File reference, e.g. "SOUL.md"
+    pub persona: Option<String>,
+    /// File reference, e.g. "agent.behavior"
+    pub behavior: Option<String>,
+    #[serde(default)]
+    pub requires: Vec<AnnotatedRef>,
+    #[serde(default)]
+    pub input: Vec<AnnotatedRef>,
+    #[serde(default)]
+    pub capabilities: Vec<AnnotatedRef>,
+    #[serde(default)]
+    pub output: Vec<AnnotatedRef>,
+    #[serde(default)]
+    pub types: Vec<TypeDefinition>,
+}
+
+// ── Behavior DSL types ────────────────────────────────────────────────────────
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct BehaviorFile {

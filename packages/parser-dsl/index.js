@@ -22,17 +22,17 @@ export async function init() {
   if (_initialized) return;
 
   try {
-    const bgModule = await import('./pkg/dot_agent_behavior_parser_bg.js');
+    const bgModule = await import('./pkg/dot_agent_parser_dsl_bg.js');
 
     let wasmBuffer;
     if (typeof window !== 'undefined') {
-      const wasmPath = new URL('./pkg/dot_agent_behavior_parser_bg.wasm', import.meta.url);
+      const wasmPath = new URL('./pkg/dot_agent_parser_dsl_bg.wasm', import.meta.url);
       const wasmResponse = await fetch(wasmPath);
       wasmBuffer = await wasmResponse.arrayBuffer();
     } else {
       const { readFile } = await import('node:fs/promises');
       const { fileURLToPath } = await import('node:url');
-      const wasmPath = fileURLToPath(new URL('./pkg/dot_agent_behavior_parser_bg.wasm', import.meta.url));
+      const wasmPath = fileURLToPath(new URL('./pkg/dot_agent_parser_dsl_bg.wasm', import.meta.url));
       wasmBuffer = await readFile(wasmPath);
     }
 
@@ -40,11 +40,11 @@ export async function init() {
     // Provide no-op stubs so the WASM loads in both debug and release builds.
     const envStubs = new Proxy({}, { get: () => () => {} });
     const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
-      './dot_agent_behavior_parser_bg.js': { ...bgModule },
+      './dot_agent_parser_dsl_bg.js': { ...bgModule },
       env: envStubs,
     });
     bgModule.__wbg_set_wasm(wasmModule.instance.exports);
-    _module = await import('./pkg/dot_agent_behavior_parser.js');
+    _module = await import('./pkg/dot_agent_parser_dsl.js');
 
     _initialized = true;
   } catch (err) {
@@ -53,9 +53,17 @@ export async function init() {
   }
 }
 
-export function parse(text) {
+export function parse_behavior(text) {
   if (!_initialized) throw new Error('Must call init() first');
-  return _module.parse(text);
+  return _module.parse_behavior(text);
+}
+
+export function parse_description(text) {
+  if (!_initialized) throw new Error('Must call init() first');
+  if (!_module.parse_description) {
+    return JSON.stringify({ error: 'parse_description not available — rebuild WASM with wasm-pack' });
+  }
+  return _module.parse_description(text);
 }
 
 export function get_graph(text) {
