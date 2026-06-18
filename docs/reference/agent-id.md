@@ -99,9 +99,13 @@ Runtimes in secure environments may refuse to load `unknown`-namespaced agents b
 
 ## Digest
 
-The digest is the first 8 hex characters of the SHA-256 hash of all source files in the `.agent` ZIP, concatenated in collection order. It identifies a specific build of the agent, not just a version.
+The digest is the short git commit SHA at the time of packaging. It is identical to the `commit` field in `aboutme.json` — if both are present in a package, they must match; a mismatch indicates a corrupted or manually edited package.
 
-Two agents with the same `namespace/name:version` but different digests are different builds — for example, built from different commits or with different source files.
+The digest serves two purposes:
+- **Immutability**: pinning a form D ID locks the reference to a specific commit, not just a version label
+- **Discoverability**: a runtime that receives a form D ID can fetch the exact source from the origin repository using the commit SHA, enabling direct sharing of work-in-progress iterations without requiring a published `vX.Y` tag
+
+When no git repository is present, `commit` is absent and the ID is produced in form B (no digest). The SHA-256 hash of the ZIP contents lives in `aboutme.json` under `integrity.sha256` — it is an internal integrity check, not part of the ID.
 
 ---
 
