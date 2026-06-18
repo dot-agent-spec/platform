@@ -115,7 +115,7 @@ Both grammars use **keyword-delimited blocks** and explicit `$._newline` tokens 
 ```
 on event "..."        → trigger_decl      (top-level, uses generic block)
 on intent "..."       → intent_handler    (inside oriented_state_body)
-on offtopic           → offtopic_handler  (inside oriented_state_body)
+on offtopic           → offtopic_handler  (inside oriented_state_body, optional)
 on failure            → failure_stmt      (inside run/apply/remove, uses block)
 on success            → success_stmt      (inside parallel only, uses block)
 ```

@@ -291,8 +291,16 @@
             }
           },
           {
-            "type": "SYMBOL",
-            "name": "offtopic_handler"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "offtopic_handler"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
           }
         ]
       }

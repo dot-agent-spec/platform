@@ -14,14 +14,38 @@ merge "phases/review.behavior"
     path: (filename)))
 
 ================================================================================
-oriented state mínimo (goal + interact + handlers)
+oriented state mínimo (goal + interact + intent handler, sem offtopic)
 ================================================================================
 
 state responsive
   goal "Help the user"
   interact
   on intent "request" transition to responsive
-  on offtopic transition to responsive
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    name: (state_name)
+    body: (state_body
+      (oriented_state_body
+        (goal_stmt
+          text: (quoted_string))
+        (interact_stmt)
+        (intent_handler
+          intent: (quoted_string)
+          (transition_stmt
+            state: (state_name)))))))
+
+================================================================================
+oriented state com offtopic (still valid)
+================================================================================
+
+state greeting_with_offtopic
+  goal "Greet the user"
+  interact
+  on intent "ok" transition to next
+  on offtopic transition to handle_offtopic
 
 --------------------------------------------------------------------------------
 
@@ -51,7 +75,6 @@ state car_search
   teach "premium_features.md"
   interact
   on intent "select" transition to reservation
-  on offtopic transition to responsive
 
 --------------------------------------------------------------------------------
 
@@ -69,9 +92,6 @@ state car_search
         (interact_stmt)
         (intent_handler
           intent: (quoted_string)
-          (transition_stmt
-            state: (state_name)))
-        (offtopic_handler
           (transition_stmt
             state: (state_name)))))))
 
@@ -170,7 +190,6 @@ state phases.planning.start
   goal "Start planning"
   interact
   on intent "next" transition to phases.planning.end
-  on offtopic transition to phases.planning.start
 
 --------------------------------------------------------------------------------
 
@@ -185,9 +204,6 @@ state phases.planning.start
         (intent_handler
           intent: (quoted_string)
           (transition_stmt
-            state: (state_name)))
-        (offtopic_handler
-          (transition_stmt
             state: (state_name)))))))
 
 ================================================================================
@@ -200,7 +216,6 @@ state conversational
   on intent "help"
     run script "log.sh"
     transition to support
-  on offtopic transition to responsive
 
 --------------------------------------------------------------------------------
 
@@ -221,7 +236,4 @@ state conversational
                 target: (quoted_string)))
             (statement
               (transition_stmt
-                state: (state_name)))))
-        (offtopic_handler
-          (transition_stmt
-            state: (state_name)))))))
+                state: (state_name)))))))))

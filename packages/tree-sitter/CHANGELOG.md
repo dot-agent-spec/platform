@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Language (Spec 1.0.0-draft)
+- **Changed**: `on offtopic` is now optional in oriented states. At least one `on intent` handler already guarantees a state exit path. Off-topic handling belongs in a dedicated state reached by explicit routing — not enforced at every state boundary.
+
+### Parser
+- **Changed**: `offtopic_handler` wrapped in `optional()` in `oriented_state_body` grammar rule.
+- **Updated**: `tree-sitter-behavior/test/corpus/basic.txt` — removed `on offtopic` from states that don't need it; added explicit case for oriented state without offtopic; added `greeting_with_offtopic` case to confirm offtopic still parses when present.
+
 ---
 
 ## [0.4.0] - 2026-06-18

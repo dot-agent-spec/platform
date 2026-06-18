@@ -115,7 +115,8 @@ module.exports = grammar({
     // goal? guide? teach* interact handler+
     // Order is strict: goal and guide orient LLM context, teach fills cache,
     // interact releases LLM for response, handlers route the reply.
-    // FSM is guaranteed: repeat1(handler) ensures no deadlock.
+    // FSM is guaranteed: repeat1(intent_handler) ensures at least one exit per state.
+    // offtopic_handler is optional — add it only when fallback behavior is needed.
 
     oriented_state_body: $ => prec.right(seq(
       seq($.goal_stmt, $._end_stmt),
@@ -123,7 +124,7 @@ module.exports = grammar({
       repeat(seq($.teach_stmt, $._end_stmt)),
       seq($.interact_stmt, $._end_stmt),
       repeat1($.intent_handler),
-      $.offtopic_handler,
+      optional($.offtopic_handler),
     )),
 
 

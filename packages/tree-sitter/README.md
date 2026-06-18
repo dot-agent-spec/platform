@@ -72,7 +72,6 @@ state responsive
   interact
   on intent "proceed" transition to process
   on intent "end" transition to goodbye
-  on offtopic transition to responsive
 
 state summary
   goal "Generate and present the summary"
@@ -81,14 +80,12 @@ state summary
   interact
   on intent "new_text" transition to responsive
   on intent "end" transition to goodbye
-  on offtopic transition to responsive
 
 state goodbye
   goal "Conclude the interaction"
   guide "Deliver a polite farewell message, acknowledging the end of the session and letting the user know they can return at any time."
   interact
   on intent "new_text" transition to responsive
-  on offtopic transition to goodbye
 ```
 
 ---
