@@ -37,6 +37,18 @@ Things that require the VS Code API and cannot be expressed as LSP responses:
 
 ---
 
+## `agent/behaviorGraph` — formato da resposta
+
+O LSP request `agent/behaviorGraph` retorna uma **string SCXML** (W3C State Chart XML) gerada pelo behavior-parser WASM a partir do texto do documento.
+
+A extension converte para Mermaid `stateDiagram-v2` com `scxmlToMermaid()` em `extension.js`. O parser extrai:
+- `initial="X"` no elemento raiz `<scxml>` → `[*] --> X` (entry point)
+- `<state id="X"><transition target="Y"/></state>` → `X --> Y`
+- `<transition event="E" target="Y"/>` dentro de estado → `X --> Y : E`
+- Estados sem conexões → linha isolada (nó sem arestas no diagrama)
+
+---
+
 ## Build and release
 
 ```bash

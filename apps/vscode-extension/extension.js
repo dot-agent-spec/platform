@@ -20,21 +20,48 @@ const { LanguageClient, TransportKind } = require('vscode-languageclient/node');
 
 // ─── Graph helpers ────────────────────────────────────────────────────────────
 
-function generateMermaid(parsed) {
+function scxmlToMermaid(scxml) {
+    if (!scxml || typeof scxml !== 'string') return 'stateDiagram-v2';
     const lines = ['stateDiagram-v2'];
-    for (const ep of parsed.entryPoints) {
-        lines.push(`    [*] --> ${ep.to} : ${ep.event}`);
+    const connected = new Set();
+    const transitionLines = [];
+    const states = [];
+
+    // Entry point: initial="X" attribute on <scxml>
+    const initialM = /\binitial="([^"]+)"/.exec(scxml);
+    if (initialM) {
+        lines.push(`    [*] --> ${initialM[1]}`);
+        connected.add(initialM[1]);
     }
-    for (const t of parsed.transitions) {
-        lines.push(`    ${t.from} --> ${t.to}`);
+
+    // State blocks and their transitions
+    const stateBlockRe = /<state\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/state>/g;
+    let m;
+    while ((m = stateBlockRe.exec(scxml)) !== null) {
+        const from = m[1];
+        states.push(from);
+        const transRe = /<transition\b([^>]*?)\/>/g;
+        let tm;
+        while ((tm = transRe.exec(m[2])) !== null) {
+            const targetM = /\btarget="([^"]+)"/.exec(tm[1]);
+            if (!targetM) continue;
+            const to = targetM[1];
+            connected.add(from);
+            connected.add(to);
+            const eventM = /\bevent="([^"]+)"/.exec(tm[1]);
+            transitionLines.push(eventM
+                ? `    ${from} --> ${to} : ${eventM[1]}`
+                : `    ${from} --> ${to}`);
+        }
     }
-    const connected = new Set([
-        ...parsed.entryPoints.map(e => e.to),
-        ...parsed.transitions.flatMap(t => [t.from, t.to]),
-    ]);
-    for (const s of parsed.states) {
+
+    lines.push(...transitionLines);
+
+    // Isolated states (no incoming or outgoing connections)
+    for (const s of states) {
         if (!connected.has(s)) lines.push(`    ${s}`);
     }
+
     return lines.join('\n');
 }
 
@@ -120,7 +147,7 @@ function activate(context) {
         if (!graphPanel) return;
         try {
             const graph = await client.sendRequest('agent/behaviorGraph', { uri });
-            if (graph) graphPanel.webview.html = getGraphHtml(generateMermaid(graph));
+            if (graph) graphPanel.webview.html = getGraphHtml(scxmlToMermaid(graph));
         } catch { /* servidor ainda não pronto ou arquivo inválido */ }
     }
 
