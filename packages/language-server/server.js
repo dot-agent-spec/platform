@@ -21,7 +21,7 @@ import {
     TextDocumentSyncKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import bpInit, { get_graph } from '@dot-agent/behavior-parser';
+import bpInit, { get_graph } from '@dot-agent/parser-dsl';
 
 import { initParsers, parse, evict, nodesOfType } from './parser.js';
 
