@@ -202,9 +202,11 @@ The compiler maps `DescriptionFile` fields to `aboutme.json` as follows:
 | `agent.license` | `license` | Defaults to `""` if absent |
 | `capabilities` | `capabilities` | Each `AnnotatedRef` → `{ id: name, description }` |
 | `requires` | `requires` | `AnnotatedRef[]` passed through |
-| *(not in file)* | `purpose` | Defaults to `"unknown"`; set post-build by LLM layer |
+| *(not in file)* | `purpose` | Defaults to `"unknown"`. Derivation via LLM at pack time (Wikidata QID) is pending — see RFC-0013. |
 
-`input`, `output`, and `types` do **not** appear in `aboutme.json`. They go to `.agent/types.json`.
+`input`, `output`, and `types` do **not** appear in `aboutme.json`. They go to `.agent/types.json` (generated only when the agent declares public types; conditional).
+
+`.agent/files.json` is always generated for any agent that includes `agent.description` and `agent.behavior`. It is not conditional.
 
 ---
 

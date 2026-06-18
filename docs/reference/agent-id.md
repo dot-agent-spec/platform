@@ -39,7 +39,9 @@ A form A link (`dot-agent://entelekheia.ai/doctor`) resolves to the latest avail
 
 ## Namespace tiers
 
-The namespace identifies the publisher. Four tiers are defined, ordered by verifiability:
+The namespace identifies the publisher. Four tiers are defined, ordered by verifiability.
+
+> **Tiers are descriptive, not prescriptive.** The spec defines the tiers and their properties; it does not dictate how or whether a runtime validates them. Verification logic, trust policy, and user-facing warnings are entirely the runtime's responsibility.
 
 ### Tier 1 — Own domain
 
