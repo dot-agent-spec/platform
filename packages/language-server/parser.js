@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-'use strict';
+import { resolve } from 'path';
+import { createRequire } from 'module';
+import { Parser, Language } from 'web-tree-sitter';
 
-const path = require('path');
-const { Parser, Language } = require('web-tree-sitter');
+const require = createRequire(import.meta.url);
 const grammar = require('@dot-agent/tree-sitter');
 
 // path.resolve ensures absolute paths survive vsix packaging and cwd changes
-const DESCRIPTION_WASM = path.resolve(grammar.agentWasmPath);
-const BEHAVIOR_WASM  = path.resolve(grammar.behaviorWasmPath);
+const DESCRIPTION_WASM = resolve(grammar.agentWasmPath);
+const BEHAVIOR_WASM  = resolve(grammar.behaviorWasmPath);
 
 let descriptionParser, behaviorParser;
 
-async function initParsers() {
+export async function initParsers() {
     await Parser.init();
     const DescriptionLang = await Language.load(DESCRIPTION_WASM);
     const Behavior  = await Language.load(BEHAVIOR_WASM);
@@ -39,7 +40,7 @@ async function initParsers() {
 // Cache: uri → { version, tree }
 const cache = new Map();
 
-function parse(uri, langId, text, version) {
+export function parse(uri, langId, text, version) {
     const prev = cache.get(uri);
     if (prev?.version === version) return prev.tree;
     const parser = langId === 'behavior' ? behaviorParser : descriptionParser;
@@ -49,11 +50,11 @@ function parse(uri, langId, text, version) {
     return tree;
 }
 
-function evict(uri) {
+export function evict(uri) {
     cache.delete(uri);
 }
 
-function parseText(langId, text) {
+export function parseText(langId, text) {
     const parser = langId === 'behavior' ? behaviorParser : descriptionParser;
     if (!parser) return null;
     return parser.parse(text);
@@ -61,18 +62,18 @@ function parseText(langId, text) {
 
 // ── AST helpers ──────────────────────────────────────────────────────────────
 
-function nodesOfType(tree, type) {
+export function nodesOfType(tree, type) {
     if (!tree) return [];
     return tree.rootNode.descendantsOfType(type);
 }
 
-function nodeAtOffset(tree, offset) {
+export function nodeAtOffset(tree, offset) {
     if (!tree) return null;
     return tree.rootNode.descendantForIndex(offset);
 }
 
 // Convert a tree-sitter {row, column} position to an LSP Range
-function nodeToRange(node) {
+export function nodeToRange(node) {
     return {
         start: { line: node.startPosition.row, character: node.startPosition.column },
         end:   { line: node.endPosition.row,   character: node.endPosition.column },
@@ -80,7 +81,7 @@ function nodeToRange(node) {
 }
 
 // Convert LSP position (line, character) to a byte offset in text
-function positionToOffset(text, line, character) {
+export function positionToOffset(text, line, character) {
     let offset = 0;
     for (let i = 0; i < line; i++) {
         const nl = text.indexOf('\n', offset);
@@ -90,7 +91,7 @@ function positionToOffset(text, line, character) {
 }
 
 // Extract the word (identifier chars including dots) around position
-function wordAtPosition(text, line, character) {
+export function wordAtPosition(text, line, character) {
     const lines = text.split('\n');
     const lineText = lines[line] || '';
     let start = character, end = character;
@@ -100,7 +101,7 @@ function wordAtPosition(text, line, character) {
 }
 
 // Walk up the tree from offset, skipping ERROR/MISSING nodes
-function getContextNode(tree, offset) {
+export function getContextNode(tree, offset) {
     let node = nodeAtOffset(tree, offset);
     while (node && (node.isError || node.isMissing)) {
         node = node.parent;
@@ -118,16 +119,3 @@ function getContextNode(tree, offset) {
     }
     return node ?? tree?.rootNode;
 }
-
-module.exports = {
-    initParsers,
-    parse,
-    parseText,
-    evict,
-    nodesOfType,
-    nodeAtOffset,
-    nodeToRange,
-    positionToOffset,
-    wordAtPosition,
-    getContextNode,
-};

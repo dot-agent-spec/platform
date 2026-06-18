@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-'use strict';
-
-const { nodesOfType, nodeToRange } = require('../parser');
+import { nodesOfType, nodeToRange } from '../parser.js';
 
 // DocumentSymbol kind constants (LSP spec §3.17.5)
 const Kind = { Class: 5, Struct: 23, Event: 24 };
 
-function provideDocumentSymbols(langId, tree) {
+export function provideDocumentSymbols(langId, tree) {
     if (!tree) return [];
     const symbols = [];
 
@@ -74,5 +72,3 @@ function provideDocumentSymbols(langId, tree) {
 
     return symbols;
 }
-
-module.exports = { provideDocumentSymbols };

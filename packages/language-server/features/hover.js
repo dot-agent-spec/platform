@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-const { MarkupKind } = require('vscode-languageserver');
+import { MarkupKind } from 'vscode-languageserver';
 
 const DESCRIPTION_DOCS = {
     'agent':        '**`agent name`**\n\nDeclares a new agent. The central node of the manifest.',
@@ -60,7 +58,7 @@ const BEHAVIOR_DOCS = {
     'success':     '**`on success`**\n\nOptional success handler block inside a `parallel` statement.',
 };
 
-function provideHover(langId, text, position) {
+export function provideHover(langId, text, position) {
     const lines = text.split('\n');
     const line = lines[position.line] || '';
     const ch = position.character;
@@ -84,5 +82,3 @@ function provideHover(langId, text, position) {
         },
     };
 }
-
-module.exports = { provideHover };

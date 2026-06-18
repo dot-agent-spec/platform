@@ -14,39 +14,37 @@
  * limitations under the License.
  */
 
-'use strict';
-
-const {
+import {
     createConnection,
     TextDocuments,
     ProposedFeatures,
     TextDocumentSyncKind,
-    SymbolKind,
-} = require('vscode-languageserver/node');
-const { TextDocument } = require('vscode-languageserver-textdocument');
+} from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import bpInit, { get_graph } from '@dot-agent/behavior-parser';
 
-const { initParsers, parse, evict, nodesOfType } = require('./parser');
+import { initParsers, parse, evict, nodesOfType } from './parser.js';
 
-const { provideHover }          = require('./features/hover');
-const { provideCompletions }    = require('./features/completions');
-const { diagnose }              = require('./features/diagnostics');
-const { provideDocumentSymbols }= require('./features/symbols');
-const { provideDefinition }     = require('./features/definition');
-const { provideReferences }     = require('./features/references');
-const { provideRenameEdits }    = require('./features/rename');
-const { format }                = require('./features/formatting');
-const { provideDocumentLinks }  = require('./features/links');
-const { extractBehaviorGraph }  = require('./features/graph');
+import { provideHover }           from './features/hover.js';
+import { provideCompletions }     from './features/completions.js';
+import { diagnose }               from './features/diagnostics.js';
+import { provideDocumentSymbols } from './features/symbols.js';
+import { provideDefinition }      from './features/definition.js';
+import { provideReferences }      from './features/references.js';
+import { provideRenameEdits }     from './features/rename.js';
+import { format }                 from './features/formatting.js';
+import { provideDocumentLinks }   from './features/links.js';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents  = new TextDocuments(TextDocument);
 
 // ── Initialization ───────────────────────────────────────────────────────────
 
-// web-tree-sitter is strictly async — await before advertising capabilities
-// so no feature handler fires before parsers are ready.
+// web-tree-sitter and behavior-parser are strictly async — await before
+// advertising capabilities so no feature handler fires before parsers are ready.
 connection.onInitialize(async () => {
     await initParsers();
+    await bpInit();
     return {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -70,11 +68,10 @@ function getTree(doc) {
 
 // ── Diagnostics (push on change) ─────────────────────────────────────────────
 
-function validate(doc) {
+async function validate(doc) {
     const langId = doc.languageId;
     if (langId !== 'description' && langId !== 'behavior') return;
-    const tree = getTree(doc);
-    const diagnostics = diagnose(langId, tree, doc.getText(), doc.uri);
+    const diagnostics = await diagnose(doc.uri, langId, doc.getText());
     connection.sendDiagnostics({ uri: doc.uri, diagnostics });
 }
 
@@ -169,8 +166,7 @@ connection.onDocumentFormatting(({ textDocument }) => {
 connection.onRequest('agent/behaviorGraph', ({ uri }) => {
     const doc = documents.get(uri);
     if (!doc || doc.languageId !== 'behavior') return null;
-    const tree = getTree(doc);
-    return tree ? extractBehaviorGraph(tree) : null;
+    return get_graph(doc.getText());
 });
 
 // ── Current State at Position (custom request) ────────────────────────────────

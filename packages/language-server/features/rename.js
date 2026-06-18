@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-'use strict';
+import { nodesOfType, nodeToRange, wordAtPosition } from '../parser.js';
 
-const { nodesOfType, nodeToRange, wordAtPosition } = require('../parser');
-
-function provideRenameEdits(langId, tree, text, uri, position, newName) {
+export function provideRenameEdits(langId, tree, text, uri, position, newName) {
     if (!tree) return null;
 
     const { word: oldName } = wordAtPosition(text, position.line, position.character);
@@ -57,5 +55,3 @@ function provideRenameEdits(langId, tree, text, uri, position, newName) {
     if (edits.length === 0) return null;
     return { changes: { [uri]: edits } };
 }
-
-module.exports = { provideRenameEdits };

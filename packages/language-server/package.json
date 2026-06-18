@@ -19,18 +19,26 @@
     "dsl",
     "flow"
   ],
+  "type": "module",
   "main": "server.js",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.js --stdio"
+    "start": "node server.js --stdio",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@dot-agent/behavior-parser": "*",
+    "@dot-agent/compiler": "*",
     "@dot-agent/tree-sitter": "^0.3.6",
     "vscode-languageserver": "^10.0.0",
     "vscode-languageserver-textdocument": "^1.0.12",
     "web-tree-sitter": "^0.26.9"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
   },
   "publishConfig": {
     "access": "public"

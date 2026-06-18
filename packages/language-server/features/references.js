@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-'use strict';
+import { nodesOfType, nodeToRange, wordAtPosition } from '../parser.js';
 
-const { nodesOfType, nodeToRange, wordAtPosition } = require('../parser');
-
-function provideReferences(langId, tree, text, uri, position) {
+export function provideReferences(langId, tree, text, uri, position) {
     if (!tree) return [];
 
     const { word } = wordAtPosition(text, position.line, position.character);
@@ -56,5 +54,3 @@ function provideReferences(langId, tree, text, uri, position) {
 
     return locations;
 }
-
-module.exports = { provideReferences };

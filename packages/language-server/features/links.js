@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-const { fileURLToPath, pathToFileURL } = require('url');
-const path = require('path');
-const { nodesOfType, nodeToRange } = require('../parser');
+import { fileURLToPath, pathToFileURL } from 'url';
+import { resolve, dirname } from 'path';
+import { nodesOfType, nodeToRange } from '../parser.js';
 
 // Detecta se um nó bare_string representa um caminho de arquivo.
 // Usa o subtipo do tree-sitter (filename) como primeira fonte de verdade;
@@ -30,12 +28,12 @@ function isFilename(node) {
     return /^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(node.text.replace(/^"|"$/g, ''));
 }
 
-function provideDocumentLinks(langId, tree, docUri) {
+export function provideDocumentLinks(langId, tree, docUri) {
     if (!tree) return [];
 
     let docDir;
     try {
-        docDir = path.dirname(fileURLToPath(docUri));
+        docDir = dirname(fileURLToPath(docUri));
     } catch {
         return [];
     }
@@ -47,7 +45,7 @@ function provideDocumentLinks(langId, tree, docUri) {
         if (!filename) return;
         links.push({
             range: nodeToRange(fileNode),
-            target: pathToFileURL(path.resolve(docDir, filename)).toString(),
+            target: pathToFileURL(resolve(docDir, filename)).toString(),
         });
     }
 
@@ -91,5 +89,3 @@ function provideDocumentLinks(langId, tree, docUri) {
 
     return links;
 }
-
-module.exports = { provideDocumentLinks };

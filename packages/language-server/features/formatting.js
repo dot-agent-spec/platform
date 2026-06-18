@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-'use strict';
-
 const BLOCK_HEADERS = /^(on\s+(intent|offtopic|failure|success)|if|else|after|parallel)\b/;
 const TOP_LEVEL_LINE = /^(state|merge)\s|^on\s+event\b/;
 
@@ -76,10 +74,8 @@ function formatDescription(text) {
     return edits;
 }
 
-function format(langId, text) {
+export function format(langId, text) {
     if (langId === 'behavior') return formatBehavior(text);
     if (langId === 'description') return formatDescription(text);
     return [];
 }
-
-module.exports = { format };

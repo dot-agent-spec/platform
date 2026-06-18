@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-const fs = require('fs');
-const { fileURLToPath, pathToFileURL } = require('url');
-const path = require('path');
-const { nodesOfType, nodeToRange, wordAtPosition, parseText } = require('../parser');
+import { readFileSync } from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { resolve, dirname } from 'path';
+import { nodesOfType, nodeToRange, wordAtPosition, parseText } from '../parser.js';
 
 // Busca recursiva de state_decl em arquivos mergeados.
 // visited (Set<absPath>) evita loops em grafos de merge circulares.
@@ -28,23 +26,23 @@ function findStateInMerges(tree, docDir, word, visited = new Set()) {
         const pathNode = mergeNode.childForFieldName('path');
         if (!pathNode) continue;
         const filename = pathNode.text.replace(/^"|"$/g, '');
-        const absPath = path.resolve(docDir, filename);
+        const absPath = resolve(docDir, filename);
         if (visited.has(absPath)) continue;
         visited.add(absPath);
         let mergedText;
-        try { mergedText = fs.readFileSync(absPath, 'utf8'); } catch { continue; }
+        try { mergedText = readFileSync(absPath, 'utf8'); } catch { continue; }
         const mergedTree = parseText('behavior', mergedText);
         if (!mergedTree) continue;
         const found = nodesOfType(mergedTree, 'state_decl')
             .find(n => n.childForFieldName('name')?.text === word);
         if (found) return { uri: pathToFileURL(absPath).toString(), range: nodeToRange(found) };
-        const sub = findStateInMerges(mergedTree, path.dirname(absPath), word, visited);
+        const sub = findStateInMerges(mergedTree, dirname(absPath), word, visited);
         if (sub) return sub;
     }
     return null;
 }
 
-function provideDefinition(langId, tree, text, uri, position) {
+export function provideDefinition(langId, tree, text, uri, position) {
     if (!tree) return null;
 
     const { word } = wordAtPosition(text, position.line, position.character);
@@ -55,7 +53,7 @@ function provideDefinition(langId, tree, text, uri, position) {
             .find(n => n.childForFieldName('name')?.text === word);
         if (local) return { uri, range: nodeToRange(local) };
         try {
-            const docDir = path.dirname(fileURLToPath(uri));
+            const docDir = dirname(fileURLToPath(uri));
             return findStateInMerges(tree, docDir, word) ?? null;
         } catch { return null; }
     }
@@ -70,5 +68,3 @@ function provideDefinition(langId, tree, text, uri, position) {
 
     return null;
 }
-
-module.exports = { provideDefinition };

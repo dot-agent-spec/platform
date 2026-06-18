@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-const { CompletionItemKind } = require('vscode-languageserver');
-const { nodesOfType, positionToOffset, getContextNode } = require('../parser');
+import { CompletionItemKind } from 'vscode-languageserver';
+import { nodesOfType, positionToOffset, getContextNode } from '../parser.js';
 
 const BEHAVIOR_TOP_KW   = ['state', 'merge', 'on event', 'on intent', 'on offtopic'];
 const BEHAVIOR_BLOCK_KW = ['guide', 'teach', 'goal', 'interact', 'run', 'transition', 'set', 'if', 'else', 'end', 'after', 'parallel', 'apply', 'remove', 'on intent', 'on offtopic', 'on failure', 'on success'];
@@ -38,7 +36,7 @@ function nearestAncestor(node, types) {
     return null;
 }
 
-function provideCompletions(langId, tree, text, position) {
+export function provideCompletions(langId, tree, text, position) {
     const lines = text.split('\n');
     const line = lines[position.line] || '';
     const before = line.slice(0, position.character);
@@ -108,5 +106,3 @@ function provideCompletions(langId, tree, text, position) {
 
     return [];
 }
-
-module.exports = { provideCompletions };
