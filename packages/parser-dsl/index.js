@@ -36,8 +36,12 @@ export async function init() {
       wasmBuffer = await readFile(wasmPath);
     }
 
+    // Rust debug builds include UBSan instrumentation that imports from "env".
+    // Provide no-op stubs so the WASM loads in both debug and release builds.
+    const envStubs = new Proxy({}, { get: () => () => {} });
     const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
       './dot_agent_behavior_parser_bg.js': { ...bgModule },
+      env: envStubs,
     });
     bgModule.__wbg_set_wasm(wasmModule.instance.exports);
     _module = await import('./pkg/dot_agent_behavior_parser.js');

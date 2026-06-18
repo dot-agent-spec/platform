@@ -21,8 +21,8 @@
     "pkg/dot_agent_behavior_parser_bg.wasm.d.ts"
   ],
   "scripts": {
-    "build": "./scripts/build-wasm.sh",
-    "build:release": "RELEASE=true ./scripts/build-wasm.sh"
+    "build": "RELEASE=true ./scripts/build-wasm.sh",
+    "build:debug": "./scripts/build-wasm.sh"
   },
   "keywords": ["wasm", "agent", "dsl", "parser", "fsm", "scxml"],
   "license": "Apache-2.0",

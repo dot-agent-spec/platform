@@ -39,6 +39,9 @@ pub fn parse_behavior(text: &str) -> Result<ast::BehaviorFile, ParseError> {
     parser.set_language(&dot_agent_tree_sitter::language_behavior())
         .map_err(|_| ParseError("Failed to load behavior language".to_string()))?;
 
+    let normalized = if text.ends_with('\n') { text.to_string() } else { format!("{}\n", text) };
+    let text = normalized.as_str();
+
     let tree = parser.parse(text, None)
         .ok_or_else(|| ParseError("Failed to parse behavior".to_string()))?;
 
