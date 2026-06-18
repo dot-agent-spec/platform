@@ -54,7 +54,7 @@ pub fn parse_behavior(text: &str) -> Result<ast::BehaviorFile, ParseError> {
             if col_num > line_text.len() + 1 {
                 // Error is beyond line end — likely a structural error
                 format!(
-                    "Syntax error in behavior file\n\nCheck that:\n  - Oriented states follow: goal? guide? teach* interact\n  - interact must contain: on intent \"...\" / on offtopic handlers\n  - Setup states use: run/set/transition (no interact needed)"
+                    "Syntax error in behavior file\n\nCheck that:\n  - Oriented states follow: goal? guide? teach* interact\n  - interact must contain: on intent \"...\" handlers (on offtopic is optional)\n  - Setup states use: run/set/transition (no interact needed)"
                 )
             } else {
                 let caret = format!("{}^", " ".repeat(if col_num > 1 { col_num - 1 } else { 0 }));
