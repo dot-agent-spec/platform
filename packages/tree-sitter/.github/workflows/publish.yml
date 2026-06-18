@@ -1,4 +1,4 @@
-name: Publish to npm
+name: Publish
 
 on:
   release:
@@ -9,14 +9,12 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  publish-npm:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
@@ -27,5 +25,15 @@ jobs:
       - name: Regenerate parsers
         run: npm run generate && npm run generate-behavior
 
-      - name: Publish package to npm
+      - name: Publish to npm
         run: npm publish
+
+  publish-crate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish to crates.io
+        run: cargo publish -p dot-agent-tree-sitter
