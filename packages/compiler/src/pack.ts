@@ -136,10 +136,9 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
 
   const contentForHash = Array.from(allFiles.values()).join('')
   const sha256 = createHash('sha256').update(contentForHash).digest('hex')
-  const digest = sha256.substring(0, 8)
 
   const namespace = meta.domain || 'unknown'
-  const id = buildId({ namespace, name: meta.name, version, digest })
+  const id = buildId({ namespace, name: meta.name, version, digest: commit })
 
   const aboutme = buildAboutme({
     id,
