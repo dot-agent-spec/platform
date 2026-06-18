@@ -6,80 +6,94 @@ Part of the [dot-agent](https://github.com/dot-agent-spec) ecosystem.
 
 ---
 
-**Language Specification:** `1.0.0-draft`  
-**Parser Version:** `0.2.1` (see [package.json](package.json))
+## 1. File types
 
----
-
-## 1. Documentation Index
-
-Following the Diátaxis framework, our documentation is split by user intent:
-
-### 💡 Concepts (Understanding-oriented)
-- [The .agent Ecosystem](docs/concepts/ecosystem.md) — Architecture and Division of Responsibility.
-- [Design Principles](docs/concepts/design-principles.md) — Zero Noise, Determinism, and Semantic Indentation.
-- [Roadmap & Open Questions](docs/concepts/roadmap.md) — Future of the DSL.
-
-### 📖 Reference (Information-oriented)
-- [The Manifest (.description)](docs/reference/manifest.md) — Metadata, Inputs, Outputs, and Capabilities.
-- [The Behavior (.behavior)](docs/reference/behavior.md) — States, Transitions, and Flow Orchestration.
-- [Type System](docs/reference/types.md) — Custom Types, Namespaces, and Semantic Anchors.
-
-### 🛠️ Guides & Tutorials (Task-oriented)
-- [Three-Layer Packaging](docs/guides/packaging.md) — How agents are versioned and distributed.
-- [Examples](examples/) — Canonical `.description` and `.behavior` snippets.
-
----
-
-## 2. File types
-
-| Grammar | Scope | File extensions |
+| Grammar | Scope | Used in |
 |---------|-------|----------------|
-| `grammar.js` | `source.description` | `.description`, `.type` |
-| `behavior/grammar.js` | `source.behavior` | `.behavior` |
+| `tree-sitter-description/grammar.js` | `source.description` | `.description`, `type` |
+| `tree-sitter-behavior/grammar.js` | `source.behavior` | `.behavior` |
 
 ---
 
-## 3. Editor integration
-
-**Zed** — native Tree-sitter support via the Zed extension (zed-agent).
-
-**Neovim** — use `nvim-treesitter`. Add the parser path to your `parser-install-dir` or use the local build directly.
-
-**VS Code** — install the [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) extension. Tree-sitter here powers diagnostics via the [language server](https://github.com/dot-agent-spec/language-server); the extension also bundles a `.tmLanguage.json` for syntax highlighting.
-
----
-
-## 4. Package structure
+## 2. Package structure
 
 ```
 tree-sitter/
-├── index.js              ← entry point — exports WASM paths
-├── grammar.js            ← .description / .type grammar
-├── tree-sitter.json      ← grammar scope declarations
+├── index.js                      ← entry point — exports WASM paths
+├── tree-sitter-description/      ← .description / .type grammar
+│   ├── grammar.js
+│   ├── tree-sitter.json
+│   ├── src/
+│   │   ├── scanner.c             ← newline scanner
+│   │   └── tree_sitter/          ← runtime headers (MIT, see NOTICE)
+│   ├── queries/highlights.scm    ← highlight queries
+│   └── test/corpus/types.txt     ← grammar test cases
+├── tree-sitter-behavior/         ← .behavior grammar
+│   ├── grammar.js
+│   ├── tree-sitter.json
+│   ├── src/
+│   │   └── tree_sitter/
+│   ├── queries/highlights.scm
+│   └── test/corpus/basic.txt
 ├── dist/
-│   ├── tree-sitter-agent.wasm    ← compiled WASM parser (.description / .type)
-│   └── tree-sitter-behavior.wasm ← compiled WASM parser (.behavior)
-├── docs/                 ← Language Specification & Documentation
-├── src/
-│   ├── scanner.c         ← manual INDENT/DEDENT scanner
-│   └── tree_sitter/      ← runtime headers (MIT, see NOTICE)
-├── queries/
-│   └── highlights.scm    ← highlight queries for .description / .type
-├── scripts/
-│   └── clean.js          ← cleans dist/ before WASM build
-├── test/corpus/
-│   └── types.txt         ← grammar test cases
-└── behavior/                 ← .behavior grammar (separate Tree-sitter grammar)
-    ├── grammar.js
-    ├── src/scanner.c
-    ├── queries/highlights.scm
-    └── test/corpus/basic.txt
+│   ├── tree-sitter-description.wasm ← compiled WASM parser (.description / .type)
+│   └── tree-sitter-behavior.wasm    ← compiled WASM parser (.behavior)
+└── scripts/
+    └── clean.js                  ← cleans dist/ before WASM build
 ```
 
 ---
 
-## 5. Development setup
+## 3. Examples
+
+### `.description` file
+
+```description
+agent Text Assistant
+  domain text.local
+  license Apache-2.0
+
+description
+  Reviews and summarizes texts.
+  Can adjust the tone and clarity of a text according to the objective,
+  or generate a summary at different levels of detail.
+
+capabilities
+  ReviseAction "Reviews a text focusing on the tone and objective indicated by the user."
+  SummarizeAction "Summarizes a text at the desired level of detail (executive, full, or bullet points)."
+```
+
+### `.behavior` file
+
+```behavior
+state responsive
+  goal "Initiate text summarization"
+  guide "Greet the user and request the text they wish to have summarized. Be concise and maintain a helpful tone."
+  interact
+  on intent "proceed" transition to process
+  on intent "end" transition to goodbye
+  on offtopic transition to responsive
+
+state summary
+  goal "Generate and present the summary"
+  guide "Analyze the provided text to generate a clear, accurate summary. Present the result and invite the user to provide a new text or conclude the session."
+  teach "maintopics.md"
+  interact
+  on intent "new_text" transition to responsive
+  on intent "end" transition to goodbye
+  on offtopic transition to responsive
+
+state goodbye
+  goal "Conclude the interaction"
+  guide "Deliver a polite farewell message, acknowledging the end of the session and letting the user know they can return at any time."
+  interact
+  on intent "new_text" transition to responsive
+  on offtopic transition to goodbye
+```
+
+---
+
+## 4. Development setup
 
 ```bash
 npm install
@@ -91,19 +105,19 @@ Re-run `generate` every time you edit `grammar.js`. See [CONTRIBUTING.md](CONTRI
 
 ---
 
-## 6. WASM / JavaScript
+## 5. WASM / JavaScript
 
 The package ships pre-compiled WebAssembly parsers for use in JavaScript environments (browser, Node.js, Deno):
 
 ```js
-const { agentWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter');
-// agentWasmPath    → absolute path to dist/tree-sitter-agent.wasm
-// behaviorWasmPath → absolute path to dist/tree-sitter-behavior.wasm
+const { descriptionWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter');
+// descriptionWasmPath → absolute path to dist/tree-sitter-description.wasm
+// behaviorWasmPath    → absolute path to dist/tree-sitter-behavior.wasm
 ```
 
 ---
 
-## 7. Daily commands
+## 6. Daily commands
 
 ```bash
 # Parse a file and display the syntax tree
@@ -119,7 +133,7 @@ npm run test-behavior          # .behavior grammar
 
 ---
 
-## 8. License
+## 7. License
 
 Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
 

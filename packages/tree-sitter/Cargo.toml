@@ -1,6 +1,6 @@
 [package]
 name = "dot-agent-tree-sitter"
-version = "0.3.2"
+version = "0.4.0"
 authors = ["Danilo Borges <contato@daniloborg.es>"]
 description = "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)"
 license = "Apache-2.0"
@@ -8,11 +8,11 @@ repository = "https://github.com/dot-agent-spec/tree-sitter"
 edition = "2021"
 build = "build.rs"
 include = [
-    "src/*.c",
-    "src/tree_sitter/*.h",
-    "behavior/src/*.c",
-    "behavior/src/tree_sitter/*.h",
-    "behavior/src/node-types.json",
+    "tree-sitter-description/src/*.c",
+    "tree-sitter-description/src/tree_sitter/*.h",
+    "tree-sitter-behavior/src/*.c",
+    "tree-sitter-behavior/src/tree_sitter/*.h",
+    "tree-sitter-behavior/src/node-types.json",
     "bindings/rust/**",
     "build.rs",
     "Cargo.toml",

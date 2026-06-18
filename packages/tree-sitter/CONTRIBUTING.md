@@ -5,23 +5,19 @@
 ## Grammar evolution workflow
 
 ```
-1. Edit grammar.js (or behavior/grammar.js)
+1. Edit tree-sitter-description/grammar.js (or tree-sitter-behavior/grammar.js)
        ↓
-2. npx tree-sitter generate      ← recompiles src/parser.c
+2. npm run generate-description  ← recompiles tree-sitter-description/src/parser.c
+   npm run generate-behavior     ← recompiles tree-sitter-behavior/src/parser.c
        ↓
 3. npx tree-sitter parse <file> --quiet   ← manual smoke test
        ↓
-4. Update test/corpus/ if needed
+4. Update test/corpus/ inside the relevant grammar folder if needed
        ↓
-5. npx tree-sitter test          ← confirm all cases pass
+5. npm test                      ← runs test-description + test-behavior
 ```
 
-For the `.behavior` grammar use the same steps from inside `behavior/`, or the npm scripts:
-
-```bash
-npm run generate-behavior
-npm run test-behavior
-```
+Or run both grammars at once with `npm run generate && npm test`.
 
 **Always regenerate before committing.** Stale `src/parser.c` causes silent parse failures in editors.
 
@@ -64,7 +60,7 @@ Running `npx tree-sitter parse doctor.description` produces:
 | Notation | Meaning |
 |----------|---------|
 | `(node_name ...)` | A tree node — corresponds to a grammar rule |
-| `name: (...)` | Named field — defined with `field('name', ...)` in `grammar.js` |
+| `name: (...)` | Named field — defined with `field('name', ...)` in `tree-sitter-description/grammar.js` |
 | `(identifier)` | Leaf node — corresponds to an actual token in the file |
 | `(ERROR ...)` | Portion that did not match any rule — syntax error |
 

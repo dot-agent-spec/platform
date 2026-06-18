@@ -24,7 +24,7 @@
 //   - Comments in this file explain intent and structure; they do not change parsing behavior.
 
 module.exports = grammar({
-  name: 'dot_agent',
+  name: 'description',
 
   // Tokens silently skipped between grammar tokens
   extras: $ => [

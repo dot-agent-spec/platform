@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-06-18
+
+### Tooling / Package Structure
+- **Changed**: Grammar folders reorganized for symmetry — description grammar moved from root into `tree-sitter-description/`, behavior grammar renamed from `behavior/` to `tree-sitter-behavior/`.
+- **Changed**: Grammar name `dot_agent` renamed to `description`; compiled WASM renamed from `tree-sitter-dot_agent.wasm` to `tree-sitter-description.wasm`.
+- **Changed**: `index.js` export `agentWasmPath` renamed to `descriptionWasmPath` (breaking).
+- **Changed**: npm scripts made symmetric — `generate-description` / `generate-behavior` / `generate` (all); `test-description` / `test-behavior` / `test` (all); `build:wasm-description` / `build:wasm-behavior`.
+- **Added**: `bindings/rust/src/lib.rs` restored and updated — `language_agent()` renamed to `language_description()` (breaking); `include_str!` path updated for new folder layout.
+
+---
+
 ## [0.3.4] - 2026-06-16
 
 ### Language (Spec 1.0.0-draft)

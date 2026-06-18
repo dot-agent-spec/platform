@@ -1,13 +1,13 @@
 {
   "grammars": [
     {
-      "name": "dot_agent",
+      "name": "description",
       "scope": "source.description",
       "file-types": ["description", "type"],
       "highlights": "queries/highlights.scm"
     }
   ],
   "metadata": {
-    "version": "0.3.3"
+    "version": "0.4.0"
   }
 }

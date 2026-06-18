@@ -1,27 +1,21 @@
 fn main() {
-    let agent_src = std::path::Path::new("src");
+    let description_src = std::path::Path::new("tree-sitter-description/src");
     cc::Build::new()
-        .include(agent_src)
-        .file(agent_src.join("parser.c"))
+        .include(description_src)
+        .file(description_src.join("parser.c"))
         .warnings(false)
-        .compile("tree-sitter-agent-parser");
+        .compile("tree-sitter-description-parser");
 
     cc::Build::new()
-        .include(agent_src)
-        .file(agent_src.join("scanner.c"))
+        .include(description_src)
+        .file(description_src.join("scanner.c"))
         .warnings(false)
-        .compile("tree-sitter-agent-scanner");
+        .compile("tree-sitter-description-scanner");
 
-    let behavior_src = std::path::Path::new("behavior").join("src");
+    let behavior_src = std::path::Path::new("tree-sitter-behavior/src");
     cc::Build::new()
         .include(&behavior_src)
         .file(behavior_src.join("parser.c"))
         .warnings(false)
         .compile("tree-sitter-behavior-parser");
-
-    cc::Build::new()
-        .include(&behavior_src)
-        .file(behavior_src.join("scanner.c"))
-        .warnings(false)
-        .compile("tree-sitter-behavior-scanner");
 }

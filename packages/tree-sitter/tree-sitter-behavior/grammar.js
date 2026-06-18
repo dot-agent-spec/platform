@@ -234,9 +234,6 @@ module.exports = grammar({
       optional($.failure_stmt),
     )),
 
-    // TODO: maybe expand to html, video, etc.
-    // for future genUI capabilities, but for now just CSS selectors for dynamic UI updates.
-    // ui_target: $ => choice('css', 'html', 'video'),
 
     // ================================================================
     // HANDLERS (inside oriented states)
