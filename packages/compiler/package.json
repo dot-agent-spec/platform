@@ -1,0 +1,49 @@
+{
+  "name": "@dot-agent/compiler",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "Compiler for the dot-agent DSL: AST parsing, linting, graph extraction and .agent packaging",
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "homepage": "https://dot-agent.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/dot-agent-spec"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@dot-agent/behavior-parser": "^0.1.0",
+    "@dot-agent/tree-sitter": "^0.3.6",
+    "jszip": "^3.10.1",
+    "web-tree-sitter": "^0.26.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.6.0"
+  }
+}
