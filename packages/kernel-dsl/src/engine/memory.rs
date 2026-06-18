@@ -12,28 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use crate::effect::MemValue;
-use crate::parser::ast::{AssignOp, MemoryDomain, MemoryPath, Value};
+use dot_agent_parser_dsl::ast::{AssignOp, MemoryDomain, MemoryPath, Value};
 
 pub struct MemoryStore {
-    context:     HashMap<String, MemValue>,
-    session:     HashMap<String, MemValue>,
-    worksession: HashMap<String, MemValue>,
-    user:        HashMap<String, MemValue>,
+    context:     BTreeMap<String, MemValue>,
+    session:     BTreeMap<String, MemValue>,
+    worksession: BTreeMap<String, MemValue>,
+    user:        BTreeMap<String, MemValue>,
 }
 
 impl MemoryStore {
     pub fn new() -> Self {
         MemoryStore {
-            context:     HashMap::new(),
-            session:     HashMap::new(),
-            worksession: HashMap::new(),
-            user:        HashMap::new(),
+            context:     BTreeMap::new(),
+            session:     BTreeMap::new(),
+            worksession: BTreeMap::new(),
+            user:        BTreeMap::new(),
         }
     }
 
-    fn bucket(&self, domain: &MemoryDomain) -> &HashMap<String, MemValue> {
+    fn bucket(&self, domain: &MemoryDomain) -> &BTreeMap<String, MemValue> {
         match domain {
             MemoryDomain::Context     => &self.context,
             MemoryDomain::Session     => &self.session,
@@ -42,7 +42,7 @@ impl MemoryStore {
         }
     }
 
-    fn bucket_mut(&mut self, domain: &MemoryDomain) -> &mut HashMap<String, MemValue> {
+    fn bucket_mut(&mut self, domain: &MemoryDomain) -> &mut BTreeMap<String, MemValue> {
         match domain {
             MemoryDomain::Context     => &mut self.context,
             MemoryDomain::Session     => &mut self.session,

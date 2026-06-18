@@ -16,7 +16,7 @@ pub mod fsm;
 pub mod memory;
 
 use crate::effect::{Effect, MemValue};
-use crate::parser::{self, ParseError};
+use dot_agent_parser_dsl::{self as parser, ParseError};
 use fsm::Fsm;
 use memory::MemoryStore;
 
@@ -103,7 +103,7 @@ impl AgentDSLKernel {
         self.memory.set_raw(domain, key, value);
     }
 
-    pub fn get_graph(&self) -> Option<fsm::GraphInfo> {
+    pub fn get_graph(&self) -> Option<String> {
         self.fsm.as_ref().map(|f| f.get_graph())
     }
 }

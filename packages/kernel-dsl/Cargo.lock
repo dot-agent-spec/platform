@@ -37,10 +37,22 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 name = "dot-agent-kernel-dsl"
 version = "0.1.0"
 dependencies = [
- "dot-agent-tree-sitter",
+ "dot-agent-parser-dsl",
+ "dot-agent-tree-sitter 0.3.2",
  "js-sys",
  "serde",
  "serde-wasm-bindgen",
+ "serde_json",
+ "tree-sitter",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "dot-agent-parser-dsl"
+version = "0.1.0"
+dependencies = [
+ "dot-agent-tree-sitter 0.4.1",
+ "serde",
  "serde_json",
  "tree-sitter",
  "wasm-bindgen",
@@ -51,6 +63,16 @@ name = "dot-agent-tree-sitter"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5728463ef26e59bbe4c51e73b491a83bb27c80f7a8880086332e346284ba56ce"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "dot-agent-tree-sitter"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "105e182d589ac8dede0540388f1d6989f13a4ed10d329d9ee4feb2fa941afac4"
 dependencies = [
  "cc",
  "tree-sitter",

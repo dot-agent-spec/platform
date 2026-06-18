@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
-use serde::Serialize;
+use std::collections::BTreeMap;
 
 use crate::effect::{Effect, MemValue};
 use crate::engine::memory::MemoryStore;
-use crate::parser::ast::*;
+use dot_agent_parser_dsl::ast::*;
 
 pub struct Fsm {
     // Ordered list of state names (preserves declaration order for initial state).
     state_order: Vec<String>,
-    states: HashMap<String, StateDef>,
+    states: BTreeMap<String, StateDef>,
     global_triggers: Vec<TriggerDecl>,
     pub current_state: String,
     pub prompt_count: u32,
@@ -31,7 +30,7 @@ pub struct Fsm {
 impl Fsm {
     pub fn new(behavior: BehaviorFile) -> Self {
         let state_order: Vec<String> = behavior.states.iter().map(|s| s.name.clone()).collect();
-        let states: HashMap<String, StateDef> = behavior
+        let states: BTreeMap<String, StateDef> = behavior
             .states
             .into_iter()
             .map(|s| (s.name.clone(), s))
@@ -259,20 +258,12 @@ impl Fsm {
                 }
             }
 
-            Statement::Apply { kind, value } => {
-                vec![match kind {
-                    MediaKind::Css   => Effect::ApplyCss { value: value.clone() },
-                    MediaKind::Html  => Effect::ApplyHtml { value: value.clone() },
-                    MediaKind::Video => Effect::ApplyVideo { value: value.clone() },
-                }]
+            Statement::Apply { value, .. } => {
+                vec![Effect::ApplyCss { value: value.clone() }]
             }
 
-            Statement::Remove { kind, value } => {
-                vec![match kind {
-                    MediaKind::Css   => Effect::RemoveCss { value: value.clone() },
-                    MediaKind::Html  => Effect::RemoveHtml { value: value.clone() },
-                    MediaKind::Video => Effect::RemoveVideo { value: value.clone() },
-                }]
+            Statement::Remove { value, .. } => {
+                vec![Effect::RemoveCss { value: value.clone() }]
             }
 
             Statement::Parallel { body, on_complete: _, on_failed: _ } => {
@@ -321,81 +312,96 @@ impl Fsm {
 
     pub fn get_valid_intents(&self) -> Vec<String> {
         if let Some(state) = self.states.get(&self.current_state) {
-            state.body.iter().filter_map(|stmt| {
+            let mut intents: Vec<String> = state.body.iter().filter_map(|stmt| {
                 if let Statement::OnIntent { intent, .. } = stmt {
                     Some(intent.clone())
                 } else {
                     None
                 }
-            }).collect()
+            }).collect();
+            // offtopic_handler is mandatory alongside intents in oriented states;
+            // include it so callers can treat it uniformly with other intents.
+            if state.body.iter().any(|s| matches!(s, Statement::OnOfftopic { .. })) {
+                intents.push("offtopic".to_string());
+            }
+            intents
         } else {
             vec![]
         }
     }
 
-    pub fn get_graph(&self) -> GraphInfo {
-        let states: Vec<String> = self.state_order.clone();
-        let mut transitions = Vec::new();
+    pub fn get_graph(&self) -> String {
+        let current = &self.current_state;
+        let initial = self.state_order.first().map(|s| s.as_str()).unwrap_or("");
+
+        let mut out = String::new();
+        out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        out.push_str(&format!(
+            "<scxml xmlns=\"http://www.w3.org/2005/07/scxml\" version=\"1.0\" initial=\"{}\">\n",
+            escape_xml(initial)
+        ));
 
         for name in &self.state_order {
             if let Some(state) = self.states.get(name) {
-                collect_transitions(name, &state.body, &mut transitions);
+                let mut transitions = Vec::new();
+                collect_scxml_transitions(name, &state.body, &mut transitions);
+                let active = if name == current { " _active=\"true\"" } else { "" };
+                if transitions.is_empty() {
+                    out.push_str(&format!("  <final id=\"{}\"{}/>\n", escape_xml(name), active));
+                } else {
+                    out.push_str(&format!("  <state id=\"{}\"{}>\n", escape_xml(name), active));
+                    for (event, target) in &transitions {
+                        match event {
+                            Some(ev) => out.push_str(&format!(
+                                "    <transition event=\"{}\" target=\"{}\"/>\n",
+                                escape_xml(ev), escape_xml(target)
+                            )),
+                            None => out.push_str(&format!(
+                                "    <transition target=\"{}\"/>\n",
+                                escape_xml(target)
+                            )),
+                        }
+                    }
+                    out.push_str("  </state>\n");
+                }
             }
         }
 
-        GraphInfo { states, transitions, current: self.current_state.clone() }
+        out.push_str("</scxml>");
+        out
     }
 }
 
-fn collect_transitions(from: &str, stmts: &[Statement], out: &mut Vec<GraphTransition>) {
+fn collect_scxml_transitions(_from: &str, stmts: &[Statement], out: &mut Vec<(Option<String>, String)>) {
     for stmt in stmts {
         match stmt {
             Statement::OnIntent { intent, body } => {
                 let to = match body {
                     IntentBody::Next(t) => t.clone(),
-                    IntentBody::Block(stmts) => {
-                        find_transition_in_block(stmts).unwrap_or_default()
-                    }
+                    IntentBody::Block(inner) => find_transition_in_block(inner).unwrap_or_default(),
                 };
                 if !to.is_empty() {
-                    out.push(GraphTransition {
-                        from: from.to_string(),
-                        to,
-                        label: intent.clone(),
-                    });
+                    out.push((Some(intent.clone()), to));
                 }
             }
             Statement::OnOfftopic { body: stmts } => {
                 if let Some(to) = find_transition_in_block(stmts) {
-                    let label = "offtopic".to_string();
-                    out.push(GraphTransition { from: from.to_string(), to, label });
+                    out.push((Some("offtopic".to_string()), to));
                 }
             }
             Statement::OnComplete { body: stmts } => {
                 if let Some(to) = find_transition_in_block(stmts) {
-                    out.push(GraphTransition {
-                        from: from.to_string(),
-                        to,
-                        label: "complete".into(),
-                    });
+                    out.push((Some("complete".to_string()), to));
                 }
             }
             Statement::OnFailed { body: stmts } => {
                 if let Some(to) = find_transition_in_block(stmts) {
-                    out.push(GraphTransition {
-                        from: from.to_string(),
-                        to,
-                        label: "failed".into(),
-                    });
+                    out.push((Some("failed".to_string()), to));
                 }
             }
             Statement::After { body, .. } => {
                 if let Some(to) = find_transition_in_block(body) {
-                    out.push(GraphTransition {
-                        from: from.to_string(),
-                        to,
-                        label: "after".into(),
-                    });
+                    out.push((Some("after".to_string()), to));
                 }
             }
             _ => {}
@@ -410,6 +416,14 @@ fn find_transition_in_block(stmts: &[Statement]) -> Option<String> {
         }
     }
     None
+}
+
+fn escape_xml(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 fn eval_compare(l: &MemValue, op: &CompareOp, r: &MemValue) -> bool {
@@ -449,16 +463,3 @@ fn mem_value_is_truthy(v: &MemValue) -> bool {
     }
 }
 
-#[derive(Debug, Serialize)]
-pub struct GraphInfo {
-    pub states: Vec<String>,
-    pub transitions: Vec<GraphTransition>,
-    pub current: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct GraphTransition {
-    pub from: String,
-    pub to: String,
-    pub label: String,
-}
