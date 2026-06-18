@@ -5,18 +5,12 @@
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import { createRequire } from 'module'
 import { Parser, Language } from 'web-tree-sitter'
 import type { Node, Tree } from 'web-tree-sitter'
-import type { LangId, FSMDefinition } from './types.js'
-import bpInit, { parse as bpParse, get_graph } from '@dot-agent/behavior-parser'
+import type { LangId, BehaviorFile, DescriptionFile } from './types.js'
+import bpInit, { parse_behavior as bpParseBehavior, parse_description as bpParseDescription, get_graph } from '@dot-agent/parser-dsl'
 
 const require = createRequire(import.meta.url)
 const { descriptionWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter') as {
@@ -35,8 +29,12 @@ export async function initBehaviorParser(): Promise<void> {
   _bpInitialized = true
 }
 
-export function parseFSM(text: string): { ok: FSMDefinition } | { error: string } {
-  return JSON.parse(bpParse(text)) as { ok: FSMDefinition } | { error: string }
+export function parseBehaviorFile(text: string): { ok: BehaviorFile } | { error: string } {
+  return JSON.parse(bpParseBehavior(text)) as { ok: BehaviorFile } | { error: string }
+}
+
+export function parseDescriptionFile(text: string): { ok: DescriptionFile } | { error: string } {
+  return JSON.parse(bpParseDescription(text)) as { ok: DescriptionFile } | { error: string }
 }
 
 export function getBehaviorScxml(text: string): string {
@@ -77,7 +75,6 @@ export function parseSync(langId: LangId, text: string, previousTree?: Tree): Tr
   if (!_initialized) return null
   const parser = langId === 'behavior' ? _behaviorParser : _descriptionParser
   return parser.parse(text, previousTree)
-  // parse() can theoretically return null on cancellation/timeout; callers handle it
 }
 
 // ── AST helpers ──────────────────────────────────────────────────────────────

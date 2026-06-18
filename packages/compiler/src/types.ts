@@ -5,35 +5,85 @@
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 export type LangId = 'description' | 'behavior'
 
-export interface FSMStatement {
+// ── Behavior DSL types ────────────────────────────────────────────────────────
+
+export interface BehaviorStatement {
   type: string
   [key: string]: unknown
 }
 
-export interface FSMStateDef {
+export interface StateDef {
   name: string
-  body: FSMStatement[]
+  body: BehaviorStatement[]
 }
 
-export interface FSMTriggerDecl {
+export interface TriggerDecl {
   event: string
-  body: FSMStatement[]
+  body: BehaviorStatement[]
 }
 
-export interface FSMDefinition {
+export interface BehaviorFile {
   merges: string[]
-  global_triggers: FSMTriggerDecl[]
-  states: FSMStateDef[]
+  global_triggers: TriggerDecl[]
+  states: StateDef[]
 }
+
+// ── Description DSL types ─────────────────────────────────────────────────────
+
+export interface OntologyRef {
+  uri: string
+  label?: string
+}
+
+export interface AgentDecl {
+  name: string
+  domain?: string
+  license?: string
+  terms?: string
+  privacy?: string
+}
+
+export interface AnnotatedRef {
+  name: string
+  description?: string
+}
+
+export type PropertyType =
+  | { kind: 'primitive'; value: string }
+  | { kind: 'reference'; value: string }
+  | { kind: 'array'; value: PropertyType }
+  | { kind: 'enum'; value: string[] }
+
+export interface PropertyDecl {
+  name: string
+  type: PropertyType
+  is_optional: boolean
+  description?: string
+}
+
+export interface TypeDefinition {
+  name: string
+  category: OntologyRef
+  concept?: OntologyRef
+  properties: PropertyDecl[]
+}
+
+export interface DescriptionFile {
+  agent: AgentDecl
+  description?: string
+  persona?: string
+  behavior?: string
+  requires: AnnotatedRef[]
+  input: AnnotatedRef[]
+  capabilities: AnnotatedRef[]
+  output: AnnotatedRef[]
+  types: TypeDefinition[]
+}
+
+// ── Shared toolchain types ────────────────────────────────────────────────────
 
 export interface LintMessage {
   file: string
@@ -51,7 +101,7 @@ export interface IdParts {
   digest?: string
 }
 
-export interface Skill {
+export interface Capability {
   id: string
   description: string
 }
@@ -71,27 +121,12 @@ export interface AboutMe {
   domain: string
   license: string
   persona: string
+  purpose: string
   compiler: string
   commit?: string
-  skills: Skill[]
-  requires: string[]
+  capabilities: Capability[]
+  requires: AnnotatedRef[]
   integrity: Integrity
-}
-
-export interface ParsedDescription {
-  domain: string
-  name: string
-  version: string
-  description: string
-  capabilities: Array<{
-    name: string
-    type?: string
-    description: string
-    inputType?: string | object
-    outputType?: string | object
-    public?: boolean
-  }>
-  [key: string]: any
 }
 
 export interface PackOptions {
@@ -115,9 +150,10 @@ export interface BuildAboutmeOptions {
   domain: string
   license?: string
   persona: string
+  purpose?: string
   compiler: string
   commit?: string
-  skills?: Skill[]
-  requires?: string[]
+  capabilities?: Capability[]
+  requires?: AnnotatedRef[]
   integrity: Integrity
 }

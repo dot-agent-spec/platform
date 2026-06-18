@@ -35,8 +35,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@dot-agent/behavior-parser": "^0.1.0",
-    "@dot-agent/tree-sitter": "^0.3.6",
+    "@dot-agent/parser-dsl": "*",
+    "@dot-agent/tree-sitter": "*",
     "jszip": "^3.10.1",
     "web-tree-sitter": "^0.26.9"
   },

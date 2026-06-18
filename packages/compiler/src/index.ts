@@ -5,18 +5,15 @@
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 // Parsing
 export { initParsers, parse, parseSync, nodesOfType, nodeAtOffset, nodeToRange, positionToOffset, getContextNode } from './parser.js'
 
 // Graph / SCXML
 export { getBehaviorScxml } from './parser.js'
+
+// DSL parsers
+export { parseBehaviorFile, parseDescriptionFile, initBehaviorParser } from './parser.js'
 
 // Linting
 export { lintDescription, lintBehavior, createLinter } from './linter.js'
@@ -38,10 +35,20 @@ export type {
   LangId,
   LintMessage,
   IdParts,
-  Skill,
+  Capability,
+  AnnotatedRef,
+  OntologyRef,
+  PropertyType,
+  PropertyDecl,
+  TypeDefinition,
+  AgentDecl,
+  DescriptionFile,
+  BehaviorFile,
+  BehaviorStatement,
+  StateDef,
+  TriggerDecl,
   Integrity,
   AboutMe,
-  ParsedDescription,
   PackOptions,
   PackResult,
   BuildAboutmeOptions,

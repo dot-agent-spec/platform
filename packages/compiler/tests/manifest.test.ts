@@ -5,12 +5,6 @@
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import { describe, it, expect } from 'vitest'
 import { buildAboutme, parseAboutme, aboutmeToJson } from '../src/manifest.js'
@@ -42,9 +36,9 @@ describe('buildAboutme', () => {
     expect(a.compiler).toBe('dot-agent/1.0.0')
   })
 
-  it('defaults license to Apache-2.0 when omitted', () => {
+  it('defaults license to empty string when omitted', () => {
     const a = buildAboutme(BASE_OPTS)
-    expect(a.license).toBe('Apache-2.0')
+    expect(a.license).toBe('')
   })
 
   it('uses provided license', () => {
@@ -52,9 +46,14 @@ describe('buildAboutme', () => {
     expect(a.license).toBe('MIT')
   })
 
-  it('defaults skills and requires to empty arrays', () => {
+  it('defaults purpose to "unknown" when omitted', () => {
     const a = buildAboutme(BASE_OPTS)
-    expect(a.skills).toEqual([])
+    expect(a.purpose).toBe('unknown')
+  })
+
+  it('defaults capabilities and requires to empty arrays', () => {
+    const a = buildAboutme(BASE_OPTS)
+    expect(a.capabilities).toEqual([])
     expect(a.requires).toEqual([])
   })
 
@@ -63,14 +62,15 @@ describe('buildAboutme', () => {
     expect(a.commit).toBe('abc1234')
   })
 
-  it('carries custom skills and requires', () => {
+  it('carries custom capabilities and requires', () => {
     const a = buildAboutme({
       ...BASE_OPTS,
-      skills: [{ id: 'search', description: 'Web search' }],
-      requires: ['UserProfile'],
+      capabilities: [{ id: 'TriagePatient', description: 'Triagem inicial' }],
+      requires: [{ name: 'UserProfile', description: 'Patient data' }],
     })
-    expect(a.skills).toHaveLength(1)
-    expect(a.requires).toContain('UserProfile')
+    expect(a.capabilities).toHaveLength(1)
+    expect(a.capabilities[0].id).toBe('TriagePatient')
+    expect(a.requires[0].name).toBe('UserProfile')
   })
 })
 
@@ -84,8 +84,9 @@ describe('parseAboutme', () => {
     domain: 'health.example.com',
     license: 'MIT',
     persona: 'SOUL.md',
+    purpose: 'unknown',
     compiler: 'dot-agent/1.0.0',
-    skills: [],
+    capabilities: [],
     requires: [],
     integrity: { sha256: 'e3b0c44', files: '.agent/files.json' },
   }
@@ -94,7 +95,7 @@ describe('parseAboutme', () => {
     const a = parseAboutme(VALID_JSON)
     expect(a.name).toBe('Doctor')
     expect(a.schemaVersion).toBe('dot-agent/1.0')
-    expect(a.skills).toEqual([])
+    expect(a.capabilities).toEqual([])
   })
 
   it('round-trips: buildAboutme → aboutmeToJson → JSON.parse → parseAboutme', () => {
@@ -104,7 +105,7 @@ describe('parseAboutme', () => {
     expect(parsed).toEqual(original)
   })
 
-  it.each(['schemaVersion', 'id', 'name', 'description', 'version', 'domain', 'license', 'persona', 'compiler'])(
+  it.each(['schemaVersion', 'id', 'name', 'description', 'version', 'domain', 'persona', 'compiler'])(
     'throws when required field "%s" is missing',
     field => {
       const incomplete = { ...VALID_JSON, [field]: undefined }
@@ -112,8 +113,8 @@ describe('parseAboutme', () => {
     }
   )
 
-  it('throws when skills is not an array', () => {
-    expect(() => parseAboutme({ ...VALID_JSON, skills: 'nope' })).toThrow('Missing skills array')
+  it('throws when capabilities is not an array', () => {
+    expect(() => parseAboutme({ ...VALID_JSON, capabilities: 'nope' })).toThrow('Missing capabilities array')
   })
 
   it('throws when requires is not an array', () => {

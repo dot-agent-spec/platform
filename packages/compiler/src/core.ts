@@ -21,7 +21,9 @@ export { createZip, extractFiles } from './zip-core.js'
 
 export type {
   AboutMe,
-  Skill,
+  Capability,
+  AnnotatedRef,
+  DescriptionFile,
   Integrity,
   BuildAboutmeOptions,
   IdParts,

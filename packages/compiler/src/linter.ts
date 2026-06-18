@@ -14,7 +14,7 @@
 
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
-import { parse, nodesOfType, parseSync, initBehaviorParser, parseFSM } from './parser.js'
+import { parse, nodesOfType, parseSync, initBehaviorParser, parseBehaviorFile } from './parser.js'
 import type { LintMessage } from './types.js'
 import type { Node, Tree } from 'web-tree-sitter'
 
@@ -209,6 +209,7 @@ export async function lintBehavior(
   docPath?: string
 ): Promise<LintMessage[]> {
   await initBehaviorParser()
+  if (!text.endsWith('\n')) text = text + '\n'
   const tree = await parse('behavior', text)
   const messages: LintMessage[] = []
 
@@ -310,7 +311,7 @@ export async function lintBehavior(
   }
 
   // Semantic FSM validation via behavior-parser
-  const fsmResult = parseFSM(text)
+  const fsmResult = parseBehaviorFile(text)
   if ('error' in fsmResult) {
     messages.push({
       file, line: 1, col: 1, severity: 'error', code: 'E006',

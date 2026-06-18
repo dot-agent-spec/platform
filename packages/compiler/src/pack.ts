@@ -5,12 +5,6 @@
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import { readFile, stat, readdir } from 'fs/promises'
 import { join, basename } from 'path'
@@ -21,6 +15,8 @@ import type { PackOptions, PackResult } from './types.js'
 import { lintDescription, lintBehavior } from './linter.js'
 import { buildId } from './id.js'
 import { buildAboutme, aboutmeToJson } from './manifest.js'
+import { initBehaviorParser, parseDescriptionFile } from './parser.js'
+import { buildTypesJson } from './schema.js'
 import { writeZip } from './zip.js'
 
 function gitDescribeTags(): string | null {
@@ -87,14 +83,6 @@ export async function collectFiles(dir: string): Promise<Map<string, string>> {
   return files
 }
 
-function parseDescriptionMeta(text: string): { domain: string; name: string; description: string } {
-  return {
-    domain: (text.match(/domain\s+([^\n]+)/)?.[1] ?? '').trim(),
-    name: (text.match(/agent\s+([^\n]+)/)?.[1] ?? '').trim(),
-    description: (text.match(/description\s+(.+?)(?=\n\n|\n[a-z])/s)?.[1] ?? '').trim(),
-  }
-}
-
 export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const dir = options.dir ?? process.cwd()
   const outPath = options.out ?? join(dir, `${basename(dir)}.agent`)
@@ -129,7 +117,11 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     )
   }
 
-  const meta = parseDescriptionMeta(descriptionText)
+  await initBehaviorParser()
+  const descResult = parseDescriptionFile(descriptionText)
+  if ('error' in descResult) throw new Error(`E_DESC: ${descResult.error}`)
+  const df = descResult.ok
+
   const version = await resolveVersion(options.version)
   const commit = await resolveCommit(options.commit)
   const allFiles = await collectFiles(dir)
@@ -137,26 +129,39 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const contentForHash = Array.from(allFiles.values()).join('')
   const sha256 = createHash('sha256').update(contentForHash).digest('hex')
 
-  const namespace = meta.domain || 'unknown'
-  const id = buildId({ namespace, name: meta.name, version, digest: commit })
+  const namespace = df.agent.domain ?? 'unknown'
+  const id = buildId({ namespace, name: df.agent.name, version, digest: commit })
+
+  const typesJson = buildTypesJson(df)
+  const integrity = {
+    sha256,
+    ...(typesJson ? { types: '.agent/types.json' } : {}),
+    files: '.agent/files.json',
+  }
 
   const aboutme = buildAboutme({
     id,
-    name: meta.name,
-    description: meta.description,
+    name: df.agent.name,
+    description: df.description ?? '',
     version,
-    domain: meta.domain,
-    license: 'Apache-2.0',
-    persona: 'SOUL.md',
+    domain: df.agent.domain ?? '',
+    license: df.agent.license ?? '',
+    persona: df.persona ?? 'SOUL.md',
+    purpose: 'unknown',
     compiler: 'dot-agent/1.0.0',
     commit,
-    skills: [],
-    requires: [],
-    integrity: { sha256, files: '.agent/files.json' },
+    capabilities: df.capabilities.map(c => ({ id: c.name, description: c.description ?? '' })),
+    requires: df.requires,
+    integrity,
   })
 
   const zip = new JSZip()
-  zip.folder('.agent')!.file('aboutme.json', aboutmeToJson(aboutme))
+  const agentFolder = zip.folder('.agent')!
+  agentFolder.file('aboutme.json', aboutmeToJson(aboutme))
+
+  if (typesJson) {
+    agentFolder.file('types.json', typesJson)
+  }
 
   const gitkeepPaths = new Set(['behaviors/.gitkeep', 'guides/.gitkeep', 'knowledge/.gitkeep'])
   const filesJson = {
@@ -166,7 +171,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     guides: Array.from(allFiles.keys()).filter(f => f.startsWith('guides/') && !gitkeepPaths.has(f)),
     knowledge: Array.from(allFiles.keys()).filter(f => f.startsWith('knowledge/') && !gitkeepPaths.has(f)),
   }
-  zip.folder('.agent')!.file('files.json', JSON.stringify(filesJson, null, 2))
+  agentFolder.file('files.json', JSON.stringify(filesJson, null, 2))
 
   for (const [path, content] of allFiles) {
     if (!gitkeepPaths.has(path)) zip.file(path, content)
