@@ -22,7 +22,7 @@ const require = createRequire(import.meta.url);
 const grammar = require('@dot-agent/tree-sitter');
 
 // path.resolve ensures absolute paths survive vsix packaging and cwd changes
-const DESCRIPTION_WASM = resolve(grammar.agentWasmPath);
+const DESCRIPTION_WASM = resolve(grammar.descriptionWasmPath);
 const BEHAVIOR_WASM  = resolve(grammar.behaviorWasmPath);
 
 let descriptionParser, behaviorParser;
