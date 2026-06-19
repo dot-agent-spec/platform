@@ -28,10 +28,6 @@ pub enum Effect {
     SetMemory { domain: String, key: String, value: MemValue },
     ApplyCss { value: String },
     RemoveCss { value: String },
-    ApplyHtml { value: String },
-    RemoveHtml { value: String },
-    ApplyVideo { value: String },
-    RemoveVideo { value: String },
     ParseError { message: String },
 }
 

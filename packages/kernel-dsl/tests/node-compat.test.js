@@ -26,14 +26,14 @@ state welcome
   on intent "hello" transition to next
 `;
 
-  const result = kernel.load_behavior(behavior);
+  const result = JSON.parse(kernel.load_behavior(behavior));
   assert(Array.isArray(result), 'load_behavior deve retornar array de efeitos');
   assert(result.length >= 2, 'deve ter pelo menos goal + request_interact');
   assert.equal(result[0].type, 'goal', 'primeiro efeito deve ser goal');
   kernel.free();
 });
 
-test('get_graph retorna topologia válida', () => {
+test('get_graph retorna SCXML válido com estado ativo anotado', () => {
   const kernel = new AgentDSLKernel();
 
   const behavior = `
@@ -41,12 +41,27 @@ state greet
   goal "Greeting"
   interact
   on intent "hi" transition to next
+  on offtopic transition to greet
+
+state next
+  goal "Done"
+  interact
+  on intent "bye" transition to greet
+  on offtopic transition to next
 `;
 
   kernel.load_behavior(behavior);
-  const graph = kernel.get_graph();
-  assert(graph.states, 'graph deve ter states');
-  assert(graph.transitions, 'graph deve ter transitions');
-  assert.equal(graph.current, 'greet', 'estado atual deve ser greet');
+  const scxml = kernel.get_graph();
+  assert(typeof scxml === 'string', 'get_graph deve retornar string');
+  assert(scxml.includes('<?xml'), 'deve ser SCXML');
+  assert(scxml.includes('_active="true"'), 'deve anotar o estado ativo');
+  assert(scxml.includes('id="greet"'), 'deve conter estado greet');
+  assert(scxml.includes('id="next"'), 'deve conter estado next');
+  assert(scxml.includes('_active="true"') && scxml.includes('id="greet"'), 'greet deve ser o estado ativo inicial');
+  // greet deve ser o estado ativo (primeiro estado declarado)
+  const activeStateMatch = scxml.match(/<(?:state|final)[^>]*_active="true"[^>]*id="([^"]+)"/);
+  const activeStateMatch2 = scxml.match(/<(?:state|final)[^>]*id="([^"]+)"[^>]*_active="true"/);
+  const activeId = (activeStateMatch || activeStateMatch2)?.[1];
+  assert.equal(activeId, 'greet', 'estado ativo deve ser greet');
   kernel.free();
 });

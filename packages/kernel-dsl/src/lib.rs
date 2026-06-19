@@ -64,13 +64,12 @@ impl AgentDSLKernel {
     /// Fires the observer for each entry effect of the first state (typically goal +
     /// request_interact). Also returns the effects array for imperative call sites.
     /// On parse error, fires and returns a single ParseError effect.
-    pub fn load_behavior(&mut self, text: &str) -> JsValue {
+    pub fn load_behavior(&mut self, text: &str) -> String {
         let effects = match self.inner.load_behavior(text) {
             Ok(fx) => fx,
             Err(e) => vec![Effect::ParseError { message: e.0 }],
         };
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Dispatch a named intent to the FSM.
@@ -78,19 +77,17 @@ impl AgentDSLKernel {
     /// Call this after the LLM classifies the user's message into an intent name that
     /// matches one of the `on intent "…"` declarations in the current state.
     /// Fires the observer with transition + any entry effects of the new state.
-    pub fn send_intent(&mut self, intent: &str) -> JsValue {
+    pub fn send_intent(&mut self, intent: &str) -> String {
         let effects = self.inner.send_intent(intent);
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Signal that the current message is off-topic.
     ///
     /// Fires the observer with the effects of the current state's `on offtopic` block.
-    pub fn send_offtopic(&mut self) -> JsValue {
+    pub fn send_offtopic(&mut self) -> String {
         let effects = self.inner.send_offtopic();
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Signal that the runtime could not resolve the current action.
@@ -99,20 +96,18 @@ impl AgentDSLKernel {
     ///
     /// Matches top-level `on event "…"` declarations. Use this to notify the FSM
     /// when an async operation triggered by run_script / run_subagent / run_tool completes.
-    pub fn send_event(&mut self, event: &str) -> JsValue {
+    pub fn send_event(&mut self, event: &str) -> String {
         let effects = self.inner.send_event(event);
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Notify the engine that a prompt turn was processed.
     ///
     /// Call once per LLM completion. Triggers any matching `after N prompts` handlers
     /// in the current state, firing their effects through the observer.
-    pub fn tick_prompt(&mut self) -> JsValue {
+    pub fn tick_prompt(&mut self) -> String {
         let effects = self.inner.tick_prompt();
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Return the name of the current state.
@@ -133,9 +128,9 @@ impl AgentDSLKernel {
     }
 
     /// Return the full memory store as a JSON array of { domain, key, value } entries.
-    pub fn get_memory(&self) -> JsValue {
+    pub fn get_memory(&self) -> String {
         let snapshot = self.inner.get_memory();
-        serde_wasm_bindgen::to_value(&snapshot).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&snapshot).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Set a value in the memory store from JS.
@@ -150,29 +145,26 @@ impl AgentDSLKernel {
     /// Signal that the last async operation (run_script, run_subagent, run_tool) completed successfully.
     ///
     /// Fires the observer with the effects of the current state's `on complete` block.
-    pub fn send_complete(&mut self) -> JsValue {
+    pub fn send_complete(&mut self) -> String {
         let effects = self.inner.send_complete();
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Signal that the last async operation (run_script, run_subagent, run_tool) failed.
     ///
     /// Fires the observer with the effects of the current state's `on failed` block.
-    pub fn send_failed(&mut self) -> JsValue {
+    pub fn send_failed(&mut self) -> String {
         let effects = self.inner.send_failed();
-        self.dispatch(&effects);
-        serde_wasm_bindgen::to_value(&effects).unwrap_or(JsValue::NULL)
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
-    /// Return the state graph as { states, transitions, current }.
+    /// Return the state graph as SCXML (W3C https://www.w3.org/TR/scxml/) with
+    /// `_active="true"` on the current state element.
     ///
     /// Use this to render the Flow Graph panel in VS Code or any diagram tool.
-    pub fn get_graph(&self) -> JsValue {
-        match self.inner.get_graph() {
-            Some(graph) => serde_wasm_bindgen::to_value(&graph).unwrap_or(JsValue::NULL),
-            None => JsValue::NULL,
-        }
+    /// For the static variant without runtime annotation, use the behavior-parser's get_graph().
+    pub fn get_graph(&self) -> String {
+        self.inner.get_graph().unwrap_or_default()
     }
 }
 
