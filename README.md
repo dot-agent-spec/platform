@@ -1,38 +1,48 @@
 # dot-agent
 
-A domain-specific language for defining autonomous agents and their behavioral state machines. The ecosystem consists of two file formats — `.agent` (manifest) and `.flow` (behavior) — together with the tooling that parses, validates, and executes them.
+Specification and implementation repository for the dot-agent ecosystem — a language and runtime for building deterministic, composable AI agents.
 
-## Specification
+---
 
-| Document | Description |
-|----------|-------------|
-| [`dsl/language.md`](dsl/language.md) | Language design, type system, memory model, security model, and packaging — the main spec |
-| [`dsl/roadmap.md`](dsl/roadmap.md) | Spec evolution roadmap |
+## What is dot-agent?
 
-## Tooling
+Every agent is defined by two files:
+
+```
+agent.description  —  the manifest: identity, capabilities, data contracts
+agent.behavior     —  the behavior: state machine, LLM orchestration, tool calls
+```
+
+The **Runtime** reads the manifest for sandboxing and discovery; it executes the behavior for orchestration. Agents are deterministic, composable, and portable across runtimes.
+
+---
+
+## Documentation
+
+| Section | Contents |
+|---|---|
+| [`dsl/`](dsl/) | Language reference — syntax, semantics, and design of `.description` and `.behavior` |
+| [`docs/`](docs/) | Implementation reference — compiler APIs, kernel protocol, SDK, architecture |
+| [`rfcs/`](rfcs/) | Design proposals for new language and protocol features |
+| [`examples/`](examples/) | Canonical annotated agent examples |
+
+**Architecture overview:** [`docs/explanation/architecture/map.md`](docs/explanation/architecture/map.md)
+
+---
+
+## Packages
 
 | Package | Description |
-|---------|-------------|
-| [tree-sitter-agent](https://github.com/daniloborges/dot-agent-tree-sitter) | Tree-sitter parsers for `.agent` and `.flow` — canonical grammar source |
-| [language-server](https://github.com/daniloborges/language-server) | Standalone LSP server — hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting |
-| [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) | VS Code extension — thin LSP client + Flow Graph panel and status bar |
-| dot-agent-kernel | WASM execution engine — Rust library that parses and runs `.flow` files compiled to WebAssembly |
+|---|---|
+| `@dot-agent/tree-sitter` | WASM grammar — canonical grammar source |
+| `@dot-agent/parser-dsl` | Rust/WASM parser for `.behavior` and `.description` |
+| `@dot-agent/kernel-dsl` | Rust/WASM FSM execution engine |
+| `@dot-agent/compiler` | Linter, semantic validation, ZIP packaging |
+| `@dot-agent/sdk` | Browser-compatible dispatch layer |
+| `@dot-agent/language-server` | LSP server for IDE support |
 
-## Examples
-
-The [`examples/`](examples/) directory contains annotated `.agent` + `.flow` pairs demonstrating common agent patterns:
-
-```
-examples/
-  builder/        # Agent that plans and delegates subtasks
-  customer-support/
-  booking/
-```
-
-Each example folder contains a `.agent` manifest, one or more `.flow` behavior files, and a brief README.
+---
 
 ## License
 
-Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
-Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).

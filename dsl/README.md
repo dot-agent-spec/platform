@@ -1,38 +1,40 @@
-# DSL — Consolidated Specification
+# dsl/
 
-Unified specification for the two file formats of the agent ecosystem: `.agent` (manifest) and `.flow` (behavior).
+Language specification for the dot-agent ecosystem. Everything here is about **writing** `.description` and `.behavior` files — syntax, semantics, design.
 
-## Documents
+For package internals (compiler, kernel, SDK APIs), see [`docs/`](../docs/).
 
-| File | Purpose |
-|------|---------|
-| [`language.md`](language.md) | Language design, architecture, type system, security model, packaging — the main spec |
-| [`roadmap.md`](roadmap.md) | Spec evolution roadmap |
+---
 
-## Tooling
+## Structure
 
-| Package | Purpose |
-|---------|---------|
-| [tree-sitter-agent](https://github.com/daniloborges/dot-agent-tree-sitter) | Tree-sitter parsers for `.agent` and `.flow` (git submodule) — canonical grammar source |
-| [language-server](https://github.com/daniloborges/language-server) | Standalone LSP server — hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting (git submodule) |
-| [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) | VS Code extension — thin LSP client + Flow Graph and status bar |
-| zed-agent/ | Zed extension — syntax highlighting + LSP client configuration |
+This directory follows the [Diátaxis](https://diataxis.fr/) framework:
 
-### LSP architecture
+| Folder | Purpose |
+|---|---|
+| [`reference/`](reference/) | Complete syntax specifications — keywords, statements, forms. The authoritative source for what the language accepts. |
+| [`explanation/`](explanation/) | Design background — why the language is the way it is. Read this to understand the reasoning behind constraints. |
+| [`how-to/`](how-to/) | Practical recipes for common authoring tasks. |
+| [`tutorials/`](tutorials/) | Step-by-step guides for learning the language from scratch. |
 
-The [language-server](https://github.com/daniloborges/language-server) package implements all IDE intelligence as a standalone Node.js process that speaks the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) over stdio. Both the VS Code and Zed extensions act as thin clients that start this server and delegate IDE features to it. This means any LSP-capable editor (Neovim, Helix, Emacs, …) can use the same server with minimal configuration.
+---
 
-## Mental model
+## Quick links
 
-```
-.agent  =  manifest  (the public contract — what the agent is, consumes, and exposes)
-.flow   =  behavior  (the implementation — how it executes, state by state)
-```
+**Reference:**
+- [`.behavior` syntax](reference/behavior.md) — states, keywords, statements, handlers
+- [`.description` syntax](reference/description.md) — agent identity, capabilities, type declarations
+- [Type system](reference/types.md) — custom types, primitives, namespace resolution
+- [Memory domains](reference/memory.md) — `context`, `session`, `worksession`, `user`
 
-The `.agent` points to its `.flow` via `behavior main.flow`. The Runtime reads the manifest for sandboxing and discovery; it executes the flow for orchestration.
+**Explanation:**
+- [Design principles](explanation/design-principles.md) — zero noise, determinism, small vocabulary
+- [Scope](explanation/scope.md) — what `.behavior` is and is not
+- [`.behavior` vs. WASM](explanation/behavior-vs-wasm.md) — when to use each
+- [Antipatterns](explanation/antipatterns.md) — common mistakes and alternatives
 
-Both `.flow` and `.run` (WASM) serve the same purpose: deterministic state orchestration. `.flow` is a text-based subset of `.run` — designed for authoring agents without writing compiled code. See [`language.md §1.3`](language.md#13-flow-and-run-same-purpose-different-formats) for the full explanation.
-
-## History
-
-This directory was consolidated from two separate specs (`DSL/` for `.agent` and `flow-lang/` for `.flow`). Prior state is preserved in the git history.
+**Proposed features (RFCs):**
+- [RFC-0014](../rfcs/0014-data-contract.md) — Data contract (`on intent with TypeName`, `complete`)
+- [RFC-0015](../rfcs/0015-cross-agent.md) — Cross-agent calls (`start ... in`)
+- [RFC-0016](../rfcs/0016-string-constraints.md) — String constraints & primitive types
+- [RFC-0017](../rfcs/0017-standard-library.md) — Standard library (`std.*`)

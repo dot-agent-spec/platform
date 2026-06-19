@@ -1,19 +1,20 @@
 # dot-agent — Agent Guidelines
 
-AI collaboration guide for maintaining and evolving this specification repository.
+AI collaboration guide for maintaining and evolving this repository.
 
 ---
 
 ## What this repo is
 
-`dot-agent-spec` (branch `dsl` of `https://github.com/daniloborges/dot-agent.git`) is the **specification and examples** repository for the dot-agent ecosystem. It contains:
+`dot-agent-spec` is the specification and implementation repository for the dot-agent ecosystem. It contains:
 
-- The language specification (`dsl/language.md`) — the authoritative definition of `.agent` and `.flow` syntax and semantics
-- The evolution roadmap (`dsl/roadmap.md`)
-- Annotated examples (`examples/`) — `.agent` + `.flow` file pairs
-- Git submodule references to all implementation packages
+- Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
+- Implementation packages (`packages/`) — compiler, parser, kernel, SDK, language server
+- Developer-facing apps (`apps/`) — CLI, VS Code extension
+- Design proposals (`rfcs/`) — RFCs for proposed language and protocol changes
+- Annotated examples (`examples/`) — canonical `.description` + `.behavior` pairs
 
-There is **no executable code** at the root level. All implementations live in standalone repos referenced as git submodules under `dsl/`.
+There is **no executable code** at the root level. Packages live under `packages/` (as workspace members) and apps under `apps/` (as git submodules).
 
 ---
 
@@ -23,70 +24,91 @@ There is **no executable code** at the root level. All implementations live in s
 dot-agent-spec/
 ├── LICENSE
 ├── README.md
-├── AGENTS.md
-├── dsl/
-│   ├── language.md          ← main specification (single source of truth)
-│   ├── roadmap.md           ← evolution roadmap
-│   ├── tree-sitter-agent/   ← submodule: github.com/daniloborges/dot-agent-tree-sitter
-│   ├── language-server/     ← submodule: github.com/daniloborges/language-server
-│   ├── vscode-extension/    ← submodule: github.com/daniloborges/vscode-dot-agent
-│   └── zed-agent/           ← Zed extension (local, no separate GitHub repo)
-├── examples/                ← annotated .agent + .flow pairs
-└── org-spec/                ← organizational spec (separate submodule)
+├── AGENTS.md                      ← this file
+├── dsl/                           ← language spec (Diátaxis structure)
+│   ├── README.md
+│   ├── reference/                 ← syntax: .behavior, .description, types, memory
+│   ├── explanation/               ← design: principles, scope, .behavior vs WASM
+│   ├── how-to/                    ← recipes for agent authors
+│   └── tutorials/                 ← step-by-step guides (WIP)
+├── docs/                          ← implementation docs (Diátaxis structure)
+│   ├── README.md
+│   ├── reference/                 ← BehaviorFile, DescriptionFile, kernel API, agent-id
+│   ├── explanation/               ← architecture map, ecosystem overview, design decisions
+│   └── how-to/                    ← packaging, SDK usage
+├── rfcs/                          ← design proposals
+│   ├── AGENTS.md                  ← RFC lifecycle rules
+│   ├── implemented/               ← RFCs that reached Implemented (frozen)
+│   └── rejected/                  ← RFCs that were Rejected (frozen)
+├── packages/
+│   ├── tree-sitter/               ← WASM grammar (submodule) — canonical grammar source
+│   ├── parser-dsl/                ← Rust/WASM — parses .behavior + .description
+│   ├── kernel-dsl/                ← Rust/WASM — FSM execution engine
+│   ├── compiler/                  ← TypeScript — linter, AST analysis, ZIP packaging
+│   ├── sdk/                       ← TypeScript — browser-compatible dispatch layer
+│   └── language-server/           ← Node.js — LSP server
+├── apps/
+│   ├── dot-agent-cli/             ← submodule — developer CLI (pending v2 update)
+│   └── vscode-extension/          ← submodule — VS Code LSP client (pending v2 update)
+└── examples/                      ← canonical .description + .behavior pairs (CI-tested)
 ```
 
 ---
 
-## Evolving the specification
+## Source of truth
 
-- **All language changes belong in `dsl/language.md`** — this is the single source of truth for syntax and semantics.
-- After changing `language.md`, check whether any of the implementation submodules need to be updated to match.
-- Grammar changes must be reflected in `dsl/tree-sitter-agent/` (the canonical grammar source).
-- Example files in `examples/` must remain valid according to the current spec.
+| What | Where |
+|---|---|
+| Language syntax and semantics | `dsl/reference/` |
+| Language design decisions | `dsl/explanation/` |
+| Package implementation | `packages/*/` (code is canonical) |
+| Package internals docs | `packages/*/docs/` |
+| Architecture overview | `docs/explanation/architecture/map.md` |
+| Proposed changes | `rfcs/` (Draft status — not canonical) |
+
+**When code and docs diverge, the code wins.** Docs describe intent; code is what runs.
+
+---
+
+## Evolving the language
+
+- Language changes must be reflected in **both** `dsl/reference/` and the grammar in `packages/tree-sitter/`
+- Grammar changes take effect only after regenerating `parser.c` in `packages/tree-sitter/tree-sitter-behavior/src/`
+- Example files in `examples/` must remain valid against the current grammar
+- Proposed new syntax goes in an RFC first (`rfcs/`) before touching the grammar
 
 ---
 
 ## Submodule table
 
-| Directory | GitHub repo | Purpose |
-|-----------|-------------|---------|
-| `dsl/tree-sitter-agent/` | [dot-agent-tree-sitter](https://github.com/daniloborges/dot-agent-tree-sitter) | Tree-sitter grammars for `.agent` and `.flow` |
-| `dsl/language-server/` | [language-server](https://github.com/daniloborges/language-server) | Standalone LSP server |
-| `dsl/vscode-extension/` | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) | VS Code extension |
-| `dsl/zed-agent/` | *(no separate repo)* | Zed extension |
+| Directory | Purpose | Status |
+|-----------|---------|--------|
+| `packages/tree-sitter/` | WASM grammar — canonical grammar source | ✅ Active |
+| `apps/dot-agent-cli/` | Developer CLI | ⚠️ Pending v2 update |
+| `apps/vscode-extension/` | VS Code LSP client | ⚠️ Pending v2 update |
 
-Each submodule has its own `LICENSE`, `README.md`, and `AGENTS.md`. Refer to those files when making changes to the respective packages.
+`apps/zed-agent/` has been removed. Historical reference only in git history.
+
+Each active submodule has its own `AGENTS.md`. Read it before making changes to that package.
 
 ---
 
 ## Language rule
 
-**All documentation in this repository must be written in English.** This includes `README.md`, `AGENTS.md`, `dsl/language.md`, `dsl/roadmap.md`, comments in example files, and any future spec documents.
+All documentation in this repository must be written in English.
 
 ---
 
 ## Example files
 
-- `.agent` and `.flow` files in `examples/` are specification documents, not compiled code.
-- No license headers are needed on `.agent` or `.flow` files — they are covered by the root `LICENSE`.
-- Each example should have a brief `README.md` explaining what pattern it demonstrates.
+- `.description` and `.behavior` files in `examples/` are specification documents, not compiled code
+- Each example has a companion `src/` folder with the source files and a compiled output in `<Name> - content/`
+- No license headers are needed on `.description` or `.behavior` files — covered by the root `LICENSE`
 
 ---
 
 ## License rules
 
-- New `.md` documents at the repo root or under `dsl/` need **no license header** — JSON and Markdown do not support comments, and the root `LICENSE` covers the entire repository.
-- `.agent` and `.flow` example files need **no license header**.
-- The `LICENSE` file at the root covers everything in this repository.
-- No `NOTICE` file is needed — no third-party source code is committed here; submodules have their own licenses.
-
----
-
-## Key references
-
-| Resource | Link |
-|----------|------|
-| Language specification | [`dsl/language.md`](dsl/language.md) |
-| Tree-sitter grammars | [dot-agent-tree-sitter](https://github.com/daniloborges/dot-agent-tree-sitter) |
-| Language server | [language-server](https://github.com/daniloborges/language-server) |
-| VS Code extension | [vscode-dot-agent](https://github.com/daniloborges/vscode-dot-agent) |
+- New `.md` documents need **no license header** — the root `LICENSE` covers the repository
+- `.description` and `.behavior` example files need **no license header**
+- Rust and TypeScript source files in `packages/` use Apache 2.0 headers — follow the existing pattern

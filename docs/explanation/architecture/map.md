@@ -44,9 +44,6 @@ dot-agent/ (Monorepo Root)
     └── zed-agent/             # FROZEN — kept for historical reference only
 ```
 
-```mermaid
-
-```
 ---
 
 ## View 2: Package Dependency Hierarchy

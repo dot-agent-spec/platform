@@ -15,6 +15,8 @@
 | Status | Draft |
 | Created | 2026-06-17 |
 | Author | Danilo Borges |
+| Extended by | [RFC-0016](0016-string-constraints.md) — string constraints (`template`, `format`, `regexp`) and new primitive types |
+| Extended by | [RFC-0017](0017-standard-library.md) — standard library (`std.*`) built on this type system |
 
 ---
 
