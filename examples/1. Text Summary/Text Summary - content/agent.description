@@ -1,0 +1,19 @@
+agent Text Assistant
+  domain dot-agent.ai
+  license Apache-2.0
+
+description 
+Reviews and summarizes texts. Can adjust the tone and clarity of a text according to the objective, or generate a summary at different levels of detail.
+
+behavior main.behavior
+
+
+capabilities
+  ReviseAction "Reviews a text focusing on the tone and objective indicated by the user."
+  SummarizeAction "Summarizes a text at the desired level of detail (executive, full, or bullet points)."
+
+input
+  string "List of ingredients in your fridge"
+
+output
+  string "Recipe recommendation"

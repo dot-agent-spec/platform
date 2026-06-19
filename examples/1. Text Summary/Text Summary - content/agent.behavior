@@ -1,0 +1,23 @@
+state responsive
+  goal "Initiate text summarization"
+  guide "Greet the user and request the text they wish to have summarized. Be concise and maintain a helpful tone."
+  interact
+  on intent "proceed" transition to summary
+  on intent "end" transition to goodbye
+  on offtopic transition to responsive
+
+state summary
+  goal "Generate and present the summary"
+  guide "Analyze the provided text to generate a clear, accurate summary. Present the result and invite the user to provide a new text or conclude the session."
+  teach "maintopics.md"
+  interact
+  on intent "new_text" transition to responsive
+  on intent "end" transition to goodbye
+  on offtopic transition to responsive
+
+state goodbye
+  goal "Conclude the interaction"
+  guide "Deliver a polite farewell message, acknowledging the end of the session and letting the user know they can return at any time."
+  interact
+  on intent "new_text" transition to responsive
+  on offtopic transition to goodbye
