@@ -4,7 +4,7 @@
   "description": "WASM kernel for parsing and executing the agent behavior DSL",
   "type": "module",
   "main": "./index.js",
-  "types": "./pkg/dot_agent_kernel_dsl.d.ts",
+  "types": "./index.d.ts",
   "license": "Apache-2.0",
   "author": {
     "name": "Danilo Borges",
@@ -37,6 +37,8 @@
   ],
   "files": [
     "index.js",
+    "index.browser.js",
+    "index.d.ts",
     "scripts/discover-wasm-imports.js",
     "scripts/patch-wasm-bindgen.js",
     "pkg/dot_agent_kernel_dsl.js",
@@ -48,8 +50,9 @@
   ],
   "exports": {
     ".": {
-      "import": "./index.js",
-      "types": "./pkg/dot_agent_kernel_dsl.d.ts"
+      "types": "./index.d.ts",
+      "browser": "./index.browser.js",
+      "import": "./index.js"
     }
   },
   "engines": {
