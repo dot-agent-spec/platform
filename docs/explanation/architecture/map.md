@@ -25,6 +25,7 @@ dot-agent/ (Monorepo Root)
 │   └── std_library.md
 ├── rfcs/                      # Design proposals (RFC-0001 onward)
 │   └── AGENTS.md              # RFC folder guidelines for AI collaborators
+├── tasks/                     # Implementation tasks and technical debt tracking
 ├── examples/                  # Canonical annotated .agent + .behavior pairs (CI-tested)
 ├── docs/                      # Diátaxis documentation
 │   ├── tutorials/
@@ -37,7 +38,10 @@ dot-agent/ (Monorepo Root)
 │   ├── kernel-dsl/            # Micro-kernel: executes BehaviorFile, emits Effects
 │   ├── compiler/              # Linter, AST analysis, semantic validation, ZIP packaging
 │   ├── sdk/                   # Browser-compatible dispatch layer — loads .agent, runs kernel
-│   └── language-server/       # LSP server (uses compiler; does not use kernel)
+│   ├── language-server/       # LSP server (uses compiler; does not use kernel)
+│   ├── transpiler-core/       # ⚠️ Types/interface — TranspileInput, Transpiler<TGraph>, CodeEmitter<TGraph>
+│   ├── transpiler-langgraph/  # ⚠️ Codegen: .agent → LangGraph Python StateGraph
+│   └── transpiler-appintent/  # ⚠️ Codegen: .agent → Swift AppIntent
 └── apps/
     ├── dot-agent-cli/         # Developer CLI (submodule) — outdated, pending update
     ├── vscode-extension/      # VS Code LSP client (submodule) — outdated, pending update
@@ -237,6 +241,9 @@ Effects are the kernel's only output channel. The SDK dispatches each one to the
 | `@dot-agent/compiler` | ✅ Done | `packages/compiler/` (TypeScript) |
 | `@dot-agent/language-server` | ✅ Done | `packages/language-server/` |
 | `@dot-agent/sdk` | ✅ Done | `packages/sdk/` — browser-compatible, accepts `Uint8Array`, reads `.agent/files.json` for flexible filenames |
+| `@dot-agent/transpiler-core` | ⚠️ Aspirational | `packages/transpiler-core/` — types/interface only; see RFC-0018 |
+| `@dot-agent/transpiler-langgraph` | ⚠️ Aspirational | `packages/transpiler-langgraph/` — codegen target; see RFC-0018 |
+| `@dot-agent/transpiler-appintent` | ⚠️ Aspirational | `packages/transpiler-appintent/` — codegen target; see RFC-0018 |
 | `dot-agent-cli` | ⚠️ Outdated | `apps/dot-agent-cli/` (submodule) — pending update to v2 architecture |
 | `vscode-extension` | ⚠️ Outdated | `apps/vscode-extension/` (submodule) — pending update to v2 architecture |
 | `zed-agent` | 🧊 Frozen | `apps/zed-agent/` — historical reference only |

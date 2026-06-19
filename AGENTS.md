@@ -9,9 +9,11 @@ AI collaboration guide for maintaining and evolving this repository.
 `dot-agent-spec` is the specification and implementation repository for the dot-agent ecosystem. It contains:
 
 - Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
+- Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
 - Implementation packages (`packages/`) — compiler, parser, kernel, SDK, language server
 - Developer-facing apps (`apps/`) — CLI, VS Code extension
 - Design proposals (`rfcs/`) — RFCs for proposed language and protocol changes
+- Implementation tasks (`tasks/`) — technical debt and planned work items
 - Annotated examples (`examples/`) — canonical `.description` + `.behavior` pairs
 
 There is **no executable code** at the root level. Packages live under `packages/` (as workspace members) and apps under `apps/` (as git submodules).
@@ -40,13 +42,18 @@ dot-agent-spec/
 │   ├── AGENTS.md                  ← RFC lifecycle rules
 │   ├── implemented/               ← RFCs that reached Implemented (frozen)
 │   └── rejected/                  ← RFCs that were Rejected (frozen)
+├── tasks/                         ← implementation tasks and technical debt
+│   └── AGENTS.md                  ← task lifecycle rules
 ├── packages/
 │   ├── tree-sitter/               ← WASM grammar (submodule) — canonical grammar source
 │   ├── parser-dsl/                ← Rust/WASM — parses .behavior + .description
 │   ├── kernel-dsl/                ← Rust/WASM — FSM execution engine
 │   ├── compiler/                  ← TypeScript — linter, AST analysis, ZIP packaging
 │   ├── sdk/                       ← TypeScript — browser-compatible dispatch layer
-│   └── language-server/           ← Node.js — LSP server
+│   ├── language-server/           ← Node.js — LSP server
+│   ├── transpiler-core/           ← ⚠️ aspirational — types/interface only (RFC-0018)
+│   ├── transpiler-langgraph/      ← ⚠️ aspirational — codegen target (RFC-0018)
+│   └── transpiler-appintent/      ← ⚠️ aspirational — codegen target (RFC-0018)
 ├── apps/
 │   ├── dot-agent-cli/             ← submodule — developer CLI (pending v2 update)
 │   └── vscode-extension/          ← submodule — VS Code LSP client (pending v2 update)
@@ -65,8 +72,22 @@ dot-agent-spec/
 | Package internals docs | `packages/*/docs/` |
 | Architecture overview | `docs/explanation/architecture/map.md` |
 | Proposed changes | `rfcs/` (Draft status — not canonical) |
+| Pending implementation work | `tasks/` |
 
 **When code and docs diverge, the code wins.** Docs describe intent; code is what runs.
+
+---
+
+## After structural changes
+
+When adding, removing, or renaming top-level folders or packages, **always update these two files**:
+
+1. **`README.md`** — Documentation table and Packages table
+2. **`AGENTS.md`** (this file) — Repository layout tree and Source of truth table
+
+These are the entry points for both human contributors and AI collaborators. Stale layout information here is a primary source of hallucination.
+
+Also update [`docs/explanation/architecture/map.md`](docs/explanation/architecture/map.md) — View 1 (directory structure) and the Implementation Status table.
 
 ---
 

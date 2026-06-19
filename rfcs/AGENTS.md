@@ -38,3 +38,13 @@ rfcs/
 ├── implemented/           ← RFCs that reached Implemented status (frozen)
 └── rejected/              ← RFCs that were Rejected (frozen)
 ```
+
+## Relationship to tasks/
+
+| `rfcs/` | `tasks/` |
+|---|---|
+| "Should we do X, and how?" | "We decided to do X — here is what exactly needs to change" |
+| Requires ratification | No ratification needed |
+| Frozen after implementation | Removed after implementation |
+
+An RFC that reaches `Accepted` often produces one or more task files describing the concrete implementation steps.

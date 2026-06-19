@@ -24,6 +24,7 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | [`dsl/`](dsl/) | Language reference — syntax, semantics, and design of `.description` and `.behavior` |
 | [`docs/`](docs/) | Implementation reference — compiler APIs, kernel protocol, SDK, architecture |
 | [`rfcs/`](rfcs/) | Design proposals for new language and protocol features |
+| [`tasks/`](tasks/) | Implementation tasks and technical debt tracking |
 | [`examples/`](examples/) | Canonical annotated agent examples |
 
 **Architecture overview:** [`docs/explanation/architecture/map.md`](docs/explanation/architecture/map.md)
@@ -40,6 +41,8 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | `@dot-agent/compiler` | Linter, semantic validation, ZIP packaging |
 | `@dot-agent/sdk` | Browser-compatible dispatch layer |
 | `@dot-agent/language-server` | LSP server for IDE support |
+| `@dot-agent/transpiler-core` | ⚠️ Types/interface for transpiler targets (aspirational — see RFC-0018) |
+| `@dot-agent/transpiler-langgraph` | ⚠️ Codegen: `.agent` → LangGraph Python (aspirational — see RFC-0018) |
 
 ---
 
