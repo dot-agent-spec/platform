@@ -40,10 +40,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@dot-agent/kernel-dsl": "^0.1.3",
-    "@dot-agent/tree-sitter": "^0.3.2",
-    "jszip": "^3.10.1",
-    "web-tree-sitter": "^0.25.0"
+    "@dot-agent/compiler": "*",
+    "@dot-agent/sdk": "*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

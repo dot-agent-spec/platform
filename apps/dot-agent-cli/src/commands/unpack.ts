@@ -14,10 +14,14 @@
 
 import { mkdir, writeFile, stat } from 'fs/promises'
 import { join } from 'path'
-import { createHash } from 'crypto'
 import { UnpackOptions, UnpackResult } from '../types.js'
-import { readZip, validateZipBomb, validateMagicBytes, extractFiles } from '../core/zip.js'
-import { parseAboutme } from '../core/envelope.js'
+import {
+  readZip,
+  validateZipBomb,
+  validateMagicBytes,
+  extractFiles,
+  parseAboutme,
+} from '@dot-agent/compiler'
 
 export async function unpack(options: UnpackOptions): Promise<UnpackResult> {
   const { file, out, force = false } = options

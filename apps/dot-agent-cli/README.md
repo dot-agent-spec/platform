@@ -229,35 +229,19 @@ Error codes:
 
 ## Dependencies
 
-- `@dot-agent/tree-sitter` — WASM-based DSL parser
-- `@dot-agent/kernel-dsl` — WASM-based FSM execution engine
-- `web-tree-sitter` — Tree-sitter bindings for web/Node.js
-- `jszip` — ZIP file creation and extraction
+- `@dot-agent/compiler` — Agent compiler, static analysis, linter, validation, and package builder
+- `@dot-agent/sdk` — Browser and Node.js-compatible SDK runtime dispatch layer (loads `.agent` files and manages execution)
 
 ---
 
-## Specification
+## Status
 
-For the complete dot-agent specification, see:
-- [plan.md](./plan.md) — CLI design and implementation details
-- [file structure.md](./file%20structure.md) — `.agent` package format and semantics
+**V1 Release Candidate** — All 4 core commands (`init`, `pack`, `unpack`, `run`) implemented and tested.
 
 ---
 
 ## License
 
-Apache License 2.0 — See [LICENSE](./LICENSE) file
+Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
 
-## Author
-
-Danilo Borges — [https://daniloborg.es](https://daniloborg.es)
-
----
-
-## Contributing
-
-Contributions welcome! Please file issues and PRs at the [main repository](https://github.com/dot-agent-spec/dot-agent).
-
-## Status
-
-**V1 Release Candidate** — All 4 core commands (`init`, `pack`, `unpack`, `run`) implemented and tested.
+Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).

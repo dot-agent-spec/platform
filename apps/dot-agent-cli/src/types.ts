@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface LintMessage {
-  file: string
-  line: number
-  col: number
-  severity: 'error' | 'warning'
-  code: string
-  message: string
-}
+import type { AboutMe, LintMessage, PackOptions, PackResult, Integrity } from '@dot-agent/compiler'
+
+export type { AboutMe, LintMessage, PackOptions, PackResult, Integrity }
 
 export interface InitOptions {
   name?: string
@@ -30,19 +25,6 @@ export interface InitOptions {
 export interface InitResult {
   dir: string
   files: string[]
-}
-
-export interface PackOptions {
-  dir?: string
-  out?: string
-  commit?: string
-  version?: string
-}
-
-export interface PackResult {
-  path: string
-  id: string
-  warnings: LintMessage[]
 }
 
 export interface UnpackOptions {
@@ -86,28 +68,6 @@ export interface AgentContext {
 export interface Skill {
   id: string
   description: string
-}
-
-export interface Integrity {
-  sha256: string
-  types?: string
-  files?: string
-}
-
-export interface AboutMe {
-  schemaVersion: string
-  id: string
-  name: string
-  description: string
-  version: string
-  domain: string
-  license: string
-  persona: string
-  compiler: string
-  commit?: string
-  skills: Skill[]
-  requires: string[]
-  integrity: Integrity
 }
 
 export interface ParsedDescription {

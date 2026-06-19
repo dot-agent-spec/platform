@@ -13,11 +13,10 @@
 // limitations under the License.
 
 import { EventEmitter } from 'events'
-import { readFile, stat } from 'fs/promises'
-import { AgentDSLKernel, init as initKernel } from '@dot-agent/kernel-dsl'
+import { readFile } from 'fs/promises'
+import { loadAgent, AgentSession, AgentBundle } from '@dot-agent/sdk'
+import { collectFiles, parseDescriptionFile, initBehaviorParser } from '@dot-agent/compiler'
 import { RunOptions, AgentContext, FileEntry } from '../types.js'
-import { readZip, validateZipBomb, validateMagicBytes, extractFiles } from '../core/zip.js'
-import { parseAboutme } from '../core/envelope.js'
 
 function isZipFile(source: string): boolean {
   return source.endsWith('.agent')
@@ -30,75 +29,40 @@ export async function run(options: RunOptions): Promise<AgentContext> {
   try {
     context.emit('progress', { step: 'opening', pct: 0 })
 
-    let descriptionText: string
-    let behaviorText: string
-    let aboutme: any = null
-    let id: string
+    let bundle: AgentBundle
 
     if (isZipFile(source)) {
-      // Load from .agent ZIP
-      await validateMagicBytes(source)
-      await validateZipBomb(source)
-
-      const zip = await readZip(source)
-
-      const aboutmeFile = zip.file('.agent/aboutme.json')
-      if (!aboutmeFile) {
-        throw new Error('Missing .agent/aboutme.json')
-      }
-
-      const aboutmeText = await aboutmeFile.async('text')
-      aboutme = parseAboutme(JSON.parse(aboutmeText))
-      id = aboutme.id
-
-      const descFile = zip.file('agent.description')
-      if (!descFile) throw new Error('Missing agent.description')
-      descriptionText = await descFile.async('text')
-
-      const behavFile = zip.file('agent.behavior')
-      if (!behavFile) throw new Error('Missing agent.behavior')
-      behaviorText = await behavFile.async('text')
-
+      const bytes = await readFile(source)
       context.emit('progress', { step: 'parsing', pct: 30 })
+      bundle = await loadAgent(bytes)
+    } else {
+      context.emit('progress', { step: 'parsing', pct: 30 })
+      const allFiles = await collectFiles(source)
 
-      // Load kernel-dsl
-      let kernel: any
-      try {
-        await initKernel()
-        kernel = new AgentDSLKernel()
-        kernel.load_behavior(behaviorText)
-      } catch (err: any) {
-        // Kernel failed - create a stub
-        kernel = {
-          get_current_state: () => 'init',
-          get_graph: () => ({}),
-          get_memory: () => [],
-          get_valid_intents: () => [],
-          load_behavior: () => {},
-          observe: () => {},
-          send_complete: () => {},
-          send_event: () => {},
-          send_failed: () => {},
-          send_intent: () => {},
-          send_offtopic: () => {},
-          set_memory: () => {},
-          tick_prompt: () => {},
-          free: () => {},
-        }
+      const descriptionText = allFiles.get('agent.description')
+      if (!descriptionText) {
+        throw new Error('E003: File agent.description not found')
       }
 
-      context.emit('progress', { step: 'loading-files', pct: 60 })
+      const behaviorText = allFiles.get('agent.behavior')
+      if (!behaviorText) {
+        throw new Error('E007: File agent.behavior not found')
+      }
 
-      // Load files
-      const soulFile = zip.file('SOUL.md')
-      const soul = soulFile ? await soulFile.async('text') : undefined
+      const soul = allFiles.get('SOUL.md')
 
-      const allFiles = await extractFiles(zip)
+      await initBehaviorParser()
+      const descResult = parseDescriptionFile(descriptionText)
+      if ('error' in descResult) {
+        throw new Error(`E_DESC: ${descResult.error}`)
+      }
+      const df = descResult.ok
+
       const guides: FileEntry[] = []
       const knowledge: FileEntry[] = []
       const behaviors: FileEntry[] = []
 
-      for (const [path, content] of allFiles) {
+      for (const [path, content] of allFiles.entries()) {
         if (path.startsWith('guides/') && path !== 'guides/.gitkeep') {
           guides.push({ path, content })
         } else if (path.startsWith('knowledge/') && path !== 'knowledge/.gitkeep') {
@@ -108,93 +72,56 @@ export async function run(options: RunOptions): Promise<AgentContext> {
         }
       }
 
-      context.id = id
-      context.description = { domain: 'example.com', name: 'Agent' }
-      context.behavior = {}
-      context.kernel = kernel
-      context.files = { soul, guides, knowledge, behaviors }
-      context.aboutme = aboutme
-    } else {
-      // Load from directory
-      const descPath = `${source}/agent.description`
-      const behavPath = `${source}/agent.behavior`
-
-      try {
-        descriptionText = await readFile(descPath, 'utf-8')
-      } catch {
-        throw new Error(`Missing agent.description at ${descPath}`)
-      }
-
-      try {
-        behaviorText = await readFile(behavPath, 'utf-8')
-      } catch {
-        throw new Error(`Missing agent.behavior at ${behavPath}`)
-      }
-
-      context.emit('progress', { step: 'parsing', pct: 30 })
-
-      // Load kernel-dsl
-      let kernel: any
-      try {
-        await initKernel()
-        kernel = new AgentDSLKernel()
-        kernel.load_behavior(behaviorText)
-      } catch (err: any) {
-        // Kernel failed - create a stub
-        kernel = {
-          get_current_state: () => 'init',
-          get_graph: () => ({}),
-          get_memory: () => [],
-          get_valid_intents: () => [],
-          load_behavior: () => {},
-          observe: () => {},
-          send_complete: () => {},
-          send_event: () => {},
-          send_failed: () => {},
-          send_intent: () => {},
-          send_offtopic: () => {},
-          set_memory: () => {},
-          tick_prompt: () => {},
-          free: () => {},
-        }
-      }
-
-      context.emit('progress', { step: 'loading-files', pct: 60 })
-
-      id = 'local/agent:v1.0~unknown'
-
-      try {
-        const soul = await readFile(`${source}/SOUL.md`, 'utf-8')
-        context.files = {
-          soul,
-          guides: [],
-          knowledge: [],
-          behaviors: [],
-        }
-      } catch {
-        context.files = { guides: [], knowledge: [], behaviors: [] }
-      }
-
-      const defaultAboutme: any = {
+      const id = `local/${df.agent.name}:v1.0`
+      const aboutme = {
         schemaVersion: 'dot-agent/1.0',
         id,
-        name: 'Agent',
-        description: '',
+        name: df.agent.name,
+        description: df.description ?? '',
         version: 'v1.0',
-        domain: 'local',
-        license: 'Apache-2.0',
-        persona: 'SOUL.md',
+        domain: df.agent.domain ?? 'local',
+        license: df.agent.license ?? 'Apache-2.0',
+        persona: df.persona ?? 'SOUL.md',
+        purpose: 'local development',
         compiler: 'dot-agent/1.0.0',
         skills: [],
-        requires: [],
-        integrity: { sha256: '', files: '' },
+        requires: df.requires,
+        capabilities: df.capabilities.map(c => ({ id: c.name, description: c.description ?? '' })),
+        integrity: {
+          sha256: '',
+          files: '.agent/files.json',
+        },
       }
 
-      context.id = id
-      context.description = { domain: 'example.com', name: 'Agent' }
-      context.behavior = {}
-      context.kernel = kernel
-      context.aboutme = defaultAboutme
+      bundle = {
+        id,
+        aboutme,
+        files: {
+          description: descriptionText,
+          behavior: behaviorText,
+          soul,
+          guides,
+          knowledge,
+          behaviors,
+        },
+      }
+    }
+
+    context.emit('progress', { step: 'loading-files', pct: 60 })
+
+    const session = await AgentSession.create(bundle)
+    session.start()
+
+    context.id = bundle.id
+    context.description = bundle.files.description
+    context.behavior = bundle.files.behavior
+    context.kernel = (session as any).kernel
+    context.aboutme = bundle.aboutme
+    context.files = {
+      soul: bundle.files.soul,
+      guides: bundle.files.guides,
+      knowledge: bundle.files.knowledge,
+      behaviors: bundle.files.behaviors,
     }
 
     context.emit('progress', { step: 'ready', pct: 100 })
