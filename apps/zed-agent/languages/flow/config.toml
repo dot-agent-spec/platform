@@ -1,4 +1,0 @@
-name = "Flow DSL"
-grammar = "flow"
-path_suffixes = ["flow"]
-line_comments = ["// "]
