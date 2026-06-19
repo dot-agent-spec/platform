@@ -98,11 +98,13 @@ export function AgentPanel() {
 
 ## WASM Runtime Requirements
 
-The kernel-dsl WASM binary requires a complete runtime environment. See [`WASM_SHIM_ARCHITECTURE.md`](./WASM_SHIM_ARCHITECTURE.md) for:
-- Why a shim is necessary
-- Complete list of 31 required functions
-- How to extend implementations (time, random, environment)
-- Post-build patching process
+The kernel-dsl WASM binary has **zero WASI imports** after build — it is browser-compatible
+without any WASI runtime shim, equivalent to `wasm32-unknown-unknown` for consumers.
+
+The build pipeline uses [`wasi-stub`](https://github.com/bjorn3/wasi-stub) to strip all
+`wasi_snapshot_preview1` imports from the binary after `wasm-bindgen`. In debug builds,
+`index.js` provides a minimal `env` shim (12 UBSan handlers) that the Rust compiler
+injects for undefined-behavior detection; release builds compile these out entirely.
 
 **Note**: Initialization is handled automatically by the `init()` function. No manual setup needed.
 
@@ -216,14 +218,10 @@ type Effect =
   | { type: "set_memory";       domain: string; key: string; value: string | number | boolean | null }
   | { type: "apply_css";        value: string }
   | { type: "remove_css";       value: string }
-  | { type: "apply_html";       value: string }
-  | { type: "remove_html";      value: string }
-  | { type: "apply_video";      value: string }
-  | { type: "remove_video";     value: string }
   | { type: "parse_error";      message: string }
 ```
 
-For the full API reference — all effect types, handler implementation examples, memory domains, TypeScript types, and a React hook — see [API.md](API.md).
+For the full API reference — all effect types, handler implementation examples, memory domains, TypeScript types, and a React hook — see [docs/reference/kernel-dsl.md](../../docs/reference/kernel-dsl.md).
 
 ### Dynamic import (Next.js / SSR)
 

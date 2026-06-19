@@ -31,26 +31,25 @@ Never put parser or FSM logic in `lib.rs`. Never expose internal structs directl
 
 - **Prohibited in `[dependencies]`**: `std::fs`, `std::net`, threads, libc-dependent crates, C FFI without WASM shims
 
-## WASM Runtime & JavaScript Shim
+## WASM Runtime & Build Pipeline
 
-The WASM binary is compiled with `wasm32-wasip1`, which embeds:
-- Tree-sitter (C library)
-- Rust runtime checks (UB Sanitizer)
-- Rust standard library interfaces
-
-This requires **31 JavaScript stub functions** provided by the `index.js` shim. See [`WASM_SHIM_ARCHITECTURE.md`](./WASM_SHIM_ARCHITECTURE.md) for the complete list and how to extend them.
+The WASM binary is compiled with `wasm32-wasip1` (required for tree-sitter's C runtime),
+then post-processed by `wasi-stub` to strip all `wasi_snapshot_preview1` imports.
+The final binary has **zero WASI imports** — browser-compatible without a WASI runtime.
 
 ### Key Points
 
 1. **Do not call C FFI directly**: Tree-sitter is already compiled in; use its Rust bindings.
-2. **Shim functions are auto-discovered**: If you add a new runtime function, run:
-   ```bash
-   npm run build
-   node scripts/discover-wasm-imports.js
-   ```
-   and update `index.js` with the discovered functions.
-3. **The shim is minimal**: Current implementations are no-ops (`return 0`). Future enhancements can provide real implementations (time, environment, random bytes).
-4. **Post-build patching is automatic**: After `npm run build`, `scripts/patch-wasm-bindgen.js` removes direct WASM imports to avoid bundler errors. Do not delete this script.
+2. **WASI is stripped at build time**: `wasi-stub` removes WASI imports from the binary.
+   No manual JS shim for WASI functions is needed or should be added.
+3. **Use `BTreeMap` instead of `HashMap`**: `HashMap` requires `random_get` (WASI) for seeding.
+   `BTreeMap` is deterministic and has no system dependencies.
+4. **`panic = "abort"` is set in both profiles**: Keeps binary size small and removes the
+   `fd_write`/`proc_exit` code path from panic handling.
+5. **`env` shim is debug-only**: `index.js` provides 12 UBSan handler stubs for debug builds.
+   Release builds compile them out — `env` shim is never needed in production.
+6. **Post-build patching is automatic**: `scripts/patch-wasm-bindgen.js` removes direct WASM
+   imports to avoid bundler errors. Do not delete this script.
 
 ## Keeping in sync with the spec
 
@@ -75,7 +74,7 @@ The parser uses tree-sitter, so the grammar is in [`dot-agent-tree-sitter/behavi
 
 ## WASM → JS boundary
 
-`#[wasm_bindgen]` does not directly support: lifetimes, generics, `HashMap`, or `Vec<T>` of non-primitive structs. Conventions used here:
+`#[wasm_bindgen]` does not directly support: lifetimes, generics, or `Vec<T>` of non-primitive structs. Use `BTreeMap` instead of `HashMap` (`HashMap` requires WASI `random_get` for seeding). Conventions used here:
 
 - Functions returning effects: `→ JsValue` via `serde_wasm_bindgen::to_value(&effects)`
 - Functions returning strings: `→ String` (natively supported)
