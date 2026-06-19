@@ -19,3 +19,9 @@
 [submodule "dot-agent-cli"]
 	path = apps/dot-agent-cli
 	url = https://github.com/dot-agent-spec/dot-agent-cli.git
+[submodule "packages/compiler"]
+	path = packages/compiler
+	url = git@github.com:dot-agent-spec/compiler.git
+[submodule "packages/sdk"]
+	path = packages/sdk
+	url = git@github.com:dot-agent-spec/sdk.git
