@@ -589,7 +589,7 @@ state planning.next
 
     #[test]
     fn parse_fridge_logic() {
-        let src = include_str!("../../../examples/2. Recipe /src/fridge_logic.behavior");
+        let src = include_str!("../../../examples/2. Fridge Assistant/src/agent.behavior");
         let result = parse_behavior(src);
         match &result {
             Ok(bf) => println!("OK: {} states", bf.states.len()),
