@@ -3,6 +3,8 @@ DSL/vscode-extension/node_modules/
 DSL/vscode-extension/*.vsix
 Deprecated/*
 
+node_modules/
+
 # Rust/Cargo
 **/target/
 Cargo.lock
