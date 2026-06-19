@@ -1,53 +1,20 @@
 let _initialized = false;
 let _module = null;
 
-// Complete WASI + Rust runtime shim - 31 functions required
-const wasiShim = {
-  // WASI file descriptor operations (5)
-  fd_write: () => 0,
-  fd_close: () => 0,
-  fd_seek: () => 0,
-  fd_prestat_get: () => 0,
-  fd_prestat_dir_name: () => 0,
-
-  // WASI environment (2)
-  environ_get: () => 0,
-  environ_sizes_get: () => 0,
-
-  // WASI time (1)
-  clock_time_get: () => 0,
-
-  // WASI misc (1)
-  random_get: () => 0,
-  proc_exit: () => 0,
-
-  // Rust UB Sanitizer handlers (11)
-  __ubsan_handle_type_mismatch_v1: () => 0,
-  __ubsan_handle_alignment_assumption: () => 0,
-  __ubsan_handle_out_of_bounds: () => 0,
-  __ubsan_handle_nonnull_arg: () => 0,
-  __ubsan_handle_load_invalid_value: () => 0,
-  __ubsan_handle_builtin_unreachable: () => 0,
-  __ubsan_handle_add_overflow: () => 0,
-  __ubsan_handle_sub_overflow: () => 0,
-  __ubsan_handle_mul_overflow: () => 0,
-  __ubsan_handle_divrem_overflow: () => 0,
-  __ubsan_handle_shift_out_of_bounds: () => 0,
-  __ubsan_handle_pointer_overflow: () => 0,
-
-  // wasm-bindgen JS interop (8)
-  __wbg_call_9c758de292015997: () => 0,
-  __wbg_new_d90091b82fdf5b91: () => 0,
-  __wbg_new_ce1ab61c1c2b300d: () => 0,
-  __wbg_push_a6822215aa43e71c: () => 0,
-  __wbg_set_6be42768c690e380: () => 0,
-  __wbg_set_dca99999bba88a9a: () => 0,
-  __wbg___wbindgen_throw_1506f2235d1bdba0: () => 0,
-
-  // wasm-bindgen internal (3)
-  __wbindgen_init_externref_table: () => 0,
-  __wbindgen_cast_0000000000000001: () => 0,
-  __wbindgen_cast_0000000000000002: () => 0,
+// UBSan handlers present only in debug builds; release builds compile them out.
+const envShim = {
+  __ubsan_handle_type_mismatch_v1: () => {},
+  __ubsan_handle_alignment_assumption: () => {},
+  __ubsan_handle_out_of_bounds: () => {},
+  __ubsan_handle_nonnull_arg: () => {},
+  __ubsan_handle_load_invalid_value: () => {},
+  __ubsan_handle_builtin_unreachable: () => {},
+  __ubsan_handle_add_overflow: () => {},
+  __ubsan_handle_sub_overflow: () => {},
+  __ubsan_handle_mul_overflow: () => {},
+  __ubsan_handle_divrem_overflow: () => {},
+  __ubsan_handle_shift_out_of_bounds: () => {},
+  __ubsan_handle_pointer_overflow: () => {},
 };
 
 export class AgentDSLKernel {
@@ -94,8 +61,7 @@ export async function init() {
     }
 
     const importObject = {
-      env: wasiShim,
-      wasi_snapshot_preview1: wasiShim,
+      env: envShim,
       './dot_agent_kernel_dsl_bg.js': { ...bgModule }
     };
 

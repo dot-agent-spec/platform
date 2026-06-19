@@ -42,4 +42,18 @@ if (!content.includes('MODIFIED:')) {
 }
 
 fs.writeFileSync(filePath, content, 'utf-8');
+
+// Patch _bg.js: fix stale Uint8Array cache after WASM memory.grow
+const bgPath = path.join(__dirname, '../pkg/dot_agent_kernel_dsl_bg.js');
+if (fs.existsSync(bgPath)) {
+  let bgContent = fs.readFileSync(bgPath, 'utf-8');
+  const staleCheck = 'if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {';
+  const freshCheck = 'if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0 || cachedUint8ArrayMemory0.buffer !== wasm.memory.buffer) {';
+  if (bgContent.includes(staleCheck)) {
+    bgContent = bgContent.replace(staleCheck, freshCheck);
+    fs.writeFileSync(bgPath, bgContent, 'utf-8');
+    console.log('✅ Patched _bg.js memory staleness fix');
+  }
+}
+
 console.log('✅ Patched successfully');
