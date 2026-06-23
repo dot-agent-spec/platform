@@ -38,6 +38,7 @@ Scannable overview of all RFCs with package impact. Use the impact columns to ga
 | [RFC-0016: String Constraints](0016-string-constraints.md) | Draft | ⚠️ | ⚠️ | ⚠️ | — | ⚠️ | Extends `string` with `template`/`format`/`regexp` constraints and adds first-class primitives (`Timestamp`, `Currency`, `Email`, `PhoneE164`). Grammar, parser, compiler validation, SDK runtime checks. |
 | [RFC-0017: Standard Library](0017-standard-library.md) | Draft | — | — | ⚠️ | — | ⚠️ | Defines `std.*` compound types (`std.Prompt`, `std.Image`, `std.Speech`). Compiler resolves `std.*` references; SDK injects definitions at load time. |
 | [RFC-0018: Transpiler Infrastructure](0018-transpiler-infrastructure.md) | Draft | — | 🔄 | 🔄 | — | — | Pluggable codegen layer: `.agent` → LangGraph / Swift AppIntent. Consumes parser-dsl and compiler AST without modifying them. Lands in `transpiler-core/langgraph/appintent` packages. |
+| [RFC-0019: Memory Binding](0019-memory-binding.md) | Draft | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ? | New `extract session.x from intent` statement to capture LLM-extracted values into memory; `{session.x}` interpolation in `run` parameter strings for forwarding memory to scripts/tools. |
 
 ---
 
