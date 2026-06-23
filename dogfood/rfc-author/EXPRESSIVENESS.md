@@ -187,3 +187,160 @@ non-standard indented style that happened to work, which masks the issue.
 constraint to `dsl/reference/description.md` with a clear explanation. Consider whether
 the grammar should be relaxed to allow any order (a `choice` of all optional blocks
 would require disambiguation via keyword lookahead).
+
+---
+
+## Diagnostic quality
+
+> **Scope:** This section records specific error experiences during dogfood construction —
+> what the compiler or parser actually emitted, what the problem really was, and what
+> message would have been actionable. Not a best-practices survey. Every example below
+> is a concrete incident from building `rfc-author.description` and `rfc-author.behavior`.
+
+---
+
+### D1 — E006 reports at line 1:1 with a Rust internal type name
+
+**What the compiler emitted:**
+```
+E006 (line 1:1): Failed to map tree to AST: data did not match any variant
+of untagged enum IntentBody
+```
+
+**What was actually wrong:** A `set` statement inside an `on intent` block handler (G2).
+The grammar admitted it; the Rust AST mapper could not deserialize the result.
+
+**Why the message was unhelpful:**
+
+- `line 1:1` is the file start — no relationship to the actual failing line.
+- `untagged enum IntentBody` is a Rust/serde implementation detail leaked into the
+  user-facing error string. An author writing `.behavior` has no mental model of
+  `IntentBody`.
+- Because there was no location, the only way to find the offending line was binary
+  search: copy one state at a time into a scratch file, lint it, repeat. With six states,
+  this took six iterations.
+
+**What would have been actionable:**
+```
+E006 (line 12): AST mapping failed in state "collect_topic", on-intent handler
+"topic provided" — statement type "set" is not valid inside an intent block.
+```
+
+The mapper walks a known structure (state → body → handler → statements). It knows
+which state it is processing when deserialization fails. Propagating that context to the
+error string would make the problem immediately locatable.
+
+**Pattern this experience points to:** Elm's "I got X but expected Y in this context"
+format. The parser knows what it was trying to build when it failed; surfacing that —
+rather than the name of the internal Rust type — gives the author a search term that
+exists in the DSL reference, not in the Rust source.
+
+---
+
+### D2 — E004 `Syntax error near 'on failure'` with no correct-form hint
+
+**What the compiler emitted:**
+```
+E004: Syntax error near 'on failure'
+```
+
+**What was actually wrong:** `on failure` was written on the next line after `run script`,
+which is the form shown in the reference documentation. The grammar requires it on the
+same line (G3).
+
+**Why the message was unhelpful:**
+
+- The error names the token it found (`on failure`) but not the token it expected, and
+  gives no indication of where the form described in the docs differs from what the
+  grammar requires.
+- The reference docs show the next-line form; the grammar requires the same-line form.
+  Nothing in the error message pointed toward placement — it looked like `on failure`
+  itself was the problem, not its position.
+- The fix (moving `on failure` to the end of the `run` line) was found only by reading
+  the tree-sitter grammar source directly.
+
+**What would have been actionable:**
+```
+E004 (line 8): Expected 'on failure' immediately after 'run script "..."'
+(same line, before the newline). Found 'on failure' on the next line.
+
+Correct form:
+  run script "scripts/foo.js" on failure
+    transition to error
+```
+
+This is not a large investment: the `run_stmt` production has `optional(failure_stmt)`
+with no `_newline` in between. The parser already knows at the point of failure that it
+was parsing a `run_stmt` and that the next token was `on` when it expected something
+else. Emitting the correct form of that specific rule is a localized change.
+
+**Pattern this experience points to:** rustc's `error[EXXXX]: expected X, found Y`
+with a note showing the valid form. The grammar rule structure already encodes the
+constraint; the question is whether the diagnostic layer surfaces it or swallows it into
+a generic "syntax error near TOKEN" message.
+
+---
+
+### D3 — E004 `Syntax error near 'input ...'` implicates the wrong token
+
+**What the compiler emitted:**
+```
+E004: Syntax error near 'input string "RFC topic — a short phrase..."'
+```
+
+**What was actually wrong:** The `input` block appeared before `capabilities` in
+`rfc-author.description`. The `agent_decl` grammar requires a fixed block order:
+`description → persona → behavior → capabilities → requires → input → output`. The
+error named `input` as the problem token when the real issue was that `capabilities` was
+expected at that position.
+
+**Why the message was unhelpful:**
+
+- The named token (`input`) is valid syntax and appears verbatim in the reference.
+  The author's first inference is that something about the `input` block content is
+  malformed — not that the block is in the wrong position.
+- There is no mention of expected block order anywhere in the error or in
+  `dsl/reference/description.md`.
+- Discovering the root cause required reading the tree-sitter description grammar to
+  find that `agent_decl` uses `seq()` with optionals in strict order — an invisible
+  constraint with no documentation trail.
+
+**What would have been actionable:**
+```
+E004 (line 14): Unexpected block 'input' — in a description file, 'capabilities'
+must appear before 'input'.
+
+Expected block order: description → persona → behavior → capabilities
+                      → requires → input → output
+```
+
+The grammar's `seq()` encodes the constraint directly. A diagnostic pass over the
+parsed tree that knows which blocks appeared and in what order could produce an exact
+"X before Y" message rather than naming the first misplaced token as the offender.
+
+**Pattern this experience points to:** This class of error — wrong order, not wrong
+syntax — is better caught in a linter pass that sees the full block list than in the
+tree-sitter parser that fails at the first unexpected token. The separation already
+exists (E004 is tree-sitter; E005/E006/W00x are the JS linter and Rust mapper). A
+linter rule that validates `agent_decl` block order post-parse could produce a targeted
+message without touching the grammar.
+
+---
+
+### D4 — E004 and E006 share a code namespace, masking their different root causes
+
+**Observation across all three incidents above:** E004 covers tree-sitter parse failures
+(wrong token, wrong placement). E006 covers Rust AST mapper failures (grammar
+admitted it, deserializer rejected it). These have fundamentally different causes and
+different remediation paths, but from the author's perspective they look identical: a
+code, a terse message, no source location for E006.
+
+The consequence is that an author who hits E006 at line 1:1 and searches for "E006"
+in the reference will find a description that reads like a syntax error — which it is not.
+The actual fix path for E006 (remove the statement the mapper cannot handle, even though
+the grammar allowed it) is not implied by anything in the error text.
+
+**What would help:** Distinct sub-codes or a clear prose distinction in the error
+message — "this is a grammar error" vs. "the file parsed but the AST mapper rejected it
+at state X." The information is available at error-generation time; propagating it to the
+message is a compiler change, not a grammar change.
