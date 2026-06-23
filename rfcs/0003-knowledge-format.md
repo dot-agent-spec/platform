@@ -17,6 +17,10 @@
 | Author | Danilo Borges |
 | Depends on | [RFC-0001: Addon Protocol](./0001-addon-protocol.md) |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| — | — | ⚠️ | ? | ⚠️ |
+
 ---
 
 ## Summary

@@ -16,6 +16,10 @@
 | Created | 2026-06-17 |
 | Author | Danilo Borges |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| — | — | ⚠️ | ⚠️ | ⚠️ |
+
 ---
 
 ## Summary
@@ -211,7 +215,7 @@ The SDK calls the matching handler with the effect payload and feeds the result 
 > - **`dsl/kernel-dsl/`** — current behavior kernel: remove internal `get_memory()`/`set_memory()` storage; add `inject_memory()`; add `serialize_state()`/`restore_state()`; update `get_graph()` to return SCXML
 > - **`apps/dot-agent-cli/`** — CLI drives the execution loop directly; after this change it takes ownership of memory storage and must call `inject_memory()` before each `send_intent()`
 > - **`dsl/language-server/`** — LSP uses the compiler, not the runtime kernel; verify whether diagnostics for `set` statements or memory domain references are affected
-> - **`murici`** — primary runtime; confirm it takes responsibility for storing memory, enforcing permission checks, and calling `inject_memory()` before dispatching intents
+> - **the reference runtime** — primary runtime; confirm it takes responsibility for storing memory, enforcing permission checks, and calling `inject_memory()` before dispatching intents
 
 ---
 

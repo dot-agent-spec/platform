@@ -17,6 +17,10 @@
 | Author | Danilo Borges |
 | Related | [RFC-0015](0015-cross-agent.md) — cross-agent calls use data contracts for output types |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| ⚠️ | ⚠️ | ⚠️ | ⚠️ | — |
+
 ---
 
 ## Summary

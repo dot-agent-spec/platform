@@ -17,6 +17,10 @@
 | Author | Danilo Borges |
 | Depends | [RFC-0014](0014-data-contract.md) — data contract defines types that flow between agents |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+
 ---
 
 ## Summary

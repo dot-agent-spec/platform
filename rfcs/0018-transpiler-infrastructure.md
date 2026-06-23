@@ -17,6 +17,12 @@
 | Author | Danilo Borges |
 | Depends on | [tasks/compiler-api.md](../tasks/compiler-api.md) |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| — | 🔄 | 🔄 | — | — |
+
+> **Also impacts:** transpiler-core, transpiler-langgraph, transpiler-appintent
+
 ---
 
 ## Summary

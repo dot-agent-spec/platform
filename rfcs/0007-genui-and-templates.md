@@ -16,6 +16,10 @@
 | Created | 2026-06-17 |
 | Author | Danilo Borges |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+
 ---
 
 ## Summary
@@ -89,7 +93,7 @@ The template primitive may also need to parameterize (passing variables from FSM
 
 Runtimes differ in rendering capability:
 
-- Murici (Electron/WebView): full DOM, CSS, video, HTML
+- Reference runtime (Electron/WebView): full DOM, CSS, video, HTML
 - CLI runner: no DOM; must degrade gracefully or reject agents that require `host.dom`
 - Future embedded runtimes: may have partial DOM or custom renderers
 

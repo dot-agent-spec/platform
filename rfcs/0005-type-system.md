@@ -18,6 +18,10 @@
 | Extended by | [RFC-0016](0016-string-constraints.md) — string constraints (`template`, `format`, `regexp`) and new primitive types |
 | Extended by | [RFC-0017](0017-standard-library.md) — standard library (`std.*`) built on this type system |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| ⚠️ | ⚠️ | ⚠️ | ? | ⚠️ |
+
 ---
 
 ## Summary
@@ -154,7 +158,7 @@ This distinction is **semantic only**. There is no character-count boundary or e
 
 #### `table`
 
-The `table` type expresses the intent that the data is tabular — rows and columns. The grammar does not prescribe a serialization format. The runtime (e.g. `murici`) inspects the host context and chooses the appropriate representation: a `.csv` file in a terminal pipeline, an `.xlsx` file in a desktop export, a rendered HTML table in a web UI.
+The `table` type expresses the intent that the data is tabular — rows and columns. The grammar does not prescribe a serialization format. The runtime inspects the host context and chooses the appropriate representation: a `.csv` file in a terminal pipeline, an `.xlsx` file in a desktop export, a rendered HTML table in a web UI.
 
 #### MIME-aware runtime validation
 

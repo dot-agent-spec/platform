@@ -18,6 +18,10 @@
 | Related | [RFC-0005](0005-type-system.md) — type system this RFC extends |
 | Related | [RFC-0017](0017-standard-library.md) — standard library using these primitives |
 
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
+|---|---|---|---|---|
+| ⚠️ | ⚠️ | ⚠️ | — | ⚠️ |
+
 ---
 
 ## Summary
