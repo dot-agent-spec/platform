@@ -57,7 +57,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Why:** A coordinated public release needs an explicit policy: lockstep (align all to one version) vs. independent per-package semver. This is a decision, not code — record the outcome here.
 
-**Decision (2026-06-22):** Two independent version axes — see [`ROADMAP.md` § Two version axes](../ROADMAP.md#two-version-axes).
+**Decision (2026-06-22):** Two independent version axes — see [`ROADMAP.md` § Two version axes](../ROADMAP.md#two-version-axes). Recorded as [ADR-0001](../adr/0001-two-axis-versioning.md).
 
 - **DSL version** is the public capability tier (`v0.1`, `v0.2`, … `v1.0`) — what docs and authors cite.
 - **Package versions** stay per-package semver, but the **tens digit mirrors the DSL milestone**: `0.10.x` = DSL `v0.1`, `0.20.x` = DSL `v0.2`, … reaching `1.0` together. Within a tens band each package keeps its own minor/patch freedom.

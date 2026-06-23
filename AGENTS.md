@@ -9,14 +9,13 @@ AI collaboration guide for maintaining and evolving this repository.
 `dot-agent-spec` is the specification and implementation repository for the dot-agent ecosystem. It contains:
 
 - Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
-- Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
 - Implementation packages (`packages/`) — compiler, parser, kernel, SDK, language server
 - Developer-facing apps (`apps/`) — CLI, VS Code extension
 - Design proposals (`rfcs/`) — RFCs for proposed language and protocol changes
 - Implementation tasks (`tasks/`) — technical debt and planned work items
 - Annotated examples (`examples/`) — canonical `.description` + `.behavior` pairs
 
-There is **no executable code** at the root level. Packages live under `packages/` (as workspace members) and apps under `apps/` (as git submodules).
+There is **no executable code** at the root level. Every package under `packages/` and every app under `apps/` is a **git submodule** — each is its own repository with its own `AGENTS.md`. `org-spec/` (the org-wide `.github` repo) is a submodule too. Run `git submodule update --init` before working on a package, and commit a submodule's changes in that submodule before bumping its pointer in the superproject.
 
 ---
 
@@ -27,6 +26,11 @@ dot-agent-spec/
 ├── LICENSE
 ├── README.md
 ├── AGENTS.md                      ← this file
+├── ROADMAP.md                     ← language roadmap, version policy, freeze/editions model
+├── GOVERNANCE.md                  ← decision process (RFC / ADR / task lifecycles)
+├── templates/                     ← copy-ready templates: rfc, adr, task
+├── adr/                           ← architecture decision records
+│   └── AGENTS.md                  ← ADR lifecycle rules
 ├── dsl/                           ← language spec (Diátaxis structure)
 │   ├── README.md
 │   ├── reference/                 ← syntax: .behavior, .description, types, memory
@@ -73,6 +77,10 @@ dot-agent-spec/
 | Architecture overview | `docs/explanation/architecture/map.md` |
 | Proposed changes | `rfcs/` (Draft status — not canonical) |
 | Pending implementation work | `tasks/` |
+| Decision process | `GOVERNANCE.md` |
+| Roadmap & version policy | `ROADMAP.md` |
+| Architecture decisions (settled) | `adr/` |
+| Document templates | `templates/` |
 
 **When code and docs diverge, the code wins.** Docs describe intent; code is what runs.
 
@@ -100,15 +108,38 @@ Also update [`docs/explanation/architecture/map.md`](docs/explanation/architectu
 
 ---
 
+## Keeping docs in sync — definition of done
+
+Doc drift across the layered packages is the main failure mode. **Treat the doc update as part of the change, not a follow-up.** After any change, walk the affected row in [`docs/explanation/architecture/implementation-status.md`](docs/explanation/architecture/implementation-status.md), update every layer it touches, then run the `/sync-implementation-status` skill to regenerate the tracker and surface what was missed.
+
+By change type:
+
+| If you change… | Also update… |
+|---|---|
+| Grammar / new syntax (`packages/tree-sitter`) | `dsl/reference/` · `packages/parser-dsl` AST · `packages/compiler` lint · `packages/kernel-dsl` (if it has runtime behavior) · `examples/` · the `implementation-status.md` row · that package's `AGENTS.md` |
+| A kernel effect (`packages/kernel-dsl`) | `packages/sdk` handler · `dsl/reference/behavior.md` · `implementation-status.md` |
+| An `aboutme` / pack field (`packages/compiler`) | `dsl/reference/description.md` · `implementation-status.md` |
+| Top-level folders or packages | `README.md` · this file (layout tree + source-of-truth) · `docs/explanation/architecture/map.md` |
+
+New syntax is gated by an RFC first; a hard-to-reverse decision is recorded as an ADR (`adr/`). See [`GOVERNANCE.md`](GOVERNANCE.md).
+
+---
+
 ## Submodule table
 
 | Directory | Purpose | Status |
 |-----------|---------|--------|
 | `packages/tree-sitter/` | WASM grammar — canonical grammar source | ✅ Active |
+| `packages/parser-dsl/` | Rust/WASM — parses `.behavior` + `.description` | ✅ Active |
+| `packages/kernel-dsl/` | Rust/WASM — FSM execution engine | ✅ Active |
+| `packages/compiler/` | TypeScript — linter, AST analysis, ZIP packaging | ✅ Active |
+| `packages/sdk/` | TypeScript — browser dispatch layer | ✅ Active |
+| `packages/language-server/` | Node.js — LSP server | ✅ Active |
 | `apps/dot-agent-cli/` | Developer CLI | ⚠️ Pending v2 update |
 | `apps/vscode-extension/` | VS Code LSP client | ⚠️ Pending v2 update |
+| `org-spec/` | Org-wide `.github` (community-health defaults) | ✅ Active |
 
-`apps/zed-agent/` has been removed. Historical reference only in git history.
+`apps/zed-agent/` has been removed. Historical reference only in git history. The `transpiler-*` packages in the layout are aspirational (RFC-0018) and are not yet submodules.
 
 Each active submodule has its own `AGENTS.md`. Read it before making changes to that package.
 
