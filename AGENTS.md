@@ -125,6 +125,20 @@ New syntax is gated by an RFC first; a hard-to-reverse decision is recorded as a
 
 ---
 
+## Working with subagents and skills
+
+When delegating to a subagent, choose its model by the **tier** of the task, not by habit:
+
+- judgment-heavy (architecture, design, ambiguous trade-offs) → strongest tier
+- structured execution (drafting from a template/brief, multi-file edits) → mid tier
+- mechanical (boilerplate, reformatting, known-value fills) → cheap tier; raise `effort` only when needed
+
+Default to `inherit` when unsure. **Do not change the `model` of an existing subagent** — it was chosen
+deliberately; this applies to *new* subagents. Skills carry `model` / `effort` in frontmatter for the
+same routing. Rationale and the obsolescence/reversal plan: [ADR-0002](adr/0002-model-tiering-for-agent-routing.md).
+
+---
+
 ## Submodule table
 
 | Directory | Purpose | Status |
