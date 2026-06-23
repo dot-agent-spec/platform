@@ -21,6 +21,7 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 
 | Section | Contents |
 |---|---|
+| [`ROADMAP.md`](ROADMAP.md) | Language roadmap — current milestone, version policy, and feature maturity |
 | [`dsl/`](dsl/) | Language reference — syntax, semantics, and design of `.description` and `.behavior` |
 | [`docs/`](docs/) | Implementation reference — compiler APIs, kernel protocol, SDK, architecture |
 | [`rfcs/`](rfcs/) | Design proposals for new language and protocol features |
