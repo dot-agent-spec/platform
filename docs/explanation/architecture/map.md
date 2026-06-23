@@ -61,7 +61,7 @@ graph TD
     SDK["@dot-agent/sdk<br/>(Dispatch layer — browser-compatible)"]
     LSP["@dot-agent/language-server<br/>(LSP server)"]
     CLI["dot-agent-cli"]
-    Murici["murici<br/>(Electron runtime)"]
+    RefRuntime["Reference runtime<br/>(Electron)"]
     Hosts["Other runtimes<br/>(CLIs, bots, APIs...)"]
 
     Compiler_Core["@dot-agent/compiler/core<br/>(browser-safe sub-path)"]
@@ -80,7 +80,7 @@ graph TD
     Kernel -->|imported by| SDK
 
     SDK -->|imported by| CLI
-    SDK -->|imported by| Murici
+    SDK -->|imported by| RefRuntime
     SDK -->|imported by| Hosts
 
     LSP <-->|JSON-RPC| VSCode["vscode-extension"]
@@ -169,7 +169,7 @@ kernel emits: SetMemory { domain: "session", key: "city", value: "São Paulo" }
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Runtime as Runtime (murici / CLI)
+    participant Runtime as Runtime (Electron / CLI)
     participant SDK as @dot-agent/sdk
     participant Kernel as @dot-agent/kernel-dsl
     participant Ext as Tools / LLM / Scripts
