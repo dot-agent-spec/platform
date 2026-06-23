@@ -8,6 +8,8 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
+> ⚠️ Point-in-time DSL usability snapshot (2026-06-23). NOT spec truth — may be obsolete. Source of truth: dsl/ + packages/.
+
 # DSL Expressiveness Report — Sync Implementation Status
 
 > **Context:** `sync-status.description` + `sync-status.behavior` model the `/sync-implementation-status`
@@ -45,7 +47,7 @@
 
 ---
 
-## Gaps and limitations
+## Gaps & limitations
 
 ### S1 — `parallel` grammar does not support multi-line handler blocks (bug)
 
@@ -191,11 +193,7 @@ LLM needs to know what is in the drift report to present it — that is a DSL re
 
 ---
 
-## Observation: Parser error messages — practical improvements
-
-> **Note:** this section documents a pattern observed while building the dogfood. Specific to
-> the experience of writing `.behavior` files and receiving compiler feedback. Not a gap in
-> language design; a UX observation about error clarity.
+## Parser & linter error-message quality
 
 **Context:** the first attempt included `parallel` with multi-line `run` statements. The linter
 returned:

@@ -8,6 +8,8 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
+> ⚠️ Point-in-time DSL usability snapshot (2026-06-23). NOT spec truth — may be obsolete. Source of truth: dsl/ + packages/.
+
 # DSL Expressiveness Report — RFC Authoring Workflow
 
 > **Context:** `rfc-author.description` + `rfc-author.behavior` model the `/new-rfc` skill
@@ -40,7 +42,7 @@
 
 ---
 
-## Gaps and limitations
+## Gaps & limitations
 
 ### G1 — No way to capture user input into session memory
 
@@ -190,12 +192,7 @@ would require disambiguation via keyword lookahead).
 
 ---
 
-## Diagnostic quality
-
-> **Scope:** This section records specific error experiences during dogfood construction —
-> what the compiler or parser actually emitted, what the problem really was, and what
-> message would have been actionable. Not a best-practices survey. Every example below
-> is a concrete incident from building `rfc-author.description` and `rfc-author.behavior`.
+## Parser & linter error-message quality
 
 ---
 
