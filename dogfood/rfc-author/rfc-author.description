@@ -1,0 +1,33 @@
+// Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// NOTE: Dogfood modeling exercise — not a shipping agent.
+// Models the /new-rfc skill as a .description to test DSL expressiveness.
+// Do not pack or run this file.
+
+agent RFC Author
+  domain dot-agent.ai
+  license Apache-2.0
+
+description
+  Guides a user through creating a new RFC for the dot-agent-spec project.
+  Scaffolds the file from templates/rfc.md, fills the package impact table,
+  and updates rfcs/INDEX.md.
+
+behavior rfc-author.behavior
+
+capabilities
+  SearchAction "Reads rfcs/ to determine the next available RFC number"
+  CreateAction "Creates the RFC file in rfcs/ from templates/rfc.md"
+  WriteAction  "Updates rfcs/INDEX.md with a new row for the created RFC"
+
+input
+  string "RFC topic — a short phrase describing what the RFC proposes"
+
+output
+  string "Path to the newly created RFC file"

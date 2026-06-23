@@ -1,0 +1,62 @@
+// Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// NOTE: Dogfood modeling exercise — not a shipping agent.
+// Models the /new-rfc workflow as a state machine to test DSL expressiveness.
+// States: collect_topic → draft_sections → validate_impact_table → emit → done
+// Do not pack or run this file.
+
+state collect_topic
+  goal "Understand what the RFC will propose"
+  guide "Ask the user for: (1) a short topic phrase, (2) the author name (default: Danilo Borges). Confirm both before proceeding."
+  interact
+  on intent "topic provided"
+    transition to draft_sections
+  on intent "cancel"
+    transition to done
+  on offtopic
+    transition to collect_topic
+
+state draft_sections
+  run script "scripts/scaffold-rfc.js" on failure
+    transition to error
+  transition to validate_impact_table
+
+state validate_impact_table
+  goal "Confirm the package impact table for this RFC"
+  guide "Present the inferred symbol for each of the five core packages (tree-sitter, parser-dsl, compiler, kernel-dsl, sdk). Walk through each one. Resolve every ? cell before proceeding."
+  interact
+  on intent "table confirmed"
+    transition to emit
+  on intent "corrections provided"
+    transition to validate_impact_table
+  on offtopic
+    transition to validate_impact_table
+
+state emit
+  run script "scripts/emit-rfc.js" on failure
+    transition to error
+  transition to done
+
+state done
+  goal "Confirm the RFC was created and share next steps"
+  guide "Tell the user the RFC file path and the INDEX.md row that was added. Remind them to fill in Motivation, Specification, and Open Questions."
+  interact
+  on intent "create another RFC"
+    transition to collect_topic
+  on offtopic
+    transition to done
+
+state error
+  goal "Report the error and offer to retry"
+  guide "Explain what failed and ask whether the user wants to retry from the beginning or abort."
+  interact
+  on intent "retry"
+    transition to collect_topic
+  on offtopic
+    transition to error
