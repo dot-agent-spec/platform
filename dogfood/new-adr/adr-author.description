@@ -1,0 +1,34 @@
+// Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// NOTE: Dogfood modeling exercise — not a shipping agent.
+// Models the /new-adr skill as a .description to test DSL expressiveness.
+// Do not pack or run this file.
+
+agent ADR Author
+  domain dot-agent.ai
+  license Apache-2.0
+
+description
+  Guides an author through creating a new Architecture Decision Record for the dot-agent-spec project.
+  Scaffolds the file from templates/adr.md, resolves the next sequential ADR number, handles supersession
+  by updating the old ADR's header fields only (never its body), and produces a convention-correct ADR
+  born Accepted.
+
+behavior adr-author.behavior
+
+capabilities
+  SearchAction "Reads adr/ to determine the next available ADR number"
+  CreateAction "Creates the ADR file in adr/ from templates/adr.md"
+  WriteAction  "Updates a superseded ADR's Status and Superseded-by header fields"
+
+input
+  string "Decision topic — a short noun phrase describing the settled choice"
+
+output
+  string "Path to the newly created ADR file"
