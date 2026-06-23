@@ -45,6 +45,7 @@ dot-agent/ (Monorepo Root)
 └── apps/
     ├── dot-agent-cli/         # Developer CLI (submodule) — outdated, pending update
     ├── vscode-extension/      # VS Code LSP client (submodule) — outdated, pending update
+    ├── agy/                   # Antigravity CLI runtime plugin (submodule)
     └── zed-agent/             # FROZEN — kept for historical reference only
 ```
 
@@ -246,5 +247,6 @@ Effects are the kernel's only output channel. The SDK dispatches each one to the
 | `@dot-agent/transpiler-appintent` | ⚠️ Aspirational | `packages/transpiler-appintent/` — codegen target; see RFC-0018 |
 | `dot-agent-cli` | ⚠️ Outdated | `apps/dot-agent-cli/` (submodule) — pending update to v2 architecture |
 | `vscode-extension` | ⚠️ Outdated | `apps/vscode-extension/` (submodule) — pending update to v2 architecture |
+| `agy` | 🚧 In Progress | `apps/agy/` (submodule) — Antigravity CLI plugin |
 | `zed-agent` | 🧊 Frozen | `apps/zed-agent/` — historical reference only |
 | RFCs 0001–0004 | 📝 Draft | `rfcs/` — specs in progress, not reflected in this map |

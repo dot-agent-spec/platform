@@ -44,6 +44,7 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | `@dot-agent/language-server` | LSP server for IDE support |
 | `@dot-agent/transpiler-core` | ⚠️ Types/interface for transpiler targets (aspirational — see RFC-0018) |
 | `@dot-agent/transpiler-langgraph` | ⚠️ Codegen: `.agent` → LangGraph Python (aspirational — see RFC-0018) |
+| `apps/agy` | Antigravity CLI Plugin — dot-agent runtime embedded in AGY |
 
 ---
 

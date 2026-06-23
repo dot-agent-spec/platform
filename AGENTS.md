@@ -60,7 +60,8 @@ dot-agent-spec/
 │   └── transpiler-appintent/      ← ⚠️ aspirational — codegen target (RFC-0018)
 ├── apps/
 │   ├── dot-agent-cli/             ← submodule — developer CLI (pending v2 update)
-│   └── vscode-extension/          ← submodule — VS Code LSP client (pending v2 update)
+│   ├── vscode-extension/          ← submodule — VS Code LSP client (pending v2 update)
+│   └── agy/                       ← submodule — Antigravity CLI runtime plugin
 └── examples/                      ← canonical .description + .behavior pairs (CI-tested)
 ```
 
@@ -151,6 +152,7 @@ same routing. Rationale and the obsolescence/reversal plan: [ADR-0002](adr/0002-
 | `packages/language-server/` | Node.js — LSP server | ✅ Active |
 | `apps/dot-agent-cli/` | Developer CLI | ⚠️ Pending v2 update |
 | `apps/vscode-extension/` | VS Code LSP client | ⚠️ Pending v2 update |
+| `apps/agy/` | Antigravity CLI runtime plugin | 🚧 In Progress |
 | `org-spec/` | Org-wide `.github` (community-health defaults) | ✅ Active |
 
 `apps/zed-agent/` has been removed. Historical reference only in git history. The `transpiler-*` packages in the layout are aspirational (RFC-0018) and are not yet submodules.
