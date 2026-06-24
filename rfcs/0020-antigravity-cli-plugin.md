@@ -58,5 +58,41 @@ Embedding the kernel directly as an AGY plugin leverages AGY's deep extensibilit
 - How do we handle multi-agent collisions if multiple `.behavior` files are active in the same AGY workspace?
 - Should the Sidecar UI be part of the plugin bundle or a separate extension?
 
+## Host Portability: Claude Code
+
+A viability analysis was conducted for porting this RFC to **Claude Code** (the Anthropic CLI) as a second host target (`apps/claude`).
+
+### High-fit mappings
+
+| AGY concept | Claude Code equivalent |
+|---|---|
+| MCP Server plugin | Native MCP server support via `settings.json` |
+| `PreToolUse` hook | Native `PreToolUse` shell hook; non-zero exit blocks the tool call; stdout is relayed to Claude as feedback |
+| `UserPromptSubmit` hook | Native hook; can inject the `teach` property content as extra context each turn |
+| Kernel as policy engine | MCP server maintains FSM state; hook scripts communicate with it via socket or subprocess |
+
+### Gaps (platform limitations, not solvable by iteration)
+
+| AGY concept | Claude Code gap |
+|---|---|
+| Dynamic tool registration | MCP tools are loaded at session start — cannot add tools at runtime |
+| Dynamic tool deregistration | Tools can only be **blocked** via `PreToolUse` (tool remains visible in tool list, execution is refused with state feedback) |
+| `SessionStart` hook | Does not exist — approximation: detect first `UserPromptSubmit` of the session |
+| System prompt injection mid-session | `CLAUDE.md` is read at startup; cannot be mutated without restarting the session |
+| Sidecar UI | No UI extension architecture in the CLI |
+
+### Architecture for `apps/claude`
+
+```
+dot-agent MCP server (owns FSM state)
+    ↕ IPC (socket or subprocess)
+PreToolUse hook script  →  check current state  →  block or allow
+UserPromptSubmit hook   →  inject active state's `teach` as extra context
+```
+
+### Verdict
+
+~75% viable. The "dynamic tooling" feature of the spec cannot be fully replicated — tools remain visible even when blocked by state. This should be documented as an **explicit divergence** if the plugin evolves to support multiple hosts: AGY hides tools by state, Claude Code refuses them by state. The behavioral outcome is similar but the UX differs.
+
 ## Decisions Closed
 - The plugin will target `agy` (Antigravity CLI) specifically due to its robust hook architecture.
