@@ -40,7 +40,13 @@ dogfood/
    - *Parser & linter error-message quality* — only errors you hit firsthand: the exact message + the
      clearer author-facing message that would have helped
    Ground every entry in real experience from your run. **No generic best-practices.**
-5. Lint with `@dot-agent/compiler`; **never** `pack` or run (there is no kernel here).
+5. Lint the `.behavior`/`.description` with `@dot-agent/compiler`; **never** `pack` or run them (no kernel here).
+6. **Quarantine skill output.** Running the skill under test may write real files into the live tree (an
+   example ADR in `adr/`, an example RFC in `rfcs/`, etc.). After capturing your findings, **move every
+   generated artifact into `dogfood/<this-skill>/examples/`, mirroring its original path** — e.g. an
+   example ADR → `dogfood/new-adr/examples/adr/<file>`; an example RFC → `dogfood/new-rfc/examples/rfcs/<file>`
+   — or delete it. **Never leave skill output in the live `adr/` / `rfcs/` / `examples/` folders.** These
+   `examples/` are throwaway proof and are git-ignored — do not commit them.
 
 ## Consolidation (maintainer only)
 
