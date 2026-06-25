@@ -1,0 +1,159 @@
+================================================================================
+if / else / end
+================================================================================
+
+state check
+  if session.has_context == true
+    transition to proceed
+  else
+    transition to fallback
+  end
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (conditional_stmt
+        (condition
+          (expression
+            (value
+              (state_name))
+            (comparison_op)
+            (value
+              (boolean))))
+        (block
+          (transition_stmt
+            (state_name)))
+        (block
+          (transition_stmt
+            (state_name)))))))
+
+================================================================================
+if sem else
+================================================================================
+
+state check
+  if session.ready == true
+    run script "go.sh"
+    transition to next
+  end
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (conditional_stmt
+        (condition
+          (expression
+            (value
+              (state_name))
+            (comparison_op)
+            (value
+              (boolean))))
+        (block
+          (run_stmt
+            (run_type)
+            (quoted_string))
+          (transition_stmt
+            (state_name)))))))
+
+================================================================================
+parallel com on failure de grupo + end
+================================================================================
+
+state verify_layers
+  parallel
+    run script "verify-a.sh"
+    run script "verify-b.sh"
+    run script "verify-c.sh"
+  on failure
+    set session.failed = true
+    transition to error
+  end
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (parallel_stmt
+        (run_stmt
+          (run_type)
+          (quoted_string))
+        (run_stmt
+          (run_type)
+          (quoted_string))
+        (run_stmt
+          (run_type)
+          (quoted_string))
+        (block
+          (memory_stmt
+            (memory_target
+              (memory_domain)
+              (identifier))
+            (assignment_op)
+            (expression
+              (value
+                (boolean))))
+          (transition_stmt
+            (state_name))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+parallel sem on failure (opcional) + end
+================================================================================
+
+state run_all
+  parallel
+    run script "a.sh"
+    run script "b.sh"
+  end
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (parallel_stmt
+        (run_stmt
+          (run_type)
+          (quoted_string))
+        (run_stmt
+          (run_type)
+          (quoted_string)))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+after N prompts + end
+================================================================================
+
+state waiting
+  after 3 prompts
+    run script "nudge.sh"
+    transition to timeout
+  end
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (temporal_stmt
+        (number)
+        (block
+          (run_stmt
+            (run_type)
+            (quoted_string))
+          (transition_stmt
+            (state_name)))))))

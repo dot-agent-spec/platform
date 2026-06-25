@@ -60,22 +60,29 @@ module.exports = grammar({
     //     privacy https://...
     // ----------------------------------------------------------------
 
-    agent_decl: $ => seq(
+    agent_decl: $ => prec.right(seq(
       'agent',
       field('name', $.agent_name),
       $._newline,
 
-      repeat1(seq($.agent_meta, $._newline)),
-      $._newline, // Blank line separates metadata from optional blocks
+      // Metadata is permissive: zero or more entries interleaved with blank
+      // lines, in any order. The linter enforces required keys (e.g. domain)
+      // and uniqueness — not the grammar. Blank lines here are optional.
+      repeat(choice(
+        seq($.agent_meta, $._newline),
+        $._newline,
+      )),
 
-      optional(field('description', $.description_block)),
-      optional(field('persona', $.persona_block)),
-      optional(field('behavior', $.behavior_block)),
-      optional(field('capabilities', $.capabilities_block)),
-      optional(field('requires', $.requires_block)),
-      optional(field('input', $.input_block)),
-      optional(field('output', $.output_block)),
-    ),
+      repeat(choice(
+        field('description', $.description_block),
+        field('persona', $.persona_block),
+        field('behavior', $.behavior_block),
+        field('capabilities', $.capabilities_block),
+        field('requires', $.requires_block),
+        field('input', $.input_block),
+        field('output', $.output_block),
+      )),
+    )),
 
     // Supports single-word (Doctor) and multi-word (Mickey Mouse) names
     agent_name: $ => seq($.identifier, repeat($.identifier)),
@@ -111,8 +118,6 @@ module.exports = grammar({
     // so this rule does not need an extra precedence override.
     // This avoids incorrect tokenization of accented or non-ASCII text in descriptions.
     text_content: $ => token(/[^\n\r\s][^\n\r]*/),
-
-    _blank_line: $ => prec(2, $._newline),
 
     persona_block: $ => prec.right(seq(
       'persona',

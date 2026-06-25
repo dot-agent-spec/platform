@@ -58,7 +58,6 @@
 "intent"   @keyword.operator
 "offtopic" @keyword.operator
 "failure"  @keyword.operator
-"success"  @keyword.operator
 
 ; ----------------------------------------------------------------
 ; Keywords — temporal / parallel

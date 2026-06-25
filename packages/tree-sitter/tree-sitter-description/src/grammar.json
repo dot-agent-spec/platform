@@ -37,157 +37,118 @@
       "value": "\\r?\\n"
     },
     "agent_decl": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "STRING",
-          "value": "agent"
-        },
-        {
-          "type": "FIELD",
-          "name": "name",
-          "content": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "agent"
+          },
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "agent_name"
+            }
+          },
+          {
             "type": "SYMBOL",
-            "name": "agent_name"
+            "name": "_newline"
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "agent_meta"
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "_newline"
+                    }
+                  ]
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_newline"
+                }
+              ]
+            }
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "FIELD",
+                  "name": "description",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "description_block"
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "persona",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "persona_block"
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "behavior",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "behavior_block"
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "capabilities",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "capabilities_block"
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "requires",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "requires_block"
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "input",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "input_block"
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "output",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "output_block"
+                  }
+                }
+              ]
+            }
           }
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_newline"
-        },
-        {
-          "type": "REPEAT1",
-          "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "agent_meta"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_newline"
-              }
-            ]
-          }
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_newline"
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "description",
-              "content": {
-                "type": "SYMBOL",
-                "name": "description_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "persona",
-              "content": {
-                "type": "SYMBOL",
-                "name": "persona_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "behavior",
-              "content": {
-                "type": "SYMBOL",
-                "name": "behavior_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "capabilities",
-              "content": {
-                "type": "SYMBOL",
-                "name": "capabilities_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "requires",
-              "content": {
-                "type": "SYMBOL",
-                "name": "requires_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "input",
-              "content": {
-                "type": "SYMBOL",
-                "name": "input_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "FIELD",
-              "name": "output",
-              "content": {
-                "type": "SYMBOL",
-                "name": "output_block"
-              }
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        }
-      ]
+        ]
+      }
     },
     "agent_name": {
       "type": "SEQ",
@@ -313,14 +274,6 @@
       "content": {
         "type": "PATTERN",
         "value": "[^\\n\\r\\s][^\\n\\r]*"
-      }
-    },
-    "_blank_line": {
-      "type": "PREC",
-      "value": 2,
-      "content": {
-        "type": "SYMBOL",
-        "name": "_newline"
       }
     },
     "persona_block": {

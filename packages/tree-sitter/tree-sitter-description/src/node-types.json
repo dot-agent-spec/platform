@@ -4,7 +4,7 @@
     "named": true,
     "fields": {
       "behavior": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -14,7 +14,7 @@
         ]
       },
       "capabilities": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -24,7 +24,7 @@
         ]
       },
       "description": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -34,7 +34,7 @@
         ]
       },
       "input": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -54,7 +54,7 @@
         ]
       },
       "output": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -64,7 +64,7 @@
         ]
       },
       "persona": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -74,7 +74,7 @@
         ]
       },
       "requires": {
-        "multiple": false,
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -86,7 +86,7 @@
     },
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "agent_meta",
