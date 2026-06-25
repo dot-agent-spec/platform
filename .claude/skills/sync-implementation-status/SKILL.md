@@ -6,7 +6,7 @@ effort: high
 
 # /sync-implementation-status — Sync Implementation Status
 
-Re-derives `docs/explanation/architecture/implementation-status.md` from the actual source code across all five packages, then emits a drift report of what changed.
+Re-derives `project/implementation-status.md` from the actual source code across all five packages, then emits a drift report of what changed.
 
 **Usage:** `/sync-implementation-status`
 
@@ -16,7 +16,7 @@ No arguments. Run from the repository root.
 
 ## Overview
 
-The doc at `docs/explanation/architecture/implementation-status.md` describes *intent*, not outcome — it drifts as packages change. This skill re-derives the table from the **real code** and updates it.
+The doc at `project/implementation-status.md` describes *intent*, not outcome — it drifts as packages change. This skill re-derives the table from the **real code** and updates it.
 
 **Source of truth:** `packages/tree-sitter/tree-sitter-behavior/src/node-types.json` and `packages/tree-sitter/tree-sitter-description/src/node-types.json` — a feature exists because the grammar has a node.
 
@@ -38,7 +38,7 @@ If a submodule directory remains empty after this command, note which package is
 
 ## Step 2 — Read the existing doc
 
-Read the full `docs/explanation/architecture/implementation-status.md`.
+Read the full `project/implementation-status.md`.
 
 Study and internalize:
 - The **legend**: ☑️✅ · ⚠️ · ❌ · → · 🔄 · 🗑️ · ➕ · 📌
@@ -193,7 +193,7 @@ If a cell's status is ambiguous (you cannot determine from the code alone whethe
 
 ## Step 10 — Write the updated doc
 
-Update `docs/explanation/architecture/implementation-status.md` in-place:
+Update `project/implementation-status.md` in-place:
 
 - Preserve the exact document structure: every section header, legend line, note block, and table column order
 - Only change cell values that you have code evidence to justify
@@ -204,6 +204,19 @@ Update `docs/explanation/architecture/implementation-status.md` in-place:
 - Do **not** restructure, rename sections, or change the legend — propose such changes in a separate RFC
 
 ---
+
+
+---
+
+## Step 11 — Generate HTML Dashboard
+
+Run the Node.js generator script to produce the interactive HTML dashboard from the updated Markdown file.
+
+Run from the repository root:
+
+```bash
+npm run generate:dashboard
+```
 
 ## Checklist — verify before reporting done
 
@@ -219,5 +232,6 @@ Update `docs/explanation/architecture/implementation-status.md` in-place:
 - [ ] Doc written with preserved structure and no unverified cell changes
 - [ ] Node-name discrepancy table updated if new discrepancies found
 - [ ] A re-run would produce no further changes (stable output)
+- [ ] HTML dashboard generated successfully via `scripts/generate-dashboard.js`
 
 All boxes must be checked before the task is complete.

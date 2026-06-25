@@ -114,7 +114,7 @@ Also update [`docs/explanation/architecture/map.md`](docs/explanation/architectu
 
 ## Keeping docs in sync — definition of done
 
-Doc drift across the layered packages is the main failure mode. **Treat the doc update as part of the change, not a follow-up.** After any change, walk the affected row in [`docs/explanation/architecture/implementation-status.md`](docs/explanation/architecture/implementation-status.md), update every layer it touches, then run the `/sync-implementation-status` skill to regenerate the tracker and surface what was missed.
+Doc drift across the layered packages is the main failure mode. **Treat the doc update as part of the change, not a follow-up.** After any change, walk the affected row in [`project/implementation-status.md`](project/implementation-status.md), update every layer it touches, then run the `/sync-implementation-status` skill to regenerate the tracker and surface what was missed.
 
 By change type:
 

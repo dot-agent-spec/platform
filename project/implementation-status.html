@@ -1,0 +1,1354 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dot-Agent Spec | Implementation Status</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --text-color: #e2e8f0;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      
+      --status-implemented: #10b981; /* Green */
+      --status-partial: #f59e0b; /* Yellow */
+      --status-missing: #ef4444; /* Red */
+      --status-dep: #3b82f6; /* Blue */
+      --status-frozen: #64748b; /* Gray */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    header {
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    h1, h2, h3 {
+      color: #f8fafc;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 4px;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      display: block;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-radius: 6px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      min-width: 150px;
+      vertical-align: top;
+      font-size: 0.9rem;
+    }
+
+    th {
+      font-weight: 600;
+      background-color: #0f172a;
+      border-color: #475569;
+      position: sticky;
+      top: 0;
+    }
+
+    td:first-child, th:first-child {
+      font-weight: 600;
+      background-color: #1e293b;
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    }
+
+    td:hover {
+      filter: brightness(1.2);
+      transform: scale(1.02);
+      transition: all 0.2s ease;
+      cursor: default;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      z-index: 20;
+      position: relative;
+    }
+
+    blockquote {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 4px solid var(--status-dep);
+      padding: 1rem;
+      margin: 1.5rem 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .cell-implemented { background-color: rgba(16, 185, 129, 0.2); border-color: var(--status-implemented); color: #a7f3d0; }
+    .cell-partial { background-color: rgba(245, 158, 11, 0.2); border-color: var(--status-partial); color: #fde68a; }
+    .cell-missing { background-color: rgba(239, 68, 68, 0.2); border-color: var(--status-missing); color: #fecaca; }
+    .cell-dep { background-color: rgba(59, 130, 246, 0.2); border-color: var(--status-dep); color: #bfdbfe; }
+    .cell-frozen { background-color: rgba(100, 116, 139, 0.2); border-color: var(--status-frozen); color: #e2e8f0; }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    input[type="text"] {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      color: white;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dot-Agent Implementation Status</h1>
+    <p>Interactive architecture and feature support overview.</p>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Filter features...">
+  </div>
+
+  <main id="content">
+    <h1>Implementation Status</h1>
+<p>Caniuse-style tracking. Rows = DSL features (tree-sitter is the source of truth). Columns = packages in layer order.</p>
+<p>Legend: ☑️ verified ✅ implemented · ⚠️ partial or gap · ❌ missing, should exist · → re-exports or delegates · 🔄 <code>pkg</code> consumes from <code>pkg</code> · 🗑️ obsolete (node removed or renamed in grammar) · ➕ field/type injected at this layer (no upstream DSL source) · 📌 hardcoded value that should derive from the language</p>
+<hr>
+<h2>Package freeze status</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>tree-sitter (L0)</th>
+<th>parser-dsl (L1)</th>
+<th>compiler (L2)</th>
+<th>kernel-dsl (L2)</th>
+<th>sdk (L3)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Status</strong></td>
+<td>🔥 Active</td>
+<td>🧊⚠️ <a href="#node-name-discrepancy">Frozen</a></td>
+<td>🔥⚠️ Active</td>
+<td>🧊⚠️ Frozen</td>
+<td>🔥⚠️ Active</td>
+</tr>
+<tr>
+<td><strong>Version</strong></td>
+<td><code>0.4.1</code></td>
+<td><code>0.1.0</code></td>
+<td><code>0.1.0</code></td>
+<td><code>0.1.3</code></td>
+<td><code>0.1.0</code></td>
+</tr>
+<tr>
+<td><strong>Build</strong></td>
+<td><code>tree-sitter-cli</code> — manual npm scripts (<code>generate</code> + <code>build --wasm</code>)</td>
+<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> (<code>build-wasm.sh</code>, target <code>wasm32-wasip1</code>)</td>
+<td><code>tsup</code> (esm + cjs, <code>dts:true</code>)</td>
+<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> + <code>patch-wasm-bindgen.js</code></td>
+<td><code>tsup</code> (esm + cjs, <code>dts:true</code>)</td>
+</tr>
+<tr>
+<td><strong>Exports</strong></td>
+<td>npm (wasm file paths) · 🦀 rlib (via <code>cc</code>)</td>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm <code>cdylib</code> (npm) · 🦀 rlib</td>
+<td>npm only (esm + cjs)</td>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm <code>cdylib</code> (npm) · 🦀 rlib</td>
+<td>npm only (esm + cjs)</td>
+</tr>
+<tr>
+<td><strong>Types (.d.ts)</strong></td>
+<td>❌ none (consumers type-assert)</td>
+<td>⚠️ hand-written stub (thin; no Rust structs)</td>
+<td>✅ <code>tsup</code> auto (full)</td>
+<td>⚠️ hand-written stub (thin); rich <code>pkg/*.d.ts</code> shadowed</td>
+<td>✅ <code>tsup</code> auto (full)</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>Build / packaging gaps</strong> — full catalog in <a href="../research/build-pipeline-investigation.md">build-pipeline-investigation</a>:</p>
+<ul>
+<li>Stale <code>wasm-pack</code> definitions in both Rust crates&#39; <code>Cargo.toml</code> metadata — the real build is the shell script (<code>cargo + wasm-bindgen + wasi-stub</code>).</li>
+<li><code>build.rs</code> byte-identical across parser-dsl/kernel-dsl; wasm-bindgen patches and UBSan env-stubs duplicated 3× with different strategies.</li>
+<li>kernel-dsl ships a second, unreferenced <code>pkg-web/</code> output (predates <code>pkg/</code>; maintained vs abandoned unconfirmed).</li>
+<li><code>wasm-bindgen</code>&#39;s rich <code>.d.ts</code> exists in <code>pkg/</code> but is shadowed by the thinner hand-written <code>index.d.ts</code>.</li>
+<li>Versions diverge: tree-sitter <code>0.4.1</code>, kernel-dsl <code>0.1.3</code>, others <code>0.1.0</code>.</li>
+</ul>
+</blockquote>
+<hr>
+<h2>tree-sitter package (L0 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 tree-sitter</th>
+<th>☑️⚠️🧊parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/tree-sitter</td>
+<td>-</td>
+<td>🔄 dependency</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>🦀 dot-agent-tree-sitter</td>
+<td>🔄 dependency</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 tree-sitter</th>
+<th>☑️⚠️🧊parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>descriptionWasmPath: string</code> (js export)</td>
+<td></td>
+<td>🔄 <code>compiler</code></td>
+<td></td>
+<td></td>
+<td><code>full.initParsers()</code> loads via <code>web-tree-sitter</code>; also for standalone editor extensions</td>
+</tr>
+<tr>
+<td>✅ <code>behaviorWasmPath: string</code> (js export)</td>
+<td></td>
+<td>🔄 <code>compiler</code></td>
+<td></td>
+<td></td>
+<td><code>full.initParsers()</code> loads via <code>web-tree-sitter</code>; also for standalone editor extensions</td>
+</tr>
+<tr>
+<td>✅ 🦀 <code>language_description() → Language</code> (lib fn)</td>
+<td>🔄 <code>parser-dsl</code></td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td><code>description_parser.rs</code> · direct dep in kernel-dsl <code>Cargo.toml</code></td>
+</tr>
+<tr>
+<td>✅ 🦀 <code>language_behavior() → Language</code> (lib fn)</td>
+<td>🔄 <code>parser-dsl</code></td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td><code>parser.rs</code> · direct dep in kernel-dsl <code>Cargo.toml</code></td>
+</tr>
+<tr>
+<td>✅ 🦀 <code>NODE_TYPES_BEHAVIOR: &amp;str</code> (lib const)</td>
+<td>🔄 <code>parser-dsl</code></td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>build-time in parser-dsl <code>build.rs</code> · direct dep in kernel-dsl</td>
+</tr>
+<tr>
+<td>❌ <code>NODE_TYPES_DESCRIPTION</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>absent from Rust lib</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>parser-dsl package (L1 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 tree-sitter</th>
+<th>☑️⚠️🧊parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-</td>
+<td>⚠️ not published <br> <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/parser-dsl</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>🔄 dependency</td>
+<td>⚠️ local <br> ⚠️ 🦀 not published</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>init()</code> → <code>Promise&lt;void&gt;</code> (wasm fn)</td>
+<td>→ <code>full.initParsers()</code></td>
+<td></td>
+<td></td>
+<td>must call before any other wasm fn</td>
+</tr>
+<tr>
+<td>✅ <code>parse_description(text)</code> → <code>string</code> (wasm fn)</td>
+<td>→ <code>full.parseDescriptionFile(text)</code></td>
+<td></td>
+<td></td>
+<td>JSON <code>{ok: DescriptionFile}</code> or <code>{error}</code></td>
+</tr>
+<tr>
+<td>✅ <code>parse_behavior(text)</code> → <code>string</code> (wasm fn)</td>
+<td>→ <code>full.parseBehaviorFile(text)</code></td>
+<td></td>
+<td></td>
+<td>JSON <code>{ok: BehaviorFile}</code> or <code>{error}</code></td>
+</tr>
+<tr>
+<td>✅ <code>get_graph(text)</code> → <code>string</code> (wasm fn)</td>
+<td>→ <code>full.getBehaviorScxml(text)</code></td>
+<td></td>
+<td></td>
+<td>W3C SCXML XML; static (no <code>_active</code> annotation)</td>
+</tr>
+<tr>
+<td>✅ <code>get_states(text)</code> → <code>string</code> (wasm fn)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>JSON <code>string[]</code> in declaration order</td>
+</tr>
+<tr>
+<td>✅ <code>get_intents_for_state(text, state)</code> → <code>string</code> (wasm fn)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>JSON <code>string[]</code>; empty if state not found</td>
+</tr>
+<tr>
+<td>✅ <code>parse_behavior(text)</code> → <code>Result&lt;BehaviorFile, ParseError&gt;</code> (rust lib fn)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>crate linkage — called directly by <code>load_behavior</code></td>
+</tr>
+<tr>
+<td>✅ <code>parse_description(text)</code> → <code>Result&lt;DescriptionFile, ParseError&gt;</code> (rust lib fn)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>crate linkage</td>
+</tr>
+<tr>
+<td>✅ <code>mod ast</code> (rust lib)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td><code>BehaviorFile</code>, <code>DescriptionFile</code>, <code>StateDef</code>, <code>Statement</code>, … all serde-tagged AST types</td>
+</tr>
+<tr>
+<td>✅ <code>ParseError(String)</code> (rust lib)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>human-readable message with line/col</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>compiler package (L2 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 tree-sitter</th>
+<th>☑️⚠️🧊parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>🔄 dependency</td>
+<td>🔄 dependency</td>
+<td>@dot-agent/compiler</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>X</td>
+<td>X</td>
+<td>npm only</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🔥 compiler</th>
+<th>kernel-dsl</th>
+<th>⚠️ sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>core.parseAboutme(json)</code> → <code>AboutMe</code></td>
+<td></td>
+<td>🔄 <code>sdk</code></td>
+<td>sdk imports from <code>compiler/core</code></td>
+</tr>
+<tr>
+<td>✅ <code>core.buildAboutme(opts)</code> → <code>AboutMe</code></td>
+<td></td>
+<td></td>
+<td>used internally by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅ <code>core.aboutmeToJson(aboutme)</code> → <code>string</code></td>
+<td></td>
+<td></td>
+<td>used internally by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅ <code>core.parseId(id)</code> · <code>core.buildId(parts)</code> · <code>core.extractDigest(id)</code> · <code>core.extractName(id)</code></td>
+<td></td>
+<td></td>
+<td>agent ID helpers</td>
+</tr>
+<tr>
+<td>✅ <code>core.createZip()</code> · <code>core.extractFiles(zip, filter?)</code></td>
+<td></td>
+<td>🔄 <code>sdk</code></td>
+<td>sdk imports from <code>compiler/core</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.parse(langId, text, tree?)</code> → <code>Promise&lt;Tree&gt;</code></td>
+<td></td>
+<td></td>
+<td>raw tree-sitter tree; used by language-server</td>
+</tr>
+<tr>
+<td>✅ <code>full.parseSync(langId, text, tree?)</code> → <code>Tree|null</code></td>
+<td></td>
+<td></td>
+<td>sync variant for LSP diagnostics</td>
+</tr>
+<tr>
+<td>✅ <code>full.nodesOfType(tree, type)</code> + nav helpers</td>
+<td></td>
+<td></td>
+<td><code>nodeAtOffset</code>, <code>nodeToRange</code>, <code>positionToOffset</code>, <code>getContextNode</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.lintDescription(text, file?)</code> → <code>Promise&lt;LintMessage[]&gt;</code></td>
+<td></td>
+<td></td>
+<td>used by language-server and <code>pack</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.lintBehavior(text, file?, docPath?)</code> → <code>Promise&lt;LintMessage[]&gt;</code></td>
+<td></td>
+<td></td>
+<td>used by language-server and <code>pack</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.createLinter()</code> → <code>{lintDescription, lintBehavior}</code></td>
+<td></td>
+<td></td>
+<td>factory; used by language-server</td>
+</tr>
+<tr>
+<td>✅ <code>full.buildTypesJson(df)</code> → <code>string</code></td>
+<td></td>
+<td></td>
+<td>JSON Schema 2020-12 from <code>types[]</code> + <code>input[]</code> + <code>output[]</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.readZip(filePath)</code> · <code>full.writeZip(zip, outPath)</code></td>
+<td></td>
+<td></td>
+<td>Node.js; used by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.validateMagicBytes(filePath)</code> · <code>full.validateZipBomb(filePath)</code></td>
+<td></td>
+<td>⚠️ local copies</td>
+<td>Node.js; sdk redefines identical fns in <code>load.ts</code> instead of importing</td>
+</tr>
+<tr>
+<td>✅ <code>full.collectFiles(dir)</code> → <code>Promise&lt;Map&lt;string,string&gt;&gt;</code></td>
+<td></td>
+<td></td>
+<td>Node.js; used by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.pack(options?)</code> → <code>Promise&lt;PackResult&gt;</code></td>
+<td></td>
+<td></td>
+<td>full pipeline; consumed by CLI <code>pack.ts</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>kernel-dsl package (L2 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 tree-sitter</th>
+<th>☑️⚠️🧊 parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>🔄 dependency (🦀 <code>language_*</code> + <code>NODE_TYPES_BEHAVIOR</code>)</td>
+<td>🔄 dependency (🦀 rlib: <code>parse_behavior</code>, <code>parse_description</code>, <code>mod ast</code>)</td>
+<td>-</td>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/kernel-dsl</td>
+<td>🔄 dependency</td>
+<td>dual build: <code>pkg/</code> (node) + <code>pkg-web/</code> (browser)</td>
+</tr>
+<tr>
+<td>🔄 dependency</td>
+<td>🔄 dependency</td>
+<td>-</td>
+<td>🦀 dot-agent-kernel-dsl (rlib, not published)</td>
+<td>🔄 dependency</td>
+<td>links parser-dsl + tree-sitter crates directly</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🔥 kernel-dsl (wasm)</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>init()</code> → <code>Promise&lt;void&gt;</code> (js wrapper)</td>
+<td></td>
+<td>hand-written loader in <code>index.js</code>; must run before <code>new AgentDSLKernel()</code></td>
+</tr>
+<tr>
+<td>✅ <code>new AgentDSLKernel()</code> (wasm class ctor)</td>
+<td>🔄 <code>sdk</code></td>
+<td>constructed inside <code>AgentSession</code></td>
+</tr>
+<tr>
+<td>✅ <code>load_behavior(text)</code> → <code>string</code></td>
+<td>→ <code>start()</code></td>
+<td>🔄 <code>parser-dsl</code> rlib <code>parse_behavior</code>; returns effects JSON</td>
+</tr>
+<tr>
+<td>✅ <code>send_intent(intent)</code> → <code>string</code></td>
+<td>→ <code>sendIntent(intent)</code></td>
+<td>effects JSON</td>
+</tr>
+<tr>
+<td>✅ <code>send_offtopic()</code> → <code>string</code></td>
+<td>→ <code>sendOfftopic()</code></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>send_event(event)</code> → <code>string</code></td>
+<td>→ <code>sendEvent(event)</code></td>
+<td>matches global <code>trigger_decl</code></td>
+</tr>
+<tr>
+<td>✅ <code>tick_prompt()</code> → <code>string</code></td>
+<td>→ <code>tickPrompt()</code></td>
+<td>advances turn counter; fires <code>temporal_stmt</code></td>
+</tr>
+<tr>
+<td>✅ <code>send_complete()</code> · <code>send_failed()</code> → <code>string</code></td>
+<td>→ <code>sendComplete()</code> · <code>sendFailed()</code></td>
+<td>async result of <code>run</code>/<code>parallel</code></td>
+</tr>
+<tr>
+<td>✅ <code>get_current_state()</code> → <code>string</code></td>
+<td>→ <code>getState()</code></td>
+<td>current FSM state only</td>
+</tr>
+<tr>
+<td>✅ <code>get_valid_intents()</code> → <code>js_sys::Array</code></td>
+<td>→ <code>getValidIntents()</code></td>
+<td>intents of current state only</td>
+</tr>
+<tr>
+<td>✅ <code>get_graph()</code> → <code>string</code></td>
+<td>→ <code>getGraph()</code></td>
+<td>SCXML with runtime <code>_active=&quot;true&quot;</code>; 🔄 <code>parser-dsl</code> <code>to_scxml</code></td>
+</tr>
+<tr>
+<td>✅ <code>get_memory()</code> → <code>string</code></td>
+<td>❌ not exposed</td>
+<td><code>{domain, key, value}[]</code> snapshot</td>
+</tr>
+<tr>
+<td>✅ <code>set_memory(domain, key, value_json)</code></td>
+<td>→ <code>injectMemory(domain, key, value)</code></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>observe(callback: Function)</code></td>
+<td>⚠️ replaced by <code>registerHandler</code></td>
+<td>push model; sdk uses pull-style per-effect handlers instead</td>
+</tr>
+<tr>
+<td>✅ <code>free()</code> (wasm-bindgen auto)</td>
+<td>→ <code>dispose()</code></td>
+<td>WASM memory cleanup</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>sdk package (L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 tree-sitter</th>
+<th>parser-dsl</th>
+<th>⚠️☑️✅🔥 compiler</th>
+<th>☑️✅🔥 kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-</td>
+<td>-</td>
+<td>🔄 dependency (<code>compiler/core</code>)</td>
+<td>🔄 dependency (wasm)</td>
+<td>@dot-agent/sdk</td>
+<td>browser-compatible dispatch layer; tsup → esm + cjs</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🔥 sdk export</th>
+<th>source</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>loadAgent(input: Uint8Array | ArrayBuffer)</code> → <code>Promise&lt;AgentBundle&gt;</code></td>
+<td><code>load.ts</code></td>
+<td>🔄 <code>compiler/core</code> <code>parseAboutme</code> + <code>extractFiles</code></td>
+</tr>
+<tr>
+<td>✅ <code>AgentSession</code> (class)</td>
+<td><code>session.ts</code></td>
+<td>private ctor; wraps <code>AgentDSLKernel</code></td>
+</tr>
+<tr>
+<td>✅ <code>AgentSession.start()</code></td>
+<td></td>
+<td>🔄 <code>kernel.load_behavior</code></td>
+</tr>
+<tr>
+<td>✅ <code>AgentSession.registerHandler(type, handler)</code></td>
+<td></td>
+<td>pull-style replacement for kernel <code>observe</code></td>
+</tr>
+<tr>
+<td>✅ <code>sendIntent</code> · <code>sendEvent</code> · <code>sendComplete</code> · <code>sendFailed</code> · <code>sendOfftopic</code> · <code>tickPrompt</code></td>
+<td></td>
+<td>thin wrappers → <code>dispatchRaw(kernel.*)</code></td>
+</tr>
+<tr>
+<td>✅ <code>getState()</code> · <code>getValidIntents()</code> · <code>getGraph()</code></td>
+<td></td>
+<td>🔄 <code>kernel.get_current_state</code> / <code>get_valid_intents</code> / <code>get_graph</code></td>
+</tr>
+<tr>
+<td>✅ <code>injectMemory(domain, key, value)</code></td>
+<td></td>
+<td>🔄 <code>kernel.set_memory</code></td>
+</tr>
+<tr>
+<td>✅ <code>dispose()</code></td>
+<td></td>
+<td>🔄 <code>kernel.free</code></td>
+</tr>
+<tr>
+<td>✅ types: <code>AgentBundle</code>, <code>AgentFiles</code>, <code>Effect</code>, <code>EffectHandler</code>, <code>AboutMe</code></td>
+<td><code>types.js</code></td>
+<td>re-exported from <code>index.ts</code></td>
+</tr>
+<tr>
+<td>⚠️ <code>validateMagicBytes</code> · <code>validateZipBomb</code></td>
+<td><code>load.ts</code> (local)</td>
+<td>duplicated — compiler exports identical fns in <code>zip.ts</code>, not imported</td>
+</tr>
+<tr>
+<td>❌ read memory (<code>get_memory</code>)</td>
+<td></td>
+<td>kernel exposes it; sdk does not surface it</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Description DSL</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 DSL</th>
+<th>☑️✅🧊 Tree-sitter node</th>
+<th>⚠️☑️✅🧊 <a href="#node-name-discrepancy">parser-dsl</a></th>
+<th>⚠️☑️✅🔥 compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>agent</code></td>
+<td>✅ <code>agent_name</code></td>
+<td>✅ <code>AgentDecl.name</code></td>
+<td>✅ lint + <code>aboutme.name</code> + agent <code>id</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.schemaVersion</code> — 📌 hardcoded <code>&#39;dot-agent/1.0&#39;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.id</code> — <code>buildId({namespace=domain, name, version, digest=commit})</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>⚠️ <code>aboutme.purpose</code> — 📌 hardcoded <code>&#39;unknown&#39;</code>; never wired to any DSL field</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.compiler</code> — 📌 hardcoded <code>&#39;dot-agent/1.0.0&#39;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.version</code> — from <code>PackOptions.version</code> / git (<code>resolveVersion</code>), not DSL</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.commit</code> — from <code>PackOptions.commit</code> / git (<code>resolveCommit</code>), not DSL</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.integrity { sha256: string, types?: string, files?: string }</code> — <code>sha256</code> = hex of concatenated file contents; <code>types</code>/<code>files</code> = 📌 fixed paths <code>.agent/types.json</code> · <code>.agent/files.json</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>domain</code></td>
+<td>✅ <code>agent_meta[domain]</code></td>
+<td>✅ <code>AgentDecl.domain</code></td>
+<td>✅ lint W003/W007 · <code>aboutme.domain</code> · <code>id</code> prefix</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>license</code></td>
+<td>✅ <code>agent_meta[license]</code></td>
+<td>✅ <code>AgentDecl.license</code></td>
+<td>✅ <code>aboutme.license</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>terms</code></td>
+<td>✅ <code>agent_meta[terms]</code></td>
+<td>✅ <code>AgentDecl.terms</code></td>
+<td>⚠️ parsed, not written to <code>aboutme.json</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>privacy</code></td>
+<td>✅ <code>agent_meta[privacy]</code></td>
+<td>✅ <code>AgentDecl.privacy</code></td>
+<td>⚠️ parsed, not written to <code>aboutme.json</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>description</code></td>
+<td>✅ <code>description_block</code></td>
+<td>✅ <code>DescriptionFile.description</code></td>
+<td>✅ <code>aboutme.description</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>persona</code></td>
+<td>✅ <code>persona_block</code></td>
+<td>✅ <code>DescriptionFile.persona</code></td>
+<td>✅ <code>aboutme.persona</code> — 📌 falls back to <code>&#39;SOUL.md&#39;</code> when block absent</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>behavior</code></td>
+<td>✅ <code>behavior_block</code></td>
+<td>✅ <code>DescriptionFile.behavior</code></td>
+<td>⚠️ parsed but unused — compiler reads the file directly</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>require</code></td>
+<td>✅ <code>requires_block[]</code></td>
+<td>✅ <code>DescriptionFile.requires[]</code></td>
+<td>✅ <code>aboutme.requires[]</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>input</code></td>
+<td>✅ <code>input_block[]</code></td>
+<td>✅ <code>DescriptionFile.input[]</code></td>
+<td>✅ <code>types.json input</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>capabilities</code></td>
+<td>✅ <code>capabilities_block[]</code></td>
+<td>✅ <code>DescriptionFile.capabilities[]</code> (<code>AnnotatedRef {name, description}</code>)</td>
+<td>✅ <code>aboutme.capabilities[]</code> (<code>Capability {id, description}</code> — field <code>name</code>→<code>id</code>)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>output</code></td>
+<td>✅ <code>output_block[]</code></td>
+<td>✅ <code>DescriptionFile.output[]</code></td>
+<td>✅ <code>types.json output</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>type</code> (inline)</td>
+<td>✅ <code>type_decl[]</code></td>
+<td>✅ <code>DescriptionFile.types[]</code></td>
+<td>✅ <code>buildTypesJson(df)</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>📌 <strong>Hardcoded values in <code>compiler/pack.ts</code> that should derive from the language — needs fixing</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Hardcoded as</th>
+<th>Should be</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>files.json</code> <code>behavior</code></td>
+<td><code>&#39;agent.behavior&#39;</code></td>
+<td>the <code>behavior</code> block value (<code>DescriptionFile.behavior</code> is parsed but ignored — compiler reads the file directly)</td>
+</tr>
+<tr>
+<td><code>files.json</code> <code>description</code></td>
+<td><code>&#39;agent.description&#39;</code></td>
+<td>the actual <code>.description</code> source filename</td>
+</tr>
+<tr>
+<td><code>aboutme.purpose</code></td>
+<td><code>&#39;unknown&#39;</code></td>
+<td>a real DSL field — none exists yet (no <code>purpose</code> in grammar)</td>
+</tr>
+<tr>
+<td><code>aboutme.persona</code></td>
+<td>falls back to <code>&#39;SOUL.md&#39;</code></td>
+<td>required from the <code>persona</code> block, no silent default</td>
+</tr>
+<tr>
+<td><code>aboutme.schemaVersion</code></td>
+<td><code>&#39;dot-agent/1.0&#39;</code></td>
+<td>sourced constant, not a literal</td>
+</tr>
+<tr>
+<td><code>aboutme.compiler</code></td>
+<td><code>&#39;dot-agent/1.0.0&#39;</code></td>
+<td>the compiler package version</td>
+</tr>
+<tr>
+<td><code>aboutme.integrity.types</code> / <code>.files</code></td>
+<td><code>&#39;.agent/types.json&#39;</code> · <code>&#39;.agent/files.json&#39;</code></td>
+<td>fixed bundle paths — acceptable, but centralize the constants</td>
+</tr>
+</tbody></table>
+</blockquote>
+<hr>
+<h2>TypeDefinition DSL</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 DSL</th>
+<th>☑️✅🧊 Tree-sitter node</th>
+<th>parser-dsl</th>
+<th>☑️✅🔥 compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>type</code></td>
+<td>✅ <code>type_decl</code></td>
+<td>✅ <code>TypeDefinition</code></td>
+<td>✅ <code>types.json $defs</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>category</code></td>
+<td>✅ <code>category_prop</code></td>
+<td>✅ <code>TypeDefinition.category</code> (OntologyRef)</td>
+<td>✅ <code>x-category</code> · <code>x-category-label</code> in JSON Schema</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>concept</code></td>
+<td>✅ <code>concept_prop</code></td>
+<td>✅ <code>TypeDefinition.concept</code> (OntologyRef)</td>
+<td>✅ <code>x-concept</code> · <code>x-concept-label</code> in JSON Schema</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>prop: Type</code></td>
+<td>✅ <code>property_decl</code></td>
+<td>✅ <code>PropertyDecl</code></td>
+<td>✅ schema <code>properties</code> entry</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>prop: Type &quot;doc&quot;</code></td>
+<td>✅ <code>property_decl.description</code></td>
+<td>✅ <code>PropertyDecl.description?</code></td>
+<td>✅ <code>description</code> in schema property</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>?</code></td>
+<td>✅ <code>optional_marker</code></td>
+<td>✅ <code>PropertyDecl.is_optional</code></td>
+<td>✅ omitted from <code>required[]</code> in schema</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>string | number | …</code></td>
+<td>✅ <code>type_value</code> → primitive</td>
+<td>✅ <code>PropertyType::Primitive</code></td>
+<td>✅ <code>{ &quot;type&quot;: &quot;...&quot; }</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>TypeName</code></td>
+<td>✅ <code>type_value</code> → reference</td>
+<td>✅ <code>PropertyType::Reference</code></td>
+<td>✅ <code>{ &quot;$ref&quot;: &quot;...&quot; }</code> (std. or local <code>#/$defs/</code>)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>[TypeName]</code></td>
+<td>✅ <code>type_value</code> → array</td>
+<td>✅ <code>PropertyType::Array</code></td>
+<td>✅ <code>{ &quot;type&quot;: &quot;array&quot;, &quot;items&quot;: ... }</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>Enum(a, b)</code></td>
+<td>✅ <code>type_value</code> → enum</td>
+<td>✅ <code>PropertyType::Enum</code></td>
+<td>✅ <code>{ &quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [...] }</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Behavior DSL</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 DSL</th>
+<th>☑️✅🧊 Tree-sitter node</th>
+<th>⚠️☑️✅🧊 <a href="#node-name-discrepancy">parser-dsl</a></th>
+<th>☑️✅🔥 compiler</th>
+<th>⚠️ kernel-dsl</th>
+<th>⚠️ sdk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>merge</code></td>
+<td>✅ <code>merge_decl</code></td>
+<td>✅ <code>BehaviorFile.merges[]</code></td>
+<td>✅ resolves for transition lint</td>
+<td>⚠️ field parsed, merge files not resolved at runtime</td>
+<td>⚠️ <code>files.behaviors[]</code> loaded but not passed to kernel</td>
+</tr>
+<tr>
+<td>✅ <code>state</code></td>
+<td>✅ <code>state_decl</code></td>
+<td>✅ <code>StateDef</code></td>
+<td>✅ lint + FSM validation</td>
+<td>✅ FSM state map</td>
+<td>✅ transparent via kernel</td>
+</tr>
+<tr>
+<td>✅ <code>goal</code></td>
+<td>✅ <code>goal_stmt</code></td>
+<td>✅ <code>Statement::Goal</code></td>
+<td>✅ lint W002 (&gt;280 chars)</td>
+<td>✅ → <code>Effect::Goal {text}</code></td>
+<td>✅ <code>registerHandler(&quot;goal&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>guide</code></td>
+<td>✅ <code>guide_stmt</code></td>
+<td>✅ <code>Statement::Guide</code></td>
+<td>✅ lint W002 (&gt;280 chars)</td>
+<td>✅ → <code>Effect::Guide {text}</code></td>
+<td>✅ <code>registerHandler(&quot;guide&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>teach</code></td>
+<td>✅ <code>teach_stmt</code></td>
+<td>✅ <code>Statement::Teach</code></td>
+<td></td>
+<td>✅ → <code>Effect::Teach {text}</code></td>
+<td>✅ <code>registerHandler(&quot;teach&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>interact</code></td>
+<td>✅ <code>interact_stmt</code></td>
+<td>✅ <code>Statement::Interact</code></td>
+<td>✅ lint W006 (no handlers) · E008 (no goal)</td>
+<td>✅ → <code>Effect::RequestInteract</code></td>
+<td>✅ <code>registerHandler(&quot;request_interact&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>on intent &quot;…&quot;</code></td>
+<td>✅ <code>intent_handler</code></td>
+<td>✅ <code>Statement::OnIntent</code></td>
+<td>✅ lint E005/W005 (dangling transition)</td>
+<td>✅ <code>send_intent()</code> dispatches body</td>
+<td>✅ → <code>sendIntent(intent)</code></td>
+</tr>
+<tr>
+<td>✅ <code>on offtopic</code></td>
+<td>✅ <code>offtopic_handler</code></td>
+<td>✅ <code>Statement::OnOfftopic</code></td>
+<td>✅ lint (missing offtopic)</td>
+<td>✅ <code>send_offtopic()</code> dispatches body</td>
+<td>✅ → <code>sendOfftopic()</code></td>
+</tr>
+<tr>
+<td>✅ <code>transition to</code></td>
+<td>✅ <code>transition_stmt</code></td>
+<td>✅ <code>Statement::Transition</code></td>
+<td>✅ lint E005/W005</td>
+<td>✅ → <code>Effect::Transition {from, to}</code></td>
+<td>✅ <code>registerHandler(&quot;transition&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>after N prompts</code></td>
+<td>✅ <code>temporal_stmt</code></td>
+<td>✅ <code>Statement::After</code></td>
+<td></td>
+<td>✅ <code>tick_prompt()</code> fires at N turns</td>
+<td>✅ → <code>tickPrompt()</code></td>
+</tr>
+<tr>
+<td>✅ <code>run script</code></td>
+<td>✅ <code>run_stmt[script]</code></td>
+<td>✅ <code>RunStmt { kind: Script }</code></td>
+<td></td>
+<td>✅ → <code>Effect::RunScript {target, label, silent}</code></td>
+<td>✅ <code>registerHandler(&quot;run_script&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>run subagent</code></td>
+<td>✅ <code>run_stmt[subagent]</code></td>
+<td>✅ <code>RunStmt { kind: Subagent }</code></td>
+<td></td>
+<td>✅ → <code>Effect::RunSubagent {target, label, background}</code></td>
+<td>✅ <code>registerHandler(&quot;run_subagent&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>run tool</code></td>
+<td>✅ <code>run_stmt[tool]</code></td>
+<td>✅ <code>RunStmt { kind: Tool }</code></td>
+<td></td>
+<td>✅ → <code>Effect::RunTool {target, label}</code></td>
+<td>✅ <code>registerHandler(&quot;run_tool&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>run … each</code></td>
+<td>🗑️ <code>run_stmt[each]</code></td>
+<td>✅ <code>RunStmt.each</code></td>
+<td></td>
+<td>❌ parsed but never executed</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>✅ <code>set</code></td>
+<td>✅ <code>memory_stmt</code></td>
+<td>✅ <code>Statement::Set</code></td>
+<td></td>
+<td>✅ → <code>Effect::SetMemory</code> + writes <code>MemoryStore</code></td>
+<td>✅ <code>registerHandler(&quot;set_memory&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>if … end</code></td>
+<td>✅ <code>conditional_stmt</code></td>
+<td>✅ <code>Statement::If</code></td>
+<td></td>
+<td>✅ <code>eval_condition()</code> resolves at runtime</td>
+<td>✅ transparent (no effect emitted)</td>
+</tr>
+<tr>
+<td>✅ <code>apply css</code></td>
+<td>✅ <code>apply_stmt</code></td>
+<td>✅ <code>Statement::Apply</code></td>
+<td></td>
+<td>✅ → <code>Effect::ApplyCss {value}</code></td>
+<td>✅ <code>registerHandler(&quot;apply_css&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>remove css</code></td>
+<td>✅ <code>remove_stmt</code></td>
+<td>✅ <code>Statement::Remove</code></td>
+<td></td>
+<td>✅ → <code>Effect::RemoveCss {value}</code></td>
+<td>✅ <code>registerHandler(&quot;remove_css&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>on failure</code> (run)</td>
+<td>✅ <code>failure_stmt</code> (sub-node of <code>run_stmt</code>)</td>
+<td>✅ <code>RunStmt.on_failed</code></td>
+<td></td>
+<td>✅ <code>send_failed()</code> dispatches body</td>
+<td>→ <code>sendFailed()</code></td>
+</tr>
+<tr>
+<td>✅ <code>on failure</code> (apply/remove)</td>
+<td>✅ <code>failure_stmt</code> (sub-node of <code>apply_stmt</code>/<code>remove_stmt</code>)</td>
+<td>⚠️ not captured — <code>Apply</code>/<code>Remove</code> AST structs lack <code>on_failed</code>; parser drops sub-node</td>
+<td></td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>✅ <code>parallel</code></td>
+<td>✅ <code>parallel_stmt</code></td>
+<td>✅ <code>Statement::Parallel</code></td>
+<td></td>
+<td>⚠️ body executed sequentially (WASM single-threaded)</td>
+<td>✅ <code>registerHandler(&quot;run_script&quot; / &quot;run_subagent&quot; / &quot;run_tool&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>parallel on success</code> (removed v0.1)</td>
+<td>🗑️ <code>success_stmt</code> (removed — no <code>on success</code>)</td>
+<td>✅ <code>Parallel.on_complete</code> (now dead — C6)</td>
+<td></td>
+<td>✅ <code>send_complete()</code> dispatches body</td>
+<td>→ <code>sendComplete()</code></td>
+</tr>
+<tr>
+<td>✅ <code>parallel on failure</code></td>
+<td>✅ <code>on_failure</code> field (block) of <code>parallel_stmt</code></td>
+<td>✅ <code>Parallel.on_failed</code></td>
+<td></td>
+<td>✅ <code>send_failed()</code> dispatches body</td>
+<td>→ <code>sendFailed()</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>on complete</code></td>
+<td>🗑️ <code>on_complete_stmt</code></td>
+<td>✅ <code>Statement::OnComplete</code></td>
+<td></td>
+<td>✅ <code>send_complete()</code> dispatches body</td>
+<td>✅ → <code>sendComplete()</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>on failed</code></td>
+<td>🗑️ <code>on_failed_stmt</code></td>
+<td>✅ <code>Statement::OnFailed</code></td>
+<td></td>
+<td>✅ <code>send_failed()</code> dispatches body</td>
+<td>✅ → <code>sendFailed()</code></td>
+</tr>
+<tr>
+<td>✅ <code>on event &quot;…&quot;</code></td>
+<td>✅ <code>trigger_decl</code></td>
+<td>✅ <code>TriggerDecl</code></td>
+<td></td>
+<td>✅ <code>send_event(name)</code> dispatches matching triggers</td>
+<td>✅ → <code>sendEvent(name)</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Node name discrepancy</h2>
+<p>Tree-sitter node names and parser-dsl JSON serialization names are not always identical:</p>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 Tree-sitter (linter)</th>
+<th>parser-dsl serde rename</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>intent_handler</code></td>
+<td><code>intent_trigger</code></td>
+<td>different names for the same construct</td>
+</tr>
+<tr>
+<td><code>offtopic_handler</code></td>
+<td><code>offtopic_stmt</code></td>
+<td>different names for the same construct</td>
+</tr>
+<tr>
+<td><code>temporal_stmt</code></td>
+<td><code>after_stmt</code></td>
+<td><code>Statement::After</code> serializes <code>type: &quot;after_stmt&quot;</code>; grammar node is <code>temporal_stmt</code></td>
+</tr>
+<tr>
+<td><code>run_stmt</code> field <code>parameters</code></td>
+<td><code>RunStmt.label</code></td>
+<td>field renamed in parser (<code>parameters</code> → <code>label</code>)</td>
+</tr>
+<tr>
+<td><code>oriented_state_body</code></td>
+<td>—</td>
+<td>🗑️ removed v0.1 — <code>state_body</code> is now a flat <code>repeat(statement)</code>; ordering enforced by the linter</td>
+</tr>
+</tbody></table>
+
+  </main>
+
+  <script>
+    document.querySelectorAll('td').forEach(td => {
+      const text = td.textContent || '';
+      if (text.includes('✅') || text.includes('☑️')) td.classList.add('cell-implemented');
+      else if (text.includes('⚠️')) td.classList.add('cell-partial');
+      else if (text.includes('❌')) td.classList.add('cell-missing');
+      else if (text.includes('🔄') || text.includes('→')) td.classList.add('cell-dep');
+      else if (text.includes('🧊')) td.classList.add('cell-frozen');
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      document.querySelectorAll('tbody tr').forEach(row => {
+        if (row.querySelector('th')) return;
+        const rowText = row.textContent.toLowerCase();
+        row.style.display = rowText.includes(term) ? '' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>
+  

@@ -14,9 +14,13 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
-    "clean": "npm run clean --workspaces"
+    "clean": "npm run clean --workspaces",
+    "generate:dashboard": "node scripts/generate-dashboard.js"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "marked": "^18.0.5"
   }
 }
