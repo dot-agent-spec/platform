@@ -61,8 +61,16 @@ state car_reservation
 | `guide "text"` | No | After `goal` | Detailed instructions for LLM behavior |
 | `teach "filename"` | No | After `guide`, repeatable | Loads a knowledge file into LLM context |
 | `interact` | Yes | Before handlers | Releases control to the LLM for a user turn |
-| `on intent "..."` | Yes (one+) | After `interact` | Routes user intent to a transition or block |
-| `on offtopic` | Yes | Last handler | Handles off-topic user turns |
+| `on intent "..."` | Yes (one+) | After `interact` | Routes user intent to an action or block |
+| `on offtopic` | No | Optional, last handler | Handles off-topic user turns |
+
+> **Syntax model.** The grammar is keyword-driven: whitespace and line breaks are
+> insignificant — structure is held by keywords and an explicit `end` that closes
+> every multi-statement block (`if`, `on failure` block, `on intent`/`on offtopic`
+> block, `after`, `parallel`). A single-action handler stays inline with no `end`.
+> The grammar is deliberately permissive (order, uniqueness, and the oriented-state
+> shape are enforced by the linter, not the parser); the formatter re-imposes the
+> canonical layout shown in these examples.
 
 ### 2.2 Setup State (orchestration only)
 
@@ -129,21 +137,29 @@ See [`dsl/reference/memory.md`](memory.md) for full semantics.
 ```
 run script   "setup.js"
 run subagent "reviewer.behavior" "context params"
-run tool     "booking.api"
+
+run tool "booking.api" on failure transition to error   // inline, single action
+
+run tool "booking.api"                                   // block, closed by end
   on failure
+    run script "use-cache.js"
     transition to error
+  end
 ```
 
-Three targets: `script`, `subagent`, `tool`. Optional second quoted string is a parameters payload. `on failure` is an optional error handler block.
+Three targets: `script`, `subagent`, `tool`. Optional second quoted string is a parameters payload.
+
+`on failure` is an optional error handler — either a **single inline action** (no `end`) or a **block** of actions closed by `end`. It is **catch-and-resume**: after the handler runs, execution falls through to the next statement, *unless* the handler `transition`s away. There is no `on success` — success is the implicit fall-through to the next statement.
 
 ### `apply` / `remove` — CSS
 
 ```
-apply css "dark-theme.css"
-  on failure
-    transition to error
+apply css "dark-theme.css" on failure transition to error
 
 remove css "loading-overlay.css"
+  on failure
+    run script "restore.js"
+  end
 ```
 
 ### `transition to` — State Change
@@ -166,7 +182,7 @@ else
 end
 ```
 
-Conditions: comparison operators `==`, `!=`, `>`, `<`, `>=`, `<=`; logical operators `and`, `or`. No nesting.
+Conditions: comparison operators `==`, `!=`, `>`, `<`, `>=`, `<=`; logical operators `and`, `or`. Each `if` is closed by its own `end`, so conditionals may nest.
 
 ### `after N prompts` — Temporal
 
@@ -174,9 +190,10 @@ Conditions: comparison operators `==`, `!=`, `>`, `<`, `>=`, `<=`; logical opera
 after 3 prompts
   set session.nudged = true
   transition to responsive
+end
 ```
 
-Fires after the specified number of LLM turns within the current state.
+Fires after the specified number of LLM turns within the current state. The block is closed by `end`.
 
 ### `parallel` — Concurrent Execution
 
@@ -184,13 +201,12 @@ Fires after the specified number of LLM turns within the current state.
 parallel
   run script "fetch-rates.js"
   run tool   "currency.api"
-on success
-  transition to results
 on failure
   transition to error
+end
 ```
 
-`on failure` is required. `on success` is optional.
+Runs the listed `run` statements concurrently. The runs inside a `parallel` do **not** carry their own `on failure` — group failure is handled by the parallel's optional `on failure` block. The block is delimited by the parallel's single `end`. There is no `on success`: success falls through after `end`.
 
 ### `merge` — Flow Composition
 
@@ -218,23 +234,25 @@ Top-level `on event` blocks fire independently of the current state, functioning
 
 Inside an oriented state, handlers appear after `interact`:
 
-**Inline** (transition only):
+**Inline** (a single action — usually a transition):
 ```
 on intent "confirm" transition to payment
+on intent "log"     run script "log.js"
 on offtopic         transition to responsive
 ```
 
-**Block** (multiple statements):
+**Block** (multiple statements, closed by `end`):
 ```
 on intent "add item"
   set context.cart_item = "new"
   run tool "cart.api"
   transition to cart_updated
+end
 ```
 
-**`on offtopic`** fires when the LLM determines the user has shifted to a subject outside this state's domain — not an unmatched intent, but a genuine change of topic. The interact loop does not stop for unmatched intents; it continues until one matches.
+**`on offtopic`** fires when the LLM determines the user has shifted to a subject outside this state's domain — not an unmatched intent, but a genuine change of topic. It is optional. The interact loop does not stop for unmatched intents; it continues until one matches.
 
-**`on failure`** fires on runtime errors (tool unavailable, external agent unreachable, script error). Not triggered by unmatched intents.
+**`on failure`** fires on runtime errors (tool unavailable, external agent unreachable, script error). Not triggered by unmatched intents. It is catch-and-resume (see `run` above).
 
 ---
 

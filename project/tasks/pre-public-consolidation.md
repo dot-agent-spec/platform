@@ -5,7 +5,7 @@
 | Status | Planned |
 | Created | 2026-06-22 |
 | Author | Danilo Borges |
-| Sources | [implementation-status.md](../docs/explanation/architecture/implementation-status.md) · [build-pipeline-investigation.md](../docs/explanation/research/build-pipeline-investigation.md) |
+| Sources | [implementation-status.md](../../docs/explanation/architecture/implementation-status.md) · [build-pipeline-investigation.md](../../docs/explanation/research/build-pipeline-investigation.md) |
 
 ---
 

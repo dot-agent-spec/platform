@@ -10,7 +10,7 @@ Legend: ☑️ verified ✅ implemented · ⚠️ partial or gap · ❌ missing,
 
 | | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
 |---|---|---|---|---|---|
-| **Status** | 🧊 Frozen | 🧊⚠️ [Frozen](#node-name-discrepancy) | 🔥⚠️ Active | 🧊⚠️ Frozen | 🔥⚠️ Active |
+| **Status** | 🔥 Active | 🧊⚠️ [Frozen](#node-name-discrepancy) | 🔥⚠️ Active | 🧊⚠️ Frozen | 🔥⚠️ Active |
 | **Version** | `0.4.1` | `0.1.0` | `0.1.0` | `0.1.3` | `0.1.0` |
 | **Build** | `tree-sitter-cli` — manual npm scripts (`generate` + `build --wasm`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`build-wasm.sh`, target `wasm32-wasip1`) | `tsup` (esm + cjs, `dts:true`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` + `patch-wasm-bindgen.js` | `tsup` (esm + cjs, `dts:true`) |
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
@@ -222,8 +222,8 @@ Legend: ☑️ verified ✅ implemented · ⚠️ partial or gap · ❌ missing,
 | ✅ `on failure` (run) | ✅ `failure_stmt` (sub-node of `run_stmt`) | ✅ `RunStmt.on_failed` | | ✅ `send_failed()` dispatches body | → `sendFailed()` |
 | ✅ `on failure` (apply/remove) | ✅ `failure_stmt` (sub-node of `apply_stmt`/`remove_stmt`) | ⚠️ not captured — `Apply`/`Remove` AST structs lack `on_failed`; parser drops sub-node | | ❌ | ❌ |
 | ✅ `parallel` | ✅ `parallel_stmt` | ✅ `Statement::Parallel` | | ⚠️ body executed sequentially (WASM single-threaded) | ✅ `registerHandler("run_script" / "run_subagent" / "run_tool", fn)` |
-| ✅ `parallel on success` | ✅ `success_stmt` (sub-node of `parallel_stmt`) | ✅ `Parallel.on_complete` | | ✅ `send_complete()` dispatches body | → `sendComplete()` |
-| ✅ `parallel on failure` | ✅ `failure_stmt` (sub-node of `parallel_stmt`) | ✅ `Parallel.on_failed` | | ✅ `send_failed()` dispatches body | → `sendFailed()` |
+| 🗑️ `parallel on success` (removed v0.1) | 🗑️ `success_stmt` (removed — no `on success`) | ✅ `Parallel.on_complete` (now dead — C6) | | ✅ `send_complete()` dispatches body | → `sendComplete()` |
+| ✅ `parallel on failure` | ✅ `on_failure` field (block) of `parallel_stmt` | ✅ `Parallel.on_failed` | | ✅ `send_failed()` dispatches body | → `sendFailed()` |
 | 🗑️ `on complete` | 🗑️ `on_complete_stmt` | ✅ `Statement::OnComplete` | | ✅ `send_complete()` dispatches body | ✅ → `sendComplete()` |
 | 🗑️ `on failed` | 🗑️ `on_failed_stmt` | ✅ `Statement::OnFailed` | | ✅ `send_failed()` dispatches body | ✅ → `sendFailed()` |
 | ✅ `on event "…"` | ✅ `trigger_decl` | ✅ `TriggerDecl` | | ✅ `send_event(name)` dispatches matching triggers | ✅ → `sendEvent(name)` |
@@ -240,4 +240,4 @@ Tree-sitter node names and parser-dsl JSON serialization names are not always id
 | `offtopic_handler` | `offtopic_stmt` | different names for the same construct |
 | `temporal_stmt` | `after_stmt` | `Statement::After` serializes `type: "after_stmt"`; grammar node is `temporal_stmt` |
 | `run_stmt` field `parameters` | `RunStmt.label` | field renamed in parser (`parameters` → `label`) |
-| `oriented_state_body` | — | grammar-internal grouping, not present in AST output |
+| `oriented_state_body` | — | 🗑️ removed v0.1 — `state_body` is now a flat `repeat(statement)`; ordering enforced by the linter |
