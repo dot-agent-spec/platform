@@ -39,3 +39,13 @@ tasks/
 | "Should we do X, and how?" | "We decided to do X — here is what exactly needs to change" |
 | Requires ratification | No ratification needed |
 | Frozen after implementation | Removed after implementation |
+
+## Naming convention
+
+**Standalone tasks** (not derived from a specific RFC): `<topic>.md`
+Examples: `pre-public-consolidation.md`, `compiler-api.md`
+
+**RFC-derived tasks**: `<RFC-ID>-<topic>.md`
+Examples: `0021-grammar-unfreeze.md`, `0021-compiler-work.md`
+
+The RFC ID prefix signals which RFC owns the "why" — when the RFC is the source of truth, the task only needs to say *what* and *in what order*, not why the decision was made. Always link to the RFC in the task header.

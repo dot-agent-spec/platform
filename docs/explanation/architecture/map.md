@@ -18,14 +18,21 @@
 
 ```
 dot-agent/ (Monorepo Root)
-├── dsl/
-│   ├── language.md            # Single source of truth for the DSL
-│   ├── roadmap.md
-│   ├── syntax.md
-│   └── std_library.md
-├── rfcs/                      # Design proposals (RFC-0001 onward)
-│   └── AGENTS.md              # RFC folder guidelines for AI collaborators
-├── tasks/                     # Implementation tasks and technical debt tracking
+├── README.md
+├── AGENTS.md                  # Repo guide for AI collaborators
+├── ROADMAP.md                 # Language roadmap, version policy, freeze/editions
+├── GOVERNANCE.md              # Decision process (RFC / ADR / task)
+├── project/                   # PM: decisions, proposals, tasks
+│   ├── templates/             # rfc / adr / task templates
+│   ├── adr/                   # architecture decision records
+│   ├── pre-release/           # pre-v1.0 incubation logs (DA scheme)
+│   ├── rfcs/                  # public design proposals
+│   └── tasks/                 # implementation tasks and technical debt
+├── dsl/                       # language spec (Diátaxis)
+│   ├── reference/             # syntax: .behavior, .description, types, memory
+│   ├── explanation/           # design: principles, scope, behavior vs WASM
+│   ├── how-to/
+│   └── tutorials/
 ├── examples/                  # Canonical annotated .agent + .behavior pairs (CI-tested)
 ├── docs/                      # Diátaxis documentation
 │   ├── tutorials/

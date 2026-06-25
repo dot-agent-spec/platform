@@ -25,10 +25,10 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
 | B1 | **P0** — blocks publish | `parser-dsl` missing `publishConfig: {access: public}` | parser-dsl | XS |
-| B2 | **P0** — release decision | Version strategy (0.4.1 / 0.1.3 / 0.1.0 diverge) | all | S |
+| B2 ✅ | **P0** — release decision | Version strategy (0.4.1 / 0.1.3 / 0.1.0 diverge) | all | S |
 | C3 | **P0** — wrong output | `files.json.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
 | C2 | **P1** — feature broken e2e | `merge` parsed but not resolved at runtime | kernel-dsl, sdk | M |
-| C1 | **P1** — silent feature loss 🧊 | `on failure` on apply/remove dropped by parser | parser-dsl | S |
+| C1 | **→ RFC-0021** | `on failure` on apply/remove dropped by parser | see `0021-grammar-unfreeze.md` | — |
 | B3 | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
 | B4 | **P1** — consumer DX | Rich wasm-bindgen `.d.ts` shadowed by thin stub | parser-dsl, kernel-dsl | S |
 | B5 | **P1** — artifact confusion | `kernel-dsl/pkg-web/` orphan, unreferenced | kernel-dsl | XS |
@@ -37,7 +37,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 | B6 | **P2** — dedup | UBSan stubs + wasm-bindgen patches written 3× | parser-dsl, kernel-dsl | M |
 | B7 | **P2** — dedup | `build.rs` byte-identical across crates | parser-dsl, kernel-dsl | S |
 | B8 | **P2** — DX / robustness | `tree-sitter` has no `.d.ts`; consumers type-assert | tree-sitter, compiler | S |
-| C6 | **P2** — cleanup 🧊 | Dead AST nodes: `OnComplete`/`OnFailed`/`RunStmt.each` | parser-dsl | S |
+| C6 | **→ RFC-0021** | Dead AST nodes: `OnComplete`/`OnFailed`/`RunStmt.each` | see `0021-grammar-unfreeze.md` | — |
 
 ---
 
@@ -57,7 +57,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Why:** A coordinated public release needs an explicit policy: lockstep (align all to one version) vs. independent per-package semver. This is a decision, not code — record the outcome here.
 
-**Decision (2026-06-22):** Two independent version axes — see [`ROADMAP.md` § Two version axes](../ROADMAP.md#two-version-axes). Recorded as [ADR-0001](../adr/0001-two-axis-versioning.md).
+**Decision (2026-06-22):** Two independent version axes — see [`ROADMAP.md` § Two version axes](../ROADMAP.md#two-version-axes). Recorded as [DA00-02](../adr/DA00-02-two-axis-versioning.md).
 
 - **DSL version** is the public capability tier (`v0.1`, `v0.2`, … `v1.0`) — what docs and authors cite.
 - **Package versions** stay per-package semver, but the **tens digit mirrors the DSL milestone**: `0.10.x` = DSL `v0.1`, `0.20.x` = DSL `v0.2`, … reaching `1.0` together. Within a tens band each package keeps its own minor/patch freedom.
@@ -128,13 +128,9 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** wire merge resolution into the load path. Overlaps with `compiler-api.md` task 3 (`resolveMerges`) — coordinate so the SDK feeds resolved behavior to the kernel.
 
-### C1. Capture `on failure` on apply/remove — P1 🧊
+### C1. ~~Capture `on failure` on apply/remove~~ → moved to RFC-0021
 
-**What:** The grammar emits `failure_stmt` as a child of `apply_stmt`/`remove_stmt`, but the `Apply`/`Remove` AST structs have no `on_failed` field, so `parser.rs` drops the sub-node. (`run`/`parallel` capture it correctly.)
-
-**Why:** A documented DSL feature silently vanishes after parsing — never reaches kernel or SDK.
-
-**Change:** add `on_failed: Option<Vec<Statement>>` to the `Apply`/`Remove` AST variants and populate it in the parser; then dispatch it in the kernel. **Crosses frozen `parser-dsl`** — needs an unfreeze decision.
+See [`tasks/0021-grammar-unfreeze.md`](0021-grammar-unfreeze.md) §4.2 item C1.
 
 ### C4. `aboutme.purpose` has no DSL source — P1
 
@@ -150,11 +146,9 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** export them from `compiler/core` and import in the SDK; delete the SDK copies.
 
-### C6. Remove dead AST nodes — P2 🧊
+### C6. ~~Remove dead AST nodes~~ → moved to RFC-0021
 
-**What:** `parser-dsl` still carries `Statement::OnComplete` / `Statement::OnFailed` (no matching grammar node) and `RunStmt.each` (no matching grammar field). Marked `🗑️` in the status doc.
-
-**Change:** delete the dead variants/field. **Crosses frozen `parser-dsl`** — batch with C1 under one unfreeze.
+See [`tasks/0021-grammar-unfreeze.md`](0021-grammar-unfreeze.md) §4.2 item C6.
 
 ---
 
@@ -165,12 +159,12 @@ P0:  B1 (publishConfig) ─ independent
      B2 (version policy) ─ decision, gates the actual publish
      C3 (behavior filename) ─ independent
 
-P1:  C1 + C6 ─ batch under one parser-dsl unfreeze
-     C2 (merge runtime) ─ pairs with compiler-api.md task 3
+P1:  C2 (merge runtime) ─ pairs with compiler-api.md task 3
      C4, C5, B3, B4, B5 ─ independent
+     C1 + C6 ─ moved to 0021-grammar-unfreeze.md (parser-dsl unfreeze window)
 
 P2:  B6, B7 ─ batch (shared build infra)
      B8 ─ independent
 ```
 
-P0 items gate the public release. C1/C6 share a single `parser-dsl` unfreeze window — do them together to freeze once. B6/B7 are best done in one shared-build-infrastructure pass.
+P0 items gate the public release. B6/B7 are best done in one shared-build-infrastructure pass.

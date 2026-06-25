@@ -28,9 +28,18 @@ dot-agent-spec/
 ├── AGENTS.md                      ← this file
 ├── ROADMAP.md                     ← language roadmap, version policy, freeze/editions model
 ├── GOVERNANCE.md                  ← decision process (RFC / ADR / task lifecycles)
-├── templates/                     ← copy-ready templates: rfc, adr, task
-├── adr/                           ← architecture decision records
-│   └── AGENTS.md                  ← ADR lifecycle rules
+├── project/                       ← product management, decisions, and tasks
+│   ├── templates/                 ← copy-ready templates: rfc, adr, task
+│   ├── adr/                       ← architecture decision records
+│   │   └── AGENTS.md              ← ADR lifecycle rules
+│   ├── pre-release/               ← pre-v1.0 incubation logs
+│   │   └── v0.1/                  ← DA01 lifecycle logs
+│   ├── rfcs/                      ← public design proposals
+│   │   ├── AGENTS.md              ← RFC lifecycle rules
+│   │   ├── implemented/           ← RFCs that reached Implemented (frozen)
+│   │   └── rejected/              ← RFCs that were Rejected (frozen)
+│   └── tasks/                     ← implementation tasks and technical debt
+│       └── AGENTS.md              ← task lifecycle rules
 ├── dsl/                           ← language spec (Diátaxis structure)
 │   ├── README.md
 │   ├── reference/                 ← syntax: .behavior, .description, types, memory
@@ -42,12 +51,6 @@ dot-agent-spec/
 │   ├── reference/                 ← BehaviorFile, DescriptionFile, kernel API, agent-id
 │   ├── explanation/               ← architecture map, ecosystem overview, design decisions
 │   └── how-to/                    ← packaging, SDK usage
-├── rfcs/                          ← design proposals
-│   ├── AGENTS.md                  ← RFC lifecycle rules
-│   ├── implemented/               ← RFCs that reached Implemented (frozen)
-│   └── rejected/                  ← RFCs that were Rejected (frozen)
-├── tasks/                         ← implementation tasks and technical debt
-│   └── AGENTS.md                  ← task lifecycle rules
 ├── packages/
 │   ├── tree-sitter/               ← WASM grammar (submodule) — canonical grammar source
 │   ├── parser-dsl/                ← Rust/WASM — parses .behavior + .description
@@ -76,12 +79,12 @@ dot-agent-spec/
 | Package implementation | `packages/*/` (code is canonical) |
 | Package internals docs | `packages/*/docs/` |
 | Architecture overview | `docs/explanation/architecture/map.md` |
-| Proposed changes | `rfcs/` (Draft status — not canonical) |
-| Pending implementation work | `tasks/` |
+| Proposed changes | `project/rfcs/` (Draft status — not canonical) |
+| Pending implementation work | `project/tasks/` |
 | Decision process | `GOVERNANCE.md` |
 | Roadmap & version policy | `ROADMAP.md` |
-| Architecture decisions (settled) | `adr/` |
-| Document templates | `templates/` |
+| Architecture decisions (settled) | `project/adr/` |
+| Document templates | `project/templates/` |
 
 **When code and docs diverge, the code wins.** Docs describe intent; code is what runs.
 
@@ -105,7 +108,7 @@ Also update [`docs/explanation/architecture/map.md`](docs/explanation/architectu
 - Language changes must be reflected in **both** `dsl/reference/` and the grammar in `packages/tree-sitter/`
 - Grammar changes take effect only after regenerating `parser.c` in `packages/tree-sitter/tree-sitter-behavior/src/`
 - Example files in `examples/` must remain valid against the current grammar
-- Proposed new syntax goes in an RFC first (`rfcs/`) before touching the grammar
+- Proposed new syntax goes in an RFC first (`project/rfcs/`) before touching the grammar
 
 ---
 
@@ -122,7 +125,7 @@ By change type:
 | An `aboutme` / pack field (`packages/compiler`) | `dsl/reference/description.md` · `implementation-status.md` |
 | Top-level folders or packages | `README.md` · this file (layout tree + source-of-truth) · `docs/explanation/architecture/map.md` |
 
-New syntax is gated by an RFC first; a hard-to-reverse decision is recorded as an ADR (`adr/`). See [`GOVERNANCE.md`](GOVERNANCE.md).
+New syntax is gated by an RFC first; a hard-to-reverse decision is recorded as an ADR (`project/adr/`). See [`GOVERNANCE.md`](GOVERNANCE.md).
 
 ---
 
@@ -136,7 +139,7 @@ When delegating to a subagent, choose its model by the **tier** of the task, not
 
 Default to `inherit` when unsure. **Do not change the `model` of an existing subagent** — it was chosen
 deliberately; this applies to *new* subagents. Skills carry `model` / `effort` in frontmatter for the
-same routing. Rationale and the obsolescence/reversal plan: [ADR-0002](adr/0002-model-tiering-for-agent-routing.md).
+same routing. Rationale and the obsolescence/reversal plan: [DA00-03](project/adr/DA00-03-model-tiering-for-agent-routing.md).
 
 ---
 

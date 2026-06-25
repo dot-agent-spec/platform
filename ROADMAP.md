@@ -10,7 +10,7 @@ The single stability commitment is **v1.0** — the point at which the grammar i
 
 ## Two version axes
 
-> Decision record: [ADR-0001](adr/0001-two-axis-versioning.md).
+> Decision record: [DA00-02](project/adr/DA00-02-two-axis-versioning.md).
 
 The project tracks **two independent versions** — do not conflate them.
 

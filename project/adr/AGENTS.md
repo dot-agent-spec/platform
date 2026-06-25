@@ -13,7 +13,7 @@ reverse: "we chose X, because Y, and we accept consequence Z". Smaller grain tha
 ## ADR lifecycle
 
 ```
-Proposed → Accepted → (Deprecated | Superseded by ADR-NNNN)
+Proposed → Accepted → (Deprecated | Superseded by DA<minor>-<seq>)
 ```
 
 **An ADR is immutable once Accepted.** To change a decision, write a *new* ADR that supersedes the old
@@ -22,9 +22,14 @@ delete one — the chain of ADRs is the project's decision history.
 
 ## Creating an ADR
 
-1. Copy [`../templates/adr.md`](../templates/adr.md) to `adr/<NNNN>-<kebab-title>.md`.
+1. Copy [`../templates/adr.md`](../templates/adr.md) to `DA<minor>-<seq>-<kebab-title>.md`. Numbering
+   follows the **DA scheme** — see [DA00-01](DA00-01-traceability-scheme.md).
+   - `DA00-xx` if the decision governs **all** milestones; `DA0N-xx` if anchored to milestone v0.N.
+     Boundary test: *one milestone or all?*
+   - Numeric only; **never renumber**; supersession may cross milestones (`DA02-x` supersedes `DA01-y`).
 2. One decision per file. The title is the decision as a short noun phrase.
-3. Fill Context → Decision → Options considered → Consequences. Including rejected options is the point.
+3. Fill Context → Decision → Options considered → Consequences (rejected options are the point). Add a
+   `Sunset & reversal` section if the decision is expected to expire.
 
 ## Folder structure
 

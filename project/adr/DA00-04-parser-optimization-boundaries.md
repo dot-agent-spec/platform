@@ -8,7 +8,9 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
-# ADR-0003: Parser optimization boundaries
+# DA00-04: Parser optimization boundaries
+
+> Migrated from legacy ADR-0003 under [DA00-01](DA00-01-traceability-scheme.md).
 
 | Field | Value |
 |---|---|

@@ -8,7 +8,9 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
-# ADR-0002: Model tiering for subagent and skill routing
+# DA00-03: Model tiering for subagent and skill routing
+
+> Migrated from legacy ADR-0002 under [DA00-01](DA00-01-traceability-scheme.md).
 
 | Field | Value |
 |---|---|
@@ -82,4 +84,4 @@ the current state where per-task model selection is manual.
 
 - Root [`AGENTS.md`](../AGENTS.md) — the operational heuristic this ADR justifies
 - [`GOVERNANCE.md`](../GOVERNANCE.md) — process
-- [ADR-0001](0001-two-axis-versioning.md) — sibling decision record
+- [DA00-02](DA00-02-two-axis-versioning.md) — sibling decision record

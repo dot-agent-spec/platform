@@ -24,8 +24,9 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | [`ROADMAP.md`](ROADMAP.md) | Language roadmap — current milestone, version policy, and feature maturity |
 | [`dsl/`](dsl/) | Language reference — syntax, semantics, and design of `.description` and `.behavior` |
 | [`docs/`](docs/) | Implementation reference — compiler APIs, kernel protocol, SDK, architecture |
-| [`rfcs/`](rfcs/) | Design proposals for new language and protocol features |
-| [`tasks/`](tasks/) | Implementation tasks and technical debt tracking |
+| [`project/rfcs/`](project/rfcs/) | Public design proposals for new language and protocol features |
+| [`project/pre-release/`](project/pre-release/) | Pre-1.0 incubation historical logs |
+| [`project/tasks/`](project/tasks/) | Implementation tasks and technical debt tracking |
 | [`examples/`](examples/) | Canonical annotated agent examples |
 
 **Architecture overview:** [`docs/explanation/architecture/map.md`](docs/explanation/architecture/map.md)

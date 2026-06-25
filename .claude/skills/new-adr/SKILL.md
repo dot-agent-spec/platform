@@ -119,7 +119,7 @@ Format each option as: `- **Option A — …** — pro / con.` Mark the chosen o
 
 **i) Consequences section** — What becomes easier AND what becomes harder as a result. Be honest about accepted costs. Note any follow-up work, new constraints, or risks introduced. If there are critical follow-ups, call them out explicitly.
 
-**j) Sunset & reversal section** — Add this section **only if** the decision is expected to expire or become obsolete (e.g. a stopgap measure). Follow the structure in `adr/0002-model-tiering-for-agent-routing.md` exactly: include *When to revisit* and *How to unwind* sub-bullets. Omit this section entirely otherwise — do not add it as an empty placeholder.
+**j) Sunset & reversal section** — Add this section **only if** the decision is expected to expire or become obsolete (e.g. a stopgap measure). Follow the structure in `project/adr/DA00-03-model-tiering-for-agent-routing.md` exactly: include *When to revisit* and *How to unwind* sub-bullets. Omit this section entirely otherwise — do not add it as an empty placeholder.
 
 **k) Related section** — List the RFCs that produced this decision, tasks it unblocks, or sibling ADRs. If nothing is related, leave the section empty (do not add placeholder text).
 

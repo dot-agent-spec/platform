@@ -1,0 +1,50 @@
+<!--
+ Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ https://www.apache.org/licenses/LICENSE-2.0
+-->
+
+# LOG-DA01-A: Pre-Release Governance and Synchronized Traceability IDs
+
+| Field | Value |
+|---|---|
+| Status | Accepted |
+| Date | 2026-06-25 |
+| Deciders | Danilo Borges |
+
+---
+
+## Context
+
+The dot-agent project is currently in its pre-v1.0 baseline architecture phase (incubation). During this phase, decisions are made rapidly by the author acting as the sole maintainer to establish the core design. However, using the standard public `RFC` format for these foundation decisions misrepresents their intent: they do not seek community comments, but rather serve as a historical and contextual log for the author and AI agents working on the repository.
+
+Mixing pre-release design logs with public RFCs creates semantic confusion and clutter in the `rfcs/` folder, which should be strictly reserved for external community proposals.
+
+## Decision
+
+We will implement a **Synchronized Traceability IDs** system for the incubation lifecycle, utilizing the `DA01-` prefix (dot-agent v0.1) for all pre-release decisions.
+
+We will restructure the governance architecture:
+1. **The Executive Index:** Every structural decision is recorded as a consecutive ADR (e.g., `ADR-DA01-001`). ADRs are the primary source of truth for humans.
+2. **The Long-form Appendices:** When a decision involves complex AI collaboration, dead-ends, or deep context, a matching log is created in `project/pre-release/v0.1/` sharing the same ID (e.g., `DA01-001-pre-release-governance.md`).
+3. **The Public Channel:** The `project/rfcs/` folder is reserved strictly for real public proposals (Requests for Comments).
+
+## Options considered
+
+- **Option A — Keep using `rfcs/` for everything:** Rejected. Calling a unilateral baseline decision an "RFC" breaks the semantic meaning of the term and pollutes the community proposal space.
+- **Option B — Use a `design-logs/` folder:** Considered, but deemed too informal for the long-term repository structure.
+- **Option C (chosen) — Synchronized `ADR` + `pre-release/` logs:** Accepted. Separates the concise human-readable decision (ADR) from the rich LLM-readable context (pre-release log), while tightly coupling them via identical IDs (e.g., `DA01-XXX`).
+
+## Consequences
+
+- **Easier:** New developers can read consecutive ADRs without sifting through long AI-generation logs. LLM agents can jump from an ADR to its matched pre-release log to understand historical context and hallucinations.
+- **Harder:** The author must manually keep the ID pairing synchronized and ensure that `rfcs/` is explicitly reserved for future community use.
+
+## Related
+
+- `GOVERNANCE.md` (Updated with DA01 Lifecycle rules)
+- `AGENTS.md` (Updated Repository Layout)
