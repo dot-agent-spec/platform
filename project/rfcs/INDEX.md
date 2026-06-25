@@ -39,7 +39,7 @@ Scannable overview of all RFCs with package impact. Use the impact columns to ga
 | [RFC-0017: Standard Library](0017-standard-library.md) | Draft | — | — | ⚠️ | — | ⚠️ | Defines `std.*` compound types (`std.Prompt`, `std.Image`, `std.Speech`). Compiler resolves `std.*` references; SDK injects definitions at load time. |
 | [RFC-0018: Transpiler Infrastructure](0018-transpiler-infrastructure.md) | Draft | — | 🔄 | 🔄 | — | — | Pluggable codegen layer: `.agent` → LangGraph / Swift AppIntent. Consumes parser-dsl and compiler AST without modifying them. Lands in `transpiler-core/langgraph/appintent` packages. |
 | [RFC-0019: Memory Binding](0019-memory-binding.md) | Draft | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ? | New `extract session.x from intent` statement to capture LLM-extracted values into memory; `{session.x}` interpolation in `run` parameter strings for forwarding memory to scripts/tools. |
-| [RFC-0021: Forgiving Syntax and Prettifier](0021-forgiving-syntax-and-prettifier.md) | Draft | ⚠️ | ⚠️ | ⚠️ | — | — | Master plan for v0.1 tree-sitter/parser-dsl unfreeze: relax grammar (block order, newlines, `on success` for `run_stmt`, `run…on failure` inside `if`), fix AST mapper crashes, add Prettifier, reform E004/E006 diagnostics. |
+
 
 ---
 

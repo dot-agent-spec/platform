@@ -1,11 +1,11 @@
-# Task: Grammar Unfreeze — RFC-0021 §4.1–§4.2
+# Task: Grammar Unfreeze — DA01-01 §4.1–§4.2
 
 | Field | Value |
 |---|---|
 | Status | In Progress |
 | Created | 2026-06-25 |
 | Author | Danilo Borges |
-| RFC | [RFC-0021: Forgiving Syntax and Prettifier](../rfcs/0021-forgiving-syntax-and-prettifier.md) |
+| Decision Log | [DA01-01: Forgiving Syntax and Prettifier](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
 
 All items in this task must be implemented in a single batch (one unfreeze of `tree-sitter` + `parser-dsl`). Do not open a second unfreeze for a missed item.
 

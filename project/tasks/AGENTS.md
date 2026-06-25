@@ -45,7 +45,7 @@ tasks/
 **Standalone tasks** (not derived from a specific RFC): `<topic>.md`
 Examples: `pre-public-consolidation.md`, `compiler-api.md`
 
-**RFC-derived tasks**: `<RFC-ID>-<topic>.md`
-Examples: `0021-grammar-unfreeze.md`, `0021-compiler-work.md`
+**RFC or Decision-derived tasks**: `<ID>-<topic>.md` (where `<ID>` is the RFC ID or DA ID)
+Examples: `0018-transpiler-core.md`, `DA01-01-grammar-unfreeze.md`
 
-The RFC ID prefix signals which RFC owns the "why" — when the RFC is the source of truth, the task only needs to say *what* and *in what order*, not why the decision was made. Always link to the RFC in the task header.
+The ID prefix signals which RFC or Decision Record/Log owns the "why" — when that document is the source of truth, the task only needs to say *what* and *in what order*, not why the decision was made. Always link to the source document in the task header.

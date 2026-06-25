@@ -8,14 +8,15 @@
  https://www.apache.org/licenses/LICENSE-2.0
 -->
 
-# RFC-0021: Forgiving Syntax and Prettifier Architecture
+# LOG-DA01-01: Forgiving Syntax and Prettifier Architecture
+
+> Migrated from RFC-0021 under [DA00-01](../../adr/DA00-01-traceability-scheme.md).
 
 | Field | Value |
 |---|---|
 | Status | Draft |
-| Author | Danilo Borges |
-| Created | 2026-06-24 |
-| Target Release | v0.1 |
+| Date | 2026-06-25 |
+| Deciders | Danilo Borges |
 
 | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
 |---|---|---|---|---|
@@ -29,7 +30,7 @@ This RFC proposes an architectural shift in the `dot-agent` language parser and 
 
 The mechanism for relaxation is: **newlines are moved to `extras`** (cosmetic) in `.behavior`, and **structure is held entirely by keywords and an explicit `end` terminator**. This makes the grammar keyword-driven: the parser never needs to count newlines to understand block boundaries.
 
-This RFC also serves as the **master plan for the v0.1 tree-sitter and parser-dsl unfreeze window.** All grammar and AST changes must be batched into this single window. Each grammar change in §4.1 requires a corresponding corpus test case under `packages/tree-sitter/test/corpus/forgiving-syntax/`.
+This RFC also serves as the **master plan for the v0.1 tree-sitter and parser-dsl unfreeze window.** All grammar and AST changes must be batched into this single window. Each grammar change in §4.1 requires a corresponding corpus test case under `packages/tree-sitter/{language}/test/corpus/`.
 
 ---
 
@@ -145,7 +146,7 @@ This RFC is the master plan for the upcoming `tree-sitter` and `parser-dsl` unfr
 
 **Layer 2 — parser-dsl unfreeze (immediately after the freeze):** AST changes in §4.2 (L2/G2, C1, C6). These have no grammar dependency but should not race the grammar rewrite.
 
-Each grammar change in §4.1 must have a corresponding corpus test case under `packages/tree-sitter/test/corpus/forgiving-syntax/` (one file per item, named after the item ID).
+Each grammar change in §4.1 must have a corresponding corpus test case under `packages/tree-sitter/{language}/test/corpus/` (one file per item, named after the item ID).
 
 > **Scheduling note:** Native States (§4.3) is a compiler-only change with no grammar dependency — it can be shipped as a standalone fix before or after the unfreeze window.
 
@@ -159,7 +160,7 @@ Each grammar change in §4.1 must have a corresponding corpus test case under `p
 | **S3** | sync-status S3 | `run_stmt` has no `on success` handler; `success_stmt` only exists for `parallel`. | **CANCELLED/REJECTED.** `on success` has been removed from the language entirely (including from `parallel`). Success is always the implicit sequential fall-through. Adding symmetric `on success` would invite control-flow spaghetti and was rejected as a design principle (see §3.4). | Cancelled |
 | **Gap 1** | new-adr Gap 1 | `run script … on failure` inside an `if/else` body is undocumented and untested. | The keyword-driven grammar makes this valid for free. Add corpus test cases (`if-body-run-on-failure.behavior`). Document in `dsl/reference/behavior.md`. | Active |
 
-The following are NEW grammar changes introduced by the keyword-driven design (not in the original RFC):
+The following are NEW grammar changes introduced by the keyword-driven design (not in the original DA):
 
 | Item | Description | Status |
 |---|---|---|
@@ -218,7 +219,6 @@ The following gaps were surfaced in dogfooding but fall outside the grammar/AST-
 ## 7. Alternatives Considered
 
 - **Keep Grammar Strict, Improve Parser Errors:** We could keep the strict `seq()` and write complex error recovery logic. This does not solve the token waste problem — the LLM still executes another generation turn to fix block order. Auto-formatting saves an entire roundtrip.
-- **Implement Prettifier in Rust:** We could add `.to_canonical_string()` to the `parser-dsl` structs. However, the Rust structs discard comments by design. Moving this to TypeScript using `web-tree-sitter` is the only safe way to preserve developer workflow.
 - **Relax `_newline` incrementally (original approach):** The original §3.1 proposed making `_newline` optional in specific positions (`handler_block`, `failure_stmt`, etc.). This was rejected because it requires auditing every position individually and still leaves the grammar newline-sensitive. Moving newlines to `extras` globally is simpler, more complete, and consistent.
 - **`on success` as sugar for `transition to`:** We considered keeping `on success` as a symmetric construct to `on failure`. This was rejected: success is always the implicit sequential fall-through, and adding an explicit `on success` handler would invite authors to create non-linear control flow where simple sequencing suffices. The asymmetry is intentional — `on failure` exists to handle the exception; the happy path needs no annotation.
 
