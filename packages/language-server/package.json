@@ -18,11 +18,11 @@
   "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "url": "https://github.com/dot-agent-spec/core",
     "directory": "packages/language-server"
   },
   "bugs": {
-    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "url": "https://github.com/dot-agent-spec/core/issues",
     "email": "contato@daniloborg.es"
   },
   "keywords": [
