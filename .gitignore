@@ -16,4 +16,4 @@ graphify-out/
 # The dogfood's value (.behavior/.description, EXPRESSIVENESS.md, BRIEF.md) IS committed.
 dogfood/**/examples/
 
-tmp/
+tmp/org-spec/
