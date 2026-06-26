@@ -15,11 +15,192 @@
 use crate::ast;
 use tree_sitter::{Parser, Node};
 use serde_json::{Value, json, Map};
+use serde::Serialize;
 
 include!(concat!(env!("OUT_DIR"), "/node_kinds.rs"));
 
 #[derive(Debug)]
 pub struct ParseError(pub String);
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "lowercase")]
+// All four levels exist in the WASM protocol; the Rust parser only emits Error.
+#[allow(dead_code)]
+pub enum Severity { Error, Warning, Info, Hint }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParseDiagnostic {
+    pub severity: Severity,
+    pub code: String,
+    pub message: String,
+    pub hint: Option<String>,
+    pub start: Option<(usize, usize)>,
+    pub end: Option<(usize, usize)>,
+}
+
+const DSL_KEYWORDS: &[&str] = &[
+    "state", "goal", "guide", "teach", "interact",
+    "transition", "to", "on", "intent", "offtopic",
+    "parallel", "after", "run", "tool", "script",
+    "subagent", "set", "apply", "remove", "if",
+    "else", "end", "failure", "background", "silent", "merge",
+];
+
+fn levenshtein(a: &str, b: &str) -> usize {
+    let a: Vec<char> = a.chars().collect();
+    let b: Vec<char> = b.chars().collect();
+    let la = a.len();
+    let lb = b.len();
+    let mut dp = vec![vec![0usize; lb + 1]; la + 1];
+    for i in 0..=la { dp[i][0] = i; }
+    for j in 0..=lb { dp[0][j] = j; }
+    for i in 1..=la {
+        for j in 1..=lb {
+            dp[i][j] = if a[i - 1] == b[j - 1] {
+                dp[i - 1][j - 1]
+            } else {
+                1 + dp[i - 1][j].min(dp[i][j - 1]).min(dp[i - 1][j - 1])
+            };
+        }
+    }
+    dp[la][lb]
+}
+
+pub fn keyword_hint(token: &str) -> Option<String> {
+    DSL_KEYWORDS.iter()
+        .filter_map(|kw| {
+            let d = levenshtein(token, kw);
+            if d > 0 && d <= 2 { Some((d, *kw)) } else { None }
+        })
+        .min_by_key(|(d, _)| *d)
+        .map(|(_, kw)| format!("did you mean '{}'?", kw))
+}
+
+pub fn collect_all_errors<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
+    if node.is_error() {
+        out.push(node);
+        // Don't recurse into ERROR children — they are part of the same error region.
+        return;
+    }
+    if node.is_missing() {
+        out.push(node);
+        return;
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_all_errors(child, out);
+    }
+}
+
+pub fn node_to_diagnostic(node: Node, source: &str) -> ParseDiagnostic {
+    let sp = node.start_position();
+    let ep = node.end_position();
+    let start = Some((sp.row + 1, sp.column + 1));
+    let end = if node.is_missing() {
+        start  // zero-width marker at expected position
+    } else {
+        Some((ep.row + 1, ep.column + 1))
+    };
+
+    let token = source.get(node.byte_range()).unwrap_or("").trim();
+    let hint = if !token.is_empty() && !token.contains(char::is_whitespace) {
+        keyword_hint(token)
+    } else {
+        None
+    };
+
+    let line_text = source.lines().nth(sp.row).unwrap_or("");
+    let col_num = sp.column + 1;
+    let message = if node.is_missing() {
+        let parent_kind = node.parent().map(|p| p.kind()).unwrap_or("unknown");
+        format!("Missing token expected after '{}' at line {}, column {}", parent_kind, sp.row + 1, col_num)
+    } else if col_num <= line_text.len() + 1 {
+        let caret = format!("{}^", " ".repeat(if col_num > 1 { col_num - 1 } else { 0 }));
+        format!("Syntax error at line {}, column {}:\n  {}\n  {}", sp.row + 1, col_num, line_text, caret)
+    } else {
+        format!(
+            "Syntax error in behavior file\n\nCheck that:\n  - Oriented states follow: goal? guide? teach* interact\n  - interact must contain: on intent \"...\" handlers (on offtopic is optional)\n  - Setup states use: run/set/transition (no interact needed)"
+        )
+    };
+
+    ParseDiagnostic {
+        severity: Severity::Error,
+        code: "E004".to_string(),
+        message,
+        hint,
+        start,
+        end,
+    }
+}
+
+/// Parse behavior text and return structured diagnostics.
+/// On syntax errors, still attempts AST construction (tree-sitter error recovery).
+/// Returns `(Some(BehaviorFile), diagnostics)` when AST can be built even with errors.
+/// Returns `(None, diagnostics)` when the AST cannot be built.
+pub fn parse_behavior_with_diagnostics(text: &str) -> (Option<ast::BehaviorFile>, Vec<ParseDiagnostic>) {
+    let mut parser = Parser::new();
+    if parser.set_language(&dot_agent_tree_sitter::language_behavior()).is_err() {
+        return (None, vec![ParseDiagnostic {
+            severity: Severity::Error,
+            code: "E004".to_string(),
+            message: "Failed to load behavior language".to_string(),
+            hint: None,
+            start: Some((1, 1)),
+            end: Some((1, 1)),
+        }]);
+    }
+
+    let normalized = if text.ends_with('\n') { text.to_string() } else { format!("{}\n", text) };
+    let src = normalized.as_str();
+
+    let tree = match parser.parse(src, None) {
+        Some(t) => t,
+        None => return (None, vec![ParseDiagnostic {
+            severity: Severity::Error,
+            code: "E004".to_string(),
+            message: "Failed to parse behavior".to_string(),
+            hint: None,
+            start: Some((1, 1)),
+            end: Some((1, 1)),
+        }]),
+    };
+
+    let root_node = tree.root_node();
+    let mut diagnostics = Vec::new();
+
+    if root_node.has_error() {
+        let mut error_nodes = Vec::new();
+        collect_all_errors(root_node, &mut error_nodes);
+        for err_node in error_nodes {
+            diagnostics.push(node_to_diagnostic(err_node, src));
+        }
+    }
+
+    let value = node_to_value(root_node, src);
+    match serde_json::from_value::<ast::BehaviorFile>(value) {
+        Ok(behavior) => (Some(behavior), diagnostics),
+        Err(e) => {
+            let raw = e.to_string();
+            let msg = if raw.contains("unknown variant") || raw.contains("unknown field") {
+                "Internal parse error: unrecognised statement type. This may be a grammar/parser version mismatch.".to_string()
+            } else if raw.contains("missing field") {
+                "Internal parse error: required AST field missing after parse. File a bug.".to_string()
+            } else {
+                "Failed to map parse tree to AST. File a bug if this persists.".to_string()
+            };
+            diagnostics.push(ParseDiagnostic {
+                severity: Severity::Error,
+                code: "E004".to_string(),
+                message: msg,
+                hint: None,
+                start: None,
+                end: None,
+            });
+            (None, diagnostics)
+        }
+    }
+}
 
 fn find_first_error(node: Node) -> Option<Node> {
     if node.is_error() || node.is_missing() {

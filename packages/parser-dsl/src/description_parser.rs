@@ -10,8 +10,54 @@ use crate::ast::{
     AgentDecl, AnnotatedRef, DescriptionFile, OntologyRef, PropertyDecl, PropertyType,
     TypeDefinition,
 };
-use crate::parser::ParseError;
+use crate::parser::{ParseDiagnostic, ParseError, Severity, collect_all_errors, node_to_diagnostic};
 use tree_sitter::{Node, Parser};
+
+/// Parse a .description file and return structured diagnostics.
+/// Mirrors the contract of `parse_behavior_with_diagnostics`.
+pub fn parse_description_with_diagnostics(text: &str) -> (Option<DescriptionFile>, Vec<ParseDiagnostic>) {
+    let mut parser = Parser::new();
+    if parser.set_language(&dot_agent_tree_sitter::language_description()).is_err() {
+        return (None, vec![ParseDiagnostic {
+            severity: Severity::Error,
+            code: "E004".to_string(),
+            message: "Failed to load description language".to_string(),
+            hint: None,
+            start: Some((1, 1)),
+            end: Some((1, 1)),
+        }]);
+    }
+
+    let normalized = if text.ends_with('\n') { text.to_string() } else { format!("{}\n", text) };
+    let src = normalized.as_str();
+
+    let tree = match parser.parse(src, None) {
+        Some(t) => t,
+        None => return (None, vec![ParseDiagnostic {
+            severity: Severity::Error,
+            code: "E004".to_string(),
+            message: "Failed to parse description".to_string(),
+            hint: None,
+            start: Some((1, 1)),
+            end: Some((1, 1)),
+        }]),
+    };
+
+    let root = tree.root_node();
+    let mut diagnostics = Vec::new();
+
+    if root.has_error() {
+        let mut error_nodes = Vec::new();
+        collect_all_errors(root, &mut error_nodes);
+        for err_node in error_nodes {
+            diagnostics.push(node_to_diagnostic(err_node, src));
+        }
+        return (None, diagnostics);
+    }
+
+    let df = build_description_from_root(src, root);
+    (Some(df), diagnostics)
+}
 
 pub fn parse_description(text: &str) -> Result<DescriptionFile, ParseError> {
     let mut parser = Parser::new();
@@ -36,6 +82,10 @@ pub fn parse_description(text: &str) -> Result<DescriptionFile, ParseError> {
         return Err(ParseError(msg));
     }
 
+    Ok(build_description_from_root(src, root))
+}
+
+fn build_description_from_root(src: &str, root: Node) -> DescriptionFile {
     let mut df = DescriptionFile {
         agent: AgentDecl {
             name: String::new(),
@@ -74,7 +124,7 @@ pub fn parse_description(text: &str) -> Result<DescriptionFile, ParseError> {
         }
     }
 
-    Ok(df)
+    df
 }
 
 // ── agent_decl ────────────────────────────────────────────────────────────────

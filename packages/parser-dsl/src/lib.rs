@@ -18,24 +18,26 @@ pub use description_parser::parse_description;
 use wasm_bindgen::prelude::*;
 
 /// Parse a .behavior source text.
-/// Returns JSON: `{ "ok": BehaviorFile }` on success, `{ "error": "..." }` on failure.
-/// js_name keeps the WASM export as `parse_behavior` while the Rust name avoids collision.
+///
+/// New JSON contract (breaking change from DA01-01):
+/// - Success, no issues:  `{ "ok": BehaviorFile, "diagnostics": [] }`
+/// - Success with errors: `{ "ok": BehaviorFile, "diagnostics": [ParseDiagnostic, ...] }`
+/// - Parse failure:       `{ "ok": null,         "diagnostics": [ParseDiagnostic, ...] }`
 #[wasm_bindgen(js_name = "parse_behavior")]
 pub fn wasm_parse_behavior(text: &str) -> String {
-    match parser::parse_behavior(text) {
-        Ok(behavior) => serde_json::json!({ "ok": behavior }).to_string(),
-        Err(ParseError(msg)) => serde_json::json!({ "error": msg }).to_string(),
-    }
+    let (ok, diags) = parser::parse_behavior_with_diagnostics(text);
+    serde_json::json!({ "ok": ok, "diagnostics": diags }).to_string()
 }
 
 /// Parse a .description source text.
-/// Returns JSON: `{ "ok": DescriptionFile }` on success, `{ "error": "..." }` on failure.
+///
+/// Same contract as parse_behavior:
+/// - Success:  `{ "ok": DescriptionFile, "diagnostics": [] }`
+/// - Failure:  `{ "ok": null,            "diagnostics": [ParseDiagnostic, ...] }`
 #[wasm_bindgen(js_name = "parse_description")]
 pub fn wasm_parse_description(text: &str) -> String {
-    match description_parser::parse_description(text) {
-        Ok(df) => serde_json::json!({ "ok": df }).to_string(),
-        Err(ParseError(msg)) => serde_json::json!({ "error": msg }).to_string(),
-    }
+    let (ok, diags) = description_parser::parse_description_with_diagnostics(text);
+    serde_json::json!({ "ok": ok, "diagnostics": diags }).to_string()
 }
 
 /// Generate a static FSM graph as SCXML (W3C https://www.w3.org/TR/scxml/).
