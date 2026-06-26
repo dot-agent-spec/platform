@@ -149,7 +149,7 @@ state waiting
   (state_decl
     (state_name)
     (state_body
-      (temporal_stmt
+      (after_stmt
         (number)
         (block
           (run_stmt

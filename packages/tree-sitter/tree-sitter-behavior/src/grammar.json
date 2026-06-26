@@ -186,7 +186,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "temporal_stmt"
+          "name": "after_stmt"
         },
         {
           "type": "SYMBOL",
@@ -775,7 +775,7 @@
         }
       ]
     },
-    "temporal_stmt": {
+    "after_stmt": {
       "type": "SEQ",
       "members": [
         {

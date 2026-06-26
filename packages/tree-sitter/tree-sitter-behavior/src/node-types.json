@@ -1,5 +1,31 @@
 [
   {
+    "type": "after_stmt",
+    "named": true,
+    "fields": {
+      "block": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "block",
+            "named": true
+          }
+        ]
+      },
+      "count": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "apply_stmt",
     "named": true,
     "fields": {
@@ -63,6 +89,10 @@
       "required": true,
       "types": [
         {
+          "type": "after_stmt",
+          "named": true
+        },
+        {
           "type": "apply_stmt",
           "named": true
         },
@@ -84,10 +114,6 @@
         },
         {
           "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "temporal_stmt",
           "named": true
         },
         {
@@ -228,6 +254,10 @@
       "required": false,
       "types": [
         {
+          "type": "after_stmt",
+          "named": true
+        },
+        {
           "type": "apply_stmt",
           "named": true
         },
@@ -249,10 +279,6 @@
         },
         {
           "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "temporal_stmt",
           "named": true
         },
         {
@@ -324,6 +350,10 @@
       "required": false,
       "types": [
         {
+          "type": "after_stmt",
+          "named": true
+        },
+        {
           "type": "apply_stmt",
           "named": true
         },
@@ -345,10 +375,6 @@
         },
         {
           "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "temporal_stmt",
           "named": true
         },
         {
@@ -466,6 +492,10 @@
       "required": false,
       "types": [
         {
+          "type": "after_stmt",
+          "named": true
+        },
+        {
           "type": "apply_stmt",
           "named": true
         },
@@ -487,10 +517,6 @@
         },
         {
           "type": "run_stmt",
-          "named": true
-        },
-        {
-          "type": "temporal_stmt",
           "named": true
         },
         {
@@ -612,6 +638,10 @@
       "required": true,
       "types": [
         {
+          "type": "after_stmt",
+          "named": true
+        },
+        {
           "type": "apply_stmt",
           "named": true
         },
@@ -660,10 +690,6 @@
           "named": true
         },
         {
-          "type": "temporal_stmt",
-          "named": true
-        },
-        {
           "type": "transition_stmt",
           "named": true
         }
@@ -706,32 +732,6 @@
         "types": [
           {
             "type": "filename",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "temporal_stmt",
-    "named": true,
-    "fields": {
-      "block": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "block",
-            "named": true
-          }
-        ]
-      },
-      "count": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "number",
             "named": true
           }
         ]

@@ -128,7 +128,7 @@ module.exports = grammar({
       $.remove_stmt,
       $.conditional_stmt,
       $.transition_stmt,
-      $.temporal_stmt,
+      $.after_stmt,
       $.parallel_stmt,
     ),
 
@@ -244,7 +244,7 @@ module.exports = grammar({
     ),
 
     // after N prompts <block> end
-    temporal_stmt: $ => seq(
+    after_stmt: $ => seq(
       'after',
       field('count', $.number),
       'prompts',
