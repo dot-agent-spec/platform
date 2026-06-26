@@ -2,46 +2,116 @@
 
 All diagnostic codes emitted by `lintDescription` and `lintBehavior`.
 
-Errors (`E*`) block packaging — `pack()` throws if any are present. Warnings (`W*`) are advisory and do not block packaging.
+---
+
+## Severity levels
+
+| Level | Prefix | Blocks `pack()`? | Description |
+|---|---|---|---|
+| Error | `E*` | **Yes** | FSM broken or packaging invalid — must fix |
+| Warning | `W*` | No | Likely bug at runtime — advisory |
+| Info | `I*` | No | Contextual — overrides default kernel behaviour |
+| Hint | `H*` | No | Proactive suggestion — possible typo, no error triggered |
+
+**Note:** Code `W008` is Error-level despite its `W` prefix (it produces `severity: 'error'`). This is intentional — the prefix reflects its origin as a warning-class rule that was promoted.
+
+---
+
+## WASM parser diagnostic shape
+
+The `parse_behavior` and `parse_description` WASM exports use this JSON contract (breaking change from DA01-01):
+
+```json
+{ "ok": BehaviorFile | null, "diagnostics": [ParseDiagnostic, ...] }
+```
+
+A `ParseDiagnostic` has the shape:
+
+```typescript
+interface ParseDiagnostic {
+  severity: 'error' | 'warning' | 'info' | 'hint'
+  code: string          // "E004", "H001", etc.
+  message: string
+  hint?: string         // "did you mean 'transition'?"
+  start?: [number, number]  // [line, col] 1-based; absent for serde-boundary errors
+  end?: [number, number]
+}
+```
+
+The old `{ "error": string }` envelope is removed.
 
 ---
 
 ## Error codes
 
-| Code | File | Description |
-|------|------|-------------|
-| `E001` | `.description` | **Missing required field.** A required field in the agent manifest is absent or empty. Referenced in the CLI error table and `docs/reference/types.md` (missing `category` on a `type` declaration) — not yet emitted by the structured linter; implemented as an unstructured throw in `compiler/src/pack.ts` via `E_DESC`. Candidate for a proper lint rule in `lintDescription`. |
-| `E002` | — | **Reserved — unassigned.** No code with this identifier exists in the codebase or documentation. Free for future use. |
-| `E003` | `.description` | **Description file missing.** `agent.description` was not found in the agent directory during `pack()` or `run`. Thrown as an unstructured error in `compiler/src/pack.ts` and `apps/dot-agent-cli/src/commands/run.ts`. Not yet emitted as a structured `LintMessage`. |
-| `E004` | `.description` / `.behavior` | **Syntax error.** The tree-sitter parser produced an `ERROR` or `MISSING` node. The message includes the offending snippet and a grammar hint when the node type is recognisable (e.g. missing `goal`, missing `on offtopic`). |
-| `E005` | `.behavior` | **Transition to undefined state.** A `transition to <name>` references a state that is not declared in this file (or in any merged files when `docPath` is provided). |
-| `E006` | `.behavior` | **FSM semantic error from kernel.** The `@dot-agent/kernel-dsl` engine reported a `parse_error` effect when loading the behavior. This indicates a semantic inconsistency the grammar cannot catch. |
-| `E007` | — | **Behavior file missing.** The `agent.behavior` file was not found in the agent directory during `pack()`. |
-| `E008` | `.behavior` | **Oriented state missing `goal`.** A state declares `interact` (making it an oriented state) but does not include a required `goal "..."` statement. The message names the offending state. |
+| Code | File | Status | Description |
+|---|---|---|---|
+| `E001` | `.description` | Planned | **Missing required field.** A required field in the agent manifest is absent. Currently thrown as `E_DESC: <msg>` in `apps/dot-agent-cli/src/commands/run.ts` — not a structured lint rule yet. Candidate for `lintDescription`. |
+| `E002` | — | Reserved | **Unassigned.** No usage found anywhere. Free for future use. |
+| `E003` | `.description` | Unstructured | **Description file missing.** Thrown as `throw new Error('E003: File agent.description not found')` in `compiler/src/pack.ts` and `apps/dot-agent-cli/src/commands/run.ts`. Not emitted as a `LintMessage`. |
+| `E004` | `.description` / `.behavior` | ✅ | **Syntax error.** Tree-sitter `ERROR` or `MISSING` node. Message includes position, snippet, and grammar hint. Multi-error collection: all errors in the file are reported, not just the first. |
+| `E005` | `.behavior` | ✅ | **Transition to undefined state.** `transition to <name>` references a state not declared locally or in merged files. Enriched with H002 hint when a close match exists. |
+| `E006` | `.behavior` | ✅ | **Parse error from kernel.** The WASM parser returned `ok: null`. Indicates a semantic inconsistency the grammar cannot catch. |
+| `E007` | — | Unstructured | **Behavior file missing.** Thrown during `pack()` — not a `LintMessage`. |
+| `E008` | `.behavior` | **Superseded by W013** | Oriented state missing `goal`. Same condition, downgraded to Warning in DA01-01. |
+| `E009` | `.behavior` | ✅ | **Oriented state with no `on intent` handlers.** A state has `interact` but zero `on intent` handlers. The FSM has no valid routing path. |
+| `E010` | `.behavior` | ✅ | **`parallel` block has no `run` statements.** (Warning-level) Will execute immediately with no effect. |
+| `E011` | `.behavior` | ✅ | **`after 0 prompts`.** Zero prompts will never trigger. Use `after 1` or higher. |
+| `E012` | — | Free | Reserved for future use. |
+| `E013` | — | Free | Reserved for future use. |
+| `E014` | — | Free | Reserved for future use. |
 
 ---
 
 ## Warning codes
 
-| Code | File | Description |
-|------|------|-------------|
-| `W001` | `.behavior` | **State has no transitions.** The FSM kernel reports a state that has neither incoming nor outgoing transitions, making it unreachable or a dead end. |
-| `W002` | `.behavior` | **Text content exceeds 280 characters.** The quoted string inside a `goal` or `guide` statement is longer than 280 characters. Long goals reduce LLM instruction quality. |
-| `W003` | `.description` | **Default domain value.** The `domain` field in the agent manifest still has the placeholder value `"example.com"`. |
-| `W004` | `.description` | **Undeclared type reference.** A type name used in an `input`, `output`, `requires`, or `capabilities` block is not declared as a `type` in this file. The compiler assumes it is a native or external type. |
-| `W005` | `.behavior` | **External state reference.** A transition target contains dots (e.g. `other.behavior.state`), which the compiler interprets as a cross-behavior reference. These cannot be validated locally. |
-| `W006` | `.behavior` | **Dead-end `interact`.** A state calls `interact` but has no `on intent` or `on offtopic` handlers. The agent will be stuck waiting for input it can never route. |
-| `W007` | `.description` | **No domain declared.** The agent manifest has no `domain` field. The agent will be packaged as `unknown/name`. Interoperability between runtimes is not guaranteed. See [agent-id.md — Tier 4](../../../docs/reference/agent-id.md#tier-4--unknown). |
+| Code | File | Status | Description |
+|---|---|---|---|
+| `W001` | `.behavior` | ✅ | **Isolated state.** No incoming and no outgoing transitions — unreachable and a dead end. |
+| `W002` | `.behavior` | ✅ | **`goal` text exceeds 280 characters.** Consider using `teach` to load long goal text from an external file. |
+| `W003` | `.description` | ✅ | **Default domain value.** The `domain` field is still `"example.com"`. |
+| `W004` | `.description` | ✅ | **Undeclared type reference.** Type name in `input`/`output`/`requires`/`capabilities` is not declared locally. |
+| `W005` | `.behavior` | ✅ | **External state reference.** Transition target contains dots — interpreted as cross-behavior reference, cannot be validated locally. |
+| `W006` | `.behavior` | ✅ | **Dead-end `interact`.** No `on intent` or `on offtopic` handlers — agent will trap. |
+| `W007` | `.description` | ✅ | **No domain declared.** Agent will be packaged as `unknown/name`. |
+| `W008` | `.behavior` | ✅ **(Error-level)** | **Duplicate `on intent` label in same state.** The FSM cannot route ambiguous intents — each label must be unique per state. |
+| `W009` | `.behavior` | ✅ | **Unreachable state.** No transition from any other state leads to it, and it is not the first declared state (entry point). Complements W001: W001 catches isolated states, W009 catches orphaned entry points. |
+| `W010` | `.behavior` | ✅ | **`guide` text exceeds 280 characters.** Consider using `teach` to load guidance from an external file. |
+| `W011` | `.behavior` | ✅ | **`on intent` self-transition.** Handler transitions back to its own enclosing state. The user expressed an intent but receives no progress. |
+| `W012` | `.behavior` | ✅ | **`goal` in non-oriented state.** `goal` is only valid in states that also have `interact`. The prettifier can adjust this. |
+| `W013` | `.behavior` | ✅ | **`interact` without `goal`.** The prettifier will insert one. Supersedes E008 (same condition, downgraded to Warning). |
 
 ---
 
-## Grammar constraints that produce E004
+## Info codes
 
-The most common sources of `E004` in behavior files:
+| Code | File | Status | Description |
+|---|---|---|---|
+| `I001` | `.behavior` | ✅ | **State `init` overrides kernel lifecycle.** The kernel will use this definition instead of its built-in init sequence. |
+| `I002` | `.behavior` | ✅ | **State `end` overrides kernel lifecycle.** The kernel will treat this state as the canonical exit point. |
 
-- **`goal` outside an oriented state** — `goal` is only valid as the first statement of an `oriented_state_body`. It cannot appear in transit states (those using only `transition to`, `set`, `run`, etc.).
-- **`interact` without `goal`** — every `oriented_state_body` must begin with `goal`. Adding `interact` alone is a syntax error.
-- **Missing `on offtopic`** — every oriented state must end with an `on offtopic` handler. Omitting it produces a MISSING node.
-- **Missing `on intent`** — `repeat1(intent_handler)` means at least one `on intent` handler is required before `on offtopic`.
+---
 
-These constraints exist because the FSM guarantees no dead-lock: `interact` releases control to the LLM, and every possible reply (matched intent or off-topic) must have a defined next step.
+## Hint codes
+
+| Code | File | Status | Description |
+|---|---|---|---|
+| `H001` | `.behavior` | ✅ | **State name resembles a kernel lifecycle name.** Levenshtein distance ≤ 2 from `init`, `welcome`, `end`, `online`, or `offline`. If intentional, ignore. |
+| `H002` | `.behavior` | ✅ | **Possible typo in transition target.** Not a standalone diagnostic — enriches the `hint` field on an `E005` message when the undefined target has Levenshtein distance ≤ 2 from a declared state name. |
+
+---
+
+## Grammar constraints (DA01-01 migration note)
+
+Prior to DA01-01, the following patterns were caught by tree-sitter as `E004` due to strict grammar rules:
+
+| Pattern | Was E004 | Now |
+|---|---|---|
+| `goal` outside oriented state | ✅ | W012 (linter) |
+| `interact` without `goal` | ✅ | W013 (linter) |
+| No `on intent` handlers | ✅ | E009 (linter) |
+| No `on offtopic` handler | ✅ | Optional — kernel holds by default |
+
+With newlines-as-extras and flat `state_body`, these patterns now parse successfully. The linter enforces the semantic constraints instead of the grammar.
+
+`E_DESC` cleanup: `apps/dot-agent-cli/src/commands/run.ts` throws `E_DESC: ${descResult.error}` for description parse failures — this ad-hoc code should become `E001` when that rule is implemented.

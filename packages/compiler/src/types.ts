@@ -85,13 +85,25 @@ export interface DescriptionFile {
 
 // ── Shared toolchain types ────────────────────────────────────────────────────
 
+/** Structured diagnostic from the Rust WASM parser. */
+export interface ParseDiagnostic {
+  severity: 'error' | 'warning' | 'info' | 'hint'
+  code: string
+  message: string
+  hint?: string
+  /** [line, col] 1-based, absent when position is unavailable (e.g. serde errors). */
+  start?: [number, number]
+  end?: [number, number]
+}
+
 export interface LintMessage {
   file: string
   line: number
   col: number
-  severity: 'error' | 'warning'
+  severity: 'error' | 'warning' | 'info' | 'hint'
   code: string
   message: string
+  hint?: string
 }
 
 export interface IdParts {

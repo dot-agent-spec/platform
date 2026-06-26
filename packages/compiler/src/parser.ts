@@ -9,7 +9,7 @@
 import { createRequire } from 'module'
 import { Parser, Language } from 'web-tree-sitter'
 import type { Node, Tree } from 'web-tree-sitter'
-import type { LangId, BehaviorFile, DescriptionFile } from './types.js'
+import type { LangId, BehaviorFile, DescriptionFile, ParseDiagnostic } from './types.js'
 import bpInit, { parse_behavior as bpParseBehavior, parse_description as bpParseDescription, get_graph } from '@dot-agent/parser-dsl'
 
 const require = createRequire(import.meta.url)
@@ -29,12 +29,17 @@ export async function initBehaviorParser(): Promise<void> {
   _bpInitialized = true
 }
 
-export function parseBehaviorFile(text: string): { ok: BehaviorFile } | { error: string } {
-  return JSON.parse(bpParseBehavior(text)) as { ok: BehaviorFile } | { error: string }
+export interface ParseResult<T> {
+  ok: T | null
+  diagnostics: ParseDiagnostic[]
 }
 
-export function parseDescriptionFile(text: string): { ok: DescriptionFile } | { error: string } {
-  return JSON.parse(bpParseDescription(text)) as { ok: DescriptionFile } | { error: string }
+export function parseBehaviorFile(text: string): ParseResult<BehaviorFile> {
+  return JSON.parse(bpParseBehavior(text)) as ParseResult<BehaviorFile>
+}
+
+export function parseDescriptionFile(text: string): ParseResult<DescriptionFile> {
+  return JSON.parse(bpParseDescription(text)) as ParseResult<DescriptionFile>
 }
 
 export function getBehaviorScxml(text: string): string {

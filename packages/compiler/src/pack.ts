@@ -119,7 +119,10 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
 
   await initBehaviorParser()
   const descResult = parseDescriptionFile(descriptionText)
-  if ('error' in descResult) throw new Error(`E_DESC: ${descResult.error}`)
+  if (descResult.ok === null) {
+    const firstError = descResult.diagnostics.find(d => d.severity === 'error')
+    throw new Error(`E_DESC: ${firstError?.message ?? 'parse failed'}`)
+  }
   const df = descResult.ok
 
   const version = await resolveVersion(options.version)
