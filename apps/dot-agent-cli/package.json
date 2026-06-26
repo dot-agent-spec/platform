@@ -3,27 +3,43 @@
   "version": "1.0.5",
   "license": "Apache-2.0",
   "description": "CLI toolkit for building, packaging, and executing deterministic FSM-based agents",
-  "keywords": [
-    "agent",
-    "cli",
-    "fsm",
-    "deterministic",
-    "specification",
-    "workflow"
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
   ],
-  "author": "Danilo Borges <contato@daniloborg.es>",
   "homepage": "https://dot-agent.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "apps/dot-agent-cli"
+  },
   "bugs": {
-    "url": "https://github.com/dot-agent-spec/dot-agent-cli/issues"
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
   },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/daniloborges"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dot-agent-spec/dot-agent-cli"
-  },
+  "keywords": [
+    "agent",
+    "agents",
+    "llm",
+    "cli",
+    "fsm",
+    "deterministic",
+    "specification",
+    "workflow",
+    "dot-agent"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -55,5 +71,8 @@
     "build": "tsup",
     "test": "vitest run",
     "dev": "tsup --watch"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

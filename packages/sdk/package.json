@@ -8,11 +8,34 @@
     "email": "contato@daniloborg.es",
     "url": "https://daniloborg.es"
   },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
   "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/dot-agent-spec"
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "packages/sdk"
   },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
+  },
+  "keywords": [
+    "agent",
+    "agents",
+    "llm",
+    "sdk",
+    "dsl",
+    "fsm",
+    "wasm",
+    "browser",
+    "dot-agent"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

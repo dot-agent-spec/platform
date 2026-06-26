@@ -14,26 +14,32 @@
   "contributors": [
     {
       "name": "Danilo Borges",
-      "email": "contato@daniloborg.es"
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
     }
   ],
-  "homepage": "https://github.com/dot-agent-spec/kernel-dsl",
+  "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/kernel-dsl"
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "packages/kernel-dsl"
   },
   "bugs": {
-    "url": "https://github.com/dot-agent-spec/kernel-dsl/issues"
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
   },
   "keywords": [
     "wasm",
     "agent",
+    "agents",
+    "llm",
     "dsl",
     "behavior",
     "fsm",
     "state-machine",
     "parser",
-    "webassembly"
+    "webassembly",
+    "dot-agent"
   ],
   "files": [
     "index.js",

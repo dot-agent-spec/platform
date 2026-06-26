@@ -3,21 +3,36 @@
   "version": "0.4.1",
   "description": "LSP server for .agent DSL files",
   "license": "Apache-2.0",
-  "author": "Danilo Borges <contato@daniloborg.es>",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
+  "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/language-server.git"
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "packages/language-server"
   },
-  "homepage": "https://github.com/dot-agent-spec/language-server#readme",
   "bugs": {
-    "url": "https://github.com/dot-agent-spec/language-server/issues"
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
   },
   "keywords": [
     "lsp",
     "language-server",
     "agent",
+    "agents",
+    "llm",
     "dsl",
-    "flow"
+    "dot-agent"
   ],
   "type": "module",
   "main": "server.js",

@@ -3,12 +3,38 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "description": "Compiler for the dot-agent DSL: AST parsing, linting, graph extraction and .agent packaging",
-  "author": "Danilo Borges <contato@daniloborg.es>",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
   "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/dot-agent-spec"
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "packages/compiler"
   },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
+  },
+  "keywords": [
+    "agent",
+    "agents",
+    "llm",
+    "dsl",
+    "compiler",
+    "fsm",
+    "state-machine",
+    "dot-agent"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -45,5 +71,8 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -4,10 +4,39 @@
   "description": "Syntax highlighting, hover docs, and snippets for .agent DSL files",
   "version": "0.3.3",
   "publisher": "dot-agent",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
+  "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/vscode-dot-agent"
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "apps/vscode-extension"
   },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
+  },
+  "keywords": [
+    "agent",
+    "agents",
+    "llm",
+    "dsl",
+    "fsm",
+    "dot-agent",
+    "language-server",
+    "syntax-highlighting"
+  ],
   "main": "./extension.js",
   "engines": {
     "vscode": "^1.91.0"

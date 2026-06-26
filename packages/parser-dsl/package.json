@@ -5,6 +5,40 @@
   "type": "module",
   "main": "./index.js",
   "types": "./index.d.ts",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
+  "homepage": "https://dot-agent.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/dot-agent",
+    "directory": "packages/parser-dsl"
+  },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/dot-agent/issues",
+    "email": "contato@daniloborg.es"
+  },
+  "keywords": [
+    "wasm",
+    "agent",
+    "agents",
+    "llm",
+    "dsl",
+    "parser",
+    "fsm",
+    "scxml",
+    "dot-agent"
+  ],
   "exports": {
     ".": {
       "import": "./index.js",
@@ -24,12 +58,7 @@
     "build": "RELEASE=true ./scripts/build-wasm.sh",
     "build:debug": "./scripts/build-wasm.sh"
   },
-  "keywords": ["wasm", "agent", "dsl", "parser", "fsm", "scxml"],
-  "license": "Apache-2.0",
-  "author": "Danilo Borges <contato@daniloborg.es>",
-  "homepage": "https://dot-agent.ai",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dot-agent-spec/dot-agent-spec"
+  "publishConfig": {
+    "access": "public"
   }
 }
