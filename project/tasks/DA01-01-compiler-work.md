@@ -52,7 +52,7 @@ Evaluate whether a new code `E007` for mapper failures is preferable to sub-code
 
 **What:** Build `toCanonicalString(ast)` in `@dot-agent/compiler` using `web-tree-sitter` to re-serialize a parsed DSL file into the canonical, readable form.
 
-**Why `web-tree-sitter` and not Rust:** The Rust AST structs discard comments by design. `web-tree-sitter` preserves `//` comment nodes in the syntax tree, which is the only way to round-trip developer annotations without loss.
+**Why `web-tree-sitter` and not the Rust parser (`parser-dsl`):** Velocity and iteration speed for the MVP. While we could implement a `format()` function entirely in Rust and expose it via WASM, writing a prettifier involves rapid, heuristic-heavy iteration on spaces, newlines, and comment placement. Building the logic natively in TypeScript (where the compiler and LSP already live) using `web-tree-sitter`'s CST API allows for much faster iteration than recompiling the Rust parser for every tweak.
 
 **Integration points (in order of priority):**
 1. **CLI:** `dot-agent-cli format <file>` — batch formatting
