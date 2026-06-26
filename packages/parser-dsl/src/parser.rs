@@ -234,10 +234,9 @@ fn node_to_value(node: Node, source: &str) -> Value {
     let mut type_name = kind.to_string();
 
     match kind {
-        // ── Intent handler (v0.4.0: intent_handler node) ──────────────────────
+        // ── Intent handler ─────────────────────────────────────────────────────
         // Inline:  on intent "X" transition to Y  →  IntentBody::Next("Y")
         // Block:   on intent "X"\n  stmts...      →  IntentBody::Block([...])
-        // Emits type = "intent_trigger" to keep AST serde compatibility.
         "intent_handler" => {
             if let Some(intent_node) = node.child_by_field_name("intent") {
                 map.insert("intent".to_string(), node_to_value(intent_node, source));
@@ -259,11 +258,10 @@ fn node_to_value(node: Node, source: &str) -> Value {
                     map.insert("body".to_string(), val);
                 }
             }
-            type_name = "intent_trigger".to_string();
+            type_name = "intent_handler".to_string();
         }
 
-        // ── Offtopic handler (v0.4.0: offtopic_handler node) ──────────────────
-        // Emits type = "offtopic_stmt" to keep AST serde compatibility.
+        // ── Offtopic handler ───────────────────────────────────────────────────
         "offtopic_handler" => {
             if let Some(block_node) = node.child_by_field_name("block") {
                 let body_stmts = extract_block_statements(block_node, source);
@@ -286,7 +284,7 @@ fn node_to_value(node: Node, source: &str) -> Value {
                     map.insert("body".to_string(), val);
                 }
             }
-            type_name = "offtopic_stmt".to_string();
+            type_name = "offtopic_handler".to_string();
         }
 
         // ── Run statement ──────────────────────────────────────────────────────
@@ -301,13 +299,13 @@ fn node_to_value(node: Node, source: &str) -> Value {
                 map.insert("target".to_string(), node_to_value(t, source));
             }
             if let Some(p) = node.child_by_field_name("parameters") {
-                map.insert("label".to_string(), node_to_value(p, source));
+                map.insert("parameters".to_string(), node_to_value(p, source));
             }
-            // failure_stmt child → on_failed (block or inline form)
+            // failure_stmt child → on_failure (block or inline form)
             let mut c = node.walk();
             for child in node.named_children(&mut c) {
                 if child.kind() == "failure_stmt" {
-                    map.insert("on_failed".to_string(), json!(extract_failure_body(child, source)));
+                    map.insert("on_failure".to_string(), json!(extract_failure_body(child, source)));
                 }
             }
         }
@@ -322,7 +320,7 @@ fn node_to_value(node: Node, source: &str) -> Value {
             let mut c = node.walk();
             for child in node.named_children(&mut c) {
                 if child.kind() == "failure_stmt" {
-                    map.insert("on_failed".to_string(), json!(extract_failure_body(child, source)));
+                    map.insert("on_failure".to_string(), json!(extract_failure_body(child, source)));
                 }
             }
         }
@@ -337,14 +335,13 @@ fn node_to_value(node: Node, source: &str) -> Value {
             let mut c = node.walk();
             for child in node.named_children(&mut c) {
                 if child.kind() == "failure_stmt" {
-                    map.insert("on_failed".to_string(), json!(extract_failure_body(child, source)));
+                    map.insert("on_failure".to_string(), json!(extract_failure_body(child, source)));
                 }
             }
         }
 
-        // ── Temporal statement (after N prompts) ────────────────────────────────
-        // Grammar node is `temporal_stmt`; AST variant is `after_stmt`.
-        "temporal_stmt" => {
+        // ── After statement (after N prompts) ──────────────────────────────────
+        "after_stmt" => {
             if let Some(cn) = node.child_by_field_name("count") {
                 let count: u64 = source[cn.byte_range()].trim().parse().unwrap_or(0);
                 map.insert("prompts".to_string(), json!(count));
@@ -356,7 +353,7 @@ fn node_to_value(node: Node, source: &str) -> Value {
         }
 
         // ── Parallel statement ─────────────────────────────────────────────────
-        // KD-3: body = run_stmt children (restricted); on_failed = on_failure field (block)
+        // KD-3: body = run_stmt children (restricted); on_failure = on_failure field (block)
         "parallel_stmt" => {
             let mut runs = Vec::new();
             let mut c = node.walk();
@@ -367,7 +364,7 @@ fn node_to_value(node: Node, source: &str) -> Value {
             }
             map.insert("body".to_string(), json!(runs));
             if let Some(blk) = node.child_by_field_name("on_failure") {
-                map.insert("on_failed".to_string(), json!(extract_block_statements(blk, source)));
+                map.insert("on_failure".to_string(), json!(extract_block_statements(blk, source)));
             }
         }
 
@@ -569,10 +566,10 @@ state main
     #[test]
     fn parse_global_event_trigger() {
         // trigger_decl uses indentation-based block (no braces)
-        let src = "on event \"action_failed\"\n  run script \"cleanup.sh\"\n\nstate main\n  goal \"Main.\"\n  interact\n  on intent \"continue\" transition to main\n  on offtopic transition to main\n";
+        let src = "on event \"action_failure\"\n  run script \"cleanup.sh\"\n\nstate main\n  goal \"Main.\"\n  interact\n  on intent \"continue\" transition to main\n  on offtopic transition to main\n";
         let bf = must_parse(src);
         assert_eq!(bf.global_triggers.len(), 1);
-        assert_eq!(bf.global_triggers[0].event, "action_failed");
+        assert_eq!(bf.global_triggers[0].event, "action_failure");
         assert!(!bf.global_triggers[0].body.is_empty());
     }
 

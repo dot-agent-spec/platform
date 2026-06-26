@@ -130,9 +130,9 @@ pub enum Statement {
         #[serde(rename = "state")]
         target: String,
     },
-    #[serde(rename = "intent_trigger")]
+    #[serde(rename = "intent_handler")]
     OnIntent { intent: String, body: IntentBody },
-    #[serde(rename = "offtopic_stmt")]
+    #[serde(rename = "offtopic_handler")]
     OnOfftopic { body: Vec<Statement> },
     #[serde(rename = "after_stmt")]
     After { prompts: u32, body: Vec<Statement> },
@@ -162,7 +162,7 @@ pub enum Statement {
         #[serde(rename = "text")]
         value: String,
         #[serde(default)]
-        on_failed: Option<Vec<Statement>>,
+        on_failure: Option<Vec<Statement>>,
     },
     #[serde(rename = "remove_stmt")]
     Remove {
@@ -171,13 +171,13 @@ pub enum Statement {
         #[serde(rename = "text")]
         value: String,
         #[serde(default)]
-        on_failed: Option<Vec<Statement>>,
+        on_failure: Option<Vec<Statement>>,
     },
     #[serde(rename = "parallel_stmt")]
     Parallel {
         body: Vec<Statement>,
         #[serde(default)]
-        on_failed: Option<Vec<Statement>>,
+        on_failure: Option<Vec<Statement>>,
     },
 }
 
@@ -193,10 +193,10 @@ pub enum IntentBody {
 pub struct RunStmt {
     pub kind: RunKind,
     pub target: String,
-    pub label: Option<String>,
+    pub parameters: Option<String>,
     pub modifier: Option<RunModifier>,
     #[serde(default)]
-    pub on_failed: Option<Vec<Statement>>,
+    pub on_failure: Option<Vec<Statement>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

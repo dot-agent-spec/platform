@@ -61,7 +61,7 @@ pub fn list_states(behavior: &BehaviorFile) -> Vec<String> {
 
 /// Return all intents declared within the interact block of the given state.
 /// Returns an empty vec if the state does not exist or has no interact statement.
-/// Note: intent_trigger nodes appear as siblings in the state body (not nested inside
+/// Note: intent_handler nodes appear as siblings in the state body (not nested inside
 /// interact_stmt.handlers) due to how the grammar is structured.
 pub fn intents_for_state(behavior: &BehaviorFile, state_name: &str) -> Vec<String> {
     let Some(state) = behavior.states.iter().find(|s| s.name == state_name) else {
@@ -79,7 +79,7 @@ pub fn intents_for_state(behavior: &BehaviorFile, state_name: &str) -> Vec<Strin
                     }
                 }
             }
-            // intent_trigger siblings in state body (current grammar behavior)
+            // intent_handler siblings in state body (current grammar behavior)
             Statement::OnIntent { intent, .. } => {
                 intents.push(intent.clone());
             }
@@ -99,7 +99,7 @@ fn collect_scxml_transitions(stmts: &[Statement]) -> Vec<(Option<String>, String
             Statement::Transition { target } => {
                 result.push((None, target.clone()));
             }
-            // intent_trigger / offtopic_stmt as direct state body siblings (current grammar)
+            // intent_handler / offtopic_handler as direct state body siblings (current grammar)
             Statement::OnIntent { intent, body } => match body {
                 IntentBody::Next(target) => {
                     result.push((Some(intent.clone()), target.clone()));
@@ -142,9 +142,9 @@ fn collect_scxml_transitions(stmts: &[Statement]) -> Vec<(Option<String>, String
                     result.push((Some(format!("after_{}_prompts", prompts)), target));
                 }
             }
-            Statement::Parallel { body, on_failed } => {
+            Statement::Parallel { body, on_failure } => {
                 result.extend(collect_scxml_transitions(body));
-                if let Some(stmts) = on_failed {
+                if let Some(stmts) = on_failure {
                     for (_, target) in collect_scxml_transitions(stmts) {
                         result.push((Some("failed".to_string()), target));
                     }
