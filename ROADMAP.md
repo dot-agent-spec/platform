@@ -4,7 +4,7 @@ This roadmap is organized by **language capability**, not by release date. It st
 
 The single stability commitment is **v1.0** — the point at which the grammar is frozen as a public contract. Until then the DSL is `0.x`: usable, but the syntax may still change. We would rather ship a small honest surface than a large one that silently drops features.
 
-> **Source of truth.** Feature status here is reconciled against [`docs/explanation/architecture/implementation-status.md`](docs/explanation/architecture/implementation-status.md) (what the packages actually do) and the design proposals in [`rfcs/`](rfcs/) (what is still being designed). When the two disagree, the implementation status wins.
+> **Source of truth.** Feature status here is reconciled against [`project/implementation-status.md`](project/implementation-status.md) (what the packages actually do) and the design proposals in [`rfcs/`](rfcs/) (what is still being designed). When the two disagree, the implementation status wins.
 
 ---
 
