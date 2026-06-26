@@ -1,0 +1,13 @@
+{
+  "grammars": [
+    {
+      "name": "description",
+      "scope": "source.description",
+      "file-types": ["description", "type"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.4.1"
+  }
+}

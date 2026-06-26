@@ -1,0 +1,13 @@
+{
+  "grammars": [
+    {
+      "name": "behavior",
+      "scope": "source.behavior",
+      "file-types": ["behavior"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.4.1"
+  }
+}

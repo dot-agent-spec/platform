@@ -1,0 +1,72 @@
+================================================================================
+merge preamble
+================================================================================
+
+merge "phases/planning.behavior"
+merge "phases/review.behavior"
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (merge_decl
+    (filename))
+  (merge_decl
+    (filename)))
+
+================================================================================
+global trigger: on event
+================================================================================
+
+on event "session.ended"
+  run script "cleanup.sh"
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (trigger_decl
+    (quoted_string)
+    (block
+      (run_stmt
+        (run_type)
+        (quoted_string)))))
+
+================================================================================
+merge + trigger + states no mesmo arquivo
+================================================================================
+
+merge "shared.behavior"
+
+on event "session.started"
+  set session.started = true
+
+state responsive
+  goal "Greet"
+  interact
+  on intent "go" transition to responsive
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (merge_decl
+    (filename))
+  (trigger_decl
+    (quoted_string)
+    (block
+      (memory_stmt
+        (memory_target
+          (memory_domain)
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (boolean))))))
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))

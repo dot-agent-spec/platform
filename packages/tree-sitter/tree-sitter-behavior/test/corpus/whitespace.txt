@@ -1,0 +1,95 @@
+================================================================================
+invariancia: forma canonica multi-linha
+================================================================================
+
+state s
+  goal "g"
+  interact
+  on intent "a" transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+invariancia: tudo numa unica linha (mesma arvore que a canonica)
+================================================================================
+
+state s goal "g" interact on intent "a" transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+invariancia: newlines e indentacao caoticos (mesma arvore)
+================================================================================
+
+state s
+
+      goal "g"
+   interact
+        on intent "a"
+   transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+comentarios sao ignorados (extras)
+================================================================================
+
+// preamble comment
+state s
+  goal "g" // inline comment
+  // standalone comment
+  interact
+  on intent "a" transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (comment)
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (comment)
+      (comment)
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))

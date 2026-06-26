@@ -1,0 +1,110 @@
+================================================================================
+set: dominios e operadores
+================================================================================
+
+state s
+  set context.a = "v"
+  set session.count += 1
+  set worksession.flag = true
+  set user.name = "ada"
+  set localVar -= 2
+  transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (memory_stmt
+        (memory_target
+          (memory_domain)
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (with_quotes_string))))
+      (memory_stmt
+        (memory_target
+          (memory_domain)
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (number))))
+      (memory_stmt
+        (memory_target
+          (memory_domain)
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (boolean))))
+      (memory_stmt
+        (memory_target
+          (memory_domain)
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (with_quotes_string))))
+      (memory_stmt
+        (memory_target
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (number))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+run: script, subagent, tool (com e sem parametros)
+================================================================================
+
+state s
+  run script "build.sh"
+  run subagent "reviewer" "focus on tests"
+  run tool "search"
+  transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (run_stmt
+        (run_type)
+        (quoted_string))
+      (run_stmt
+        (run_type)
+        (quoted_string)
+        (quoted_string))
+      (run_stmt
+        (run_type)
+        (quoted_string))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+apply e remove css
+================================================================================
+
+state s
+  apply css "body { color: red }"
+  remove css "#banner"
+  transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (apply_stmt
+        (quoted_string))
+      (remove_stmt
+        (quoted_string))
+      (transition_stmt
+        (state_name)))))

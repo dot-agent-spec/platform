@@ -1,0 +1,71 @@
+{
+  "name": "@dot-agent/tree-sitter",
+  "version": "0.4.1",
+  "description": "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "dist/",
+    "tree-sitter-description/grammar.js",
+    "tree-sitter-description/tree-sitter.json",
+    "tree-sitter-description/queries/",
+    "tree-sitter-description/src/node-types.json",
+    "tree-sitter-behavior/grammar.js",
+    "tree-sitter-behavior/tree-sitter.json",
+    "tree-sitter-behavior/queries/",
+    "tree-sitter-behavior/src/node-types.json"
+  ],
+  "license": "Apache-2.0",
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/tree-sitter.git"
+  },
+  "homepage": "https://github.com/dot-agent-spec/tree-sitter#readme",
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/tree-sitter/issues"
+  },
+  "keywords": [
+    "tree-sitter",
+    "agent",
+    "dot-agent",
+    "dsl",
+    "parser",
+    "grammar"
+  ],
+  "scripts": {
+    "generate-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter generate",
+    "generate-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter generate",
+    "generate": "npm run generate-description && npm run generate-behavior",
+    "test-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter test",
+    "test-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter test",
+    "test": "npm run test-description && npm run test-behavior",
+    "clean": "node scripts/clean.js",
+    "prebuild": "npm run clean",
+    "build:wasm-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-description.wasm ../dist/",
+    "build:wasm-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
+    "build": "npm run build:wasm-description && npm run build:wasm-behavior",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.10"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.description",
+      "file-types": [
+        "description",
+        "type"
+      ]
+    },
+    {
+      "scope": "source.behavior",
+      "file-types": [
+        "behavior"
+      ]
+    }
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,157 @@
+================================================================================
+on failure inline: transition (linha de baixo)
+================================================================================
+
+state do_work
+  run script "do-work.sh"
+    on failure
+      transition to error
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (run_stmt
+        (run_type)
+        (quoted_string)
+        (failure_stmt
+          (transition_stmt
+            (state_name))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+on failure inline: acao qualquer (nao-transition)
+================================================================================
+
+state s
+  run script "fetch.sh" on failure run script "use-cache.sh"
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (run_stmt
+        (run_type)
+        (quoted_string)
+        (failure_stmt
+          (run_stmt
+            (run_type)
+            (quoted_string))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+on failure bloco multi-stmt + end
+================================================================================
+
+state deploy
+  run script "deploy.sh"
+    on failure
+      run script "rollback.sh"
+      set session.failed = true
+      transition to failed
+    end
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (run_stmt
+        (run_type)
+        (quoted_string)
+        (failure_stmt
+          (block
+            (run_stmt
+              (run_type)
+              (quoted_string))
+            (memory_stmt
+              (memory_target
+                (memory_domain)
+                (identifier))
+              (assignment_op)
+              (expression
+                (value
+                  (boolean))))
+            (transition_stmt
+              (state_name)))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+on failure dentro de if/else body
+================================================================================
+
+state emit
+  if session.supersedes == true
+    run script "update-superseded.sh"
+      on failure
+        transition to error
+  end
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (conditional_stmt
+        (condition
+          (expression
+            (value
+              (state_name))
+            (comparison_op)
+            (value
+              (boolean))))
+        (block
+          (run_stmt
+            (run_type)
+            (quoted_string)
+            (failure_stmt
+              (transition_stmt
+                (state_name))))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+on failure em apply e remove
+================================================================================
+
+state s
+  apply css "body{}" on failure transition to e
+  remove css "#x"
+    on failure
+      run script "cleanup.sh"
+    end
+  transition to done
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (apply_stmt
+        (quoted_string)
+        (failure_stmt
+          (block
+            (transition_stmt
+              (state_name))
+            (remove_stmt
+              (quoted_string)
+              (failure_stmt
+                (run_stmt
+                  (run_type)
+                  (quoted_string)))))))
+      (transition_stmt
+        (state_name)))))

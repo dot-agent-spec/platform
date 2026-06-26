@@ -1,0 +1,184 @@
+================================================================================
+agent com metadata completo e description
+================================================================================
+
+agent Doctor
+  domain health.example.com
+  license MIT
+  terms https://health.example.com/terms
+  privacy https://health.example.com/privacy
+
+description
+  Um especialista em análise clínica
+
+behavior doctor.behavior
+requires Prontuario
+input Patient, MedicalCondition
+output Prescription
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (agent_decl
+      name: (agent_name
+        (identifier))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (filename)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (identifier)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (url))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (url))
+      description: (description_block
+        content: (description_content
+          (text_content)))
+      behavior: (behavior_block
+        file: (bare_string
+          (filename)))
+      requires: (requires_block
+        (req_item
+          (type_reference
+            (identifier))))
+      input: (input_block
+        (type_reference
+          (identifier))
+        (type_reference
+          (identifier)))
+      output: (output_block
+        (type_reference
+          (identifier))))))
+
+================================================================================
+capabilities multiline com descricoes
+================================================================================
+
+agent Mickey Mouse
+  domain disney.com
+  license Copyright
+
+capabilities
+  CreateAction "Generate images of Mickey Mouse"
+  custom.SpeechSynthesis "Transform text into speech"
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (agent_decl
+      name: (agent_name
+        (identifier)
+        (identifier))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (filename)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (identifier)))
+      capabilities: (capabilities_block
+        (cap_item
+          (type_reference
+            (identifier))
+          (quoted_string))
+        (cap_item
+          (type_reference
+            (identifier)
+            (identifier))
+          (quoted_string))))))
+
+================================================================================
+permissivo: blocos fora de ordem (grammar aceita, linter barra)
+================================================================================
+
+agent ChaoticDoctor
+  domain health.example.com
+  license MIT
+
+capabilities
+  PrescribeMedication "Can write prescriptions"
+
+description
+  Um medico com ordem caotica de blocos.
+
+input PatientData
+
+behavior doctor.behavior
+
+output MedicalReport
+
+requires Prontuario
+
+persona helper.persona
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (agent_decl
+      name: (agent_name
+        (identifier))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (filename)))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (identifier)))
+      capabilities: (capabilities_block
+        (cap_item
+          (type_reference
+            (identifier))
+          (quoted_string)))
+      description: (description_block
+        content: (description_content
+          (text_content)))
+      input: (input_block
+        (type_reference
+          (identifier)))
+      behavior: (behavior_block
+        file: (bare_string
+          (filename)))
+      output: (output_block
+        (type_reference
+          (identifier)))
+      requires: (requires_block
+        (req_item
+          (type_reference
+            (identifier))))
+      persona: (persona_block
+        file: (bare_string
+          (filename))))))
+
+================================================================================
+permissivo: sem linha em branco entre metadata e bloco
+================================================================================
+
+agent Solo
+  domain x.com
+description
+  Sem linha em branco antes do bloco.
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (agent_decl
+      name: (agent_name
+        (identifier))
+      (agent_meta
+        key: (agent_meta_key)
+        value: (bare_string
+          (filename)))
+      description: (description_block
+        content: (description_content
+          (text_content))))))
