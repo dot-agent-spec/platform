@@ -28,7 +28,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 | B2 ✅ | **P0** — release decision | Version strategy (0.4.1 / 0.1.3 / 0.1.0 diverge) | all | S |
 | C3 | **P0** — wrong output | `files.json.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
 | C2 | **P1** — feature broken e2e | `merge` parsed but not resolved at runtime | kernel-dsl, sdk | M |
-| C1 | **→ DA01-01** | `on failure` on apply/remove dropped by parser | see `DA01-01-grammar-unfreeze.md` | — |
+| C1 ✅ | **→ DA01-01** | `on failure` on apply/remove dropped by parser | see `DA01-01-grammar-unfreeze.md` | — |
 | B3 | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
 | B4 | **P1** — consumer DX | Rich wasm-bindgen `.d.ts` shadowed by thin stub | parser-dsl, kernel-dsl | S |
 | B5 | **P1** — artifact confusion | `kernel-dsl/pkg-web/` orphan, unreferenced | kernel-dsl | XS |
@@ -37,7 +37,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 | B6 | **P2** — dedup | UBSan stubs + wasm-bindgen patches written 3× | parser-dsl, kernel-dsl | M |
 | B7 | **P2** — dedup | `build.rs` byte-identical across crates | parser-dsl, kernel-dsl | S |
 | B8 | **P2** — DX / robustness | `tree-sitter` has no `.d.ts`; consumers type-assert | tree-sitter, compiler | S |
-| C6 | **→ DA01-01** | Dead AST nodes: `OnComplete`/`OnFailed`/`RunStmt.each` | see `DA01-01-grammar-unfreeze.md` | — |
+| C6 ✅ | **→ DA01-01** | Dead AST nodes: `OnComplete`/`OnFailed`/`RunStmt.each` | see `DA01-01-grammar-unfreeze.md` | — |
 
 ---
 
