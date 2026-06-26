@@ -35,9 +35,11 @@ if ! command -v wasm-bindgen &> /dev/null; then
     cargo install wasm-bindgen-cli
 fi
 
+WORKSPACE_ROOT="$(cd "$(dirname "$0")/../../../" && pwd)"
+
 wasm-bindgen --target bundler \
     --out-dir ./pkg \
-    "./target/$TARGET/$PROFILE_DIR/dot_agent_kernel_dsl.wasm"
+    "$WORKSPACE_ROOT/target/$TARGET/$PROFILE_DIR/dot_agent_kernel_dsl.wasm"
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}[ERROR] wasm-bindgen failed.${NC}"

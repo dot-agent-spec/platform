@@ -35,7 +35,7 @@ const AGENT_BEHAVIOR_TEMPLATE = `state init
 state responsive
   goal "Help the user with their task."
   interact
-  on intent "start" transition to responsive
+  on intent "done" transition to init
 `
 
 const SOUL_TEMPLATE = (name: string) => `# ${name} — Persona
