@@ -1,0 +1,46 @@
+{
+  "name": "@dot-agent/language-server",
+  "version": "0.4.1",
+  "description": "LSP server for .agent DSL files",
+  "license": "Apache-2.0",
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/language-server.git"
+  },
+  "homepage": "https://github.com/dot-agent-spec/language-server#readme",
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/language-server/issues"
+  },
+  "keywords": [
+    "lsp",
+    "language-server",
+    "agent",
+    "dsl",
+    "flow"
+  ],
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js --stdio",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@dot-agent/parser-dsl": "*",
+    "@dot-agent/compiler": "*",
+    "@dot-agent/tree-sitter": "*",
+    "vscode-languageserver": "^10.0.0",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "web-tree-sitter": "^0.26.9"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
