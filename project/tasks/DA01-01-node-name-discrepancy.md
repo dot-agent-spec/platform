@@ -12,10 +12,11 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | Done |
 | Created | 2026-06-26 |
+| Closed | 2026-06-26 |
 | Author | Danilo Borges |
-| Sources | [implementation-status.md § Node name discrepancy](../implementation-status.md#node-name-discrepancy), [DA01-01-forgiving-syntax.md](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
+| Sources | [implementation-status.md](../implementation-status.md), [DA01-01-forgiving-syntax.md](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
 
 ---
 
