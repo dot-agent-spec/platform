@@ -1,0 +1,15 @@
+# Rust build output
+/target/
+
+# WASM build output
+/pkg/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Node (for wasm-pack tooling)
+node_modules/

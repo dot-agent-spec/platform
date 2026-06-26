@@ -1,0 +1,35 @@
+{
+  "name": "@dot-agent/parser-dsl",
+  "version": "0.1.0",
+  "description": "Unified DSL parser for dot-agent — parses .behavior and .description files using tree-sitter, providing structured ASTs for compiler, LSP, and runtime consumption",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "pkg/dot_agent_parser_dsl.js",
+    "pkg/dot_agent_parser_dsl.d.ts",
+    "pkg/dot_agent_parser_dsl_bg.js",
+    "pkg/dot_agent_parser_dsl_bg.wasm",
+    "pkg/dot_agent_parser_dsl_bg.wasm.d.ts"
+  ],
+  "scripts": {
+    "build": "RELEASE=true ./scripts/build-wasm.sh",
+    "build:debug": "./scripts/build-wasm.sh"
+  },
+  "keywords": ["wasm", "agent", "dsl", "parser", "fsm", "scxml"],
+  "license": "Apache-2.0",
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "homepage": "https://dot-agent.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/dot-agent-spec"
+  }
+}
