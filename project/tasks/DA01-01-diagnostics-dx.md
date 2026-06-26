@@ -2,8 +2,9 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | Done |
 | Created | 2026-06-25 |
+| Completed | 2026-06-26 |
 | Author | Danilo Borges |
 | Decision Log | [DA01-01: Forgiving Syntax and Prettifier](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
 | Depends on | [DA01-01-ast-mapper-fixes.md](DA01-01-ast-mapper-fixes.md) |
@@ -161,7 +162,7 @@ For each `ERROR` node, extract the node's text, call `keyword_hint`, and if it r
 | Code | Level | Condition | Message |
 |---|---|---|---|
 | `W009` | Warning | A state has no incoming transitions from any other state in the file (after merge), and is not the first declared state | `"State '<name>' is unreachable — no other state transitions to it."` |
-| `W010` | Warning | A `guide` statement's text exceeds 280 characters | `"'guide' text in state '<name>' is <N> characters (limit: 280). Consider using 'teach' to load guidance from an external file."` |
+| `W010` | Warning | A `guide` statement's text exceeds 280 characters | `"'guide' text in state '<name>' is <N> characters (limit: 280). Consider using an external file."` |
 | `W011` | Warning | An `on intent` handler transitions to its own enclosing state | `"'on intent \"<label>\"' in state '<name>' transitions back to itself. The user expressed an intent but receives no progress — did you mean a different target state?"` |
 
 For W009: build a set of all transition targets across the merged file. Any declared state not in that set (excluding the first) is unreachable.

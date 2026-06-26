@@ -56,8 +56,8 @@ Legend:
 | ☑️✅ parser-dsl | compiler | kernel-dsl | sdk | Notes |
 |---|---|---|---|---|
 | ✅1️⃣ `init()` → `Promise<void>` (wasm fn) | → `full.initParsers()` | | | must call before any other wasm fn |
-| ✅1️⃣ `parse_description(text)` → `string` (wasm fn) | → `full.parseDescriptionFile(text)` | | | JSON `{ok: DescriptionFile}` or `{error}` |
-| ✅1️⃣ `parse_behavior(text)` → `string` (wasm fn) | → `full.parseBehaviorFile(text)` | | | JSON `{ok: BehaviorFile}` or `{error}` |
+| ✅1️⃣ `parse_description(text)` → `string` (wasm fn) | → `full.parseDescriptionFile(text)` | | | JSON `{ok: DescriptionFile \| null, diagnostics: ParseDiagnostic[]}` — DA01-01 breaking change |
+| ✅1️⃣ `parse_behavior(text)` → `string` (wasm fn) | → `full.parseBehaviorFile(text)` | | | JSON `{ok: BehaviorFile \| null, diagnostics: ParseDiagnostic[]}` — DA01-01 breaking change |
 | ✅1️⃣ `get_graph(text)` → `string` (wasm fn) | → `full.getBehaviorScxml(text)` | | | W3C SCXML XML; static (no `_active` annotation) |
 | ✅1️⃣ `get_states(text)` → `string` (wasm fn) | | | | JSON `string[]` in declaration order |
 | ✅1️⃣ `get_intents_for_state(text, state)` → `string` (wasm fn) | | | | JSON `string[]`; empty if state not found |
@@ -208,13 +208,13 @@ Legend:
 | ✅1️⃣ `merge` | ✅ `merge_decl` | ✅ `BehaviorFile.merges[]` | ✅ resolves for transition lint | ⚠️ field parsed, merge files not resolved at runtime | ⚠️ `files.behaviors[]` loaded but not passed to kernel |
 | ✅1️⃣ `state` | ✅ `state_decl` | ✅ `StateDef` | ✅ lint + FSM validation | ✅ FSM state map | ✅ transparent via kernel |
 | ✅1️⃣ `goal` | ✅ `goal_stmt` | ✅ `Statement::Goal` | ✅ lint W002 (>280 chars) | ✅ → `Effect::Goal {text}` | ✅ `registerHandler("goal", fn)` |
-| ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W002 (>280 chars) | ✅ → `Effect::Guide {text}` | ✅ `registerHandler("guide", fn)` |
+| ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W010 (>280 chars) | ✅ → `Effect::Guide {text}` | ✅ `registerHandler("guide", fn)` |
 | ✅1️⃣ `teach` | ✅ `teach_stmt` | ✅ `Statement::Teach` | | ✅ → `Effect::Teach {text}` | ✅ `registerHandler("teach", fn)` |
-| ✅1️⃣ `interact` | ✅ `interact_stmt` | ✅ `Statement::Interact` | ✅ lint W006 (no handlers) · E008 (no goal) | ✅ → `Effect::RequestInteract` | ✅ `registerHandler("request_interact", fn)` |
+| ✅1️⃣ `interact` | ✅ `interact_stmt` | ✅ `Statement::Interact` | ✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal w/o interact) · E009 (no intent handlers) | ✅ → `Effect::RequestInteract` | ✅ `registerHandler("request_interact", fn)` |
 | ✅1️⃣ `on intent "…"` | ✅ `intent_handler` | ✅ `Statement::OnIntent` | ✅ lint E005/W005 (dangling transition) | ✅ `send_intent()` dispatches body | ✅ → `sendIntent(intent)` |
 | ✅1️⃣ `on offtopic` | ✅ `offtopic_handler` | ✅ `Statement::OnOfftopic` | ✅ lint (missing offtopic) | ✅ `send_offtopic()` dispatches body | ✅ → `sendOfftopic()` |
 | ✅1️⃣ `transition to` | ✅ `transition_stmt` | ✅ `Statement::Transition` | ✅ lint E005/W005 | ✅ → `Effect::Transition {from, to}` | ✅ `registerHandler("transition", fn)` |
-| ✅ `after N prompts` | ✅ `after_stmt` | ✅ `Statement::After` | | ✅ `tick_prompt()` fires at N turns | ✅ → `tickPrompt()` |
+| ✅ `after N prompts` | ✅ `after_stmt` | ✅ `Statement::After` | ✅ lint E011 (`after 0` never fires) | ✅ `tick_prompt()` fires at N turns | ✅ → `tickPrompt()` |
 | ✅ `run script` | ✅ `run_stmt[script]` | ✅ `RunStmt { kind: Script }` | | ✅ → `Effect::RunScript {target, parameters, silent}` | ✅ `registerHandler("run_script", fn)` |
 | ✅ `run subagent` | ✅ `run_stmt[subagent]` | ✅ `RunStmt { kind: Subagent }` | | ✅ → `Effect::RunSubagent {target, parameters, background}` | ✅ `registerHandler("run_subagent", fn)` |
 | ✅ `run tool` | ✅ `run_stmt[tool]` | ✅ `RunStmt { kind: Tool }` | | ✅ → `Effect::RunTool {target, parameters}` | ✅ `registerHandler("run_tool", fn)` |
@@ -225,7 +225,7 @@ Legend:
 | ✅ `remove css` | ✅ `remove_stmt` | ✅ `Statement::Remove` | | ✅ → `Effect::RemoveCss {value}` | ✅ `registerHandler("remove_css", fn)` |
 | ✅ `on failure` (run) | ✅ `failure_stmt` (sub-node of `run_stmt`) | ✅ `RunStmt.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |
 | ✅ `on failure` (apply/remove) | ✅ `failure_stmt` (sub-node of `apply_stmt`/`remove_stmt`) | ✅ `Apply.on_failure` / `Remove.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |
-| ✅ `parallel` | ✅ `parallel_stmt` | ✅ `Statement::Parallel` | | ⚠️ body executed sequentially (WASM single-threaded) | ✅ `registerHandler("run_script" / "run_subagent" / "run_tool", fn)` |
+| ✅ `parallel` | ✅ `parallel_stmt` | ✅ `Statement::Parallel` | ✅ lint E010 (no `run` stmts) | ⚠️ body executed sequentially (WASM single-threaded) | ✅ `registerHandler("run_script" / "run_subagent" / "run_tool", fn)` |
 | 🗑️ `parallel on success` (removed v0.1) | 🗑️ `success_stmt` (removed — no `on success`) | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
 | ✅ `parallel on failure` | ✅ `on_failure` field (block) of `parallel_stmt` | ✅ `Parallel.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |
 | 🗑️ `on complete` | 🗑️ `on_complete_stmt` | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
