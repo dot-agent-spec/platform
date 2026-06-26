@@ -169,6 +169,7 @@ The following are NEW grammar changes introduced by the keyword-driven design (n
 | **KD-3** | Flatten `state_body` to `repeat(statement)`. All ordering rules move to the Linter. | Active |
 | **KD-4** | Remove `success_stmt` rule entirely from `tree-sitter-behavior`. | Active |
 | **KD-5** | Restrict `run` inside `parallel` to a simplified variant (no `on failure` clause). | Active |
+| **KD-6** | Rename grammar node `temporal_stmt` → `after_stmt` (keyword `after` is canonical; aligns grammar with parser-dsl serde output). See [node-name-discrepancy task](../../tasks/DA01-01-node-name-discrepancy.md) item 2. | Active |
 
 ### 4.2. AST Mapper Changes (packages/parser-dsl)
 
@@ -180,6 +181,8 @@ The following are NEW grammar changes introduced by the keyword-driven design (n
 | **C1** | pre-public-consolidation C1 | Grammar emits `on failure` for `apply`/`remove`, but AST structs drop it silently. | Add `on_failed` field to `Apply` and `Remove` AST structs. | Active — next layer |
 | **C6** | pre-public-consolidation C6 | Dead AST nodes in Rust (`OnComplete`, `OnFailed`, `RunStmt.each`) with no grammar counterpart. Additionally: `Parallel.on_complete` and `Statement::OnComplete` become dead once `on success` is removed from the language. | Remove dead variants from `parser-dsl`: `OnComplete`, `OnFailed`, `RunStmt.each`, `Parallel.on_complete`, `Statement::OnComplete`. | Active — next layer |
 | ~~**S3-AST**~~ | sync-status S3 | `RunStmt` has no `on_success` field. | **CANCELLED** — `on success` has been removed from the language. No `on_success` field will be added. | Cancelled |
+| **AST-1** | node-name-discrepancy | `RunStmt.label` in ast.rs deviates from the canonical grammar field `parameters`. The JSON emits `label`; `parameters` is the standard market term. | Rename `RunStmt.label` → `RunStmt.parameters` in ast.rs; update parser.rs and all consumers (`compiler`, `sdk`). Grammar is not changed. See [node-name-discrepancy task](../../tasks/DA01-01-node-name-discrepancy.md) item 3. | Active — next layer |
+| **AST-2** | node-name-discrepancy | Serde renames `intent_handler` → `intent_trigger` and `offtopic_handler` → `offtopic_stmt`, diverging from grammar node names. The grammar is canonical. | Change `#[serde(rename = "intent_trigger")]` → `"intent_handler"` and `#[serde(rename = "offtopic_stmt")]` → `"offtopic_handler"` in ast.rs; update all downstream `stmt.type` checks in `compiler/linter.ts`. See [node-name-discrepancy task](../../tasks/DA01-01-node-name-discrepancy.md) item 4. | Active — next layer |
 
 ### 4.3. Compiler Work (packages/compiler)
 
