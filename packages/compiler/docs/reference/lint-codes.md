@@ -10,6 +10,9 @@ Errors (`E*`) block packaging — `pack()` throws if any are present. Warnings (
 
 | Code | File | Description |
 |------|------|-------------|
+| `E001` | `.description` | **Missing required field.** A required field in the agent manifest is absent or empty. Referenced in the CLI error table and `docs/reference/types.md` (missing `category` on a `type` declaration) — not yet emitted by the structured linter; implemented as an unstructured throw in `compiler/src/pack.ts` via `E_DESC`. Candidate for a proper lint rule in `lintDescription`. |
+| `E002` | — | **Reserved — unassigned.** No code with this identifier exists in the codebase or documentation. Free for future use. |
+| `E003` | `.description` | **Description file missing.** `agent.description` was not found in the agent directory during `pack()` or `run`. Thrown as an unstructured error in `compiler/src/pack.ts` and `apps/dot-agent-cli/src/commands/run.ts`. Not yet emitted as a structured `LintMessage`. |
 | `E004` | `.description` / `.behavior` | **Syntax error.** The tree-sitter parser produced an `ERROR` or `MISSING` node. The message includes the offending snippet and a grammar hint when the node type is recognisable (e.g. missing `goal`, missing `on offtopic`). |
 | `E005` | `.behavior` | **Transition to undefined state.** A `transition to <name>` references a state that is not declared in this file (or in any merged files when `docPath` is provided). |
 | `E006` | `.behavior` | **FSM semantic error from kernel.** The `@dot-agent/kernel-dsl` engine reported a `parse_error` effect when loading the behavior. This indicates a semantic inconsistency the grammar cannot catch. |

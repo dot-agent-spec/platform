@@ -158,18 +158,18 @@ function collectTransitionTargets(stmts: Array<{ type: string; [k: string]: unkn
     if (stmt.type === 'transition_stmt' && typeof stmt['state'] === 'string') {
       targets.push(stmt['state'])
     }
-    if (stmt.type === 'intent_trigger' && typeof stmt['body'] === 'string') {
+    if (stmt.type === 'intent_handler' && typeof stmt['body'] === 'string') {
       targets.push(stmt['body'])
     }
     const recurse = (v: unknown) => {
       if (Array.isArray(v)) targets.push(...collectTransitionTargets(v as Array<{ type: string }>))
     }
-    if (stmt.type !== 'intent_trigger') recurse(stmt['body'])
+    if (stmt.type !== 'intent_handler') recurse(stmt['body'])
     recurse(stmt['handlers'])
     recurse(stmt['then'])
     recurse(stmt['else'])
     recurse(stmt['on_complete'])
-    recurse(stmt['on_failed'])
+    recurse(stmt['on_failure'])
   }
   return targets
 }
@@ -289,7 +289,7 @@ export async function lintBehavior(
   // Rule 2: dead-end interact (no handlers)
   for (const interactNode of nodesOfType(tree, 'interact_stmt')) {
     let ancestor = interactNode.parent
-    while (ancestor && ancestor.type !== 'oriented_state_body' && ancestor.type !== 'state_decl') {
+    while (ancestor && ancestor.type !== 'state_decl') {
       ancestor = ancestor.parent
     }
     if (!ancestor) continue
