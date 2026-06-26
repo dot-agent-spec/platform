@@ -142,27 +142,12 @@ fn collect_scxml_transitions(stmts: &[Statement]) -> Vec<(Option<String>, String
                     result.push((Some(format!("after_{}_prompts", prompts)), target));
                 }
             }
-            Statement::Parallel { body, on_complete, on_failed } => {
+            Statement::Parallel { body, on_failed } => {
                 result.extend(collect_scxml_transitions(body));
-                if let Some(stmts) = on_complete {
-                    for (_, target) in collect_scxml_transitions(stmts) {
-                        result.push((Some("complete".to_string()), target));
-                    }
-                }
                 if let Some(stmts) = on_failed {
                     for (_, target) in collect_scxml_transitions(stmts) {
                         result.push((Some("failed".to_string()), target));
                     }
-                }
-            }
-            Statement::OnComplete { body } => {
-                for (_, target) in collect_scxml_transitions(body) {
-                    result.push((Some("complete".to_string()), target));
-                }
-            }
-            Statement::OnFailed { body } => {
-                for (_, target) in collect_scxml_transitions(body) {
-                    result.push((Some("failed".to_string()), target));
                 }
             }
             Statement::If { then_body, else_body, .. } => {

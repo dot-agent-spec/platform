@@ -161,6 +161,8 @@ pub enum Statement {
         kind: MediaKind,
         #[serde(rename = "text")]
         value: String,
+        #[serde(default)]
+        on_failed: Option<Vec<Statement>>,
     },
     #[serde(rename = "remove_stmt")]
     Remove {
@@ -168,19 +170,15 @@ pub enum Statement {
         kind: MediaKind,
         #[serde(rename = "text")]
         value: String,
+        #[serde(default)]
+        on_failed: Option<Vec<Statement>>,
     },
     #[serde(rename = "parallel_stmt")]
     Parallel {
         body: Vec<Statement>,
         #[serde(default)]
-        on_complete: Option<Vec<Statement>>,
-        #[serde(default)]
         on_failed: Option<Vec<Statement>>,
     },
-    #[serde(rename = "on_complete_stmt")]
-    OnComplete { body: Vec<Statement> },
-    #[serde(rename = "on_failed_stmt")]
-    OnFailed { body: Vec<Statement> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,7 +195,6 @@ pub struct RunStmt {
     pub target: String,
     pub label: Option<String>,
     pub modifier: Option<RunModifier>,
-    pub each: Option<String>,
     #[serde(default)]
     pub on_failed: Option<Vec<Statement>>,
 }

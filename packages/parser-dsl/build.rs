@@ -24,10 +24,16 @@ fn main() {
         .expect("Failed to parse NODE_TYPES_BEHAVIOR as JSON");
 
     let statement_kinds = children_of(&nodes, "statement");
-    let handler_kinds = children_of(&nodes, "handler_block");
+    // KD-3: grammar now uses flat `block` (direct children) instead of `handler_block`
+    let handler_kinds = {
+        let mut v = children_of(&nodes, "block");
+        v.sort();
+        v.dedup();
+        v
+    };
+    // KD-3: grammar now uses flat `state_body` (no more oriented_state_body/setup_state_body)
     let state_body_kinds = {
-        let mut v = children_of(&nodes, "oriented_state_body");
-        v.extend(children_of(&nodes, "setup_state_body"));
+        let mut v = children_of(&nodes, "state_body");
         v.sort();
         v.dedup();
         v
@@ -38,11 +44,12 @@ fn main() {
         r#"
 // AUTO-GENERATED: do not edit. Regenerated from tree-sitter grammar node-types.json
 
-pub const STATEMENT_KINDS: &[&str] = &[{stmt}];
+#[allow(dead_code)] pub const STATEMENT_KINDS: &[&str] = &[{stmt}];
 pub const HANDLER_BLOCK_KINDS: &[&str] = &[{handler}];
 pub const STATE_BODY_KINDS: &[&str] = &[{state}];
-pub const RESTRICTED_BLOCK_KINDS: &[&str] = &[{restricted}];
+#[allow(dead_code)] pub const RESTRICTED_BLOCK_KINDS: &[&str] = &[{restricted}];
 
+#[allow(dead_code)]
 pub fn is_statement_kind(kind: &str) -> bool {{
     STATEMENT_KINDS.contains(&kind)
 }}
@@ -55,6 +62,7 @@ pub fn is_state_body_kind(kind: &str) -> bool {{
     STATE_BODY_KINDS.contains(&kind)
 }}
 
+#[allow(dead_code)]
 pub fn is_restricted_block_kind(kind: &str) -> bool {{
     RESTRICTED_BLOCK_KINDS.contains(&kind)
 }}

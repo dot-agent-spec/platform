@@ -96,18 +96,74 @@ fn node_to_value(node: Node, source: &str) -> Value {
         return Value::Object(map);
     }
 
-    // run_type is a keyword-choice node (tool/script/subagent).
-    // Its byte_range may include a leading space in indentation-sensitive grammars, so trim.
-    if kind == "run_type" {
+    // Keyword/operator nodes that must return their raw source text.
+    if kind == "run_type" || kind == "assignment_op" || kind == "comparison_op" || kind == "logical_op" || kind == "memory_domain" {
         return json!(source[node.byte_range()].trim());
     }
 
-    if node.child_count() == 0 || kind == "identifier" || kind == "quoted_string" || kind == "number_literal" || kind == "path" {
+    // Typed literal leaves
+    if kind == "boolean" {
+        return if source[node.byte_range()].trim() == "true" { json!(true) } else { json!(false) };
+    }
+    if kind == "null" {
+        return json!(null);
+    }
+    if kind == "number" {
+        let text = source[node.byte_range()].trim();
+        return json!(text.parse::<f64>().unwrap_or(0.0));
+    }
+
+    if node.child_count() == 0 || kind == "identifier" || kind == "quoted_string" || kind == "with_quotes_string" || kind == "number_literal" || kind == "path" || kind == "state_name" || kind == "filename" {
         let text = &source[node.byte_range()];
-        if kind == "quoted_string" && text.starts_with('"') && text.ends_with('"') {
+        if (kind == "quoted_string" || kind == "with_quotes_string") && text.starts_with('"') && text.ends_with('"') {
             return json!(text[1..text.len()-1].to_string());
         }
         return json!(text);
+    }
+
+    // ── grammar `value` wrapper node → forward to its single named child ────────
+    if kind == "value" {
+        let mut c = node.walk();
+        for child in node.named_children(&mut c) {
+            return node_to_value(child, source);
+        }
+        return json!(null);
+    }
+
+    // ── grammar `expression` node → simple value or compare triple ──────────────
+    if kind == "expression" {
+        if let Some(left) = node.child_by_field_name("left") {
+            let left_val = node_to_value(left, source);
+            let op_val = node.child_by_field_name("op")
+                .map(|n| node_to_value(n, source))
+                .unwrap_or(json!(null));
+            let right_val = node.child_by_field_name("right")
+                .map(|n| node_to_value(n, source))
+                .unwrap_or(json!(null));
+            let mut m = Map::new();
+            m.insert("left".to_string(), left_val);
+            m.insert("op".to_string(), op_val);
+            m.insert("right".to_string(), right_val);
+            return Value::Object(m);
+        }
+        // simple value expression: single named child
+        let mut c = node.walk();
+        for child in node.named_children(&mut c) {
+            return node_to_value(child, source);
+        }
+        return json!(null);
+    }
+
+    // ── memory_target → MemoryPath { domain, key } (grammar field is `var`) ─────
+    if kind == "memory_target" {
+        let mut m = Map::new();
+        if let Some(dn) = node.child_by_field_name("domain") {
+            m.insert("domain".to_string(), node_to_value(dn, source));
+        }
+        if let Some(vn) = node.child_by_field_name("var") {
+            m.insert("key".to_string(), node_to_value(vn, source));
+        }
+        return Value::Object(m);
     }
 
     // Special handling for state_decl: flatten body into statement list
@@ -122,31 +178,9 @@ fn node_to_value(node: Node, source: &str) -> Value {
         let mut body_statements = Vec::new();
 
         if let Some(body_wrapper) = node.child_by_field_name("body") {
-            // v0.4.0: state_decl has a named "body" field (state_body node)
-            // state_body children: oriented_state_body | block (for setup)
-            let mut cursor = body_wrapper.walk();
-            for child in body_wrapper.named_children(&mut cursor) {
-                match child.kind() {
-                    "oriented_state_body" => {
-                        body_statements.extend(extract_state_body_statements(child, source));
-                    }
-                    "block" => {
-                        body_statements.extend(extract_block_statements(child, source));
-                    }
-                    _ => {}
-                }
-            }
-        } else {
-            // v0.3.x fallback: oriented_state_body/setup_state_body as unnamed children
-            let mut cursor = node.walk();
-            for child in node.named_children(&mut cursor) {
-                match child.kind() {
-                    "oriented_state_body" | "setup_state_body" => {
-                        body_statements.extend(extract_state_body_statements(child, source));
-                    }
-                    _ => {}
-                }
-            }
+            // KD-3: state_decl.body field IS the flat state_body node directly.
+            // state_body children are all statement kinds (goal, intent_handler, run, etc.)
+            body_statements.extend(extract_state_body_statements(body_wrapper, source));
         }
 
         map.insert("body".to_string(), json!(body_statements));
@@ -269,40 +303,71 @@ fn node_to_value(node: Node, source: &str) -> Value {
             if let Some(p) = node.child_by_field_name("parameters") {
                 map.insert("label".to_string(), node_to_value(p, source));
             }
-            // failure_stmt child → on_failed
+            // failure_stmt child → on_failed (block or inline form)
             let mut c = node.walk();
             for child in node.named_children(&mut c) {
                 if child.kind() == "failure_stmt" {
-                    if let Some(blk) = child.child_by_field_name("block") {
-                        map.insert("on_failed".to_string(), json!(extract_block_statements(blk, source)));
-                    }
+                    map.insert("on_failed".to_string(), json!(extract_failure_body(child, source)));
                 }
             }
         }
 
-        // ── Parallel statement ─────────────────────────────────────────────────
-        // body from handler_block field; on_complete/on_failed from child stmts
-        "parallel_stmt" => {
-            if let Some(blk) = node.child_by_field_name("block") {
-                map.insert("body".to_string(), json!(extract_handler_block_statements(blk, source)));
-            } else {
-                map.insert("body".to_string(), json!(Vec::<Value>::new()));
+        // ── Apply statement ─────────────────────────────────────────────────────
+        // Grammar has only `text` field; `css` keyword is unnamed. Hardcode target.
+        "apply_stmt" => {
+            map.insert("target".to_string(), json!("css"));
+            if let Some(t) = node.child_by_field_name("text") {
+                map.insert("text".to_string(), node_to_value(t, source));
             }
             let mut c = node.walk();
             for child in node.named_children(&mut c) {
-                match child.kind() {
-                    "success_stmt" => {
-                        if let Some(blk) = child.child_by_field_name("block") {
-                            map.insert("on_complete".to_string(), json!(extract_block_statements(blk, source)));
-                        }
-                    }
-                    "failure_stmt" => {
-                        if let Some(blk) = child.child_by_field_name("block") {
-                            map.insert("on_failed".to_string(), json!(extract_block_statements(blk, source)));
-                        }
-                    }
-                    _ => {}
+                if child.kind() == "failure_stmt" {
+                    map.insert("on_failed".to_string(), json!(extract_failure_body(child, source)));
                 }
+            }
+        }
+
+        // ── Remove statement ────────────────────────────────────────────────────
+        // Same structure as apply_stmt.
+        "remove_stmt" => {
+            map.insert("target".to_string(), json!("css"));
+            if let Some(t) = node.child_by_field_name("text") {
+                map.insert("text".to_string(), node_to_value(t, source));
+            }
+            let mut c = node.walk();
+            for child in node.named_children(&mut c) {
+                if child.kind() == "failure_stmt" {
+                    map.insert("on_failed".to_string(), json!(extract_failure_body(child, source)));
+                }
+            }
+        }
+
+        // ── Temporal statement (after N prompts) ────────────────────────────────
+        // Grammar node is `temporal_stmt`; AST variant is `after_stmt`.
+        "temporal_stmt" => {
+            if let Some(cn) = node.child_by_field_name("count") {
+                let count: u64 = source[cn.byte_range()].trim().parse().unwrap_or(0);
+                map.insert("prompts".to_string(), json!(count));
+            }
+            if let Some(blk) = node.child_by_field_name("block") {
+                map.insert("body".to_string(), json!(extract_block_statements(blk, source)));
+            }
+            type_name = "after_stmt".to_string();
+        }
+
+        // ── Parallel statement ─────────────────────────────────────────────────
+        // KD-3: body = run_stmt children (restricted); on_failed = on_failure field (block)
+        "parallel_stmt" => {
+            let mut runs = Vec::new();
+            let mut c = node.walk();
+            for child in node.named_children(&mut c) {
+                if child.kind() == "run_stmt" {
+                    runs.push(node_to_value(child, source));
+                }
+            }
+            map.insert("body".to_string(), json!(runs));
+            if let Some(blk) = node.child_by_field_name("on_failure") {
+                map.insert("on_failed".to_string(), json!(extract_block_statements(blk, source)));
             }
         }
 
@@ -356,19 +421,12 @@ fn node_to_value(node: Node, source: &str) -> Value {
     Value::Object(map)
 }
 
-/// Extract statements from a `block` node (v0.4.0 style).
-/// `block` wraps each statement in a `statement` node; this unwraps them.
-/// Falls back to direct handler_block-style children if no statement wrapper is found.
+/// Extract action statements from a `block` node (KD-3: direct children, no wrapper).
 fn extract_block_statements(block_node: Node, source: &str) -> Vec<Value> {
     let mut stmts = Vec::new();
     let mut cursor = block_node.walk();
     for child in block_node.named_children(&mut cursor) {
-        if child.kind() == "statement" {
-            let mut c2 = child.walk();
-            for inner in child.named_children(&mut c2) {
-                stmts.push(node_to_value(inner, source));
-            }
-        } else if is_handler_block_kind(child.kind()) {
+        if is_handler_block_kind(child.kind()) {
             stmts.push(node_to_value(child, source));
         }
     }
@@ -378,27 +436,24 @@ fn extract_block_statements(block_node: Node, source: &str) -> Vec<Value> {
 fn extract_state_body_statements(body_node: Node, source: &str) -> Vec<Value> {
     let mut stmts = Vec::new();
     let mut cursor = body_node.walk();
-
     for child in body_node.named_children(&mut cursor) {
         if is_state_body_kind(child.kind()) {
             stmts.push(node_to_value(child, source));
         }
     }
-
     stmts
 }
 
-fn extract_handler_block_statements(block_node: Node, source: &str) -> Vec<Value> {
-    let mut stmts = Vec::new();
-    let mut cursor = block_node.walk();
-
-    for child in block_node.named_children(&mut cursor) {
-        if is_handler_block_kind(child.kind()) {
-            stmts.push(node_to_value(child, source));
-        }
+/// Extract the body of a `failure_stmt` — block form (field `block`) or inline single action.
+fn extract_failure_body(failure_node: Node, source: &str) -> Vec<Value> {
+    if let Some(blk) = failure_node.child_by_field_name("block") {
+        return extract_block_statements(blk, source);
     }
-
-    stmts
+    // inline: single named child action
+    let mut c = failure_node.walk();
+    failure_node.named_children(&mut c)
+        .map(|n| node_to_value(n, source))
+        .collect()
 }
 
 #[cfg(test)]
@@ -559,8 +614,8 @@ state planning.next
 
     #[test]
     fn parse_intent_block_form_produces_block_body() {
-        // intent block uses indentation (no braces)
-        let src = "state s\n  goal \"S.\"\n  interact\n  on intent \"go\"\n    transition to t\n  on offtopic transition to s\n\nstate t\n  goal \"T.\"\n  interact\n  on intent \"stay\" transition to t\n  on offtopic transition to t\n";
+        // KD-3 grammar: block form requires `end` keyword terminator
+        let src = "state s\n  goal \"S.\"\n  interact\n  on intent \"go\"\n    transition to t\n  end\n  on offtopic transition to s\n\nstate t\n  goal \"T.\"\n  interact\n  on intent \"stay\" transition to t\n  on offtopic transition to t\n";
         let bf = must_parse(src);
         let on_intent = bf.states[0].body.iter()
             .find(|s| matches!(s, Statement::OnIntent { .. }))
@@ -570,6 +625,26 @@ state planning.next
             matches!(on_intent, Statement::OnIntent { body: IntentBody::Block(_), .. }),
             "expected Block body for block-form intent handler"
         );
+    }
+
+    #[test]
+    fn parse_set_inside_intent_block_accepted() {
+        // L2/G2: set (memory_stmt) must be accepted inside block-form on intent handler
+        let src = "state s\n  goal \"S.\"\n  interact\n  on intent \"configure\"\n    set context.mode = \"strict\"\n    transition to t\n  end\n  on offtopic transition to s\n\nstate t\n  goal \"T.\"\n  interact\n  on intent \"stay\" transition to t\n  on offtopic transition to t\n";
+        let bf = must_parse(src);
+        let on_intent = bf.states[0].body.iter()
+            .find(|s| matches!(s, Statement::OnIntent { .. }))
+            .expect("expected OnIntent in state body");
+
+        if let Statement::OnIntent { intent, body } = on_intent {
+            assert_eq!(intent, "configure");
+            if let IntentBody::Block(stmts) = body {
+                assert!(stmts.iter().any(|s| matches!(s, Statement::Set { .. })),
+                    "expected Set statement inside intent block, got: {:?}", stmts);
+            } else {
+                panic!("expected Block body, got Next");
+            }
+        }
     }
 
     #[test]
@@ -585,7 +660,6 @@ state planning.next
         let result = parse_behavior("");
         assert!(result.is_err(), "empty string should be a parse error");
     }
-}
 
     #[test]
     fn parse_fridge_logic() {
@@ -597,3 +671,4 @@ state planning.next
         }
         assert!(result.is_ok(), "fridge_logic.behavior should parse without errors");
     }
+}
