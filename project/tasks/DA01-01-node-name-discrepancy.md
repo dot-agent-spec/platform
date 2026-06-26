@@ -30,13 +30,14 @@ the same constructs. There are three categories of discrepancy:
 The grammar node names are canonical. The parser-dsl serde layer introduced different names
 for three constructs. The fix is to align serde (and all layers above) to the grammar names.
 
-| Grammar (canonical) | Serde now | Action |
+| Grammar (canonical) | Serde / JSON now | Action |
 |---|---|---|
 | `intent_handler` | `intent_trigger` | rename serde → `intent_handler` |
 | `offtopic_handler` | `offtopic_stmt` | rename serde → `offtopic_handler` |
+| field `on_failure` (parallel_stmt) | `on_failed` | rename field → `on_failure` across parser-dsl + linter |
 
-The linter checks `stmt.type === 'intent_trigger'` (linter.ts:161,167) against parsed JSON.
-After the rename these checks must be updated to match the new serde names.
+The linter checks `stmt.type === 'intent_trigger'` (linter.ts:161,167) against parsed JSON and
+accesses `stmt['on_failed']` (linter.ts:172). Both must be updated alongside the serde renames.
 
 **B — Grammar node name does not match the keyword**
 
@@ -73,6 +74,7 @@ The `oriented_state_body` branch will never match — it is dead code left from 
 | 2 | P1 | Rename grammar node `temporal_stmt` → `after_stmt` (align with keyword) | `tree-sitter`, `compiler` | S |
 | 3 | P1 | Rename `RunStmt.label` → `RunStmt.parameters` in parser-dsl and layers above | `parser-dsl`, `compiler`, `sdk` | S |
 | 4 | P1 | Rename serde `intent_trigger` → `intent_handler`, `offtopic_stmt` → `offtopic_handler` in parser-dsl and layers above | `parser-dsl`, `compiler` | S |
+| 5 | P1 | Rename field `on_failed` → `on_failure` in parser-dsl and layers above | `parser-dsl`, `compiler`, `kernel-dsl` | M |
 
 ---
 
@@ -153,6 +155,33 @@ No tree-sitter change needed. No unfreeze required.
 
 ---
 
+### 5. Rename field `on_failed` → `on_failure` in parser-dsl and layers above — P1
+
+**What:** The grammar uses `field('on_failure', $.block)` in `parallel_stmt` (grammar.js:263)
+and the keyword phrase is `on failure`. The parser-dsl serializes and pattern-matches the field
+as `on_failed` across all four statement types that carry a failure handler (`run`, `apply`,
+`remove`, `parallel`). The canonical name is `on_failure`.
+
+**Why:** `failure` is the keyword users write; `on_failure` is what the grammar field is named.
+`on_failed` is a historical artifact. The mismatch affects anyone reading the AST JSON or
+pattern-matching in Rust.
+
+**Change:**
+1. `packages/parser-dsl/src/ast.rs` — rename `on_failed` → `on_failure` at lines 165, 174, 180, 199
+2. `packages/parser-dsl/src/parser.rs` — update `map.insert("on_failed"...)` → `"on_failure"` at lines 310, 325, 340, 370
+3. `packages/parser-dsl/src/analysis.rs:145` — update destructure `Parallel { body, on_failed }` → `on_failure`
+4. `packages/compiler/src/linter.ts:172` — update `stmt['on_failed']` → `stmt['on_failure']`
+5. `packages/kernel-dsl/src/engine/fsm.rs:269` — fix `Statement::Parallel { body, on_complete: _, on_failed: _ }`:
+   - drop `on_complete` (field was removed from ast.rs; this is a pre-existing bug that will surface as a compile error)
+   - rename `on_failed` → `on_failure`
+6. Grep `kernel-dsl` for any other `on_failed` pattern-matches in Parallel arms
+7. Update `index.d.ts` typings if `on_failed` is exposed in the public API
+8. Rebuild compiler (`npm run build`) — `dist/index.js` is auto-updated
+
+No tree-sitter change needed. No unfreeze required.
+
+---
+
 ## Implementation order
 
 Item 2 belongs to the **v0.1 tree-sitter unfreeze window** (§4.1 of
@@ -163,10 +192,13 @@ tree-sitter freeze.
 
 ```
 P0:  1 — remove oriented_state_body dead code (compiler only, independent of unfreeze)
-P1a: 3 + 4 — parser-dsl rename batch (§4.2 window; one PR alongside C1/C6)
+P1a: 3 + 4 + 5 — parser-dsl rename batch (§4.2 window; one PR alongside C1/C6)
 P1b: 2 — grammar rename (§4.1 window; batch with KD-1…KD-5)
 ```
 
-Items 3 and 4 are non-breaking before any external release of parser-dsl.
+Items 3, 4, and 5 are non-breaking before any external release of parser-dsl.
+Item 5 touches `kernel-dsl` too — the `on_complete` bug in `fsm.rs:269` is a pre-existing
+compile error waiting to surface; fixing `on_failed` in that file should also remove `on_complete`
+from the Parallel pattern.
 Item 2 requires verifying the linter has no remaining `temporal_stmt` references after
 `tree-sitter generate`.
