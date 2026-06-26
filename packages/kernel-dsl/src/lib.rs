@@ -90,8 +90,6 @@ impl AgentDSLKernel {
         serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
-    /// Signal that the runtime could not resolve the current action.
-
     /// Dispatch a named global event (e.g. "session.ended", "script.done").
     ///
     /// Matches top-level `on event "…"` declarations. Use this to notify the FSM
@@ -140,22 +138,6 @@ impl AgentDSLKernel {
     pub fn set_memory(&mut self, domain: &str, key: &str, value_json: &str) {
         let mem_value = parse_json_primitive(value_json);
         self.inner.set_memory(domain, key, mem_value);
-    }
-
-    /// Signal that the last async operation (run_script, run_subagent, run_tool) completed successfully.
-    ///
-    /// Fires the observer with the effects of the current state's `on complete` block.
-    pub fn send_complete(&mut self) -> String {
-        let effects = self.inner.send_complete();
-        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
-    }
-
-    /// Signal that the last async operation (run_script, run_subagent, run_tool) failed.
-    ///
-    /// Fires the observer with the effects of the current state's `on failed` block.
-    pub fn send_failed(&mut self) -> String {
-        let effects = self.inner.send_failed();
-        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Return the state graph as SCXML (W3C https://www.w3.org/TR/scxml/) with

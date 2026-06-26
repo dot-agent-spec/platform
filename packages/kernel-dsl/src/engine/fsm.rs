@@ -145,30 +145,6 @@ impl Fsm {
         effects
     }
 
-    pub fn send_complete(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
-        let name = self.current_state.clone();
-        if let Some(state) = self.states.get(&name).cloned() {
-            for stmt in &state.body {
-                if let Statement::OnComplete { body: stmts } = stmt {
-                    return self.exec_statements(stmts, mem);
-                }
-            }
-        }
-        vec![]
-    }
-
-    pub fn send_failed(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
-        let name = self.current_state.clone();
-        if let Some(state) = self.states.get(&name).cloned() {
-            for stmt in &state.body {
-                if let Statement::OnFailed { body: stmts } = stmt {
-                    return self.exec_statements(stmts, mem);
-                }
-            }
-        }
-        vec![]
-    }
-
     fn transition_to(&mut self, target: &str, _mem: &mut MemoryStore) -> Vec<Effect> {
         let from = self.current_state.clone();
         if self.states.contains_key(target) {
@@ -213,17 +189,17 @@ impl Fsm {
                 match r.kind {
                     RunKind::Script => fx.push(Effect::RunScript {
                         target: r.target.clone(),
-                        label: r.label.clone(),
+                        parameters: r.parameters.clone(),
                         silent: matches!(r.modifier, Some(RunModifier::Silent)),
                     }),
                     RunKind::Subagent => fx.push(Effect::RunSubagent {
                         target: r.target.clone(),
-                        label: r.label.clone(),
+                        parameters: r.parameters.clone(),
                         background: matches!(r.modifier, Some(RunModifier::Background)),
                     }),
                     RunKind::Tool => fx.push(Effect::RunTool {
                         target: r.target.clone(),
-                        label: r.label.clone(),
+                        parameters: r.parameters.clone(),
                     }),
                 }
                 fx
@@ -266,15 +242,13 @@ impl Fsm {
                 vec![Effect::RemoveCss { value: value.clone() }]
             }
 
-            Statement::Parallel { body, on_complete: _, on_failed: _ } => {
+            Statement::Parallel { body, on_failure: _ } => {
                 // Parallel tasks — execute sequentially for now (WASM is single-threaded).
                 self.exec_statements(body, mem)
             }
 
             Statement::OnIntent { .. }
             | Statement::OnOfftopic { .. }
-            | Statement::OnComplete { .. }
-            | Statement::OnFailed { .. }
             | Statement::After { .. } => {
                 // handlers — not directly executed, dispatched by send_*
                 vec![]
@@ -387,16 +361,6 @@ fn collect_scxml_transitions(_from: &str, stmts: &[Statement], out: &mut Vec<(Op
             Statement::OnOfftopic { body: stmts } => {
                 if let Some(to) = find_transition_in_block(stmts) {
                     out.push((Some("offtopic".to_string()), to));
-                }
-            }
-            Statement::OnComplete { body: stmts } => {
-                if let Some(to) = find_transition_in_block(stmts) {
-                    out.push((Some("complete".to_string()), to));
-                }
-            }
-            Statement::OnFailed { body: stmts } => {
-                if let Some(to) = find_transition_in_block(stmts) {
-                    out.push((Some("failed".to_string()), to));
                 }
             }
             Statement::After { body, .. } => {

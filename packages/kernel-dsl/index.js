@@ -29,9 +29,7 @@ export class AgentDSLKernel {
   get_valid_intents() { return this._kernel.get_valid_intents(); }
   load_behavior(text) { return this._kernel.load_behavior(text); }
   observe(callback) { return this._kernel.observe(callback); }
-  send_complete() { return this._kernel.send_complete(); }
   send_event(event) { return this._kernel.send_event(event); }
-  send_failed() { return this._kernel.send_failed(); }
   send_intent(intent) { return this._kernel.send_intent(intent); }
   set_memory(domain, key, value_json) { return this._kernel.set_memory(domain, key, value_json); }
   send_offtopic() { return this._kernel.send_offtopic(); }

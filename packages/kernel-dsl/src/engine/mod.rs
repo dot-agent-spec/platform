@@ -67,20 +67,6 @@ impl AgentDSLKernel {
         }
     }
 
-    pub fn send_complete(&mut self) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.send_complete(&mut self.memory),
-            None => vec![],
-        }
-    }
-
-    pub fn send_failed(&mut self) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.send_failed(&mut self.memory),
-            None => vec![],
-        }
-    }
-
     pub fn get_current_state(&self) -> String {
         self.fsm
             .as_ref()
