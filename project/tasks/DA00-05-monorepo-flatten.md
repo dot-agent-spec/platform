@@ -74,15 +74,15 @@ Flatten `dot-agent-spec` into a genuine git monorepo by removing nested `.git` d
 
 ### Phase 4 — Archive individual GitHub repos
 
-- [ ] Add a redirect notice to each repo's README before archiving (point to the monorepo)
-- [ ] Archive `dot-agent-spec/compiler`
-- [ ] Archive `dot-agent-spec/kernel-dsl`
-- [ ] Archive `dot-agent-spec/language-server`
-- [ ] Archive `dot-agent-spec/parser-dsl`
-- [ ] Archive `dot-agent-spec/sdk`
-- [ ] Archive `dot-agent-spec/tree-sitter`
-- [ ] Archive `dot-agent-spec/dot-agent-cli`
-- [ ] Archive `dot-agent-spec/vscode-dot-agent`
+- [x] Add a redirect notice to each repo's README before archiving (point to the monorepo)
+- [x] Archive `dot-agent-spec/compiler`
+- [x] Archive `dot-agent-spec/kernel-dsl`
+- [x] Archive `dot-agent-spec/language-server`
+- [x] Archive `dot-agent-spec/parser-dsl`
+- [x] Archive `dot-agent-spec/sdk`
+- [x] Archive `dot-agent-spec/tree-sitter`
+- [x] Archive `dot-agent-spec/dot-agent-cli`
+- [x] Archive `dot-agent-spec/vscode-dot-agent`
 
 ### Phase 5 — CI and publish (post-flatten)
 
