@@ -214,18 +214,18 @@ Legend: ☑️ verified ✅ implemented · ⚠️ partial or gap · ❌ missing,
 | ✅ `run script` | ✅ `run_stmt[script]` | ✅ `RunStmt { kind: Script }` | | ✅ → `Effect::RunScript {target, label, silent}` | ✅ `registerHandler("run_script", fn)` |
 | ✅ `run subagent` | ✅ `run_stmt[subagent]` | ✅ `RunStmt { kind: Subagent }` | | ✅ → `Effect::RunSubagent {target, label, background}` | ✅ `registerHandler("run_subagent", fn)` |
 | ✅ `run tool` | ✅ `run_stmt[tool]` | ✅ `RunStmt { kind: Tool }` | | ✅ → `Effect::RunTool {target, label}` | ✅ `registerHandler("run_tool", fn)` |
-| 🗑️ `run … each` | 🗑️ `run_stmt[each]` | ✅ `RunStmt.each` | | ❌ parsed but never executed | ❌ |
+| 🗑️ `run … each` | 🗑️ `run_stmt[each]` | 🗑️ removed | | ❌ | ❌ |
 | ✅ `set` | ✅ `memory_stmt` | ✅ `Statement::Set` | | ✅ → `Effect::SetMemory` + writes `MemoryStore` | ✅ `registerHandler("set_memory", fn)` |
 | ✅ `if … end` | ✅ `conditional_stmt` | ✅ `Statement::If` | | ✅ `eval_condition()` resolves at runtime | ✅ transparent (no effect emitted) |
 | ✅ `apply css` | ✅ `apply_stmt` | ✅ `Statement::Apply` | | ✅ → `Effect::ApplyCss {value}` | ✅ `registerHandler("apply_css", fn)` |
 | ✅ `remove css` | ✅ `remove_stmt` | ✅ `Statement::Remove` | | ✅ → `Effect::RemoveCss {value}` | ✅ `registerHandler("remove_css", fn)` |
 | ✅ `on failure` (run) | ✅ `failure_stmt` (sub-node of `run_stmt`) | ✅ `RunStmt.on_failed` | | ✅ `send_failed()` dispatches body | → `sendFailed()` |
-| ✅ `on failure` (apply/remove) | ✅ `failure_stmt` (sub-node of `apply_stmt`/`remove_stmt`) | ⚠️ not captured — `Apply`/`Remove` AST structs lack `on_failed`; parser drops sub-node | | ❌ | ❌ |
+| ✅ `on failure` (apply/remove) | ✅ `failure_stmt` (sub-node of `apply_stmt`/`remove_stmt`) | ✅ `Apply.on_failed` / `Remove.on_failed` | | ❌ | ❌ |
 | ✅ `parallel` | ✅ `parallel_stmt` | ✅ `Statement::Parallel` | | ⚠️ body executed sequentially (WASM single-threaded) | ✅ `registerHandler("run_script" / "run_subagent" / "run_tool", fn)` |
-| 🗑️ `parallel on success` (removed v0.1) | 🗑️ `success_stmt` (removed — no `on success`) | ✅ `Parallel.on_complete` (now dead — C6) | | ✅ `send_complete()` dispatches body | → `sendComplete()` |
+| 🗑️ `parallel on success` (removed v0.1) | 🗑️ `success_stmt` (removed — no `on success`) | 🗑️ removed | | ✅ `send_complete()` dispatches body | → `sendComplete()` |
 | ✅ `parallel on failure` | ✅ `on_failure` field (block) of `parallel_stmt` | ✅ `Parallel.on_failed` | | ✅ `send_failed()` dispatches body | → `sendFailed()` |
-| 🗑️ `on complete` | 🗑️ `on_complete_stmt` | ✅ `Statement::OnComplete` | | ✅ `send_complete()` dispatches body | ✅ → `sendComplete()` |
-| 🗑️ `on failed` | 🗑️ `on_failed_stmt` | ✅ `Statement::OnFailed` | | ✅ `send_failed()` dispatches body | ✅ → `sendFailed()` |
+| 🗑️ `on complete` | 🗑️ `on_complete_stmt` | 🗑️ removed | | ✅ `send_complete()` dispatches body | ✅ → `sendComplete()` |
+| 🗑️ `on failed` | 🗑️ `on_failed_stmt` | 🗑️ removed | | ✅ `send_failed()` dispatches body | ✅ → `sendFailed()` |
 | ✅ `on event "…"` | ✅ `trigger_decl` | ✅ `TriggerDecl` | | ✅ `send_event(name)` dispatches matching triggers | ✅ → `sendEvent(name)` |
 
 ---
@@ -238,6 +238,6 @@ Tree-sitter node names and parser-dsl JSON serialization names are not always id
 |---|---|---|
 | `intent_handler` | `intent_trigger` | different names for the same construct |
 | `offtopic_handler` | `offtopic_stmt` | different names for the same construct |
-| `temporal_stmt` | `after_stmt` | `Statement::After` serializes `type: "after_stmt"`; grammar node is `temporal_stmt` |
+| ⚠️ `temporal_stmt` | `after_stmt` | `Statement::After` serializes `type: "after_stmt"`; grammar node is `temporal_stmt`, statement is `after`  |
 | `run_stmt` field `parameters` | `RunStmt.label` | field renamed in parser (`parameters` → `label`) |
 | `oriented_state_body` | — | 🗑️ removed v0.1 — `state_body` is now a flat `repeat(statement)`; ordering enforced by the linter |

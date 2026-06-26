@@ -2,12 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress |
+| Status | Done |
 | Created | 2026-06-25 |
 | Author | Danilo Borges |
 | Decision Log | [DA01-01: Forgiving Syntax and Prettifier](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
-
-All items in this task must be implemented in a single batch (one unfreeze of `tree-sitter` + `parser-dsl`). Do not open a second unfreeze for a missed item.
 
 ---
 
@@ -46,29 +44,6 @@ The tree-sitter grammar for `.behavior` is redesigned to be keyword-driven and p
 
 ---
 
-## §4.2 AST Mapper Bugfixes (packages/parser-dsl)
-
-Updates to match the keyword-driven AST structure and fix deserialization issues.
-
-### L2/G2 — `set` inside `on intent` crashes AST mapper
-- **Change:** Add `Statement::Set` variant to the Rust `IntentBody` enum in `parser-dsl` so that `set` statements are accepted inside block-form `on intent` and `on offtopic` handlers.
-
-### C1 — `on failure` on `apply`/`remove` silently dropped
-- **Change:** Add `on_failed: Option<Vec<Statement>>` to the `Apply` and `Remove` AST structs and populate it from the grammar's `failure_stmt` node.
-
-### C6 — Remove dead AST nodes
-- **Change:** Clean up and delete dead or deprecated AST nodes in `parser-dsl`:
-  - `Statement::OnComplete`
-  - `Statement::OnFailed`
-  - `RunStmt.each`
-  - `Parallel.on_complete` (dead once `on success` is removed)
-  - `Statement::OnComplete` (dead once `on success` is removed)
-
-### S3-AST — `on_success` field for `RunStmt`
-- **Change:** *Cancelled* (since `on success` was removed from the language).
-
----
-
 ## Test Corpus
 
 Corpus test cases are organized inside the thematic `.txt` files under the submodules' `test/corpus/` directories:
@@ -90,7 +65,8 @@ Corpus test cases are organized inside the thematic `.txt` files under the submo
 ## Implementation order
 
 ```
-1. Grammar changes (tree-sitter) — KD-1 to KD-5, D3/G7, and corpus tests (already completed)
-2. AST mapper (parser-dsl)       — L2/G2, C1, C6
-3. Docs updates                  — dsl/reference/behavior.md (already completed), update description.md (D3/G7)
+1. Grammar changes (tree-sitter) — KD-1 to KD-5, D3/G7, and corpus tests ✅ Done
+2. AST mapper (parser-dsl)       — see DA01-01-ast-mapper-fixes.md
+3. Error Reporting (parser/comp) — see DA01-01-diagnostics-dx.md
+4. Docs updates                  — dsl/reference/behavior.md ✅ Done; description.md (D3/G7) ✅ Done
 ```
