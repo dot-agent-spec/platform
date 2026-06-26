@@ -46,24 +46,24 @@ Flatten `dot-agent-spec` into a genuine git monorepo by removing nested `.git` d
 
 ### Phase 0 — Audit (prerequisite for everything)
 
-- [ ] Check for unpushed commits in each sub-repo: `git log --oneline origin/HEAD..HEAD` in each folder
-- [ ] Confirm remote and state of the root repo: `git remote -v` + `git status` at `dot-agent-spec` root
+- [x] Check for unpushed commits in each sub-repo: `git log --oneline origin/HEAD..HEAD` in each folder
+- [x] Confirm remote and state of the root repo: `git remote -v` + `git status` at `dot-agent-spec` root
 
 ### Phase 1 — Decouple org-spec
 
-- [ ] Remove `org-spec/` from the local working tree
-- [ ] Add `org-spec/` to the root `.gitignore`
+- [x] Remove `org-spec/` from the local working tree
+- [x] Add `org-spec/` to the root `.gitignore`
 
 ### Phase 2 — Absorb packages (dependencies before dependents)
 
-- [ ] `packages/tree-sitter` — `rm -rf packages/tree-sitter/.git` and commit
-- [ ] `packages/parser-dsl` — remove `.git` and commit
-- [ ] `packages/kernel-dsl` — remove `.git` and commit
-- [ ] `packages/compiler` — remove `.git` and commit
-- [ ] `packages/language-server` — remove `.git` and commit
-- [ ] `packages/sdk` — remove `.git` and commit
-- [ ] `apps/dot-agent-cli` — remove `.git` and commit
-- [ ] `apps/vscode-extension` — remove `.git` and commit
+- [x] `packages/tree-sitter` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `packages/parser-dsl` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `packages/kernel-dsl` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `packages/compiler` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `packages/language-server` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `packages/sdk` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `apps/dot-agent-cli` — absorbed via `git filter-repo` + merge (history preserved)
+- [x] `apps/vscode-extension` — absorbed via `git filter-repo` + merge (history preserved)
 
 ### Phase 3 — Fix the build
 
