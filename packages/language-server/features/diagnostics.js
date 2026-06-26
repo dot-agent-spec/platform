@@ -19,13 +19,21 @@ import { DiagnosticSeverity } from 'vscode-languageserver';
 import { fileURLToPath } from 'url';
 
 function toDiagnostic(msg) {
+    const severity =
+        msg.severity === 'error'   ? DiagnosticSeverity.Error :
+        msg.severity === 'warning' ? DiagnosticSeverity.Warning :
+        msg.severity === 'info'    ? DiagnosticSeverity.Information :
+                                     DiagnosticSeverity.Hint;
+    const text = msg.hint
+        ? `[${msg.code}] ${msg.message} (${msg.hint})`
+        : `[${msg.code}] ${msg.message}`;
     return {
         range: {
             start: { line: msg.line - 1, character: msg.col - 1 },
             end:   { line: msg.line - 1, character: msg.col - 1 },
         },
-        message: `[${msg.code}] ${msg.message}`,
-        severity: msg.severity === 'error' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+        message: text,
+        severity,
         source: 'dot-agent',
     };
 }
