@@ -1,0 +1,59 @@
+{
+  "name": "@dot-agent/cli",
+  "version": "1.0.5",
+  "license": "Apache-2.0",
+  "description": "CLI toolkit for building, packaging, and executing deterministic FSM-based agents",
+  "keywords": [
+    "agent",
+    "cli",
+    "fsm",
+    "deterministic",
+    "specification",
+    "workflow"
+  ],
+  "author": "Danilo Borges <contato@daniloborg.es>",
+  "homepage": "https://dot-agent.ai",
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/dot-agent-cli/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/daniloborges"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/dot-agent-cli"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "dot-agent": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@dot-agent/compiler": "*",
+    "@dot-agent/sdk": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "prepublishOnly": "npm run build && npm run test",
+    "build": "tsup",
+    "test": "vitest run",
+    "dev": "tsup --watch"
+  }
+}
