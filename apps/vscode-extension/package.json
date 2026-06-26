@@ -20,11 +20,11 @@
   "homepage": "https://dot-agent.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dot-agent-spec/core",
+    "url": "https://github.com/dot-agent-spec/platform",
     "directory": "apps/vscode-extension"
   },
   "bugs": {
-    "url": "https://github.com/dot-agent-spec/core/issues",
+    "url": "https://github.com/dot-agent-spec/platform/issues",
     "email": "contato@daniloborg.es"
   },
   "keywords": [
