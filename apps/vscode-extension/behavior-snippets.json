@@ -1,0 +1,143 @@
+{
+  "Behavior File": {
+    "prefix": "behavior",
+    "body": [
+      "on event \"${1:start}\"",
+      "  transition to ${2:initial}",
+      "",
+      "state ${2:initial}",
+      "  guide \"${3:Welcome message}\"",
+      "  interact",
+      "  on intent \"${4:done}\" transition to ${5:end}",
+      "",
+      "state ${5:end}",
+      "  guide \"${6:Goodbye}\"",
+      "  interact",
+      "  on fallback transition to ${2:initial}"
+    ],
+    "description": "Scaffold a minimal flow file"
+  },
+  "State Declaration": {
+    "prefix": "state",
+    "body": [
+      "state ${1:name}",
+      "  guide \"${2:}\"",
+      "  interact",
+      "  on intent \"${3:intent}\" transition to${4:next_state}"
+    ],
+    "description": "Declare a new state"
+  },
+  "Event Trigger": {
+    "prefix": "on event",
+    "body": [
+      "on event \"${1:event_name}\"",
+      "  transition to${2:initial_state}"
+    ],
+    "description": "Top-level event trigger"
+  },
+  "Intent Trigger": {
+    "prefix": "on intent",
+    "body": [
+      "on intent \"${1:intent text}\" transition to${2:state_name}"
+    ],
+    "description": "Intent trigger (inline transition)"
+  },
+  "Intent Trigger Block": {
+    "prefix": "on intent block",
+    "body": [
+      "on intent \"${1:intent text}\"",
+      "  ${2:// statements}"
+    ],
+    "description": "Intent trigger with block body"
+  },
+  "Run Script": {
+    "prefix": "run script",
+    "body": [
+      "run script \"${1:script.js}\""
+    ],
+    "description": "Run a script file"
+  },
+  "Run Subagent": {
+    "prefix": "run subagent",
+    "body": [
+      "run subagent \"${1:AgentName}\""
+    ],
+    "description": "Run a subagent"
+  },
+  "Run Tool": {
+    "prefix": "run tool",
+    "body": [
+      "run tool \"${1:tool-name}\""
+    ],
+    "description": "Run a tool"
+  },
+  "Set Memory": {
+    "prefix": "set",
+    "body": [
+      "set ${1|context,session,worksession,user|}.${2:key} = ${3:value}"
+    ],
+    "description": "Set a memory variable"
+  },
+  "If Condition": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}",
+      "  ${2:// body}"
+    ],
+    "description": "Conditional statement"
+  },
+  "If Else": {
+    "prefix": "ifelse",
+    "body": [
+      "if ${1:condition}",
+      "  ${2:// then}",
+      "else",
+      "  ${3:// else}"
+    ],
+    "description": "Conditional with else branch"
+  },
+  "Merge File": {
+    "prefix": "merge",
+    "body": [
+      "merge \"${1:file.behavior}\""
+    ],
+    "description": "Merge another behavior file (preamble)"
+  },
+  "After Prompts": {
+    "prefix": "after",
+    "body": [
+      "after ${1:3} prompts",
+      "  ${2:// escalation logic}"
+    ],
+    "description": "Temporal trigger after N prompts"
+  },
+  "Parallel Block": {
+    "prefix": "parallel",
+    "body": [
+      "parallel",
+      "  run subagent \"${1:Agent1}\"",
+      "  run subagent \"${2:Agent2}\"",
+      "on complete",
+      "  ${3:// merge results}",
+      "on failed",
+      "  ${4:// handle failure}"
+    ],
+    "description": "Parallel execution with completion handlers"
+  },
+  "On Offtopic": {
+    "prefix": "on offtopic",
+    "body": [
+      "on offtopic",
+      "  transition to ${1:current_state}"
+    ],
+    "description": "Offtopic handler"
+  },
+  "On Fallback": {
+    "prefix": "on fallback",
+    "body": [
+      "on fallback",
+      "  transition to ${1:current_state}"
+    ],
+    "description": "Fallback handler for unrecognised intents"
+  }
+}

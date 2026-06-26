@@ -1,0 +1,17 @@
+.vscode/**
+.git/**
+*.vsix
+**/*.ts
+!**/*.d.ts
+**/*.map
+.gitignore
+tsconfig.json
+../../packages/*/node_modules
+../../packages/*/src
+../../packages/*/target
+../../packages/*/Cargo.toml
+../../packages/*/Cargo.lock
+../../packages/*/build.rs
+../../packages/*/scripts
+../../packages/*/docs
+../../packages/*/tests

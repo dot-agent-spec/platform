@@ -1,0 +1,107 @@
+{
+  "name": "vscode-dot-agent",
+  "displayName": ".agent DSL",
+  "description": "Syntax highlighting, hover docs, and snippets for .agent DSL files",
+  "version": "0.3.3",
+  "publisher": "dot-agent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/vscode-dot-agent"
+  },
+  "main": "./extension.js",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "scripts": {
+    "package": "vsce package",
+    "install-ext": "code --install-extension vscode-dot-agent-*.vsix"
+  },
+  "dependencies": {
+    "@dot-agent/parser-dsl": "*",
+    "@dot-agent/compiler": "*",
+    "@dot-agent/language-server": "*",
+    "@dot-agent/tree-sitter": "*",
+    "vscode-languageclient": "^10.0.0"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.9.2"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "icon": "dot-agent-icon.png",
+  "contributes": {
+    "commands": [
+      {
+        "command": "behavior.openGraph",
+        "title": "Behavior: Open Graph",
+        "category": "Behavior",
+        "icon": "$(type-hierarchy)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "behavior.openGraph",
+          "when": "resourceExtname == .behavior",
+          "group": "navigation"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "description",
+        "aliases": [
+          "Description",
+          "description"
+        ],
+        "extensions": [
+          ".description",
+          ".type"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./agent-icon.svg",
+          "dark": "./agent-icon.svg"
+        }
+      },
+      {
+        "id": "behavior",
+        "aliases": [
+          "Behavior",
+          "behavior"
+        ],
+        "extensions": [
+          ".behavior"
+        ],
+        "configuration": "./behavior-language-configuration.json",
+        "icon": {
+          "light": "./behavior-icon-light.svg",
+          "dark": "./behavior-icon.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "description",
+        "scopeName": "source.description",
+        "path": "./agent.tmLanguage.json"
+      },
+      {
+        "language": "behavior",
+        "scopeName": "source.behavior",
+        "path": "./behavior.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "description",
+        "path": "./snippets.json"
+      },
+      {
+        "language": "behavior",
+        "path": "./behavior-snippets.json"
+      }
+    ]
+  }
+}
