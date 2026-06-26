@@ -107,11 +107,7 @@ Statements use a `"type"` discriminant. The `body` of `StateDef` and `TriggerDec
 
 { type: "parallel_stmt";
   body: Statement[];
-  on_complete?: Statement[];
-  on_failed?: Statement[] }
-
-{ type: "on_complete_stmt"; body: Statement[] }
-{ type: "on_failed_stmt";   body: Statement[] }
+  on_failed?: Statement[] | null }
 ```
 
 ### Side effects
@@ -122,7 +118,6 @@ Statements use a `"type"` discriminant. The `body` of `StateDef` and `TriggerDec
   target: string;
   label: string | null;
   modifier: "silent" | "background" | null;
-  each: string | null;
   on_failed: Statement[] | null }
 
 { type: "memory_stmt";
@@ -130,8 +125,8 @@ Statements use a `"type"` discriminant. The `body` of `StateDef` and `TriggerDec
   op: "=" | "+=" | "-=";
   value: Expr }
 
-{ type: "apply_stmt";  target: "css" | "html" | "video"; text: string }
-{ type: "remove_stmt"; target: "css" | "html" | "video"; text: string }
+{ type: "apply_stmt";  target: "css"; text: string; on_failed?: Statement[] | null }
+{ type: "remove_stmt"; target: "css"; text: string; on_failed?: Statement[] | null }
 ```
 
 ### Condition and Expr
