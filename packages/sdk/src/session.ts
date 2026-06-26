@@ -62,8 +62,6 @@ export class AgentSession {
 
   sendIntent(intent: string): void  { this.dispatchRaw(this.kernel.send_intent(intent)) }
   sendEvent(event: string): void    { this.dispatchRaw(this.kernel.send_event(event)) }
-  sendComplete(): void              { this.dispatchRaw(this.kernel.send_complete()) }
-  sendFailed(): void                { this.dispatchRaw(this.kernel.send_failed()) }
   sendOfftopic(): void              { this.dispatchRaw(this.kernel.send_offtopic()) }
   tickPrompt(): void                { this.dispatchRaw(this.kernel.tick_prompt()) }
 
