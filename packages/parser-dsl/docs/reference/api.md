@@ -139,7 +139,7 @@ type Statement =
   | GoalStmt | GuideStmt | TeachStmt
   | InteractStmt | TransitionStmt | IntentTrigger | OfftopicStmt | AfterStmt
   | RunStmt | MemoryStmt | ConditionalStmt
-  | ApplyStmt | RemoveStmt | ParallelStmt | OnCompleteStmt | OnFailedStmt;
+  | ApplyStmt | RemoveStmt | ParallelStmt;
 ```
 
 ### Full example
@@ -283,9 +283,9 @@ type PropertyType =
 | `on intent "foo"` | `foo` |
 | `on offtopic` | `offtopic` |
 | `after N prompts` | `after_N_prompts` |
-| `on complete` | `complete` |
-| `on failed` | `failed` |
 | `transition to X` | *(no event — unconditional)* |
+
+`on failure` clauses on `run`, `apply`, `remove`, and `parallel` are kernel execution semantics — catch-and-resume at runtime. They do not appear as SCXML transitions in the static graph.
 
 ### Example output
 
@@ -322,11 +322,9 @@ All `Statement` objects use a `"type"` discriminant field.
 | `run_stmt` | See [RunStmt](#runstmt) | `run script/subagent/tool "..."` |
 | `memory_stmt` | `target: MemoryPath`, `op: AssignOp`, `value: Expr` | `set domain.key = value` |
 | `conditional_stmt` | `condition: Condition`, `then: Statement[]`, `else?: Statement[]` | `if ... / else` |
-| `apply_stmt` | `target: MediaKind`, `text: string` | `apply css "..."` |
-| `remove_stmt` | `target: MediaKind`, `text: string` | `remove css "..."` |
-| `parallel_stmt` | `body: Statement[]`, `on_complete?: Statement[]`, `on_failed?: Statement[]` | `parallel` |
-| `on_complete_stmt` | `body: Statement[]` | `on complete` |
-| `on_failed_stmt` | `body: Statement[]` | `on failed` |
+| `apply_stmt` | `target: MediaKind`, `text: string`, `on_failed?: Statement[] \| null` | `apply css "..."` |
+| `remove_stmt` | `target: MediaKind`, `text: string`, `on_failed?: Statement[] \| null` | `remove css "..."` |
+| `parallel_stmt` | `body: Statement[]`, `on_failed?: Statement[] \| null` | `parallel` |
 
 ### IntentBody
 
@@ -348,7 +346,6 @@ interface RunStmt {
   target: string;
   label: string | null;
   modifier: "silent" | "background" | null;
-  each: string | null;
   on_failed: Statement[] | null;
 }
 ```
