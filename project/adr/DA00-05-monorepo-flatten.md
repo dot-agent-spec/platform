@@ -12,8 +12,9 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Done |
 | Date | 2026-06-26 |
+| Concluded | 2026-06-26 |
 | Deciders | Danilo Borges |
 
 ---
@@ -43,18 +44,28 @@ We will remove the nested `.git` from every package and app, making `dot-agent-s
 
 - **Convert to git submodules** — improves traceability but does not fix the workspace link. `vscode-extension` would still depend on tarballs or a manual link script. Submodules add clone/pull friction for contributors.
 
-- **True monorepo (chosen)** — fixes workspace links (npm and Cargo are already configured with `"*"` and `{ path = "../..." }`), eliminates the tarball hack, enables atomic cross-package commits, and simplifies CI. The cost is losing per-package granular history in the monorepo commit graph, mitigated by the individual repos remaining archived and readable on GitHub.
+- **True monorepo (chosen)** — fixes workspace links (npm and Cargo are already configured with `"*"` and `{ path = "../..." }`), eliminates the tarball hack, enables atomic cross-package commits, and simplifies CI. History was preserved via `git filter-repo --to-subdirectory-filter` + `git merge --allow-unrelated-histories` for all 8 packages — `git log`, `git blame`, and `git bisect` work per-path within the monorepo.
 
 ## Consequences
 
-- **Gain:** `npm install` at the root resolves `@dot-agent/*` via workspace symlinks across all packages, including `vscode-extension`.
+- **Gain:** `npm install` at the root resolves `@dot-agent/*` via workspace symlinks across all packages, including `vscode-extension`. The tarball hack is gone.
 - **Gain:** Cross-package commits are atomic; `git log` covers the full stack.
-- **Gain:** CI runs from a single repo with a single checkout.
-- **Loss:** Each sub-repo's history is not imported into the monorepo commit graph (deliberate — see Options). Historical commits are accessible in the archived GitHub repos.
+- **Gain:** Per-path history is preserved (`git log packages/parser-dsl/` shows 12 historical commits; `git log apps/vscode-extension/` shows 15).
+- **Gain:** CI runs from a single repo with unified publish workflows in `.github/workflows/`.
 - **Loss:** Open PRs/issues in individual repos stay in the archived repos and do not migrate automatically.
 - **New constraint:** `org-spec` is managed exclusively on GitHub with no local tracked copy. Changes to `CODE_OF_CONDUCT`, `CONTRIBUTING`, etc. must be made directly on the `dot-agent-spec/.github` remote.
+
+## Outcome
+
+Implemented 2026-06-26. Monorepo is at `https://github.com/dot-agent-spec/platform` (branch `dsl`).
+
+- 8 packages absorbed with full history via `git filter-repo` + merge
+- 225 tests passing across all workspaces post-flatten
+- 2 bugs found and fixed during integration: `kernel-dsl/scripts/build-wasm.sh` WORKSPACE_ROOT path; `apps/dot-agent-cli` init scaffold W011 self-transition
+- All `package.json` metadata standardized (OIDC publish, `dot-agent.ai` homepage, monorepo `repository.directory`)
+- 8 individual GitHub repos archived with redirect notices
+- 5 CI publish workflows created, triggered by tags (`compiler@x.y.z`, etc.), npm auth via OIDC trusted publishing
 
 ## Related
 
 - [DA00-01: Traceability scheme](DA00-01-traceability-scheme.md)
-- [tasks/DA00-05-monorepo-flatten.md](../tasks/DA00-05-monorepo-flatten.md) — implementation task list
