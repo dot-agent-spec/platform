@@ -16,7 +16,7 @@
 | Date | 2026-06-27 |
 | Implemented | 2026-06-27 |
 | Deciders | Danilo Borges |
-| Related | [C3 in pre-public-consolidation](../../tasks/pre-public-consolidation.md) · RFC-0021 (init canonicalization) |
+| Related | RFC-0021 (init canonicalization) |
 
 | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
 |---|---|---|---|---|
@@ -292,7 +292,5 @@ Test coverage: 129 tests (compiler pack.test.ts) + 14 tests (kernel-dsl) — all
 
 ## 7. Related
 
-- [C3 in pre-public-consolidation.md](../../tasks/pre-public-consolidation.md)
-- [DA01-01-kernel-runtime.md](../../tasks/DA01-01-kernel-runtime.md) — C2 (merge at runtime) done, retained for dev mode
 - [RFC-0021: System Behavior](../../rfcs/0021-system-behavior.md) — `init` as prelude entry point (deferred; E016 is the v0.1 bridge)
 - [lint-codes.md](../../../packages/compiler/docs/reference/lint-codes.md)
