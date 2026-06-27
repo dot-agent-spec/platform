@@ -32,7 +32,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 | B3 ✅ | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
 | B4 ✅ | **P1** — consumer DX | Rich wasm-bindgen `.d.ts` shadowed by thin stub | parser-dsl, kernel-dsl | S |
 | B5 ✅ | **P1** — artifact confusion | `kernel-dsl/pkg-web/` orphan, unreferenced | kernel-dsl | XS |
-| C4 | **P1** — placeholder shipped | `aboutme.purpose` hardcoded `'unknown'`, no DSL source | compiler | S |
+| C4 ✅ ok v0.1| **P1** — placeholder shipped | `aboutme.purpose` hardcoded `'unknown'`, no DSL source | compiler | S | - postponed
 | C5 | **P1** — duplication | Bundle validation duplicated compiler↔sdk | compiler, sdk | S |
 | B6 ✅ | **P2** — dedup | UBSan stubs + wasm-bindgen patches written 3× | parser-dsl, kernel-dsl | M |
 | B7 ✅ | **P2** — dedup | `build.rs` byte-identical across crates | parser-dsl, kernel-dsl | S |

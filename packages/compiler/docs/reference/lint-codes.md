@@ -57,9 +57,12 @@ The old `{ "error": string }` envelope is removed.
 | `E009` | `.behavior` | ✅ | **Oriented state with no `on intent` handlers.** A state has `interact` but zero `on intent` handlers. The FSM has no valid routing path. |
 | `E010` | `.behavior` | ✅ | **`parallel` block has no `run` statements.** (Warning-level) Will execute immediately with no effect. |
 | `E011` | `.behavior` | ✅ | **`after 0 prompts`.** Zero prompts will never trigger. Use `after 1` or higher. |
-| `E012` | — | Free | Reserved for future use. |
-| `E013` | — | Free | Reserved for future use. |
-| `E014` | — | Free | Reserved for future use. |
+| `E012` | `.behavior` | Planned (DA01-02) | **Merge target not found.** Path declared in `merge` does not exist on disk. |
+| `E013` | `.behavior` | Planned (DA01-02) | **Circular merge dependency.** DFS detected a cycle in the merge graph. |
+| `E014` | `.behavior` / `.description` | Planned (DA01-02) | **External path.** `merge` path or `behavior <path>` escapes the agent root (relative `../..` escape or absolute path). |
+| `E015` | `.behavior` (consolidated) | Planned (DA01-02) | **Duplicate state name across merged files.** Two or more files in the merge chain declare the same state. |
+| `E016` | `.behavior` (consolidated) | Planned (DA01-02) | **`init` state missing.** The consolidated behavior has no state named `init`. |
+| `E017` | `.description` | Planned (DA01-02) | **Multiple `behavior` declarations.** Only one `behavior` block is allowed per `.description` file. To combine multiple files, use `merge` in your `.behavior` file. Emitted in `description_parser.rs` on the second `behavior_block` node. Resolves [platform#1](https://github.com/dot-agent-spec/platform/issues/1). |
 
 ---
 
