@@ -16,7 +16,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtemp, rm, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { pack, collectFiles } from '../src/pack.js'
+import { pack, collectFiles, consolidate, discoverDescriptionFile } from '../src/pack.js'
 import { readZip, extractFiles } from '../src/zip.js'
 import { parseAboutme } from '../src/manifest.js'
 
@@ -29,7 +29,7 @@ async function makeAgentDir(opts?: { domain?: string; extraFiles?: Record<string
 
   await writeFile(
     join(tmpDir, 'agent.description'),
-    `agent Doctor\n  domain ${domain}\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\ninput Patient\noutput Prescription\n`
+    `agent Doctor\n  domain ${domain}\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\nbehavior agent.behavior\n\ninput Patient\noutput Prescription\n`
   )
   await writeFile(
     join(tmpDir, 'agent.behavior'),
@@ -61,45 +61,54 @@ afterEach(async () => {
 
 // ── collectFiles ──────────────────────────────────────────────────────────────
 
+const MERGED_TEXT = `state init\n  transition to responsive\n`
+
 describe('collectFiles', () => {
-  it('collects agent.description and agent.behavior', async () => {
+  it('stores description under its filename and behavior as agent.behavior', async () => {
     const dir = await makeAgentDir()
-    const files = await collectFiles(dir)
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
     expect(files.has('agent.description')).toBe(true)
     expect(files.has('agent.behavior')).toBe(true)
+    expect(files.get('agent.behavior')).toBe(MERGED_TEXT)
   })
 
   it('collects SOUL.md when present', async () => {
     const dir = await makeAgentDir()
-    const files = await collectFiles(dir)
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
     expect(files.has('SOUL.md')).toBe(true)
     expect(files.get('SOUL.md')).toContain('Doctor')
   })
 
   it('collects files from guides/ subdir', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'guides/intro.md': '# Intro' } })
-    const files = await collectFiles(dir)
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
     expect(files.has('guides/intro.md')).toBe(true)
+  })
+
+  it('stores merge sources under behaviors/ prefix', async () => {
+    const dir = await makeAgentDir()
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, ['agent.behavior'])
+    expect(files.has('behaviors/agent.behavior')).toBe(true)
   })
 
   it('skips .gitkeep files', async () => {
     const dir = await makeAgentDir()
     await writeFile(join(dir, 'guides/.gitkeep'), '')
-    const files = await collectFiles(dir)
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
     expect(files.has('guides/.gitkeep')).toBe(false)
   })
 
   it('skips hidden files (dot-prefixed)', async () => {
     const dir = await makeAgentDir()
     await writeFile(join(dir, 'guides/.hidden'), 'secret')
-    const files = await collectFiles(dir)
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
     expect(files.has('guides/.hidden')).toBe(false)
   })
 
-  it('throws when agent.description is missing', async () => {
+  it('throws when description file is missing', async () => {
     const dir = await makeAgentDir()
     await rm(join(dir, 'agent.description'))
-    await expect(collectFiles(dir)).rejects.toThrow()
+    await expect(collectFiles(dir, 'agent.description', MERGED_TEXT, [])).rejects.toThrow()
   })
 })
 
@@ -150,6 +159,7 @@ describe('pack — happy path', () => {
     const filesJson = JSON.parse(files.get('.agent/files.json')!)
     expect(filesJson.description).toBe('agent.description')
     expect(filesJson.behavior).toBe('agent.behavior')
+    expect(Array.isArray(filesJson.behaviors)).toBe(true)
   })
 
   it('ZIP contains source files', async () => {
@@ -192,6 +202,178 @@ describe('pack — version', () => {
   })
 })
 
+// ── discoverDescriptionFile ───────────────────────────────────────────────────
+
+describe('discoverDescriptionFile', () => {
+  it('returns agent.description silently when present', async () => {
+    const dir = await makeAgentDir()
+    const name = await discoverDescriptionFile(dir)
+    expect(name).toBe('agent.description')
+  })
+
+  it('returns non-standard name when only one .description file found', async () => {
+    const dir = await makeAgentDir()
+    await rm(join(dir, 'agent.description'))
+    await writeFile(join(dir, 'my-agent.description'), 'agent MyAgent\n  domain test.com\n\nbehavior agent.behavior\n')
+    const name = await discoverDescriptionFile(dir)
+    expect(name).toBe('my-agent.description')
+  })
+
+  it('throws E003 when no .description file found', async () => {
+    const dir = await makeAgentDir()
+    await rm(join(dir, 'agent.description'))
+    await expect(discoverDescriptionFile(dir)).rejects.toThrow('E003')
+  })
+
+  it('throws E003 when multiple .description files found', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(join(dir, 'other.description'), 'agent Other\n')
+    await expect(discoverDescriptionFile(dir)).rejects.toThrow('E003')
+  })
+
+  it('explicit override skips glob', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(join(dir, 'explicit.description'), 'agent E\n\nbehavior agent.behavior\n')
+    const name = await discoverDescriptionFile(dir, 'explicit.description')
+    expect(name).toBe('explicit.description')
+  })
+
+  it('explicit override throws E003 if file missing', async () => {
+    const dir = await makeAgentDir()
+    await expect(discoverDescriptionFile(dir, 'missing.description')).rejects.toThrow('E003')
+  })
+})
+
+// ── consolidate ───────────────────────────────────────────────────────────────
+
+describe('consolidate', () => {
+  it('returns entry file text when no merges', async () => {
+    const dir = await makeAgentDir()
+    const { mergedText, mergeSources } = await consolidate(dir, 'agent.behavior')
+    expect(mergedText).toContain('state init')
+    expect(mergeSources).toEqual(['agent.behavior'])
+  })
+
+  it('merges a dependency file before the entry', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'shared.behavior'),
+      `state helper\n  transition to init\n`
+    )
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `merge "shared.behavior"\n\nstate init\n  transition to helper\n`
+    )
+    const { mergedText, mergeSources } = await consolidate(dir, 'agent.behavior')
+    expect(mergedText).toContain('state helper')
+    expect(mergedText).toContain('state init')
+    // helper (leaf) before init (entry) in topological order
+    expect(mergedText.indexOf('state helper')).toBeLessThan(mergedText.indexOf('state init'))
+    expect(mergeSources).toContain('shared.behavior')
+    expect(mergeSources).toContain('agent.behavior')
+  })
+
+  it('throws E012 when merge target not found', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `merge "nonexistent.behavior"\n\nstate init\n  transition to init\n`
+    )
+    await expect(consolidate(dir, 'agent.behavior')).rejects.toThrow('E012')
+  })
+
+  it('throws E013 on circular merge dependency', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(join(dir, 'a.behavior'), `merge "b.behavior"\nstate a\n  transition to b\n`)
+    await writeFile(join(dir, 'b.behavior'), `merge "a.behavior"\nstate b\n  transition to a\n`)
+    await writeFile(join(dir, 'agent.behavior'), `merge "a.behavior"\nstate init\n  transition to a\n`)
+    await expect(consolidate(dir, 'agent.behavior')).rejects.toThrow('E013')
+  })
+
+  it('throws E014 when merge path escapes agent root', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `merge "../../outside.behavior"\n\nstate init\n  transition to init\n`
+    )
+    await expect(consolidate(dir, 'agent.behavior')).rejects.toThrow('E014')
+  })
+
+  it('throws E014 when merge path is absolute', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `merge "/etc/passwd"\n\nstate init\n  transition to init\n`
+    )
+    await expect(consolidate(dir, 'agent.behavior')).rejects.toThrow('E014')
+  })
+})
+
+// ── pack — description discovery ──────────────────────────────────────────────
+
+describe('pack — description discovery', () => {
+  it('discovers non-standard description filename', async () => {
+    const dir = await makeAgentDir()
+    await rm(join(dir, 'agent.description'))
+    await writeFile(
+      join(dir, 'doctor.description'),
+      `agent Doctor\n  domain health.example.com\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\nbehavior agent.behavior\n`
+    )
+    const result = await pack({ dir, version: 'v1.0.0' })
+
+    const zip = await readZip(result.path)
+    const files = await extractFiles(zip, ['.agent/'])
+    const filesJson = JSON.parse(files.get('.agent/files.json')!)
+    expect(filesJson.description).toBe('doctor.description')
+    expect(filesJson.behavior).toBe('agent.behavior')
+  })
+
+  it('throws E_DESC when description has no behavior block', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.description'),
+      `agent Doctor\n  domain health.example.com\n  license MIT\n\ndescription\n  No behavior block.\n`
+    )
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E_DESC')
+  })
+})
+
+// ── pack — lint — E017 ────────────────────────────────────────────────────────
+
+describe('pack — E017 duplicate behavior block', () => {
+  it('throws Lint failed with E017 when description has two behavior declarations', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.description'),
+      `agent Doctor\n  domain health.example.com\n  license MIT\n\ndescription\n  Dupe.\n\nbehavior agent.behavior\nbehavior other.behavior\n`
+    )
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E017')
+  })
+})
+
+// ── pack — lint — E015 / E016 ─────────────────────────────────────────────────
+
+describe('pack — consolidation lint rules', () => {
+  it('throws Lint failed with E016 when consolidated behavior has no init state', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `state welcome\n  goal "Hello"\n  interact\n  on intent "go" transition to welcome\n  on offtopic transition to welcome\n`
+    )
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E016')
+  })
+
+  it('throws Lint failed with E015 when merged files have duplicate state name', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(join(dir, 'leaf.behavior'), `state shared\n  transition to init\n`)
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `merge "leaf.behavior"\n\nstate init\n  transition to shared\n\nstate shared\n  transition to init\n`
+    )
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E015')
+  })
+})
+
 describe('pack — lint errors abort packaging', () => {
   it('throws when agent.description has syntax errors', async () => {
     const dir = await makeAgentDir()
@@ -205,9 +387,9 @@ describe('pack — lint errors abort packaging', () => {
     await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E003')
   })
 
-  it('throws when agent.behavior is missing', async () => {
+  it('throws when the behavior file declared in .description is missing', async () => {
     const dir = await makeAgentDir()
     await rm(join(dir, 'agent.behavior'))
-    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E007')
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E012')
   })
 })

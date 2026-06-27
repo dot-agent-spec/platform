@@ -10,7 +10,7 @@ import { createRequire } from 'module'
 import { Parser, Language } from 'web-tree-sitter'
 import type { Node, Tree } from 'web-tree-sitter'
 import type { LangId, BehaviorFile, DescriptionFile, ParseDiagnostic } from './types.js'
-import bpInit, { parse_behavior as bpParseBehavior, parse_description as bpParseDescription, get_graph } from '@dot-agent/parser-dsl'
+import { init as bpInit, parse_behavior as bpParseBehavior, parse_description as bpParseDescription, get_graph } from '@dot-agent/parser-dsl'
 
 const require = createRequire(import.meta.url)
 const { descriptionWasmPath, behaviorWasmPath } = require('@dot-agent/tree-sitter') as {

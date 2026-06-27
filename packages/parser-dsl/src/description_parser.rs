@@ -55,7 +55,7 @@ pub fn parse_description_with_diagnostics(text: &str) -> (Option<DescriptionFile
         return (None, diagnostics);
     }
 
-    let df = build_description_from_root(src, root);
+    let df = build_description_from_root(src, root, &mut diagnostics);
     (Some(df), diagnostics)
 }
 
@@ -82,10 +82,15 @@ pub fn parse_description(text: &str) -> Result<DescriptionFile, ParseError> {
         return Err(ParseError(msg));
     }
 
-    Ok(build_description_from_root(src, root))
+    let mut extra_diags: Vec<ParseDiagnostic> = Vec::new();
+    let df = build_description_from_root(src, root, &mut extra_diags);
+    if let Some(err) = extra_diags.iter().find(|d| matches!(d.severity, Severity::Error)) {
+        return Err(ParseError(err.message.clone()));
+    }
+    Ok(df)
 }
 
-fn build_description_from_root(src: &str, root: Node) -> DescriptionFile {
+fn build_description_from_root(src: &str, root: Node, diagnostics: &mut Vec<ParseDiagnostic>) -> DescriptionFile {
     let mut df = DescriptionFile {
         agent: AgentDecl {
             name: String::new(),
@@ -114,7 +119,7 @@ fn build_description_from_root(src: &str, root: Node) -> DescriptionFile {
         };
         let Some(decl) = decl else { continue };
         match decl.kind() {
-            "agent_decl" => parse_agent_decl(decl, src, &mut df),
+            "agent_decl" => parse_agent_decl(decl, src, &mut df, diagnostics),
             "type_decl" => {
                 if let Some(td) = parse_type_decl(decl, src) {
                     df.types.push(td);
@@ -129,7 +134,8 @@ fn build_description_from_root(src: &str, root: Node) -> DescriptionFile {
 
 // ── agent_decl ────────────────────────────────────────────────────────────────
 
-fn parse_agent_decl(node: Node, src: &str, df: &mut DescriptionFile) {
+fn parse_agent_decl(node: Node, src: &str, df: &mut DescriptionFile, diagnostics: &mut Vec<ParseDiagnostic>) {
+    let mut behavior_seen = false;
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         match child.kind() {
@@ -142,7 +148,22 @@ fn parse_agent_decl(node: Node, src: &str, df: &mut DescriptionFile) {
             "agent_meta" => parse_agent_meta(child, src, &mut df.agent),
             "description_block" => df.description = Some(parse_description_block(child, src)),
             "persona_block" => df.persona = child_field_text(child, "file", src),
-            "behavior_block" => df.behavior = child_field_text(child, "file", src),
+            "behavior_block" => {
+                if behavior_seen {
+                    let pos = child.start_position();
+                    diagnostics.push(ParseDiagnostic {
+                        severity: Severity::Error,
+                        code: "E017".to_string(),
+                        message: "Multiple 'behavior' declarations — only one is allowed. To combine multiple files, use 'merge' in your .behavior file.".to_string(),
+                        hint: None,
+                        start: Some((pos.row + 1, pos.column + 1)),
+                        end: None,
+                    });
+                } else {
+                    df.behavior = child_field_text(child, "file", src);
+                    behavior_seen = true;
+                }
+            }
             "requires_block" => df.requires = parse_annotated_list(child, src),
             "input_block" => df.input = parse_type_list_block(child, src),
             "capabilities_block" => df.capabilities = parse_annotated_list(child, src),

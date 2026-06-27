@@ -116,6 +116,16 @@ export async function lintDescription(text: string, file = 'agent.description'):
     })
   }
 
+  // E017: multiple behavior declarations
+  const behaviorBlocks = nodesOfType(tree, 'behavior_block')
+  if (behaviorBlocks.length > 1) {
+    const { line, col } = nodePosition(behaviorBlocks[1])
+    messages.push({
+      file, line, col, severity: 'error', code: 'E017',
+      message: "Multiple 'behavior' declarations — only one is allowed. To combine multiple files, use 'merge' in your .behavior file.",
+    })
+  }
+
   // W004: undeclared type references in input/output/requires/capabilities blocks
   const declaredTypes = new Set(
     nodesOfType(tree, 'type_decl')
@@ -233,7 +243,8 @@ function collectMergedStates(
 export async function lintBehavior(
   text: string,
   file = 'agent.behavior',
-  docPath?: string
+  docPath?: string,
+  consolidated = false,
 ): Promise<LintMessage[]> {
   await initBehaviorParser()
   if (!text.endsWith('\n')) text = text + '\n'
@@ -489,6 +500,42 @@ export async function lintBehavior(
         file, line: pos.line, col: pos.col, severity: 'warning', code: 'W009',
         message: `State '${state.name}' is unreachable — no other state transitions to it.`,
       })
+    }
+  }
+
+  if (consolidated) {
+    // E015: duplicate state name across merged files
+    const seenStates = new Set<string>()
+    for (const state of fsm.states) {
+      if (seenStates.has(state.name)) {
+        messages.push({
+          file, line: 1, col: 1, severity: 'error', code: 'E015',
+          message: `Duplicate state '${state.name}' across merged files — each state name must be unique in the consolidated FSM.`,
+        })
+      } else {
+        seenStates.add(state.name)
+      }
+    }
+
+    // E016: init state missing
+    if (!fsm.states.some(s => s.name === 'init')) {
+      messages.push({
+        file, line: 1, col: 1, severity: 'error', code: 'E016',
+        message: `Required 'init' state is missing. Add a state named 'init' as the entry point of your behavior.`,
+      })
+    }
+
+    // W014: duplicate global trigger event across merged files
+    const seenTriggers = new Set<string>()
+    for (const trigger of fsm.global_triggers) {
+      if (seenTriggers.has(trigger.event)) {
+        messages.push({
+          file, line: 1, col: 1, severity: 'warning', code: 'W014',
+          message: `Duplicate global trigger '${trigger.event}' across merged files — only the last definition takes effect.`,
+        })
+      } else {
+        seenTriggers.add(trigger.event)
+      }
     }
   }
 

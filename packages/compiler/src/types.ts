@@ -86,6 +86,7 @@ export interface PackOptions {
   out?: string
   commit?: string
   version?: string
+  description?: string
 }
 
 export interface PackResult {
