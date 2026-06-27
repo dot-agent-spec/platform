@@ -601,10 +601,10 @@
 </tr>
 <tr>
 <td><strong>Build</strong></td>
-<td><code>tree-sitter-cli</code> — manual npm scripts (<code>generate</code> + <code>build --wasm</code>)</td>
-<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> (<code>build-wasm.sh</code>, target <code>wasm32-wasip1</code>)</td>
+<td><code>tree-sitter-cli</code> — manual npm scripts (<code>generate</code> + <code>build --wasm</code>) + <code>tsup</code></td>
+<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> (<code>scripts/build-wasm.sh</code> central, <code>wasm32-wasip1</code>) + <code>tsup</code></td>
 <td><code>tsup</code> (esm + cjs, <code>dts:true</code>)</td>
-<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> + <code>patch-wasm-bindgen.js</code></td>
+<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> (<code>scripts/build-wasm.sh</code> central, <code>wasm32-wasip1</code>) + <code>tsup</code></td>
 <td><code>tsup</code> (esm + cjs, <code>dts:true</code>)</td>
 </tr>
 <tr>
@@ -617,21 +617,17 @@
 </tr>
 <tr>
 <td><strong>Types (.d.ts)</strong></td>
-<td>❌ none (consumers type-assert)</td>
-<td>⚠️ hand-written stub (thin; no Rust structs)</td>
+<td>✅ <code>tsup</code> auto</td>
+<td>✅ <code>tsup</code> auto (ts-rs AST types)</td>
 <td>✅ <code>tsup</code> auto (full)</td>
-<td>⚠️ hand-written stub (thin); rich <code>pkg/*.d.ts</code> shadowed</td>
+<td>✅ <code>tsup</code> auto (ts-rs Effect types)</td>
 <td>✅ <code>tsup</code> auto (full)</td>
 </tr>
 </tbody></table>
 <blockquote>
-<p>⚠️ <strong>Build / packaging gaps</strong> — full catalog in <a href="../docs/explanation/research/build-pipeline-investigation.md">build-pipeline-investigation</a>:</p>
+<p>⚠️ <strong>Build / packaging gap remanescente</strong> — full history in <a href="pre-release/v0.1/DA00-06-build-pipeline-investigation.md">DA00-06 build-pipeline-investigation</a> (DA00-06 concluído):</p>
 <ul>
-<li>Stale <code>wasm-pack</code> definitions in both Rust crates&#39; <code>Cargo.toml</code> metadata — the real build is the shell script (<code>cargo + wasm-bindgen + wasi-stub</code>).</li>
-<li><code>build.rs</code> byte-identical across parser-dsl/kernel-dsl; wasm-bindgen patches and UBSan env-stubs duplicated 3× with different strategies.</li>
-<li>kernel-dsl ships a second, unreferenced <code>pkg-web/</code> output (predates <code>pkg/</code>; maintained vs abandoned unconfirmed).</li>
-<li><code>wasm-bindgen</code>&#39;s rich <code>.d.ts</code> exists in <code>pkg/</code> but is shadowed by the thinner hand-written <code>index.d.ts</code>.</li>
-<li>Versions diverge: tree-sitter <code>0.4.1</code>, kernel-dsl <code>0.1.3</code>, others <code>0.1.0</code>.</li>
+<li>Versions divergem: tree-sitter <code>0.4.1</code>, kernel-dsl <code>0.1.3</code>, others <code>0.1.0</code>.</li>
 </ul>
 </blockquote>
 <hr>
@@ -640,7 +636,7 @@
 <thead>
 <tr>
 <th>☑️ tree-sitter</th>
-<th>☑️⚠️🧊parser-dsl</th>
+<th>☑️ parser-dsl</th>
 <th>compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -668,7 +664,7 @@
 <thead>
 <tr>
 <th>☑️ tree-sitter</th>
-<th>☑️⚠️🧊parser-dsl</th>
+<th>☑️ parser-dsl</th>
 <th>compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -730,7 +726,7 @@
 <thead>
 <tr>
 <th>☑️ tree-sitter</th>
-<th>☑️⚠️🧊parser-dsl</th>
+<th>☑️⚠️parser-dsl</th>
 <th>compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -757,7 +753,7 @@
 <table>
 <thead>
 <tr>
-<th>☑️✅🧊 parser-dsl</th>
+<th>☑️✅ parser-dsl</th>
 <th>compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -776,14 +772,14 @@
 <td>→ <code>full.parseDescriptionFile(text)</code></td>
 <td></td>
 <td></td>
-<td>JSON <code>{ok: DescriptionFile}</code> or <code>{error}</code></td>
+<td>JSON <code>{ok: DescriptionFile | null, diagnostics: ParseDiagnostic[]}</code> — DA01-01 breaking change</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>parse_behavior(text)</code> → <code>string</code> (wasm fn)</td>
 <td>→ <code>full.parseBehaviorFile(text)</code></td>
 <td></td>
 <td></td>
-<td>JSON <code>{ok: BehaviorFile}</code> or <code>{error}</code></td>
+<td>JSON <code>{ok: BehaviorFile | null, diagnostics: ParseDiagnostic[]}</code> — DA01-01 breaking change</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>get_graph(text)</code> → <code>string</code> (wasm fn)</td>
@@ -841,7 +837,7 @@
 <thead>
 <tr>
 <th>☑️ tree-sitter</th>
-<th>☑️⚠️🧊parser-dsl</th>
+<th>☑️ parser-dsl</th>
 <th>compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -929,10 +925,10 @@
 <td>used by language-server and <code>pack</code></td>
 </tr>
 <tr>
-<td>✅1️⃣ <code>full.lintBehavior(text, file?, docPath?)</code> → <code>Promise&lt;LintMessage[]&gt;</code></td>
+<td>✅1️⃣ <code>full.lintBehavior(text, file?, docPath?, consolidated?)</code> → <code>Promise&lt;LintMessage[]&gt;</code></td>
 <td></td>
 <td></td>
-<td>used by language-server and <code>pack</code></td>
+<td>used by language-server and <code>pack</code>; <code>consolidated=true</code> enables E015/E016/W014</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>full.createLinter()</code> → <code>{lintDescription, lintBehavior}</code></td>
@@ -959,10 +955,22 @@
 <td>Node.js; sdk redefines identical fns in <code>load.ts</code> instead of importing</td>
 </tr>
 <tr>
-<td>✅1️⃣ <code>full.collectFiles(dir)</code> → <code>Promise&lt;Map&lt;string,string&gt;&gt;</code></td>
+<td>✅1️⃣ <code>full.discoverDescriptionFile(dir, explicit?)</code> → <code>Promise&lt;string&gt;</code></td>
 <td></td>
 <td></td>
-<td>Node.js; used by <code>pack</code></td>
+<td>Node.js; globs <code>*.description</code> (0 or 2+ → E003); <code>PackOptions.description</code> for override</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.consolidate(agentRoot, entryFile)</code> → <code>Promise&lt;{mergedText, mergeSources}&gt;</code></td>
+<td></td>
+<td></td>
+<td>Node.js; DFS merge graph, topological order; E012/E013/E014</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.collectFiles(dir, descriptionFile, mergedBehaviorText, mergeSources)</code> → <code>Promise&lt;Map&lt;string,string&gt;&gt;</code></td>
+<td></td>
+<td></td>
+<td>Node.js; used by <code>pack</code>; no behaviors/ walk — merge chain is authoritative</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>full.pack(options?)</code> → <code>Promise&lt;PackResult&gt;</code></td>
@@ -977,7 +985,7 @@
 <thead>
 <tr>
 <th>☑️ tree-sitter</th>
-<th>☑️⚠️🧊 parser-dsl</th>
+<th>☑️ parser-dsl</th>
 <th>compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -1012,7 +1020,7 @@
 <tbody><tr>
 <td>✅1️⃣ <code>init()</code> → <code>Promise&lt;void&gt;</code> (js wrapper)</td>
 <td></td>
-<td>hand-written loader in <code>index.js</code>; must run before <code>new AgentDSLKernel()</code></td>
+<td><code>src/ts/index.ts</code> via tsup; must run before <code>new AgentDSLKernel()</code></td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>new AgentDSLKernel()</code> (wasm class ctor)</td>
@@ -1021,8 +1029,18 @@
 </tr>
 <tr>
 <td>✅1️⃣ <code>load_behavior(text)</code> → <code>string</code></td>
+<td>→ <code>start()</code> (single-file)</td>
+<td>🔄 <code>parser-dsl</code> rlib <code>parse_behavior</code>; returns effects JSON; E016 if no <code>init</code> state</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>load_behavior_with_bundle(text, bundle_json)</code> → <code>string</code></td>
 <td>→ <code>start()</code></td>
-<td>🔄 <code>parser-dsl</code> rlib <code>parse_behavior</code>; returns effects JSON</td>
+<td>flattens <code>merge</code> paths from bundle map; effects JSON; E016 if no <code>init</code> state</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>set_file_resolver(callback: Function)</code></td>
+<td>→ <code>setFileResolver(fn)</code></td>
+<td>Mode B fallback; called when bundle lacks a merge path</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>send_intent(intent)</code> → <code>string</code></td>
@@ -1090,7 +1108,7 @@
 <table>
 <thead>
 <tr>
-<th>☑️ tree-sitter</th>
+<th>tree-sitter</th>
 <th>parser-dsl</th>
 <th>⚠️☑️✅🔥 compiler</th>
 <th>☑️✅🔥 kernel-dsl</th>
@@ -1128,7 +1146,12 @@
 <tr>
 <td>✅1️⃣ <code>AgentSession.start()</code></td>
 <td></td>
-<td>🔄 <code>kernel.load_behavior</code></td>
+<td>🔄 <code>kernel.load_behavior_with_bundle</code>; passes <code>files.behaviors[]</code> as bundle</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>AgentSession.setFileResolver(fn)</code></td>
+<td></td>
+<td>🔄 <code>kernel.set_file_resolver</code>; Mode B fallback for missing merge paths</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>AgentSession.registerHandler(type, handler)</code></td>
@@ -1178,7 +1201,7 @@
 <tr>
 <th>☑️✅🧊 DSL</th>
 <th>☑️ Tree-sitter node</th>
-<th>☑️✅🧊 parser-dsl</th>
+<th>☑️✅parser-dsl</th>
 <th>⚠️☑️✅🔥 compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -1300,7 +1323,7 @@
 <td>✅1️⃣ <code>behavior</code></td>
 <td>✅ <code>behavior_block</code></td>
 <td>✅ <code>DescriptionFile.behavior</code></td>
-<td>⚠️ parsed but unused — compiler reads the file directly</td>
+<td>✅ required — entry file for <code>consolidate()</code>; validated (E_DESC if absent); E014 check on path</td>
 <td></td>
 <td></td>
 </tr>
@@ -1356,14 +1379,14 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><code>files.json</code> <code>behavior</code></td>
-<td><code>&#39;agent.behavior&#39;</code></td>
-<td>the <code>behavior</code> block value (<code>DescriptionFile.behavior</code> is parsed but ignored — compiler reads the file directly)</td>
+<td><del><code>files.json</code> <code>behavior</code></del></td>
+<td><del><code>&#39;agent.behavior&#39;</code></del></td>
+<td>✅ fixed DA01-02: <code>&#39;agent.behavior&#39;</code> is the canonical consolidated output; source entry file is <code>df.behavior</code> (used by <code>consolidate</code>)</td>
 </tr>
 <tr>
-<td><code>files.json</code> <code>description</code></td>
-<td><code>&#39;agent.description&#39;</code></td>
-<td>the actual <code>.description</code> source filename</td>
+<td><del><code>files.json</code> <code>description</code></del></td>
+<td><del><code>&#39;agent.description&#39;</code></del></td>
+<td>✅ fixed DA01-02: real filename from <code>discoverDescriptionFile</code></td>
 </tr>
 <tr>
 <td><code>aboutme.purpose</code></td>
@@ -1399,7 +1422,7 @@
 <tr>
 <th>☑️✅🧊 DSL</th>
 <th>☑️ Tree-sitter node</th>
-<th>parser-dsl</th>
+<th>☑️ parser-dsl</th>
 <th>☑️✅🔥 compiler</th>
 <th>kernel-dsl</th>
 <th>sdk</th>
@@ -1493,7 +1516,7 @@
 <tr>
 <th>☑️✅🧊 DSL</th>
 <th>☑️ Tree-sitter node</th>
-<th>☑️✅🧊 parser-dsl</th>
+<th>☑️ parser-dsl</th>
 <th>☑️✅🔥 compiler</th>
 <th>⚠️ kernel-dsl</th>
 <th>⚠️ sdk</th>
@@ -1504,8 +1527,8 @@
 <td>✅ <code>merge_decl</code></td>
 <td>✅ <code>BehaviorFile.merges[]</code></td>
 <td>✅ resolves for transition lint</td>
-<td>⚠️ field parsed, merge files not resolved at runtime</td>
-<td>⚠️ <code>files.behaviors[]</code> loaded but not passed to kernel</td>
+<td>✅ <code>load_behavior_with_bundle</code> flattens via bundle (Mode A) or <code>set_file_resolver</code> callback (Mode B); missing paths return <code>Err</code></td>
+<td>✅ <code>files.behaviors[]</code> passed as bundle; <code>setFileResolver()</code> for Mode B fallback</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>state</code></td>
@@ -1527,7 +1550,7 @@
 <td>✅1️⃣ <code>guide</code></td>
 <td>✅ <code>guide_stmt</code></td>
 <td>✅ <code>Statement::Guide</code></td>
-<td>✅ lint W002 (&gt;280 chars)</td>
+<td>✅ lint W010 (&gt;280 chars)</td>
 <td>✅ → <code>Effect::Guide {text}</code></td>
 <td>✅ <code>registerHandler(&quot;guide&quot;, fn)</code></td>
 </tr>
@@ -1543,7 +1566,7 @@
 <td>✅1️⃣ <code>interact</code></td>
 <td>✅ <code>interact_stmt</code></td>
 <td>✅ <code>Statement::Interact</code></td>
-<td>✅ lint W006 (no handlers) · E008 (no goal)</td>
+<td>✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal w/o interact) · E009 (no intent handlers)</td>
 <td>✅ → <code>Effect::RequestInteract</code></td>
 <td>✅ <code>registerHandler(&quot;request_interact&quot;, fn)</code></td>
 </tr>
@@ -1575,7 +1598,7 @@
 <td>✅ <code>after N prompts</code></td>
 <td>✅ <code>after_stmt</code></td>
 <td>✅ <code>Statement::After</code></td>
-<td></td>
+<td>✅ lint E011 (<code>after 0</code> never fires)</td>
 <td>✅ <code>tick_prompt()</code> fires at N turns</td>
 <td>✅ → <code>tickPrompt()</code></td>
 </tr>
@@ -1663,7 +1686,7 @@
 <td>✅ <code>parallel</code></td>
 <td>✅ <code>parallel_stmt</code></td>
 <td>✅ <code>Statement::Parallel</code></td>
-<td></td>
+<td>✅ lint E010 (no <code>run</code> stmts)</td>
 <td>⚠️ body executed sequentially (WASM single-threaded)</td>
 <td>✅ <code>registerHandler(&quot;run_script&quot; / &quot;run_subagent&quot; / &quot;run_tool&quot;, fn)</code></td>
 </tr>

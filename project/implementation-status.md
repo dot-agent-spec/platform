@@ -86,7 +86,7 @@ Legend:
 | ✅1️⃣ `full.createLinter()` → `{lintDescription, lintBehavior}` | | | factory; used by language-server |
 | ✅1️⃣ `full.buildTypesJson(df)` → `string` | | | JSON Schema 2020-12 from `types[]` + `input[]` + `output[]` |
 | ✅1️⃣ `full.readZip(filePath)` · `full.writeZip(zip, outPath)` | | | Node.js; used by `pack` |
-| ✅1️⃣ `full.validateMagicBytes(filePath)` · `full.validateZipBomb(filePath)` | | ⚠️ local copies | Node.js; sdk redefines identical fns in `load.ts` instead of importing |
+| ✅1️⃣ `full.validateMagicBytes(filePath)` · `full.validateZipBomb(filePath)` | | ✅ sdk wraps | Node.js; sdk imports `Core` variants from `compiler/core` and wraps for async file I/O |
 | ✅1️⃣ `full.discoverDescriptionFile(dir, explicit?)` → `Promise<string>` | | | Node.js; globs `*.description` (0 or 2+ → E003); `PackOptions.description` for override |
 | ✅1️⃣ `full.consolidate(agentRoot, entryFile)` → `Promise<{mergedText, mergeSources}>` | | | Node.js; DFS merge graph, topological order; E012/E013/E014 |
 | ✅1️⃣ `full.collectFiles(dir, descriptionFile, mergedBehaviorText, mergeSources)` → `Promise<Map<string,string>>` | | | Node.js; used by `pack`; no behaviors/ walk — merge chain is authoritative |
@@ -141,7 +141,7 @@ Legend:
 | ✅🗓️ `injectMemory(domain, key, value)` | | 🔄 `kernel.set_memory` |
 | ✅1️⃣ `dispose()` | | 🔄 `kernel.free` |
 | ✅1️⃣ types: `AgentBundle`, `AgentFiles`, `Effect`, `EffectHandler`, `AboutMe` | `types.js` | re-exported from `index.ts` |
-| ⚠️ `validateMagicBytes` · `validateZipBomb` | `load.ts` (local) | duplicated — compiler exports identical fns in `zip.ts`, not imported |
+| ✅1️⃣ `validateMagicBytes` · `validateZipBomb` | `load.ts` (wrappers) | delegates to `compiler/core` — C5 resolved 2026-06-27 |
 | ❌ read memory (`get_memory`) | | kernel exposes it; sdk does not surface it |
 
 ---

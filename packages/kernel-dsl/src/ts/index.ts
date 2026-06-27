@@ -5,7 +5,7 @@ export async function init(): Promise<void> {
   if (_initialized) return
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bgModule: any = await import('../../pkg/dot_agent_kernel_dsl_bg.js')
-  const wasmUrl = new URL('../../pkg/dot_agent_kernel_dsl_bg.wasm', import.meta.url)
+  const wasmUrl = new URL('../pkg/dot_agent_kernel_dsl_bg.wasm', import.meta.url)
   let wasmBuffer: ArrayBuffer | Uint8Array
   if (typeof window !== 'undefined') {
     wasmBuffer = await fetch(wasmUrl).then(r => r.arrayBuffer())
