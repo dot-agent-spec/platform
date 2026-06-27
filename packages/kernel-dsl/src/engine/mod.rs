@@ -65,6 +65,7 @@ impl AgentDSLKernel {
         bundle: &HashMap<String, String>,
         visited: &mut HashSet<String>,
     ) -> Result<BehaviorFile, ParseError> {
+        let mut missing: Vec<String> = Vec::new();
         for path in std::mem::take(&mut behavior.merges) {
             if !visited.insert(path.clone()) {
                 continue;
@@ -86,8 +87,14 @@ impl AgentDSLKernel {
                         behavior.global_triggers.push(trigger);
                     }
                 }
-                None => continue,
+                None => missing.push(path),
             }
+        }
+        if !missing.is_empty() {
+            return Err(ParseError(format!(
+                "merge: files not found: {}",
+                missing.iter().map(|p| format!("\"{}\"", p)).collect::<Vec<_>>().join(", ")
+            )));
         }
         Ok(behavior)
     }
@@ -242,12 +249,22 @@ mod tests {
     }
 
     #[test]
-    fn merge_missing_path_is_silently_skipped() {
+    fn merge_missing_path_is_an_error() {
         let dsl = "merge \"nonexistent.behavior\"\nstate solo\n  interact\n";
         let mut k = AgentDSLKernel::new();
-        // No bundle, no resolver — missing merge must not crash
-        k.load_behavior_with_bundle(dsl, &HashMap::new()).expect("should not error on missing merge");
-        assert_eq!(k.get_current_state(), "solo");
+        let result = k.load_behavior_with_bundle(dsl, &HashMap::new());
+        assert!(result.is_err(), "missing merge with no resolver must return an error");
+        let err = result.unwrap_err();
+        assert!(err.0.contains("nonexistent.behavior"), "error must name the missing path");
+    }
+
+    #[test]
+    fn merge_missing_path_with_resolver_returns_error_when_resolver_returns_none() {
+        let dsl = "merge \"nonexistent.behavior\"\nstate solo\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        k.set_file_resolver(Box::new(|_| None));
+        let result = k.load_behavior_with_bundle(dsl, &HashMap::new());
+        assert!(result.is_err(), "resolver returning None must still produce an error");
     }
 
     #[test]

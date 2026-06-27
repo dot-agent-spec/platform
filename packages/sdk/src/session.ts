@@ -31,6 +31,12 @@ export class AgentSession {
     return new AgentSession(kernel, bundle)
   }
 
+  // Register a synchronous fallback called when a `merge "…"` path is not in the bundle.
+  // Must be called before start(). Return null/undefined if the path cannot be resolved.
+  setFileResolver(resolver: (path: string) => string | null | undefined): void {
+    this.kernel.set_file_resolver(resolver as unknown as Function)
+  }
+
   // Call after registerHandler() — loads the behavior and fires initial effects.
   // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.
   start(): void {
