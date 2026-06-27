@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | In Progress — Phase 5 pending |
 | Created | 2026-06-26 |
 | Author | Danilo Borges |
 | Decision | [DA00-05: Monorepo flatten](../adr/DA00-05-monorepo-flatten.md) |
@@ -67,10 +67,10 @@ Flatten `dot-agent-spec` into a genuine git monorepo by removing nested `.git` d
 
 ### Phase 3 — Fix the build
 
-- [ ] Update `apps/vscode-extension/package.json`: replace all `file:/tmp/*.tgz` deps with `"*"`
-- [ ] `npm install` at root — verify workspace symlinks under `node_modules/@dot-agent/`
-- [ ] `cargo build --workspace` — verify all crates compile
-- [ ] `npm run test --workspaces` — verify all tests pass
+- [x] Update `apps/vscode-extension/package.json`: replace all `file:/tmp/*.tgz` deps with `"*"`
+- [x] `npm install` at root — verify workspace symlinks under `node_modules/@dot-agent/`
+- [x] `cargo build --workspace` — verify all crates compile
+- [x] `npm run test --workspaces` — 225 tests passing (compiler 111, language-server 60, sdk 7, tree-sitter 42, cli 5)
 
 ### Phase 4 — Archive individual GitHub repos
 
@@ -83,6 +83,12 @@ Flatten `dot-agent-spec` into a genuine git monorepo by removing nested `.git` d
 - [x] Archive `dot-agent-spec/tree-sitter`
 - [x] Archive `dot-agent-spec/dot-agent-cli`
 - [x] Archive `dot-agent-spec/vscode-dot-agent`
+
+### Extras — concluídos junto com Phase 4
+
+- [x] Standardize all `package.json` metadata: `repository.url` com `directory`, `homepage`, `bugs`, `author`, `contributors`, keywords `agents`/`llm`
+- [x] Rename monorepo: `daniloborges/dot-agent` → `dot-agent-spec/dot-agent` → `dot-agent-spec/platform`
+- [x] Remote local atualizado para `https://github.com/dot-agent-spec/platform.git`
 
 ### Phase 5 — CI and publish (post-flatten)
 
