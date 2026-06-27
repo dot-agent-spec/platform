@@ -1,5 +1,34 @@
 let _initialized = false;
 let _module = null;
+let _wasmExports = null;
+
+// WASI imports required by the wasm32-wasip1 target.
+// wasi-stub no longer handles these (Rust 1.95+ changed import naming).
+const wasiShim = {
+  random_get(bufPtr, bufLen) {
+    if (_wasmExports) crypto.getRandomValues(new Uint8Array(_wasmExports.memory.buffer, bufPtr, bufLen));
+    return 0;
+  },
+  clock_time_get(_id, _precision, timePtr) {
+    if (_wasmExports) new DataView(_wasmExports.memory.buffer).setBigUint64(timePtr, BigInt(Date.now()) * 1_000_000n, true);
+    return 0;
+  },
+  environ_get: () => 0,
+  environ_sizes_get(countPtr, bufSizePtr) {
+    if (_wasmExports) {
+      const v = new DataView(_wasmExports.memory.buffer);
+      v.setUint32(countPtr, 0, true);
+      v.setUint32(bufSizePtr, 0, true);
+    }
+    return 0;
+  },
+  fd_close: () => 8,
+  fd_prestat_get: () => 8,
+  fd_prestat_dir_name: () => 8,
+  fd_seek: () => 8,
+  fd_write: () => 8,
+  proc_exit: (code) => { throw new Error(`WASM exit: ${code}`); },
+};
 
 // UBSan handlers present only in debug builds; release builds compile them out.
 const envShim = {
@@ -60,11 +89,13 @@ export async function init() {
 
     const importObject = {
       env: envShim,
+      wasi_snapshot_preview1: wasiShim,
       './dot_agent_kernel_dsl_bg.js': { ...bgModule }
     };
 
     const wasmModule = await WebAssembly.instantiate(wasmBuffer, importObject);
-    bgModule.__wbg_set_wasm(wasmModule.instance.exports);
+    _wasmExports = wasmModule.instance.exports;
+    bgModule.__wbg_set_wasm(_wasmExports);
     _module = await import('./pkg/dot_agent_kernel_dsl.js');
 
     _initialized = true;

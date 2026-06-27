@@ -46,18 +46,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo -e "${GREEN}[INFO] Stubbing WASI imports (browser-compatible output)...${NC}"
-
-if ! command -v wasi-stub &> /dev/null; then
-    echo -e "${YELLOW}[WARN] wasi-stub not found. Installing...${NC}"
-    cargo install wasi-stub
-fi
-
-wasi-stub pkg/dot_agent_kernel_dsl_bg.wasm -o pkg/dot_agent_kernel_dsl_bg.wasm
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}[ERROR] wasi-stub failed.${NC}"
-    exit 1
-fi
-
 echo -e "${GREEN}[SUCCESS] Build complete! Artifacts in kernel-dsl/pkg/${NC}"
