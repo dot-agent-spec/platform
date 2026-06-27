@@ -16,12 +16,12 @@ use std::collections::BTreeMap;
 
 use crate::effect::{Effect, MemValue};
 use crate::engine::memory::MemoryStore;
-use dot_agent_parser_dsl::ast::*;
+use dot_agent_parser_dsl::{ast::*, ParseError};
 
 const NATIVE_STATES: &[&str] = &["ended"];
 
 pub struct Fsm {
-    // Ordered list of state names (preserves declaration order for initial state).
+    // Ordered list of state names (for SCXML output ordering).
     state_order: Vec<String>,
     states: BTreeMap<String, StateDef>,
     global_triggers: Vec<TriggerDecl>,
@@ -30,7 +30,7 @@ pub struct Fsm {
 }
 
 impl Fsm {
-    pub fn new(behavior: BehaviorFile) -> Self {
+    pub fn new(behavior: BehaviorFile) -> Result<Self, ParseError> {
         let state_order: Vec<String> = behavior.states.iter().map(|s| s.name.clone()).collect();
         let states: BTreeMap<String, StateDef> = behavior
             .states
@@ -38,15 +38,19 @@ impl Fsm {
             .map(|s| (s.name.clone(), s))
             .collect();
 
-        let initial = state_order.first().cloned().unwrap_or_default();
+        if !states.contains_key("init") {
+            return Err(ParseError(
+                "E016: 'init' state not found — every behavior must declare a state named 'init'".to_string(),
+            ));
+        }
 
-        Fsm {
+        Ok(Fsm {
             state_order,
             states,
             global_triggers: behavior.global_triggers,
-            current_state: initial,
+            current_state: "init".to_string(),
             prompt_count: 0,
-        }
+        })
     }
 
     // Enter the current state and return initial effects.
@@ -308,7 +312,7 @@ impl Fsm {
 
     pub fn get_graph(&self) -> String {
         let current = &self.current_state;
-        let initial = self.state_order.first().map(|s| s.as_str()).unwrap_or("");
+        let initial = "init";
 
         let mut out = String::new();
         out.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");

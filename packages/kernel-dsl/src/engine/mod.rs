@@ -39,7 +39,7 @@ impl AgentDSLKernel {
 
     pub fn load_behavior(&mut self, text: &str) -> Result<Vec<Effect>, ParseError> {
         let behavior_file = parser::parse_behavior(text)?;
-        let mut fsm = Fsm::new(behavior_file);
+        let mut fsm = Fsm::new(behavior_file)?;
         let effects = fsm.enter_current_state(&mut self.memory);
         self.fsm = Some(fsm);
         Ok(effects)
@@ -53,7 +53,7 @@ impl AgentDSLKernel {
         let behavior_file = parser::parse_behavior(main_text)?;
         let mut visited = HashSet::new();
         let flattened = self.flatten_merges(behavior_file, bundle, &mut visited)?;
-        let mut fsm = Fsm::new(flattened);
+        let mut fsm = Fsm::new(flattened)?;
         let effects = fsm.enter_current_state(&mut self.memory);
         self.fsm = Some(fsm);
         Ok(effects)
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn transition_to_ended_emits_effect_and_updates_state() {
-        let dsl = "state greeting\n  interact\n  on intent \"done\" transition to ended\n";
+        let dsl = "state init\n  interact\n  on intent \"done\" transition to ended\n";
         let mut k = kernel_with(dsl);
 
         let effects = k.send_intent("done");
@@ -176,7 +176,7 @@ mod tests {
         let transition = effects.iter().find(|e| matches!(e, Effect::Transition { .. }));
         assert!(transition.is_some(), "expected Transition effect");
         if let Some(Effect::Transition { from, to }) = transition {
-            assert_eq!(from, "greeting");
+            assert_eq!(from, "init");
             assert_eq!(to, "ended");
         }
         assert_eq!(k.get_current_state(), "ended");
@@ -184,21 +184,30 @@ mod tests {
 
     #[test]
     fn transition_to_unknown_state_emits_nothing() {
-        let dsl = "state greeting\n  interact\n  on intent \"go\" transition to nonexistent\n";
+        let dsl = "state init\n  interact\n  on intent \"go\" transition to nonexistent\n";
         let mut k = kernel_with(dsl);
 
         let effects = k.send_intent("go");
 
         let transition = effects.iter().find(|e| matches!(e, Effect::Transition { .. }));
         assert!(transition.is_none(), "unknown target must not emit Transition");
-        assert_eq!(k.get_current_state(), "greeting", "state must not change");
+        assert_eq!(k.get_current_state(), "init", "state must not change");
+    }
+
+    #[test]
+    fn load_behavior_without_init_state_returns_error() {
+        let dsl = "state welcome\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        let result = k.load_behavior(dsl);
+        assert!(result.is_err(), "missing 'init' state must return Err");
+        assert!(result.unwrap_err().0.contains("E016"), "error must reference E016");
     }
 
     // ── §1 merge runtime ──────────────────────────────────────────────────────
 
     const MAIN_DSL: &str = concat!(
         "merge \"shared.behavior\"\n",
-        "state intro\n",
+        "state init\n",
         "  interact\n",
         "  on intent \"next\" transition to detail\n",
     );
@@ -217,7 +226,7 @@ mod tests {
         let mut k = AgentDSLKernel::new();
         k.load_behavior_with_bundle(MAIN_DSL, &bundle).expect("should load");
 
-        assert_eq!(k.get_current_state(), "intro");
+        assert_eq!(k.get_current_state(), "init");
 
         let effects = k.send_intent("next");
         let transition = effects.iter().find(|e| matches!(e, Effect::Transition { to, .. } if to == "detail"));
@@ -240,7 +249,7 @@ mod tests {
         // Empty bundle — resolver must handle the path
         k.load_behavior_with_bundle(MAIN_DSL, &HashMap::new()).expect("should load via resolver");
 
-        assert_eq!(k.get_current_state(), "intro");
+        assert_eq!(k.get_current_state(), "init");
 
         let effects = k.send_intent("next");
         let transition = effects.iter().find(|e| matches!(e, Effect::Transition { to, .. } if to == "detail"));
@@ -250,7 +259,7 @@ mod tests {
 
     #[test]
     fn merge_missing_path_is_an_error() {
-        let dsl = "merge \"nonexistent.behavior\"\nstate solo\n  interact\n";
+        let dsl = "merge \"nonexistent.behavior\"\nstate init\n  interact\n";
         let mut k = AgentDSLKernel::new();
         let result = k.load_behavior_with_bundle(dsl, &HashMap::new());
         assert!(result.is_err(), "missing merge with no resolver must return an error");
@@ -260,7 +269,7 @@ mod tests {
 
     #[test]
     fn merge_missing_path_with_resolver_returns_error_when_resolver_returns_none() {
-        let dsl = "merge \"nonexistent.behavior\"\nstate solo\n  interact\n";
+        let dsl = "merge \"nonexistent.behavior\"\nstate init\n  interact\n";
         let mut k = AgentDSLKernel::new();
         k.set_file_resolver(Box::new(|_| None));
         let result = k.load_behavior_with_bundle(dsl, &HashMap::new());
@@ -269,10 +278,10 @@ mod tests {
 
     #[test]
     fn main_state_takes_precedence_over_merged_duplicate() {
-        let shared = "state greeting\n  goal \"from shared\"\n";
+        let shared = "state init\n  goal \"from shared\"\n";
         let main = concat!(
             "merge \"shared.behavior\"\n",
-            "state greeting\n",
+            "state init\n",
             "  goal \"from main\"\n",
             "  interact\n",
         );
