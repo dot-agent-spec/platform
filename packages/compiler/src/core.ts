@@ -17,7 +17,7 @@
 
 export { parseAboutme, buildAboutme, aboutmeToJson } from './manifest.js'
 export { parseId, buildId, extractDigest, extractName } from './id.js'
-export { createZip, extractFiles } from './zip-core.js'
+export { createZip, extractFiles, validateMagicBytes, validateZipBomb } from './zip-core.js'
 
 export type {
   AboutMe,
