@@ -29,8 +29,6 @@ jobs:
       - name: Publish to npm
         run: npm publish --provenance --access public
         working-directory: packages/tree-sitter
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-crate:
     runs-on: ubuntu-latest

@@ -34,12 +34,12 @@ jobs:
         run: npm ci
 
       - name: Build WASM (release)
-        run: npm run build:release
+        run: |
+          export CC_wasm32_wasip1="zig cc -target wasm32-wasi"
+          export CXX_wasm32_wasip1="zig c++ -target wasm32-wasi"
+          export AR_wasm32_wasip1="zig ar"
+          npm run build:release
         working-directory: packages/kernel-dsl
-        env:
-          CC_wasm32_wasip1: zig cc -target wasm32-wasi
-          CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
-          AR_wasm32_wasip1: zig ar
 
       - name: Verify build artifacts
         working-directory: packages/kernel-dsl
@@ -58,7 +58,5 @@ jobs:
           echo "All artifacts present."
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --provenance
         working-directory: packages/kernel-dsl
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
