@@ -13,8 +13,10 @@
 // limitations under the License.
 
 use serde::Serialize;
+use ts_rs::TS;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Effect {
     Goal { text: String },
@@ -32,7 +34,8 @@ pub enum Effect {
 }
 
 /// A serializable primitive value used in SetMemory effects.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(untagged)]
 pub enum MemValue {
     Str(String),

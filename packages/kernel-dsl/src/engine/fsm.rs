@@ -18,6 +18,8 @@ use crate::effect::{Effect, MemValue};
 use crate::engine::memory::MemoryStore;
 use dot_agent_parser_dsl::ast::*;
 
+const NATIVE_STATES: &[&str] = &["ended"];
+
 pub struct Fsm {
     // Ordered list of state names (preserves declaration order for initial state).
     state_order: Vec<String>,
@@ -147,7 +149,7 @@ impl Fsm {
 
     fn transition_to(&mut self, target: &str, _mem: &mut MemoryStore) -> Vec<Effect> {
         let from = self.current_state.clone();
-        if self.states.contains_key(target) {
+        if self.states.contains_key(target) || NATIVE_STATES.contains(&target) {
             self.current_state = target.to_string();
             self.prompt_count = 0;
             vec![Effect::Transition { from, to: target.to_string() }]

@@ -20,18 +20,18 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 ---
 
-## Priority overview
+## Priority overview (9 remaining)
 
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
-| B1 | **P0** — blocks publish | `parser-dsl` missing `publishConfig: {access: public}` | parser-dsl | XS |
+| B1 ✅ | **P0** — blocks publish | `parser-dsl` missing `publishConfig: {access: public}` | parser-dsl | XS |
 | B2 ✅ | **P0** — release decision | Version strategy (0.4.1 / 0.1.3 / 0.1.0 diverge) | all | S |
 | C3 | **P0** — wrong output | `files.json.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
 | C2 | **P1** — feature broken e2e | `merge` parsed but not resolved at runtime | kernel-dsl, sdk | M |
 | C1 ✅ | **→ DA01-01** | `on failure` on apply/remove dropped by parser | see `DA01-01-grammar-unfreeze.md` | — |
 | B3 | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
 | B4 | **P1** — consumer DX | Rich wasm-bindgen `.d.ts` shadowed by thin stub | parser-dsl, kernel-dsl | S |
-| B5 | **P1** — artifact confusion | `kernel-dsl/pkg-web/` orphan, unreferenced | kernel-dsl | XS |
+| B5 ✅ | **P1** — artifact confusion | `kernel-dsl/pkg-web/` orphan, unreferenced | kernel-dsl | XS |
 | C4 | **P1** — placeholder shipped | `aboutme.purpose` hardcoded `'unknown'`, no DSL source | compiler | S |
 | C5 | **P1** — duplication | Bundle validation duplicated compiler↔sdk | compiler, sdk | S |
 | B6 | **P2** — dedup | UBSan stubs + wasm-bindgen patches written 3× | parser-dsl, kernel-dsl | M |
@@ -43,7 +43,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 ## Build / packaging
 
-### B1. Add `publishConfig` to `parser-dsl` — P0
+### B1. ~~Add `publishConfig` to `parser-dsl`~~ — P0 ✅
 
 **What:** `parser-dsl/package.json` has no `publishConfig`, while `kernel-dsl` and `sdk` declare `{access: public}`.
 
@@ -80,7 +80,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** re-export the generated `pkg/*.d.ts` from the root types, or decide the stub is intentional (to hide internals) and document that. Same for parser-dsl.
 
-### B5. Resolve the `pkg-web/` orphan — P1
+### B5. ~~Resolve the `pkg-web/` orphan~~ — P1 ✅
 
 **What:** `kernel-dsl/pkg-web/` is a second WASM output, older than `pkg/`, not referenced by `package.json` `files`/`exports`.
 

@@ -35,9 +35,17 @@
     "parser",
     "grammar"
   ],
-  "main": "index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
-    "index.js",
     "dist/",
     "tree-sitter-description/grammar.js",
     "tree-sitter-description/tree-sitter.json",
@@ -59,11 +67,14 @@
     "prebuild": "npm run clean",
     "build:wasm-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-description.wasm ../dist/",
     "build:wasm-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
-    "build": "npm run build:wasm-description && npm run build:wasm-behavior",
+    "build:wasm": "npm run build:wasm-description && npm run build:wasm-behavior",
+    "build": "npm run build:wasm && tsup",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "tree-sitter-cli": "^0.25.10"
+    "tree-sitter-cli": "^0.25.10",
+    "tsup": "^8.0.0",
+    "@types/node": "^22.0.0"
   },
   "tree-sitter": [
     {

@@ -27,9 +27,9 @@
 <!-- Package impact table — see rfcs/AGENTS.md for the symbol legend (— · ⚠️ · 🔄 · ?). -->
 <!-- All `?` cells must be resolved before this RFC moves Draft → Accepted. -->
 
-| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
-|---|---|---|---|---|
-| — | — | — | — | — |
+| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) | language-server (L3) |
+|---|---|---|---|---|---|
+| — | — | — | — | — | — |
 
 <!-- If it touches packages outside the core five, add: > **Also impacts:** transpiler-core, dot-agent-cli -->
 

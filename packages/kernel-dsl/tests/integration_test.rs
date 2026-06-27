@@ -1,5 +1,4 @@
-extern crate dot_agent_kernel_dsl as kernel;
-use kernel::parser::parse_behavior;
+use dot_agent_parser_dsl::parse_behavior;
 
 #[test]
 fn test_parse_minimal_behavior() {
@@ -66,25 +65,16 @@ fn test_valid_oriented_state() {
 }
 
 #[test]
-fn test_error_message_points_to_correct_location() {
-    // Missing required handler after interact
-    let invalid_behavior = "state welcome\n  goal \"Test\"\n  interact";
+fn test_interact_without_handlers_parses_after_forgiving_syntax() {
+    // DA01-01 forgiving syntax: interact without handlers is now valid at parse time.
+    // Semantic validation (W-series lint) happens in the compiler layer, not the parser.
+    let behavior = "state welcome\n  goal \"Test\"\n  interact";
 
-    match parse_behavior(invalid_behavior) {
-        Ok(_) => {
-            panic!("Should fail: missing required handler");
+    match parse_behavior(behavior) {
+        Ok(b) => {
+            assert_eq!(b.states.len(), 1);
+            assert_eq!(b.states[0].name, "welcome");
         }
-        Err(e) => {
-            let msg = &e.0;
-            eprintln!("Error message:\n{}", msg);
-
-            // Should have error components
-            assert!(msg.contains("Syntax error at line"), "Should have 'Syntax error at line'");
-            assert!(msg.contains("column"), "Should have 'column'");
-            assert!(msg.contains("^"), "Should have caret");
-
-            // Should NOT always be at line 1 col 1 — error should be meaningful
-            // (This test mainly documents the current behavior)
-        }
+        Err(e) => panic!("Should parse with forgiving grammar: {}", e.0),
     }
 }

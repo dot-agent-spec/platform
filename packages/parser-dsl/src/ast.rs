@@ -13,16 +13,19 @@
 // limitations under the License.
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 // ── Description DSL types ─────────────────────────────────────────────────────
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct OntologyRef {
     pub uri: String,
     pub label: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct AgentDecl {
     pub name: String,
     pub domain: Option<String>,
@@ -31,13 +34,15 @@ pub struct AgentDecl {
     pub privacy: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct AnnotatedRef {
     pub name: String,
     pub description: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct TypeDefinition {
     pub name: String,
     pub category: OntologyRef,
@@ -45,7 +50,8 @@ pub struct TypeDefinition {
     pub properties: Vec<PropertyDecl>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct PropertyDecl {
     pub name: String,
     pub r#type: PropertyType,
@@ -53,7 +59,8 @@ pub struct PropertyDecl {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(tag = "kind", content = "value", rename_all = "snake_case")]
 pub enum PropertyType {
     Primitive(String),
@@ -63,7 +70,8 @@ pub enum PropertyType {
     Enum(Vec<String>),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub struct DescriptionFile {
     pub agent: AgentDecl,
@@ -86,7 +94,8 @@ pub struct DescriptionFile {
 
 // ── Behavior DSL types ────────────────────────────────────────────────────────
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub struct BehaviorFile {
     #[serde(default, rename = "merges")]
@@ -97,21 +106,24 @@ pub struct BehaviorFile {
     pub states: Vec<StateDef>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub struct TriggerDecl {
     pub event: String,
     pub body: Vec<Statement>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub struct StateDef {
     pub name: String,
     pub body: Vec<Statement>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Statement {
     #[serde(rename = "goal_stmt")]
@@ -181,14 +193,16 @@ pub enum Statement {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(untagged)]
 pub enum IntentBody {
     Next(String),
     Block(Vec<Statement>),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub struct RunStmt {
     pub kind: RunKind,
@@ -199,14 +213,16 @@ pub struct RunStmt {
     pub on_failure: Option<Vec<Statement>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub struct MemoryPath {
     pub domain: MemoryDomain,
     pub key: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum MemoryDomain {
     Context,
@@ -226,7 +242,8 @@ impl MemoryDomain {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum RunKind {
     Script,
@@ -234,14 +251,16 @@ pub enum RunKind {
     Tool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum RunModifier {
     Silent,
     Background,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum AssignOp {
     #[serde(rename = "=")]
@@ -252,32 +271,37 @@ pub enum AssignOp {
     SubAssign,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaKind {
     Css,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Condition {
     pub parts: Vec<(Option<LogicalOp>, Expr)>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum LogicalOp {
     And,
     Or,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(untagged)]
 pub enum Expr {
     Value(Value),
     Compare { left: Value, op: CompareOp, right: Value },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum CompareOp {
     #[serde(rename = "==")]
@@ -294,7 +318,8 @@ pub enum CompareOp {
     Lte,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(untagged)]
 pub enum Value {
     Str(String),

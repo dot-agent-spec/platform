@@ -6,9 +6,12 @@
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 
-#[path = "../../scripts/shared_build.rs"]
-mod shared_build;
+import { defineConfig } from 'tsup'
 
-fn main() {
-    shared_build::main();
-}
+export default defineConfig({
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
+  dts: true,
+  shims: true,
+  clean: false, // WASM files in dist/ are built by tree-sitter-cli, not tsup
+})

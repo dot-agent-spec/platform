@@ -11,7 +11,7 @@
     "dsl/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w packages/tree-sitter && npm run build -w packages/parser-dsl && npm run build -w packages/kernel-dsl && npm run build -w packages/compiler && npm run build -w packages/sdk && npm run build -w packages/language-server && npm run build -w apps/dot-agent-cli",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present",

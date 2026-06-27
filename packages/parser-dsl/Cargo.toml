@@ -11,11 +11,6 @@ keywords = ["wasm", "agent", "dsl", "parser", "scxml"]
 categories = ["wasm", "parser-implementations"]
 exclude = ["pkg/", "target/", ".github/", "*.wasm"]
 
-[package.metadata.scripts]
-build   = "wasm-pack build --target bundler --out-dir pkg --out-name parser-dsl"
-patch   = """node -e "const fs=require('fs'),p=require('./pkg/package.json');p.name='@dot-agent/parser-dsl';p.publishConfig={access:'public'};fs.writeFileSync('./pkg/package.json',JSON.stringify(p,null,2)+'\\n')" """
-release = "cargo run-script build && cargo run-script patch"
-
 [lib]
 crate-type = ["cdylib", "rlib"]
 
@@ -25,6 +20,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tree-sitter = "0.25"
 dot-agent-tree-sitter = { path = "../tree-sitter" }
+ts-rs = { version = "10", features = ["serde-compat"] }
 
 [build-dependencies]
 serde_json = "1.0"

@@ -3,6 +3,7 @@ members = [
     "packages/tree-sitter",
     "packages/parser-dsl",
     "packages/kernel-dsl",
+    "tools/wasi-stub",
 ]
 resolver = "2"
 

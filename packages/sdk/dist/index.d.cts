@@ -42,13 +42,16 @@ declare class AgentSession {
     private dispatchRaw;
     sendIntent(intent: string): void;
     sendEvent(event: string): void;
-    sendComplete(): void;
-    sendFailed(): void;
     sendOfftopic(): void;
     tickPrompt(): void;
     getState(): string;
     getValidIntents(): Array<any>;
     getGraph(): string;
+    getMemory(): Array<{
+        domain: string;
+        key: string;
+        value: unknown;
+    }>;
     injectMemory(domain: string, key: string, value: string): void;
     dispose(): void;
 }

@@ -32,8 +32,18 @@ export class AgentSession {
   }
 
   // Call after registerHandler() — loads the behavior and fires initial effects.
+  // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.
   start(): void {
-    this.dispatchRaw(this.kernel.load_behavior(this.bundle.files.behavior))
+    const bundle: Record<string, string> = {}
+    for (const { path, content } of this.bundle.files.behaviors) {
+      bundle[path] = content
+    }
+    this.dispatchRaw(
+      this.kernel.load_behavior_with_bundle(
+        this.bundle.files.behavior,
+        JSON.stringify(bundle),
+      )
+    )
   }
 
   registerHandler(effectType: string, handler: EffectHandler): void {
@@ -68,6 +78,9 @@ export class AgentSession {
   getState(): string            { return this.kernel.get_current_state() }
   getValidIntents(): Array<any> { return this.kernel.get_valid_intents() }
   getGraph(): string            { return this.kernel.get_graph() }
+  getMemory(): Array<{ domain: string; key: string; value: unknown }> {
+    return JSON.parse(this.kernel.get_memory())
+  }
 
   injectMemory(domain: string, key: string, value: string): void {
     this.kernel.set_memory(domain, key, value)

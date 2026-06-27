@@ -6,9 +6,7 @@
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 
-#[path = "../../scripts/shared_build.rs"]
-mod shared_build;
+import path from 'path'
 
-fn main() {
-    shared_build::main();
-}
+export const descriptionWasmPath = path.resolve(__dirname, 'tree-sitter-description.wasm')
+export const behaviorWasmPath = path.resolve(__dirname, 'tree-sitter-behavior.wasm')

@@ -16,16 +16,12 @@ Legend:
 |---|---|---|---|---|---|
 | **Status** | 🧊 Frozen | 🔥 Active  | 🔥⚠️ Active | 🧊⚠️ Frozen | 🔥⚠️ Active |
 | **Version** | `0.4.1` | `0.1.0` | `0.1.0` | `0.1.3` | `0.1.0` |
-| **Build** | `tree-sitter-cli` — manual npm scripts (`generate` + `build --wasm`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`build-wasm.sh`, target `wasm32-wasip1`) | `tsup` (esm + cjs, `dts:true`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` + `patch-wasm-bindgen.js` | `tsup` (esm + cjs, `dts:true`) |
+| **Build** | `tree-sitter-cli` — manual npm scripts (`generate` + `build --wasm`) + `tsup` | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`scripts/build-wasm.sh` central, `wasm32-wasip1`) + `tsup` | `tsup` (esm + cjs, `dts:true`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`scripts/build-wasm.sh` central, `wasm32-wasip1`) + `tsup` | `tsup` (esm + cjs, `dts:true`) |
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
-| **Types (.d.ts)** | ❌ none (consumers type-assert) | ⚠️ hand-written stub (thin; no Rust structs) | ✅ `tsup` auto (full) | ⚠️ hand-written stub (thin); rich `pkg/*.d.ts` shadowed | ✅ `tsup` auto (full) |
+| **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
-> ⚠️ **Build / packaging gaps** — full catalog in [build-pipeline-investigation](../docs/explanation/research/build-pipeline-investigation.md):
-> - Stale `wasm-pack` definitions in both Rust crates' `Cargo.toml` metadata — the real build is the shell script (`cargo + wasm-bindgen + wasi-stub`).
-> - `build.rs` byte-identical across parser-dsl/kernel-dsl; wasm-bindgen patches and UBSan env-stubs duplicated 3× with different strategies.
-> - kernel-dsl ships a second, unreferenced `pkg-web/` output (predates `pkg/`; maintained vs abandoned unconfirmed).
-> - `wasm-bindgen`'s rich `.d.ts` exists in `pkg/` but is shadowed by the thinner hand-written `index.d.ts`.
-> - Versions diverge: tree-sitter `0.4.1`, kernel-dsl `0.1.3`, others `0.1.0`.
+> ⚠️ **Build / packaging gap remanescente** — full history in [DA00-06 build-pipeline-investigation](pre-release/v0.1/DA00-06-build-pipeline-investigation.md) (DA00-06 concluído):
+> - Versions divergem: tree-sitter `0.4.1`, kernel-dsl `0.1.3`, others `0.1.0`.
 
 ---
 
@@ -105,7 +101,7 @@ Legend:
 
 | ☑️✅🔥 kernel-dsl (wasm) | sdk | Notes |
 |---|---|---|
-| ✅1️⃣ `init()` → `Promise<void>` (js wrapper) | | hand-written loader in `index.js`; must run before `new AgentDSLKernel()` |
+| ✅1️⃣ `init()` → `Promise<void>` (js wrapper) | | `src/ts/index.ts` via tsup; must run before `new AgentDSLKernel()` |
 | ✅1️⃣ `new AgentDSLKernel()` (wasm class ctor) | 🔄 `sdk` | constructed inside `AgentSession` |
 | ✅1️⃣ `load_behavior(text)` → `string` | → `start()` | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON |
 | ✅1️⃣ `send_intent(intent)` → `string` | → `sendIntent(intent)` | effects JSON |
@@ -205,7 +201,7 @@ Legend:
 
 | ☑️✅🧊 DSL | ☑️ Tree-sitter node | ☑️ parser-dsl | ☑️✅🔥 compiler | ⚠️ kernel-dsl | ⚠️ sdk |
 |---|---|---|---|---|---|
-| ✅1️⃣ `merge` | ✅ `merge_decl` | ✅ `BehaviorFile.merges[]` | ✅ resolves for transition lint | ⚠️ field parsed, merge files not resolved at runtime | ⚠️ `files.behaviors[]` loaded but not passed to kernel |
+| ✅1️⃣ `merge` | ✅ `merge_decl` | ✅ `BehaviorFile.merges[]` | ✅ resolves for transition lint | ✅ resolved via bundle map; missing files silently skipped | ⚠️ `files.behaviors[]` loaded but not passed to kernel |
 | ✅1️⃣ `state` | ✅ `state_decl` | ✅ `StateDef` | ✅ lint + FSM validation | ✅ FSM state map | ✅ transparent via kernel |
 | ✅1️⃣ `goal` | ✅ `goal_stmt` | ✅ `Statement::Goal` | ✅ lint W002 (>280 chars) | ✅ → `Effect::Goal {text}` | ✅ `registerHandler("goal", fn)` |
 | ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W010 (>280 chars) | ✅ → `Effect::Guide {text}` | ✅ `registerHandler("guide", fn)` |

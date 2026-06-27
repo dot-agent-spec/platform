@@ -79,8 +79,18 @@ var AgentSession = class _AgentSession {
     return new _AgentSession(kernel, bundle);
   }
   // Call after registerHandler() — loads the behavior and fires initial effects.
+  // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.
   start() {
-    this.dispatchRaw(this.kernel.load_behavior(this.bundle.files.behavior));
+    const bundle = {};
+    for (const { path, content } of this.bundle.files.behaviors) {
+      bundle[path] = content;
+    }
+    this.dispatchRaw(
+      this.kernel.load_behavior_with_bundle(
+        this.bundle.files.behavior,
+        JSON.stringify(bundle)
+      )
+    );
   }
   registerHandler(effectType, handler) {
     this.handlers.set(effectType, handler);
@@ -110,12 +120,6 @@ var AgentSession = class _AgentSession {
   sendEvent(event) {
     this.dispatchRaw(this.kernel.send_event(event));
   }
-  sendComplete() {
-    this.dispatchRaw(this.kernel.send_complete());
-  }
-  sendFailed() {
-    this.dispatchRaw(this.kernel.send_failed());
-  }
   sendOfftopic() {
     this.dispatchRaw(this.kernel.send_offtopic());
   }
@@ -130,6 +134,9 @@ var AgentSession = class _AgentSession {
   }
   getGraph() {
     return this.kernel.get_graph();
+  }
+  getMemory() {
+    return JSON.parse(this.kernel.get_memory());
   }
   injectMemory(domain, key, value) {
     this.kernel.set_memory(domain, key, value);

@@ -72,6 +72,37 @@ impl AgentDSLKernel {
         serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
+    /// Register a synchronous fallback for resolving merge paths not in the bundle.
+    ///
+    /// The callback receives the path string declared in `merge "…"` and must return
+    /// the file content as a string, or null/undefined if the path cannot be resolved.
+    /// Only called when `load_behavior_with_bundle` encounters a path absent from the bundle.
+    pub fn set_file_resolver(&mut self, callback: Function) {
+        use std::rc::Rc;
+        let cb = Rc::new(callback);
+        self.inner.set_file_resolver(Box::new(move |path: &str| {
+            cb.call1(&JsValue::NULL, &JsValue::from_str(path))
+                .ok()
+                .and_then(|v| v.as_string())
+        }));
+    }
+
+    /// Parse and load a .behavior DSL text, resolving `merge "…"` paths from a pre-built bundle.
+    ///
+    /// `bundle_json` must be a JSON object mapping path strings to their file contents,
+    /// e.g. `{"agent.behavior": "state s1\n…", "shared/helpers.behavior": "state s2\n…"}`.
+    /// Paths not found in the bundle fall through to the resolver registered via `set_file_resolver`.
+    /// Returns effects JSON identical to `load_behavior`.
+    pub fn load_behavior_with_bundle(&mut self, main_text: &str, bundle_json: &str) -> String {
+        let bundle: std::collections::HashMap<String, String> =
+            serde_json::from_str(bundle_json).unwrap_or_default();
+        let effects = match self.inner.load_behavior_with_bundle(main_text, &bundle) {
+            Ok(fx) => fx,
+            Err(e) => vec![Effect::ParseError { message: e.0 }],
+        };
+        serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
+    }
+
     /// Dispatch a named intent to the FSM.
     ///
     /// Call this after the LLM classifies the user's message into an intent name that

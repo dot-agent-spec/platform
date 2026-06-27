@@ -44,7 +44,7 @@ export type {
   AgentDecl,
   DescriptionFile,
   BehaviorFile,
-  BehaviorStatement,
+  Statement,
   StateDef,
   TriggerDecl,
   Integrity,
