@@ -12,14 +12,16 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | Done |
 | Created | 2026-06-27 |
+| Closed | 2026-06-27 |
+| Branch | compiler-consolidation |
 | Author | Danilo Borges |
 | Sources | [DA01-02 log](../pre-release/v0.1/DA01-02-compiler-behavior-consolidation.md) · [C3 in pre-public-consolidation](pre-public-consolidation.md) · [platform#1](https://github.com/dot-agent-spec/platform/issues/1) |
 
 ---
 
-## Context
+## Context 
 
 Three bugs in the compiler and one in the kernel, all related to hardcoded filenames and missing merge resolution. Decisions fully resolved in DA01-02 log. This task tracks implementation across three PRs:
 
@@ -29,17 +31,17 @@ Three bugs in the compiler and one in the kernel, all related to hardcoded filen
 
 ## Priority overview
 
-| # | Priority | Item | Package(s) | Effort | PR |
-|---|---|---|---|---|---|
-| 1 | P0 | E017: duplicate `behavior_block` in `.description` | parser-dsl | XS | A |
-| 2 | P0 | `discoverDescriptionFile()` + `df.behavior` validation + E014 | compiler | S | B |
-| 3 | P0 | `consolidate()` — DFS, cycle detection, E012/E013/E014 | compiler | M | B |
-| 4 | P0 | `collectFiles()` refactor — explicit names, no `behaviors/` walk | compiler | S | B |
-| 5 | P0 | `filesJson` with real names + `behaviors[]` from merge chain | compiler | XS | B |
-| 6 | P0 | `lintBehavior` post-consolidation: E015, E016, W014 | compiler | S | B |
-| 7 | P0 | Entry state: `states.get("init")` instead of first-declared | kernel-dsl | XS | C |
-| 8 | P0 | `lint-codes.md` E012–E017, W014 | compiler/docs | XS | A+B |
-| 9 | P0 | `pack.test.ts` — fixture update + new test cases | compiler | S | B |
+| # | Priority | Item | Package(s) | Effort | PR | Status |
+|---|---|---|---|---|---|---|
+| 1 | P0 | E017: duplicate `behavior_block` in `.description` | parser-dsl | XS | A | ✅ Done |
+| 2 | P0 | `discoverDescriptionFile()` + `df.behavior` validation + E014 | compiler | S | B | ✅ Done |
+| 3 | P0 | `consolidate()` — DFS, cycle detection, E012/E013/E014 | compiler | M | B | ✅ Done |
+| 4 | P0 | `collectFiles()` refactor — explicit names, no `behaviors/` walk | compiler | S | B | ✅ Done |
+| 5 | P0 | `filesJson` with real names + `behaviors[]` from merge chain | compiler | XS | B | ✅ Done |
+| 6 | P0 | `lintBehavior` post-consolidation: E015, E016, W014 | compiler | S | B | ✅ Done |
+| 7 | P0 | Entry state: `states.get("init")` instead of first-declared | kernel-dsl | XS | C | ✅ Done |
+| 8 | P0 | `lint-codes.md` E012–E017, W014 | compiler/docs | XS | A+B | ✅ Done |
+| 9 | P0 | `pack.test.ts` — fixture update + new test cases | compiler | S | B | ✅ Done |
 
 ---
 
@@ -196,3 +198,6 @@ PR B (compiler):
 PR C (kernel-dsl):
   7. engine/mod.rs — states.get("init")
 ```
+
+**Completed 2026-06-27 — branch: compiler-consolidation**
+PR A ✅ · PR B ✅ · PR C ✅ · 129+14 tests green · No blockers for merge.

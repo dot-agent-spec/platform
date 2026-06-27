@@ -32,7 +32,7 @@ For design principles and state machine philosophy, see [`dsl/explanation/design
 
 ### 1.2 Declarative scope (written in `.behavior`)
 
-- Standard entry points: `init`, `onboarding`, `responsive` (override as needed)
+- **Required entry state: `init`** — the compiler enforces this (E016 lint error) and the kernel enters it by name at startup. `onboarding`, `responsive`, and any business state names are conventional; only `init` is mandatory.
 - Arbitrary business states: `car_reservation`, `phases.planning`, etc.
 - All orchestration: tools, subagents, scripts, memory, conditionals
 

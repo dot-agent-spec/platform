@@ -8,23 +8,20 @@ This document explains how `@dot-agent/compiler` processes a dot-agent source tr
 
 ```mermaid
 graph LR
-    A[".description text"] --> B[parse]
-    C[".behavior text"] --> B
-    B --> D[lintDescription]
-    B --> E[lintBehavior]
-    B --> F[extractBehaviorGraph]
-    D --> G[pack]
-    E --> G
-    F --> G
-    G --> H[".agent ZIP"]
+    A[".description text"] --> B[lintDescription]
+    B --> C[parseDescription]
+    C --> D[consolidate]
+    D --> E[lintBehavior\nconsolidated=true]
+    E --> F[pack / ZIP]
+    F --> G[".agent bundle"]
 ```
 
 The pipeline has four layers:
 
-1. **Parse** — convert source text into a tree-sitter syntax tree
+1. **Parse** — convert source text into a tree-sitter syntax tree or Rust WASM AST
 2. **Lint** — walk the tree and emit `LintMessage` diagnostics
-3. **Graph** — extract the FSM state/transition graph from a behavior tree
-4. **Pack** — orchestrate lint + hash + ZIP into a distributable bundle
+3. **Consolidate** — recursively merge all `.behavior` files into a single canonical text
+4. **Pack** — orchestrate lint + consolidation + hash + ZIP into a distributable bundle
 
 ---
 
@@ -80,19 +77,44 @@ It is used by the language server to render the Mermaid flow-graph panel and by 
 
 ## Layer 4 — Pack (`src/pack.ts`)
 
-`pack(options)` runs the full pipeline for a directory:
+`pack(options)` runs the full pipeline for a directory in seven steps:
 
 ```
-collectFiles(dir)
-  → lintDescription + lintBehavior   (abort on any error)
-  → SHA-256 hash of description + behavior sources
-  → buildAboutme (name, domain, version, integrity)
-  → JSZip: source files + .agent/aboutme.json + .agent/files.json
-  → write ZIP to disk
-  → return PackResult { id, path, warnings }
+1. discoverDescriptionFile(dir, options.description?)
+      → fail E003 if 0 or 2+ .description files found
+2. lintDescription(text)
+      → fail fast on errors (E017, E004, …) before WASM init
+3. initBehaviorParser() + parseDescriptionFile(text)
+      → fail E_DESC if behavior block absent or path escapes root (E014)
+4. consolidate(dir, df.behavior)
+      → DFS merge graph, topological order (leaves first, entry last)
+      → E012 (file not found), E013 (cycle), E014 (external path)
+5. lintBehavior(mergedText, consolidated=true)
+      → E015 (duplicate state across files), E016 (no init state), W014 (duplicate trigger)
+      → fail on errors
+6. collectFiles(dir, descriptionFile, mergedText, mergeSources)
+      → description file, agent.behavior (consolidated), behaviors/<relpath> sources,
+         SOUL.md, guides/, knowledge/
+7. hash + buildAboutme + JSZip → write .agent bundle
 ```
 
-The resulting `.agent` ZIP is self-describing: `aboutme.json` contains the agent ID, schema version, and SHA-256 integrity digest; `files.json` maps logical roles (`description`, `behavior`) to their paths inside the archive.
+### Bundle structure
+
+```
+.agent/
+  aboutme.json       — agent ID, schema, integrity hash
+  files.json         — maps { description, behavior, behaviors[], guides[], knowledge[] }
+<descriptionFile>    — e.g. analyst.description
+agent.behavior       — consolidated output (all merges flattened, always this name)
+behaviors/           — source files from merge chain (behaviors/main.behavior, behaviors/shared.behavior, …)
+SOUL.md              — persona (optional)
+guides/              — (optional)
+knowledge/           — (optional)
+```
+
+`agent.behavior` is always the canonical consolidated name regardless of what the entry file is called. `files.json.behaviors` lists the merge-chain source paths for reference.
+
+The resulting `.agent` ZIP is self-describing: `aboutme.json` contains the agent ID, schema version, and SHA-256 integrity digest; `files.json` maps logical roles to paths inside the archive.
 
 ---
 

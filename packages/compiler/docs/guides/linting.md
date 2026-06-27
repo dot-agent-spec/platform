@@ -64,6 +64,18 @@ const behMsgs = await lintBehavior(
 
 Without `docPath`, merged state names are not included when checking dangling transitions — transitions that target states defined only in merged files will be reported as `E005`.
 
+### Post-consolidation checks
+
+Three lint rules only fire on the **fully consolidated** behavior (all `merge` files resolved and concatenated). The language server does **not** trigger them — only `pack()` does, by passing `consolidated=true`:
+
+| Code | Check |
+|---|---|
+| `E015` | Duplicate state name across merged files |
+| `E016` | No `init` state in consolidated behavior (kernel would error at runtime) |
+| `W014` | Duplicate global trigger (`on event "…"`) across merged files |
+
+`pack()` sets `consolidated=true` automatically. If you call `lintBehavior` directly on pre-merge source files, these checks are suppressed (they would produce false positives on individual files).
+
 ---
 
 ## Using the `createLinter` helper

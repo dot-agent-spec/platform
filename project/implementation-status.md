@@ -82,12 +82,14 @@ Legend:
 | ✅1️⃣ `full.parseSync(langId, text, tree?)` → `Tree\|null` | | | sync variant for LSP diagnostics |
 | ✅1️⃣ `full.nodesOfType(tree, type)` + nav helpers | | | `nodeAtOffset`, `nodeToRange`, `positionToOffset`, `getContextNode` |
 | ✅1️⃣ `full.lintDescription(text, file?)` → `Promise<LintMessage[]>` | | | used by language-server and `pack` |
-| ✅1️⃣ `full.lintBehavior(text, file?, docPath?)` → `Promise<LintMessage[]>` | | | used by language-server and `pack` |
+| ✅1️⃣ `full.lintBehavior(text, file?, docPath?, consolidated?)` → `Promise<LintMessage[]>` | | | used by language-server and `pack`; `consolidated=true` enables E015/E016/W014 |
 | ✅1️⃣ `full.createLinter()` → `{lintDescription, lintBehavior}` | | | factory; used by language-server |
 | ✅1️⃣ `full.buildTypesJson(df)` → `string` | | | JSON Schema 2020-12 from `types[]` + `input[]` + `output[]` |
 | ✅1️⃣ `full.readZip(filePath)` · `full.writeZip(zip, outPath)` | | | Node.js; used by `pack` |
 | ✅1️⃣ `full.validateMagicBytes(filePath)` · `full.validateZipBomb(filePath)` | | ⚠️ local copies | Node.js; sdk redefines identical fns in `load.ts` instead of importing |
-| ✅1️⃣ `full.collectFiles(dir)` → `Promise<Map<string,string>>` | | | Node.js; used by `pack` |
+| ✅1️⃣ `full.discoverDescriptionFile(dir, explicit?)` → `Promise<string>` | | | Node.js; globs `*.description` (0 or 2+ → E003); `PackOptions.description` for override |
+| ✅1️⃣ `full.consolidate(agentRoot, entryFile)` → `Promise<{mergedText, mergeSources}>` | | | Node.js; DFS merge graph, topological order; E012/E013/E014 |
+| ✅1️⃣ `full.collectFiles(dir, descriptionFile, mergedBehaviorText, mergeSources)` → `Promise<Map<string,string>>` | | | Node.js; used by `pack`; no behaviors/ walk — merge chain is authoritative |
 | ✅1️⃣ `full.pack(options?)` → `Promise<PackResult>` | | | full pipeline; consumed by CLI `pack.ts` |
 
 ---
@@ -103,8 +105,8 @@ Legend:
 |---|---|---|
 | ✅1️⃣ `init()` → `Promise<void>` (js wrapper) | | `src/ts/index.ts` via tsup; must run before `new AgentDSLKernel()` |
 | ✅1️⃣ `new AgentDSLKernel()` (wasm class ctor) | 🔄 `sdk` | constructed inside `AgentSession` |
-| ✅1️⃣ `load_behavior(text)` → `string` | → `start()` (single-file) | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON |
-| ✅1️⃣ `load_behavior_with_bundle(text, bundle_json)` → `string` | → `start()` | flattens `merge` paths from bundle map; effects JSON |
+| ✅1️⃣ `load_behavior(text)` → `string` | → `start()` (single-file) | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON; E016 if no `init` state |
+| ✅1️⃣ `load_behavior_with_bundle(text, bundle_json)` → `string` | → `start()` | flattens `merge` paths from bundle map; effects JSON; E016 if no `init` state |
 | ✅1️⃣ `set_file_resolver(callback: Function)` | → `setFileResolver(fn)` | Mode B fallback; called when bundle lacks a merge path |
 | ✅1️⃣ `send_intent(intent)` → `string` | → `sendIntent(intent)` | effects JSON |
 | ✅1️⃣ `send_offtopic()` → `string` | → `sendOfftopic()` | |
@@ -162,7 +164,7 @@ Legend:
 | ✅1️⃣ `privacy` | ✅ `agent_meta[privacy]` | ✅ `AgentDecl.privacy` | ⚠️ parsed, not written to `aboutme.json` | | |
 | ✅1️⃣ `description` | ✅ `description_block` | ✅ `DescriptionFile.description` | ✅ `aboutme.description` | | |
 | ✅1️⃣ `persona` | ✅ `persona_block` | ✅ `DescriptionFile.persona` | ✅ `aboutme.persona` — 📌 falls back to `'SOUL.md'` when block absent | | |
-| ✅1️⃣ `behavior` | ✅ `behavior_block` | ✅ `DescriptionFile.behavior` | ⚠️ parsed but unused — compiler reads the file directly | | |
+| ✅1️⃣ `behavior` | ✅ `behavior_block` | ✅ `DescriptionFile.behavior` | ✅ required — entry file for `consolidate()`; validated (E_DESC if absent); E014 check on path | | |
 | ✅2️⃣ `require` | ✅ `requires_block[]` | ✅ `DescriptionFile.requires[]` | ✅ `aboutme.requires[]` | | |
 | ✅2️⃣ `input` | ✅ `input_block[]` | ✅ `DescriptionFile.input[]` | ✅ `types.json input` | | |
 | ✅ `capabilities` | ✅ `capabilities_block[]` | ✅ `DescriptionFile.capabilities[]` (`AnnotatedRef {name, description}`) | ✅ `aboutme.capabilities[]` (`Capability {id, description}` — field `name`→`id`) | | |
@@ -173,8 +175,8 @@ Legend:
 >
 > | Field | Hardcoded as | Should be |
 > |---|---|---|
-> | `files.json` `behavior` | `'agent.behavior'` | the `behavior` block value (`DescriptionFile.behavior` is parsed but ignored — compiler reads the file directly) |
-> | `files.json` `description` | `'agent.description'` | the actual `.description` source filename |
+> | ~~`files.json` `behavior`~~ | ~~`'agent.behavior'`~~ | ✅ fixed DA01-02: `'agent.behavior'` is the canonical consolidated output; source entry file is `df.behavior` (used by `consolidate`) |
+> | ~~`files.json` `description`~~ | ~~`'agent.description'`~~ | ✅ fixed DA01-02: real filename from `discoverDescriptionFile` |
 > | `aboutme.purpose` | `'unknown'` | a real DSL field — none exists yet (no `purpose` in grammar) |
 > | `aboutme.persona` | falls back to `'SOUL.md'` | required from the `persona` block, no silent default |
 > | `aboutme.schemaVersion` | `'dot-agent/1.0'` | sourced constant, not a literal |

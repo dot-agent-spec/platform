@@ -86,11 +86,13 @@ persona analyst-persona.md
 
 ### `behavior` — Implementation Link
 
-The `.behavior` file that manages state and transitions. Always inline:
+**Required.** The entry `.behavior` file that manages state and transitions. Always inline:
 
 ```
 behavior analyst.behavior
 ```
+
+The compiler reads this field to locate the entry file, then recursively follows all `merge` declarations to produce the consolidated `agent.behavior` bundle. If this block is absent the compiler throws `E_DESC`. If the path is absolute or escapes the agent root, E014 is emitted. Use `PackOptions.description` to override `.description` file discovery, but the `behavior` block inside the file is always the authoritative source for the entry file name.
 
 ### `requires` — Runtime Prerequisites
 

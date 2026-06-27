@@ -20,13 +20,13 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 ---
 
-## Priority overview (4 remaining)
+## Priority overview (1 remaining)
 
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
 | B1 ✅ | **P0** — blocks publish | `parser-dsl` missing `publishConfig: {access: public}` | parser-dsl | XS |
 | B2 ✅ | **P0** — release decision | Version strategy (0.4.1 / 0.1.3 / 0.1.0 diverge) | all | S |
-| C3 | **P0** — wrong output | `files.jsoo n.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
+| C3 ✅ | **P0** — wrong output | `files.json.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
 | C2 ✅ | **P1** — feature broken e2e | `merge` parsed but not resolved at runtime | kernel-dsl, sdk | M |
 | C1 ✅ | **→ DA01-01** | `on failure` on apply/remove dropped by parser | see `DA01-01-grammar-unfreeze.md` | — |
 | B3 ✅ | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
@@ -112,13 +112,13 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 ## Correctness / DSL
 
-### C3. `files.json.behavior` ignores the `behavior` block — P0
+### C3. ~~`files.json.behavior` ignores the `behavior` block~~ — P0 ✅
 
-**What:** `compiler/src/pack.ts` writes `files.json` with `behavior: 'agent.behavior'` (and `description: 'agent.description'`) as literals. The `.description` source already declares the behavior filename via the `behavior` block → `DescriptionFile.behavior`, which the compiler parses and then **discards**, reading the file directly instead.
+**What:** `compiler/src/pack.ts` wrote `files.json` with `behavior: 'agent.behavior'` (and `description: 'agent.description'`) as literals. The `.description` source already declared the behavior filename via the `behavior` block → `DescriptionFile.behavior`, which the compiler parsed and then **discarded**, reading the file directly instead.
 
-**Why:** A bundle whose behavior file is named anything other than `agent.behavior` gets wrong metadata in `files.json`.
+**Why:** A bundle whose behavior file is named anything other than `agent.behavior` got wrong metadata in `files.json`.
 
-**Change:** use `df.behavior` (and the real `.description` source filename) when building `files.json`. Falls back to the literal only when the block is absent.
+**Done (2026-06-27, branch compiler-consolidation):** `discoverDescriptionFile` (globs `*.description`, E003 on 0 or 2+) + `consolidate` DFS (E012/E013/E014) + `filesJson` with real filenames. E015/E016/W014 post-consolidation lint rules added. `PackOptions.description` for explicit override. See [DA01-02 log](../pre-release/v0.1/DA01-02-compiler-behavior-consolidation.md).
 
 ### C2. ~~Resolve `merge` at runtime~~ — P1 ✅
 
@@ -153,9 +153,9 @@ See [`tasks/DA01-01-grammar-unfreeze.md`](DA01-01-grammar-unfreeze.md) §4.2 ite
 ## Implementation order
 
 ```
-P0:  B1 (publishConfig) ─ independent
-     B2 (version policy) ─ decision, gates the actual publish
-     C3 (behavior filename) ─ independent
+P0:  B1 (publishConfig) ─ independent ✅
+     B2 (version policy) ─ decision, gates the actual publish ✅
+     C3 (behavior filename) ─ independent ✅ (DA01-02 branch)
 
 P1:  C2 (merge runtime) ─ pairs with compiler-api.md task 3
      C4, C5, B3, B4, B5 ─ independent

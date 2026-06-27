@@ -12,8 +12,9 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted |
+| Status | Done |
 | Date | 2026-06-27 |
+| Implemented | 2026-06-27 |
 | Deciders | Danilo Borges |
 | Related | [C3 in pre-public-consolidation](../../tasks/pre-public-consolidation.md) · RFC-0021 (init canonicalization) |
 
@@ -260,7 +261,19 @@ Step 1 is in `parser-dsl` and ships with its own PR (closes platform#1). Steps 2
 
 ---
 
-## 6. Decisions Closed
+## 6. Implementation Status
+
+**Completed 2026-06-27 · branch: compiler-consolidation**
+
+- ✅ PR A (parser-dsl): E017 in `description_parser.rs`; lint-codes.md E017 row; WASM URL path fix in `src/ts/index.ts`
+- ✅ PR B (compiler): `discoverDescriptionFile`, `consolidate` (DFS, E012/E013/E014), `collectFiles` refactor, `filesJson` with real names, `lintBehavior` post-consolidation (E015/E016/W014), `PackOptions.description`; pack.test.ts (25 new cases, 129 total)
+- ✅ PR C (kernel-dsl): `Fsm::new()` → `Result<Self, ParseError>`; entry state via `states.get("init")`; E016 at runtime; 14 tests updated + new E016 regression test
+
+Test coverage: 129 tests (compiler pack.test.ts) + 14 tests (kernel-dsl) — all green. No blockers for merge.
+
+---
+
+## 7. Decisions Closed
 
 | Decision | Resolution | Rationale |
 |---|---|---|
