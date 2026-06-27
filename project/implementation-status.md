@@ -103,7 +103,9 @@ Legend:
 |---|---|---|
 | ✅1️⃣ `init()` → `Promise<void>` (js wrapper) | | `src/ts/index.ts` via tsup; must run before `new AgentDSLKernel()` |
 | ✅1️⃣ `new AgentDSLKernel()` (wasm class ctor) | 🔄 `sdk` | constructed inside `AgentSession` |
-| ✅1️⃣ `load_behavior(text)` → `string` | → `start()` | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON |
+| ✅1️⃣ `load_behavior(text)` → `string` | → `start()` (single-file) | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON |
+| ✅1️⃣ `load_behavior_with_bundle(text, bundle_json)` → `string` | → `start()` | flattens `merge` paths from bundle map; effects JSON |
+| ✅1️⃣ `set_file_resolver(callback: Function)` | → `setFileResolver(fn)` | Mode B fallback; called when bundle lacks a merge path |
 | ✅1️⃣ `send_intent(intent)` → `string` | → `sendIntent(intent)` | effects JSON |
 | ✅1️⃣ `send_offtopic()` → `string` | → `sendOfftopic()` | |
 | ✅1️⃣ `send_event(event)` → `string` | → `sendEvent(event)` | matches global `trigger_decl` |
@@ -129,7 +131,8 @@ Legend:
 |---|---|---|
 | ✅1️⃣ `loadAgent(input: Uint8Array \| ArrayBuffer)` → `Promise<AgentBundle>` | `load.ts` | 🔄 `compiler/core` `parseAboutme` + `extractFiles` |
 | ✅1️⃣ `AgentSession` (class) | `session.ts` | private ctor; wraps `AgentDSLKernel` |
-| ✅1️⃣ `AgentSession.start()` | | 🔄 `kernel.load_behavior` |
+| ✅1️⃣ `AgentSession.start()` | | 🔄 `kernel.load_behavior_with_bundle`; passes `files.behaviors[]` as bundle |
+| ✅1️⃣ `AgentSession.setFileResolver(fn)` | | 🔄 `kernel.set_file_resolver`; Mode B fallback for missing merge paths |
 | ✅1️⃣ `AgentSession.registerHandler(type, handler)` | | pull-style replacement for kernel `observe` |
 | ✅1️⃣ `sendIntent` · `sendEvent` · `sendOfftopic` · `tickPrompt` | | thin wrappers → `dispatchRaw(kernel.*)` |
 | ✅1️⃣ `getState()` · `getValidIntents()` · `getGraph()` | | 🔄 `kernel.get_current_state` / `get_valid_intents` / `get_graph` |
@@ -201,7 +204,7 @@ Legend:
 
 | ☑️✅🧊 DSL | ☑️ Tree-sitter node | ☑️ parser-dsl | ☑️✅🔥 compiler | ⚠️ kernel-dsl | ⚠️ sdk |
 |---|---|---|---|---|---|
-| ✅1️⃣ `merge` | ✅ `merge_decl` | ✅ `BehaviorFile.merges[]` | ✅ resolves for transition lint | ✅ resolved via bundle map; missing files silently skipped | ⚠️ `files.behaviors[]` loaded but not passed to kernel |
+| ✅1️⃣ `merge` | ✅ `merge_decl` | ✅ `BehaviorFile.merges[]` | ✅ resolves for transition lint | ✅ `load_behavior_with_bundle` flattens via bundle (Mode A) or `set_file_resolver` callback (Mode B); missing paths return `Err` | ✅ `files.behaviors[]` passed as bundle; `setFileResolver()` for Mode B fallback |
 | ✅1️⃣ `state` | ✅ `state_decl` | ✅ `StateDef` | ✅ lint + FSM validation | ✅ FSM state map | ✅ transparent via kernel |
 | ✅1️⃣ `goal` | ✅ `goal_stmt` | ✅ `Statement::Goal` | ✅ lint W002 (>280 chars) | ✅ → `Effect::Goal {text}` | ✅ `registerHandler("goal", fn)` |
 | ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W010 (>280 chars) | ✅ → `Effect::Guide {text}` | ✅ `registerHandler("guide", fn)` |

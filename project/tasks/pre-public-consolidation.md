@@ -20,23 +20,23 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 ---
 
-## Priority overview (9 remaining)
+## Priority overview (4 remaining)
 
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
 | B1 ✅ | **P0** — blocks publish | `parser-dsl` missing `publishConfig: {access: public}` | parser-dsl | XS |
 | B2 ✅ | **P0** — release decision | Version strategy (0.4.1 / 0.1.3 / 0.1.0 diverge) | all | S |
-| C3 | **P0** — wrong output | `files.json.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
-| C2 | **P1** — feature broken e2e | `merge` parsed but not resolved at runtime | kernel-dsl, sdk | M |
+| C3 | **P0** — wrong output | `files.jsoo n.behavior` hardcoded, ignores `DescriptionFile.behavior` | compiler | S |
+| C2 ✅ | **P1** — feature broken e2e | `merge` parsed but not resolved at runtime | kernel-dsl, sdk | M |
 | C1 ✅ | **→ DA01-01** | `on failure` on apply/remove dropped by parser | see `DA01-01-grammar-unfreeze.md` | — |
-| B3 | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
-| B4 | **P1** — consumer DX | Rich wasm-bindgen `.d.ts` shadowed by thin stub | parser-dsl, kernel-dsl | S |
+| B3 ✅ | **P1** — misleads contributor | Stale `wasm-pack` defs vs real `build-wasm.sh` | parser-dsl, kernel-dsl | S |
+| B4 ✅ | **P1** — consumer DX | Rich wasm-bindgen `.d.ts` shadowed by thin stub | parser-dsl, kernel-dsl | S |
 | B5 ✅ | **P1** — artifact confusion | `kernel-dsl/pkg-web/` orphan, unreferenced | kernel-dsl | XS |
 | C4 | **P1** — placeholder shipped | `aboutme.purpose` hardcoded `'unknown'`, no DSL source | compiler | S |
 | C5 | **P1** — duplication | Bundle validation duplicated compiler↔sdk | compiler, sdk | S |
-| B6 | **P2** — dedup | UBSan stubs + wasm-bindgen patches written 3× | parser-dsl, kernel-dsl | M |
-| B7 | **P2** — dedup | `build.rs` byte-identical across crates | parser-dsl, kernel-dsl | S |
-| B8 | **P2** — DX / robustness | `tree-sitter` has no `.d.ts`; consumers type-assert | tree-sitter, compiler | S |
+| B6 ✅ | **P2** — dedup | UBSan stubs + wasm-bindgen patches written 3× | parser-dsl, kernel-dsl | M |
+| B7 ✅ | **P2** — dedup | `build.rs` byte-identical across crates | parser-dsl, kernel-dsl | S |
+| B8 ✅ | **P2** — DX / robustness | `tree-sitter` has no `.d.ts`; consumers type-assert | tree-sitter, compiler | S |
 | C6 ✅ | **→ DA01-01** | Dead AST nodes: `OnComplete`/`OnFailed`/`RunStmt.each` | see `DA01-01-grammar-unfreeze.md` | — |
 
 ---
@@ -64,7 +64,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 - **Action at first public publish:** jump all packages to `0.10.x` (from the current `0.4.1` / `0.1.3` / `0.1.0` spread).
 - Grammar stays *preview* while `0.x`; the public freeze is `v1.0`.
 
-### B3. Remove stale `wasm-pack` build definitions — P1
+### B3. ~~Remove stale `wasm-pack` build definitions~~ — P1 ✅
 
 **What:** Both Rust crates' `Cargo.toml` `[package.metadata.scripts]` declare a `wasm-pack build` command that is **not** what runs. The real build is `scripts/build-wasm.sh` (`cargo + wasm-bindgen + wasi-stub`, target `wasm32-wasip1`).
 
@@ -72,7 +72,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** delete the dead `wasm-pack` metadata, or replace it with a comment pointing to `build-wasm.sh`. Verify nothing else references it.
 
-### B4. Stop shadowing the rich wasm-bindgen `.d.ts` — P1
+### B4. ~~Stop shadowing the rich wasm-bindgen `.d.ts`~~ — P1 ✅
 
 **What:** `wasm-bindgen` emits a full `.d.ts` into `pkg/` (e.g. `kernel-dsl/pkg-web/dot_agent_kernel_dsl.d.ts`, ~6.5 KB), but the published root `index.d.ts` is a thin hand-written stub.
 
@@ -88,7 +88,7 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** confirm whether it is a maintained browser target. If yes, wire it into `exports`; if no, delete it and remove any generation step.
 
-### B6. De-duplicate WASM post-processing — P2
+### B6. ~~De-duplicate WASM post-processing~~ — P2 ✅
 
 **What:** UBSan env-stubs are written three times (parser-dsl inline `Proxy`; kernel-dsl `index.js` named list; kernel-dsl `index.browser.js` named list). The wasm-bindgen patches are duplicated (parser-dsl inline in `.sh`; kernel-dsl in `patch-wasm-bindgen.js`).
 
@@ -96,13 +96,13 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** extract a single shared post-processing script and a single init wrapper consumed by both crates.
 
-### B7. Share `build.rs` across crates — P2
+### B7. ~~Share `build.rs` across crates~~ — P2 ✅
 
 **What:** `parser-dsl/build.rs` and `kernel-dsl/build.rs` are byte-for-byte identical (both codegen `node_kinds.rs` from `NODE_TYPES_BEHAVIOR`).
 
 **Change:** move the shared codegen into one place (a small shared build crate or an `include!`d source) so the two cannot drift.
 
-### B8. Give `tree-sitter` a `.d.ts` — P2
+### B8. ~~Give `tree-sitter` a `.d.ts`~~ — P2 ✅
 
 **What:** `@dot-agent/tree-sitter` ships no types; `compiler/src/parser.ts` type-asserts the `require(...)` result.
 
@@ -120,13 +120,11 @@ Each item below was verified against source. Items touching `parser-dsl` and `ke
 
 **Change:** use `df.behavior` (and the real `.description` source filename) when building `files.json`. Falls back to the literal only when the block is absent.
 
-### C2. Resolve `merge` at runtime — P1
+### C2. ~~Resolve `merge` at runtime~~ — P1 ✅
 
-**What:** `merge` is parsed into `BehaviorFile.merges[]`, the compiler resolves it for lint, but the kernel does not resolve merge files at runtime and the SDK loads `files.behaviors[]` without passing them to the kernel.
+**What:** `merge` is parsed into `BehaviorFile.merges[]`, the compiler resolves it for lint, but the kernel did not resolve merge files at runtime and the SDK loaded `files.behaviors[]` without passing them to the kernel.
 
-**Why:** Multi-file behaviors lint clean but do not execute their merged states.
-
-**Change:** wire merge resolution into the load path. Overlaps with `compiler-api.md` task 3 (`resolveMerges`) — coordinate so the SDK feeds resolved behavior to the kernel.
+**Done (2026-06-27):** kernel `flatten_merges` + `load_behavior_with_bundle` (Mode A bundle / Mode B resolver fallback); SDK `AgentSession.start()` passes `files.behaviors[]` as bundle; `setFileResolver()` exposes Mode B to consumers. Missing paths return `Err` (not silently skipped). 13 tests green. See `DA01-01-kernel-runtime.md` §1.
 
 ### C1. ~~Capture `on failure` on apply/remove~~ → moved to DA01-01
 
