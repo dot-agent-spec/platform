@@ -1,6 +1,6 @@
 # dot-agent
 
-Specification and implementation repository for the dot-agent ecosystem — a language and runtime for building deterministic, composable AI agents.
+Monorepo for the dot-agent ecosystem — a language and runtime for building deterministic, composable AI agents.
 
 ---
 
@@ -17,6 +17,21 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 
 ---
 
+## Packages
+
+| Package | Path | Description |
+|---|---|---|
+| `@dot-agent/tree-sitter` | [`packages/tree-sitter`](packages/tree-sitter) | Tree-sitter grammars for `.behavior` and `.description` |
+| `@dot-agent/parser-dsl` | [`packages/parser-dsl`](packages/parser-dsl) | Rust/WASM parser — structured ASTs for compiler, LSP, and runtime |
+| `@dot-agent/kernel-dsl` | [`packages/kernel-dsl`](packages/kernel-dsl) | Rust/WASM FSM execution engine |
+| `@dot-agent/compiler` | [`packages/compiler`](packages/compiler) | Linter, semantic validation, ZIP packaging |
+| `@dot-agent/language-server` | [`packages/language-server`](packages/language-server) | LSP server for IDE support |
+| `@dot-agent/sdk` | [`packages/sdk`](packages/sdk) | Browser-compatible SDK for loading and running agent bundles |
+| `@dot-agent/cli` | [`apps/dot-agent-cli`](apps/dot-agent-cli) | CLI for building, packaging, and running agents |
+| `vscode-dot-agent` | [`apps/vscode-extension`](apps/vscode-extension) | VS Code extension: syntax highlighting, hover docs, LSP |
+
+---
+
 ## Documentation
 
 | Section | Contents |
@@ -25,7 +40,6 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | [`dsl/`](dsl/) | Language reference — syntax, semantics, and design of `.description` and `.behavior` |
 | [`docs/`](docs/) | Implementation reference — compiler APIs, kernel protocol, SDK, architecture |
 | [`project/rfcs/`](project/rfcs/) | Public design proposals for new language and protocol features |
-| [`project/pre-release/`](project/pre-release/) | Pre-1.0 incubation historical logs |
 | [`project/tasks/`](project/tasks/) | Implementation tasks and technical debt tracking |
 | [`examples/`](examples/) | Canonical annotated agent examples |
 
@@ -33,19 +47,39 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 
 ---
 
-## Packages
+## Development
 
-| Package | Description |
-|---|---|
-| `@dot-agent/tree-sitter` | WASM grammar — canonical grammar source |
-| `@dot-agent/parser-dsl` | Rust/WASM parser for `.behavior` and `.description` |
-| `@dot-agent/kernel-dsl` | Rust/WASM FSM execution engine |
-| `@dot-agent/compiler` | Linter, semantic validation, ZIP packaging |
-| `@dot-agent/sdk` | Browser-compatible dispatch layer |
-| `@dot-agent/language-server` | LSP server for IDE support |
-| `@dot-agent/transpiler-core` | ⚠️ Types/interface for transpiler targets (aspirational — see RFC-0018) |
-| `@dot-agent/transpiler-langgraph` | ⚠️ Codegen: `.agent` → LangGraph Python (aspirational — see RFC-0018) |
-| `apps/agy` | Antigravity CLI Plugin — dot-agent runtime embedded in AGY |
+```bash
+# Install all workspace dependencies
+npm install
+
+# Build all packages
+npm run build
+
+# Run all tests
+npm run test
+
+# Build a specific package
+npm run build --workspace=packages/compiler
+```
+
+**WASM packages** (`parser-dsl`, `kernel-dsl`) require Zig 0.13 and Rust with the `wasm32-wasip1` target. See each package's `scripts/build-wasm.sh`.
+
+**Tree-sitter WASM** requires Docker (OrbStack) via `tree-sitter build --wasm`.
+
+---
+
+## Releases
+
+Each package is released independently by pushing a tag:
+
+```
+git tag compiler@0.1.1 && git push origin compiler@0.1.1
+```
+
+Tag conventions: `<package>@<version>` — e.g. `tree-sitter@0.4.1`, `kernel-dsl@0.1.3`, `vscode@0.3.3`.
+
+CI publishes automatically via the corresponding workflow in [`.github/workflows/`](.github/workflows/).
 
 ---
 

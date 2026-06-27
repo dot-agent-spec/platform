@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress — Phase 5 pending |
+| Status | Done |
 | Created | 2026-06-26 |
 | Author | Danilo Borges |
 | Decision | [DA00-05: Monorepo flatten](../adr/DA00-05-monorepo-flatten.md) |
@@ -92,9 +92,12 @@ Flatten `dot-agent-spec` into a genuine git monorepo by removing nested `.git` d
 
 ### Phase 5 — CI and publish (post-flatten)
 
-- [ ] Update npm publish pipelines to run from the monorepo root
-- [ ] Update cargo publish pipelines to run from the monorepo root
-- [ ] Update the root `README.md` to reflect the single-repo structure
+- [x] Create `.github/workflows/publish-ts.yml` — compiler, language-server, sdk, cli (tag-based matrix)
+- [x] Create `.github/workflows/publish-parser-dsl.yml` — WASM (Zig + Rust)
+- [x] Create `.github/workflows/publish-kernel-dsl.yml` — WASM + artifact verification (Zig + Rust)
+- [x] Create `.github/workflows/publish-tree-sitter.yml` — npm + crates.io dual publish
+- [x] Create `.github/workflows/publish-vscode.yml` — builds TS deps, packages vsix, uploads to release
+- [x] Update root `README.md` — packages table, dev setup, release tag convention
 
 ---
 
