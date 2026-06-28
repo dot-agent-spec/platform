@@ -93,6 +93,16 @@ describe('diagnose — description — W003 default domain', () => {
     })
 })
 
+describe('diagnose — behavior — E016 missing init state', () => {
+    it('reports error when no init state exists', async () => {
+        const text = 'state lobby\n  goal "Welcome"\n  interact\n'
+        const diags = await diagnose(BEHAVIOR_URI, 'behavior', text)
+        const e016 = diags.filter(d => d.message.includes('E016'))
+        expect(e016.length).toBeGreaterThan(0)
+        expect(e016[0].severity).toBe(1) // Error
+    })
+})
+
 // ── unknown langId ────────────────────────────────────────────────────────────
 
 describe('diagnose — unknown langId', () => {

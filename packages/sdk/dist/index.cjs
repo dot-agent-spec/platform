@@ -38,30 +38,11 @@ module.exports = __toCommonJS(index_exports);
 // src/load.ts
 var import_jszip = __toESM(require("jszip"), 1);
 var import_core = require("@dot-agent/compiler/core");
-var MAX_ZIP_SIZE = 500 * 1024 * 1024;
-var MAX_COMPRESSION_RATIO = 100;
-function validateMagicBytes(bytes) {
-  if (!(bytes[0] === 80 && bytes[1] === 75 && bytes[2] === 3 && bytes[3] === 4)) {
-    throw new Error("Not a valid .agent file (invalid magic bytes)");
-  }
-}
-function validateZipBomb(zip, compressedSize) {
-  let totalUncompressed = 0;
-  zip.forEach((_path, file) => {
-    if (!file.dir) totalUncompressed += file._data?.uncompressedSize || 0;
-  });
-  if (totalUncompressed > MAX_ZIP_SIZE) {
-    throw new Error(`Bundle exceeds 500MB uncompressed: ${totalUncompressed}`);
-  }
-  if (totalUncompressed / compressedSize > MAX_COMPRESSION_RATIO) {
-    throw new Error(`Compression ratio exceeds 100x: ${(totalUncompressed / compressedSize).toFixed(1)}x`);
-  }
-}
 async function loadAgent(input) {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-  validateMagicBytes(bytes);
+  (0, import_core.validateMagicBytes)(bytes);
   const zip = await import_jszip.default.loadAsync(bytes);
-  validateZipBomb(zip, bytes.length);
+  (0, import_core.validateZipBomb)(zip, bytes.length);
   const aboutmeFile = zip.file(".agent/aboutme.json");
   if (!aboutmeFile) throw new Error("Missing .agent/aboutme.json in bundle");
   const aboutme = (0, import_core.parseAboutme)(JSON.parse(await aboutmeFile.async("text")));
@@ -114,6 +95,11 @@ var AgentSession = class _AgentSession {
     await (0, import_kernel_dsl.init)();
     const kernel = new import_kernel_dsl.AgentDSLKernel();
     return new _AgentSession(kernel, bundle);
+  }
+  // Register a synchronous fallback called when a `merge "…"` path is not in the bundle.
+  // Must be called before start(). Return null/undefined if the path cannot be resolved.
+  setFileResolver(resolver) {
+    this.kernel.set_file_resolver(resolver);
   }
   // Call after registerHandler() — loads the behavior and fires initial effects.
   // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.

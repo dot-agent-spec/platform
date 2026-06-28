@@ -37,6 +37,7 @@ declare class AgentSession {
     readonly bundle: AgentBundle;
     private constructor();
     static create(bundle: AgentBundle): Promise<AgentSession>;
+    setFileResolver(resolver: (path: string) => string | null | undefined): void;
     start(): void;
     registerHandler(effectType: string, handler: EffectHandler): void;
     private dispatchRaw;

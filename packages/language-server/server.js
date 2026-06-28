@@ -22,6 +22,9 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import bpInit, { get_graph } from '@dot-agent/parser-dsl';
+import { consolidate } from '@dot-agent/compiler';
+import { fileURLToPath } from 'url';
+import { dirname, basename } from 'node:path';
 
 import { initParsers, parse, evict, nodesOfType } from './parser.js';
 
@@ -163,10 +166,19 @@ connection.onDocumentFormatting(({ textDocument }) => {
 
 // ── Behavior Graph (custom request) ──────────────────────────────────────────
 
-connection.onRequest('agent/behaviorGraph', ({ uri }) => {
+connection.onRequest('agent/behaviorGraph', async ({ uri }) => {
     const doc = documents.get(uri);
     if (!doc || doc.languageId !== 'behavior') return null;
-    return get_graph(doc.getText());
+    const text = doc.getText();
+    if (/^\s*merge\s+/m.test(text)) {
+        try {
+            let filePath;
+            try { filePath = fileURLToPath(uri); } catch { filePath = uri; }
+            const { mergedText } = await consolidate(dirname(filePath), basename(filePath));
+            return get_graph(mergedText);
+        } catch { /* fallback to single-file graph */ }
+    }
+    return get_graph(text);
 });
 
 // ── Current State at Position (custom request) ────────────────────────────────

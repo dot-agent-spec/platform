@@ -1,25 +1,6 @@
 // src/load.ts
 import JSZip from "jszip";
-import { parseAboutme, extractFiles } from "@dot-agent/compiler/core";
-var MAX_ZIP_SIZE = 500 * 1024 * 1024;
-var MAX_COMPRESSION_RATIO = 100;
-function validateMagicBytes(bytes) {
-  if (!(bytes[0] === 80 && bytes[1] === 75 && bytes[2] === 3 && bytes[3] === 4)) {
-    throw new Error("Not a valid .agent file (invalid magic bytes)");
-  }
-}
-function validateZipBomb(zip, compressedSize) {
-  let totalUncompressed = 0;
-  zip.forEach((_path, file) => {
-    if (!file.dir) totalUncompressed += file._data?.uncompressedSize || 0;
-  });
-  if (totalUncompressed > MAX_ZIP_SIZE) {
-    throw new Error(`Bundle exceeds 500MB uncompressed: ${totalUncompressed}`);
-  }
-  if (totalUncompressed / compressedSize > MAX_COMPRESSION_RATIO) {
-    throw new Error(`Compression ratio exceeds 100x: ${(totalUncompressed / compressedSize).toFixed(1)}x`);
-  }
-}
+import { parseAboutme, extractFiles, validateMagicBytes, validateZipBomb } from "@dot-agent/compiler/core";
 async function loadAgent(input) {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
   validateMagicBytes(bytes);
@@ -77,6 +58,11 @@ var AgentSession = class _AgentSession {
     await initKernel();
     const kernel = new AgentDSLKernel();
     return new _AgentSession(kernel, bundle);
+  }
+  // Register a synchronous fallback called when a `merge "…"` path is not in the bundle.
+  // Must be called before start(). Return null/undefined if the path cannot be resolved.
+  setFileResolver(resolver) {
+    this.kernel.set_file_resolver(resolver);
   }
   // Call after registerHandler() — loads the behavior and fires initial effects.
   // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.

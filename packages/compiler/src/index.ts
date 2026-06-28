@@ -28,7 +28,7 @@ export { parseId, buildId, extractDigest, extractName } from './id.js'
 export { readZip, writeZip, createZip, extractFiles, validateZipBomb, validateMagicBytes } from './zip.js'
 
 // Pack pipeline
-export { pack, collectFiles } from './pack.js'
+export { pack, collectFiles, consolidate } from './pack.js'
 
 // Types
 export type {
