@@ -21,7 +21,7 @@ import {
     TextDocumentSyncKind,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import bpInit, { get_graph } from '@dot-agent/parser-dsl';
+import { init as bpInit, get_graph } from '@dot-agent/parser-dsl';
 import { consolidate } from '@dot-agent/compiler';
 import { fileURLToPath } from 'url';
 import { dirname, basename } from 'node:path';

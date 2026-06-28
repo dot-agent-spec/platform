@@ -48,7 +48,8 @@
     }
   },
   "files": [
-    "dist/"
+    "dist/",
+    "pkg/"
   ],
   "scripts": {
     "build": "cargo test -p dot-agent-parser-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup",
