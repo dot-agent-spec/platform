@@ -15,7 +15,7 @@
 pub mod fsm;
 pub mod memory;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::effect::{Effect, MemValue};
 use dot_agent_parser_dsl::{self as parser, ast::BehaviorFile, ParseError};
@@ -48,10 +48,10 @@ impl AgentDSLKernel {
     pub fn load_behavior_with_bundle(
         &mut self,
         main_text: &str,
-        bundle: &HashMap<String, String>,
+        bundle: &BTreeMap<String, String>,
     ) -> Result<Vec<Effect>, ParseError> {
         let behavior_file = parser::parse_behavior(main_text)?;
-        let mut visited = HashSet::new();
+        let mut visited = BTreeSet::new();
         let flattened = self.flatten_merges(behavior_file, bundle, &mut visited)?;
         let mut fsm = Fsm::new(flattened)?;
         let effects = fsm.enter_current_state(&mut self.memory);
@@ -62,8 +62,8 @@ impl AgentDSLKernel {
     fn flatten_merges(
         &self,
         mut behavior: BehaviorFile,
-        bundle: &HashMap<String, String>,
-        visited: &mut HashSet<String>,
+        bundle: &BTreeMap<String, String>,
+        visited: &mut BTreeSet<String>,
     ) -> Result<BehaviorFile, ParseError> {
         let mut missing: Vec<String> = Vec::new();
         for path in std::mem::take(&mut behavior.merges) {
@@ -159,6 +159,7 @@ impl AgentDSLKernel {
 mod tests {
     use super::*;
     use crate::effect::Effect;
+    use std::collections::BTreeMap;
 
     fn kernel_with(dsl: &str) -> AgentDSLKernel {
         let mut k = AgentDSLKernel::new();
@@ -220,7 +221,7 @@ mod tests {
 
     #[test]
     fn mode_a_bundle_resolves_merge_and_transitions_to_merged_state() {
-        let mut bundle = HashMap::new();
+        let mut bundle = BTreeMap::new();
         bundle.insert("shared.behavior".to_string(), SHARED_DSL.to_string());
 
         let mut k = AgentDSLKernel::new();
@@ -247,7 +248,7 @@ mod tests {
         }));
 
         // Empty bundle — resolver must handle the path
-        k.load_behavior_with_bundle(MAIN_DSL, &HashMap::new()).expect("should load via resolver");
+        k.load_behavior_with_bundle(MAIN_DSL, &BTreeMap::new()).expect("should load via resolver");
 
         assert_eq!(k.get_current_state(), "init");
 
@@ -261,7 +262,7 @@ mod tests {
     fn merge_missing_path_is_an_error() {
         let dsl = "merge \"nonexistent.behavior\"\nstate init\n  interact\n";
         let mut k = AgentDSLKernel::new();
-        let result = k.load_behavior_with_bundle(dsl, &HashMap::new());
+        let result = k.load_behavior_with_bundle(dsl, &BTreeMap::new());
         assert!(result.is_err(), "missing merge with no resolver must return an error");
         let err = result.unwrap_err();
         assert!(err.0.contains("nonexistent.behavior"), "error must name the missing path");
@@ -272,7 +273,7 @@ mod tests {
         let dsl = "merge \"nonexistent.behavior\"\nstate init\n  interact\n";
         let mut k = AgentDSLKernel::new();
         k.set_file_resolver(Box::new(|_| None));
-        let result = k.load_behavior_with_bundle(dsl, &HashMap::new());
+        let result = k.load_behavior_with_bundle(dsl, &BTreeMap::new());
         assert!(result.is_err(), "resolver returning None must still produce an error");
     }
 
@@ -285,7 +286,7 @@ mod tests {
             "  goal \"from main\"\n",
             "  interact\n",
         );
-        let mut bundle = HashMap::new();
+        let mut bundle = BTreeMap::new();
         bundle.insert("shared.behavior".to_string(), shared.to_string());
 
         let mut k = AgentDSLKernel::new();

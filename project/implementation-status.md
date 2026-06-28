@@ -20,8 +20,10 @@ Legend:
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
 | **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
-> ⚠️ **Build / packaging gap remanescente** — full history in [DA00-06 build-pipeline-investigation](pre-release/v0.1/DA00-06-build-pipeline-investigation.md) (DA00-06 concluído):
-> - Versions divergem: tree-sitter `0.4.1`, kernel-dsl `0.1.3`, others `0.1.0`.
+> ⚠️ **Gap remanescente** — full history in [DA00-06 build-pipeline-investigation](pre-release/v0.1/DA00-06-build-pipeline-investigation.md):
+> - Versions divergem: tree-sitter `0.4.1`, kernel-dsl `0.1.3`, others `0.1.0` → bump para `0.10.0` pendente (DA00-02).
+>
+> ✅ **Compliance check 2026-06-27** — todos os testes verdes: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolvido via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrigido; `CONTRIBUTING.md` criado. Ver [compliance-check-2026-06-27.md](pre-release/v0.1/compliance-check-2026-06-27.md).
 
 ---
 

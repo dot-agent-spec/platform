@@ -15,6 +15,7 @@
 mod effect;
 mod engine;
 
+use std::collections::BTreeMap;
 use engine::AgentDSLKernel as Inner;
 use js_sys::Function;
 use wasm_bindgen::prelude::*;
@@ -94,7 +95,7 @@ impl AgentDSLKernel {
     /// Paths not found in the bundle fall through to the resolver registered via `set_file_resolver`.
     /// Returns effects JSON identical to `load_behavior`.
     pub fn load_behavior_with_bundle(&mut self, main_text: &str, bundle_json: &str) -> String {
-        let bundle: std::collections::HashMap<String, String> =
+        let bundle: BTreeMap<String, String> =
             serde_json::from_str(bundle_json).unwrap_or_default();
         let effects = match self.inner.load_behavior_with_bundle(main_text, &bundle) {
             Ok(fx) => fx,

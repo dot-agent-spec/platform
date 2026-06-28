@@ -21,16 +21,16 @@ const ABOUTME = {
 }
 
 const BEHAVIOR = `
-state welcome
+state init
   goal "Hello from SDK"
   interact
   on intent "next" transition to goodbye
-  on offtopic transition to welcome
+  on offtopic transition to init
 
 state goodbye
   goal "All done"
   interact
-  on intent "restart" transition to welcome
+  on intent "restart" transition to init
   on offtopic transition to goodbye
 `
 
@@ -98,7 +98,7 @@ test('AgentSession.start() dispatches initial goal and interact effects', async 
   assert.ok(goalEffect, 'Expected a goal effect')
   assert.equal(goalEffect.text, 'Hello from SDK')
 
-  assert.equal(session.getState(), 'welcome')
+  assert.equal(session.getState(), 'init')
   session.dispose()
 })
 
@@ -113,7 +113,7 @@ test('AgentSession.sendIntent transitions state', async () => {
   session.registerHandler('transition', (e) => collected.push(e))
 
   session.start()
-  assert.equal(session.getState(), 'welcome')
+  assert.equal(session.getState(), 'init')
 
   collected.length = 0
   session.sendIntent('next')
@@ -149,9 +149,9 @@ test('AgentSession.getGraph returns topology', async () => {
 
   const scxml = session.getGraph()
   assert.ok(typeof scxml === 'string' && scxml.includes('<scxml'), 'getGraph should return SCXML')
-  assert.ok(scxml.includes('id="welcome"'), 'graph should contain welcome state')
-  assert.ok(scxml.match(/id="welcome"[^>]*_active="true"|_active="true"[^>]*id="welcome"/),
-    'welcome state should be the active state')
+  assert.ok(scxml.includes('id="init"'), 'graph should contain init state')
+  assert.ok(scxml.match(/id="init"[^>]*_active="true"|_active="true"[^>]*id="init"/),
+    'init state should be the active state')
 
   session.dispose()
 })
