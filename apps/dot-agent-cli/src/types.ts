@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type { AboutMe, LintMessage, PackOptions, PackResult, Integrity } from '@dot-agent/compiler'
+import type { AboutMe, AgentBundle, LintMessage, PackOptions, PackResult, Integrity } from '@dot-agent/compiler'
+import type { AgentSession } from '@dot-agent/sdk'
 
-export type { AboutMe, LintMessage, PackOptions, PackResult, Integrity }
+export type { AboutMe, AgentBundle, LintMessage, PackOptions, PackResult, Integrity }
 
 export interface InitOptions {
   name?: string
@@ -42,27 +43,14 @@ export interface UnpackResult {
 
 export interface RunOptions {
   source: string
+  mcp?: boolean
+  mcpTransport?: 'stdio' | 'http'
+  mcpPort?: number
 }
 
-export interface FileEntry {
-  path: string
-  content: string
-}
-
-export interface AgentContext {
-  id: string
-  description: any
-  behavior: any
-  kernel: any
-  files: {
-    soul?: string
-    guides: FileEntry[]
-    knowledge: FileEntry[]
-    behaviors: FileEntry[]
-  }
-  aboutme: AboutMe
-  on(event: string, listener: (...args: any[]) => void): this
-  emit(event: string, ...args: any[]): boolean
+export interface RunResult {
+  bundle: AgentBundle
+  session: AgentSession
 }
 
 export interface Skill {

@@ -83,21 +83,22 @@ describe('CLI Commands Integration', () => {
   })
 
   it('executes project using run command on local directory', async () => {
-    const context = await run({
+    const result = await run({
       source: tempDir,
     })
 
-    expect(context.id).toBe('local/my-agent:v1.0')
-    expect(context.aboutme.name).toBe('my-agent')
-    expect(context.files.soul).toContain('# my-agent')
+    expect(result.bundle.id).toContain('my-agent')
+    expect(result.bundle.aboutme.name).toBe('my-agent')
+    expect(result.bundle.files.soul).toContain('# my-agent')
+    expect(result.session.getState()).toBeTruthy()
   })
 
   it('executes project using run command on .agent bundle', async () => {
-    const context = await run({
+    const result = await run({
       source: outAgent,
     })
 
-    expect(context.id).toBe('test.com/my-agent:v1.2.3~abc1234')
-    expect(context.aboutme.name).toBe('my-agent')
+    expect(result.bundle.id).toBe('test.com/my-agent:v1.2.3~abc1234')
+    expect(result.bundle.aboutme.name).toBe('my-agent')
   })
 })

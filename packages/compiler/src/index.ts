@@ -30,6 +30,9 @@ export { readZip, writeZip, createZip, extractFiles, validateZipBomb, validateMa
 // Pack pipeline
 export { pack, collectFiles, consolidate } from './pack.js'
 
+// Bundle from directory (Node-only)
+export { bundleFromDir } from './bundle.js'
+
 // Types
 export type {
   LangId,
@@ -49,6 +52,8 @@ export type {
   TriggerDecl,
   Integrity,
   AboutMe,
+  AgentBundle,
+  AgentFiles,
   PackOptions,
   PackResult,
   BuildAboutmeOptions,

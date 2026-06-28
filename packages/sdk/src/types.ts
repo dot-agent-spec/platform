@@ -12,24 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type { AboutMe } from '@dot-agent/compiler/core'
+import type { AboutMe, AgentBundle, AgentFiles } from '@dot-agent/compiler/core'
 
-export type { AboutMe }
-
-export interface AgentFiles {
-  description: string
-  behavior: string
-  soul?: string
-  guides: Array<{ path: string; content: string }>
-  knowledge: Array<{ path: string; content: string }>
-  behaviors: Array<{ path: string; content: string }>
-}
-
-export interface AgentBundle {
-  id: string
-  aboutme: AboutMe
-  files: AgentFiles
-}
+export type { AboutMe, AgentBundle, AgentFiles }
 
 export type EffectHandler = (effect: Effect) => void | Promise<void>
 

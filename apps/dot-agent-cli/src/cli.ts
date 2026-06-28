@@ -15,7 +15,9 @@
 // limitations under the License.
 
 import { createRequire } from 'module'
-import { init, pack, unpack, run } from './index.js'
+import { fileURLToPath } from 'url'
+import { join, dirname } from 'path'
+import { init, pack, unpack, run, installSkill } from './index.js'
 
 const require = createRequire(import.meta.url)
 const { version } = require('../package.json')
@@ -87,15 +89,35 @@ async function main() {
       formatSuccess(`Unpacked to ${result.dir}`)
       console.log(`  ID: ${result.id}`)
       console.log(`  Files: ${result.files.length}`)
+    } else if (command === 'install-skill') {
+      const result = await installSkill()
+      formatSuccess(`Skill installed → ${result.dest}`)
+      console.log(`  Add to CLAUDE.md: @~/.claude/skills/dot-agent/SKILL.md`)
     } else if (command === 'run') {
-      const source = args[1]
-      if (!source) {
-        formatError('Usage: dot-agent run <file.agent | dir>')
+      const isHelper = args.includes('--helper')
+      const sourceArg = isHelper ? undefined : args[1]
+
+      if (!isHelper && !sourceArg) {
+        formatError('Usage: dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]')
+        formatError('       dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]')
         process.exit(1)
       }
 
-      const context = await run({ source })
-      formatSuccess(`Agent loaded: ${context.id}`)
+      const runArgs = isHelper ? args.slice(1) : args.slice(2)
+      const mcp = runArgs.includes('--mcp') || isHelper
+      const mcpTransportIdx = runArgs.indexOf('--mcp-transport')
+      const mcpPortIdx = runArgs.indexOf('--mcp-port')
+      const mcpTransport = mcpTransportIdx !== -1 ? runArgs[mcpTransportIdx + 1] as 'stdio' | 'http' : undefined
+      const mcpPort = mcpPortIdx !== -1 ? parseInt(runArgs[mcpPortIdx + 1], 10) : undefined
+
+      const helperAsset = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'helper.agent')
+      const source = isHelper ? helperAsset : sourceArg!
+
+      const result = await run({ source, mcp, mcpTransport, mcpPort })
+      if (!mcp) {
+        formatSuccess(`Agent loaded: ${result.bundle.id}`)
+        console.log(`  State: ${result.session.getState()}`)
+      }
     } else {
       console.log(`dot-agent CLI v${version}
 
@@ -103,7 +125,9 @@ Usage:
   dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]
   dot-agent pack [--dir <dir>] [--out <file>] [--commit <hash>] [--version <tag>]
   dot-agent unpack <file.agent> [--out <dir>] [--force]
-  dot-agent run <file.agent | dir>
+  dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]
+  dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
+  dot-agent install-skill
 `)
     }
   } catch (err: any) {

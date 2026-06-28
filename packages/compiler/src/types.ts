@@ -94,6 +94,21 @@ export interface AboutMe {
   integrity: Integrity
 }
 
+export interface AgentFiles {
+  description: string
+  behavior: string
+  soul?: string
+  guides: Array<{ path: string; content: string }>
+  knowledge: Array<{ path: string; content: string }>
+  behaviors: Array<{ path: string; content: string }>
+}
+
+export interface AgentBundle {
+  id: string
+  aboutme: AboutMe
+  files: AgentFiles
+}
+
 export interface PackOptions {
   dir?: string
   out?: string

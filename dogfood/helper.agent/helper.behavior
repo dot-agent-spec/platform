@@ -1,0 +1,245 @@
+state init
+  guide "Topics: about, dsl, mcp, generate, example"
+  on intent "about"
+    transition to about
+  on intent "dsl"
+    transition to dsl_overview
+  on intent "mcp"
+    transition to mcp_overview
+  on intent "generate"
+    transition to generate_overview
+  on intent "example"
+    transition to example
+  on offtopic
+    transition to init
+
+state about
+  guide "dot-agent builds FSM-based agents. A .description file declares metadata. A .behavior file defines states and intents. The kernel executes the FSM and emits effects: goal, guide, teach, request_interact, transition, set_memory."
+  on intent "dsl"
+    transition to dsl_overview
+  on intent "mcp"
+    transition to mcp_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to about
+
+state dsl_overview
+  guide "An agent project has: a .description file, a .behavior file, an optional SOUL.md persona, and optional guides/ and knowledge/ directories."
+  on intent "dsl_description"
+    transition to dsl_description
+  on intent "dsl_behavior"
+    transition to dsl_behavior
+  on intent "dsl_memory"
+    transition to dsl_memory
+  on intent "dsl_persona"
+    transition to dsl_persona
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_overview
+
+state dsl_description
+  guide "The .description file declares agent metadata. Required: agent name, domain, description block, behavior path. Optional: version, license, persona, capabilities."
+  teach "dsl-description.md"
+  on intent "dsl_behavior"
+    transition to dsl_behavior
+  on intent "dsl_overview"
+    transition to dsl_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_description
+
+state dsl_behavior
+  guide "The .behavior file defines FSM states. Every behavior must have a state named init. States contain on intent handlers and emit effects."
+  teach "dsl-behavior.md"
+  on intent "dsl_states"
+    transition to dsl_states
+  on intent "dsl_effects"
+    transition to dsl_effects
+  on intent "dsl_overview"
+    transition to dsl_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_behavior
+
+state dsl_states
+  guide "State blocks: effects at the top, then on intent and on offtopic handlers. After statements create count-gated transitions."
+  teach "dsl-states.md"
+  on intent "dsl_behavior"
+    transition to dsl_behavior
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_states
+
+state dsl_effects
+  guide "Effects fire when a state is entered or when a handler matches. Available: goal, guide, teach, interact, transition to, run script."
+  teach "dsl-effects.md"
+  on intent "dsl_behavior"
+    transition to dsl_behavior
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_effects
+
+state dsl_memory
+  guide "4 memory domains with different lifetimes: context, session, worksession, user. Set from behavior via set_memory. Inject from host via inject_memory. Read all via getMemory."
+  teach "dsl-memory.md"
+  on intent "dsl_behavior"
+    transition to dsl_behavior
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_memory
+
+state dsl_persona
+  guide "SOUL.md defines the agent voice, values, and behavioral rules. Referenced via persona in the .description file. Exposed as dot-agent://persona in MCP server mode."
+  on intent "dsl_overview"
+    transition to dsl_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to dsl_persona
+
+state mcp_overview
+  guide "MCP server mode: dot-agent run source --mcp. Exposes 5 tools and 9 resources. Loop: read dot-agent://state and dot-agent://intents, call send_intent, read effects from result, repeat."
+  on intent "mcp_tools"
+    transition to mcp_tools
+  on intent "mcp_resources"
+    transition to mcp_resources
+  on intent "mcp_effects"
+    transition to mcp_effects
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to mcp_overview
+
+state mcp_tools
+  guide "5 tools: send_intent, send_event, send_offtopic, tick_prompt, inject_memory. Each returns effects synchronously in the call result."
+  teach "mcp-tools.md"
+  on intent "mcp_overview"
+    transition to mcp_overview
+  on intent "mcp_effects"
+    transition to mcp_effects
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to mcp_tools
+
+state mcp_resources
+  guide "9 resources under the dot-agent:// scheme: howto, manifest, state, intents, graph, memory, persona, guides/name, knowledge/name."
+  teach "mcp-resources.md"
+  on intent "mcp_overview"
+    transition to mcp_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to mcp_resources
+
+state mcp_effects
+  guide "Effects are returned as an array in every tool call result. Types: goal, guide, teach, request_interact, transition, set_memory."
+  teach "mcp-effects.md"
+  on intent "mcp_overview"
+    transition to mcp_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to mcp_effects
+
+state generate_overview
+  guide "Authoring steps: (1) create .description, (2) create .behavior with init state, (3) optionally add SOUL.md and guides/knowledge, (4) validate with dot-agent run, (5) pack with dot-agent pack."
+  on intent "gen_description"
+    transition to gen_description
+  on intent "gen_behavior"
+    transition to gen_behavior
+  on intent "gen_patterns"
+    transition to gen_patterns
+  on intent "gen_validate"
+    transition to gen_validate
+  on intent "gen_pack"
+    transition to gen_pack
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to generate_overview
+
+state gen_description
+  guide "Required .description fields: agent name, domain, description block, behavior path. Optional: version, license, persona, capabilities."
+  teach "gen-description.md"
+  on intent "gen_behavior"
+    transition to gen_behavior
+  on intent "generate_overview"
+    transition to generate_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to gen_description
+
+state gen_behavior
+  guide "Every .behavior must have a state named init. States contain intent handlers and effects. Use guide and goal for short inline text, teach with a filename for examples."
+  teach "gen-behavior.md"
+  on intent "gen_description"
+    transition to gen_description
+  on intent "gen_patterns"
+    transition to gen_patterns
+  on intent "gen_validate"
+    transition to gen_validate
+  on intent "generate_overview"
+    transition to generate_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to gen_behavior
+
+state gen_patterns
+  guide "Three patterns: (1) simple responder - handles everything in init, (2) multi-stage workflow - linear state progression, (3) memory-aware - uses set_memory to store context."
+  teach "gen-patterns.md"
+  on intent "gen_behavior"
+    transition to gen_behavior
+  on intent "gen_validate"
+    transition to gen_validate
+  on intent "generate_overview"
+    transition to generate_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to gen_patterns
+
+state gen_validate
+  guide "Validate with: dot-agent run /path/to/dir. Errors block, warnings go to stderr. Key codes: E003 no .description, E016 no init state, E014 path escapes root, E012 merge target missing."
+  teach "gen-validate.md"
+  on intent "gen_pack"
+    transition to gen_pack
+  on intent "generate_overview"
+    transition to generate_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to gen_validate
+
+state gen_pack
+  guide "Pack to a .agent bundle: dot-agent pack /path/to/dir. Use --out for explicit output path. Runs the same lint as run. Output is a single .agent zip file."
+  teach "gen-pack.md"
+  on intent "gen_validate"
+    transition to gen_validate
+  on intent "generate_overview"
+    transition to generate_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to gen_pack
+
+state example
+  guide "A complete minimal agent: a greeter that remembers the user name. Navigate to dsl or generate for more depth."
+  teach "example-agent.md"
+  on intent "dsl"
+    transition to dsl_overview
+  on intent "generate"
+    transition to generate_overview
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to example

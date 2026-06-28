@@ -21,6 +21,8 @@ export { createZip, extractFiles, validateMagicBytes, validateZipBomb } from './
 
 export type {
   AboutMe,
+  AgentBundle,
+  AgentFiles,
   Capability,
   AnnotatedRef,
   DescriptionFile,

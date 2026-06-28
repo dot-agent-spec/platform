@@ -18,6 +18,7 @@ import type { AgentBundle, Effect, EffectHandler } from './types.js'
 export class AgentSession {
   private kernel: AgentDSLKernel
   private handlers = new Map<string, EffectHandler>()
+  private effectListener?: (effect: Effect) => void
   readonly bundle: AgentBundle
 
   private constructor(kernel: AgentDSLKernel, bundle: AgentBundle) {
@@ -56,6 +57,10 @@ export class AgentSession {
     this.handlers.set(effectType, handler)
   }
 
+  setEffectListener(listener: ((effect: Effect) => void) | undefined): void {
+    this.effectListener = listener
+  }
+
   private dispatchRaw(raw: string): void {
     if (!raw) return
     let effects: Effect[]
@@ -67,6 +72,7 @@ export class AgentSession {
     }
     if (!Array.isArray(effects)) return
     for (const effect of effects) {
+      this.effectListener?.(effect)
       const handler = this.handlers.get(effect.type)
       if (handler) {
         Promise.resolve(handler(effect)).catch(err => {

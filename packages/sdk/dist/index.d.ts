@@ -1,28 +1,6 @@
-import { AboutMe } from '@dot-agent/compiler/core';
-export { AboutMe } from '@dot-agent/compiler/core';
+import { AgentBundle } from '@dot-agent/compiler/core';
+export { AboutMe, AgentBundle, AgentFiles } from '@dot-agent/compiler/core';
 
-interface AgentFiles {
-    description: string;
-    behavior: string;
-    soul?: string;
-    guides: Array<{
-        path: string;
-        content: string;
-    }>;
-    knowledge: Array<{
-        path: string;
-        content: string;
-    }>;
-    behaviors: Array<{
-        path: string;
-        content: string;
-    }>;
-}
-interface AgentBundle {
-    id: string;
-    aboutme: AboutMe;
-    files: AgentFiles;
-}
 type EffectHandler = (effect: Effect) => void | Promise<void>;
 interface Effect {
     type: string;
@@ -34,12 +12,14 @@ declare function loadAgent(input: Uint8Array | ArrayBuffer): Promise<AgentBundle
 declare class AgentSession {
     private kernel;
     private handlers;
+    private effectListener?;
     readonly bundle: AgentBundle;
     private constructor();
     static create(bundle: AgentBundle): Promise<AgentSession>;
     setFileResolver(resolver: (path: string) => string | null | undefined): void;
     start(): void;
     registerHandler(effectType: string, handler: EffectHandler): void;
+    setEffectListener(listener: ((effect: Effect) => void) | undefined): void;
     private dispatchRaw;
     sendIntent(intent: string): void;
     sendEvent(event: string): void;
@@ -57,4 +37,4 @@ declare class AgentSession {
     dispose(): void;
 }
 
-export { type AgentBundle, type AgentFiles, AgentSession, type Effect, type EffectHandler, loadAgent };
+export { AgentSession, type Effect, type EffectHandler, loadAgent };

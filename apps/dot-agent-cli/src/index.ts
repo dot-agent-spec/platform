@@ -16,6 +16,7 @@ export { init } from './commands/init.js'
 export { pack } from './commands/pack.js'
 export { unpack } from './commands/unpack.js'
 export { run } from './commands/run.js'
+export { installSkill } from './commands/install-skill.js'
 
 export type {
   InitOptions,
@@ -25,10 +26,10 @@ export type {
   UnpackOptions,
   UnpackResult,
   RunOptions,
-  AgentContext,
-  FileEntry,
+  RunResult,
   LintMessage,
   AboutMe,
+  AgentBundle,
   Skill,
   Integrity,
   ParsedDescription,

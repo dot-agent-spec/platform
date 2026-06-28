@@ -49,6 +49,7 @@ import { AgentDSLKernel, init as initKernel } from "@dot-agent/kernel-dsl";
 var AgentSession = class _AgentSession {
   kernel;
   handlers = /* @__PURE__ */ new Map();
+  effectListener;
   bundle;
   constructor(kernel, bundle) {
     this.kernel = kernel;
@@ -81,6 +82,9 @@ var AgentSession = class _AgentSession {
   registerHandler(effectType, handler) {
     this.handlers.set(effectType, handler);
   }
+  setEffectListener(listener) {
+    this.effectListener = listener;
+  }
   dispatchRaw(raw) {
     if (!raw) return;
     let effects;
@@ -92,6 +96,7 @@ var AgentSession = class _AgentSession {
     }
     if (!Array.isArray(effects)) return;
     for (const effect of effects) {
+      this.effectListener?.(effect);
       const handler = this.handlers.get(effect.type);
       if (handler) {
         Promise.resolve(handler(effect)).catch((err) => {

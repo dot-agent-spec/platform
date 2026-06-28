@@ -57,7 +57,8 @@
   },
   "dependencies": {
     "@dot-agent/compiler": "*",
-    "@dot-agent/sdk": "*"
+    "@dot-agent/sdk": "*",
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,0 +1,12 @@
+agent dot-agent-helper
+  domain dot-agent
+  license Apache-2.0
+
+description
+  Interactive guide for the dot-agent platform. Covers what dot-agent is, the DSL, MCP interaction, and how to generate new agents.
+
+behavior helper.behavior
+
+capabilities
+  explain "Explains dot-agent concepts interactively via FSM navigation"
+  generate "Guides LLM clients through authoring new .agent files"
