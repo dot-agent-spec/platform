@@ -267,7 +267,7 @@ export async function lintBehavior(
       const { line, col } = nodePosition(nameNode ?? stateNode)
       messages.push({
         file, line, col, severity: 'warning', code: 'W013',
-        message: `'interact' without 'goal' — the prettifier will insert one. To set it explicitly, add 'goal "..."' before 'interact'.`,
+        message: `'interact' without 'goal'. Add 'goal "..."' before 'interact'.`,
       })
     }
 
@@ -276,7 +276,7 @@ export async function lintBehavior(
       const { line, col } = nodePosition(nameNode ?? stateNode)
       messages.push({
         file, line, col, severity: 'warning', code: 'W012',
-        message: `'goal' is only valid in an oriented state. Add 'interact' or remove 'goal' — the prettifier can adjust this.`,
+        message: `'goal' is only valid in an oriented state. Add 'interact' or remove 'goal'.`,
       })
     }
 
@@ -387,7 +387,7 @@ export async function lintBehavior(
       const { line, col } = nodePosition(strNode)
       messages.push({
         file, line, col, severity: 'warning', code: 'W002',
-        message: `Text block exceeds 280 characters (${content.length}). Consider using 'teach' to load long goal text from an external file.`,
+        message: `Text block exceeds 280 characters (${content.length}). Consider using 'guide' to load long orientation text from an external text file.`,
       })
     }
   }
@@ -404,7 +404,7 @@ export async function lintBehavior(
       const stateName = p?.childForFieldName('name')?.text ?? '?'
       messages.push({
         file, line, col, severity: 'warning', code: 'W010',
-        message: `'guide' text in state '${stateName}' is ${content.length} characters (limit: 280). Consider using an external file.`,
+        message: `'guide' text in state '${stateName}' is ${content.length} characters. Consider using an external file.`,
       })
     }
   }
