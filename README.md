@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/header.png" alt="dot-agent" width="800">
+</p>
+
 # dot-agent
 
 Monorepo for the dot-agent ecosystem — a language and runtime for building deterministic, composable AI agents.
