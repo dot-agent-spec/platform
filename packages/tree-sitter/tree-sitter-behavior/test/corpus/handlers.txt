@@ -1,0 +1,127 @@
+================================================================================
+on intent: forma inline (transition)
+================================================================================
+
+state s
+  goal "g"
+  interact
+  on intent "go" transition to next
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+on intent: forma bloco + end
+================================================================================
+
+state s
+  goal "g"
+  interact
+  on intent "help"
+    run script "log.sh"
+    set session.helped = true
+    transition to support
+  end
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (block
+          (run_stmt
+            (run_type)
+            (quoted_string))
+          (memory_stmt
+            (memory_target
+              (memory_domain)
+              (identifier))
+            (assignment_op)
+            (expression
+              (value
+                (boolean))))
+          (transition_stmt
+            (state_name)))))))
+
+================================================================================
+multiplos on intent + on offtopic inline
+================================================================================
+
+state s
+  goal "g"
+  interact
+  on intent "a" transition to sa
+  on intent "b" transition to sb
+  on offtopic transition to handle_offtopic
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name)))
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name)))
+      (offtopic_handler
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+on offtopic: forma bloco + end
+================================================================================
+
+state s
+  goal "g"
+  interact
+  on intent "a" transition to sa
+  on offtopic
+    run script "redirect.sh"
+    transition to responsive
+  end
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name)))
+      (offtopic_handler
+        (block
+          (run_stmt
+            (run_type)
+            (quoted_string))
+          (transition_stmt
+            (state_name)))))))

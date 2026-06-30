@@ -1,0 +1,183 @@
+================================================================================
+type simples com category e concept
+================================================================================
+
+type Prontuario
+  category https://www.wikidata.org/wiki/Q251648 (EHR)
+  concept https://www.wikidata.org/wiki/Q251648
+  patient: Person "Paciente que será atendido"
+  symptoms: text
+  timestamp: datetime
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url)
+        label: (ontology_label))
+      (concept_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier)))
+        description: (quoted_string))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type)))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
+
+================================================================================
+type com array
+================================================================================
+
+type BankStatement
+  category https://www.wikidata.org/wiki/Q806653
+  account: Person
+  transactions: [Transaction]
+  balance: number
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier))))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier))))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
+
+================================================================================
+type com Enum
+================================================================================
+
+type MedicalAlert
+  category https://schema.org/MedicalCondition
+  severity: Enum(low, medium, high)
+  active: boolean
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (identifier)
+          (identifier)
+          (identifier)))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
+
+================================================================================
+type com propriedade opcional
+================================================================================
+
+type AvatarWithMickey
+  category https://schema.org/ImageObject
+  image: Avatar
+  caption?: text "Legenda opcional"
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (type_reference
+            (identifier))))
+      (property_decl
+        name: (identifier)
+        optional_marker: (optional_marker)
+        type: (type_value
+          (primitive_type))
+        description: (quoted_string)))))
+
+================================================================================
+type sem concept apenas category
+================================================================================
+
+type Prescription
+  category https://www.wikidata.org/wiki/Q656094
+  medication: string
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))
+
+================================================================================
+type com primitive_type e annotation
+================================================================================
+
+type ExpenseLedger
+  category https://wikidata.org/wiki/Q3874057
+  concept https://schema.org/FinancialProduct
+  ledger_id: string(template "LED-9999-AA")
+  total_amount: number "Valor total"
+  is_audited: boolean
+
+--------------------------------------------------------------------------------
+
+(manifest
+  (statement
+    (type_decl
+      name: (identifier)
+      (category_prop
+        uri: (url))
+      (concept_prop
+        uri: (url))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type)
+          (type_annotation)))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))
+        description: (quoted_string))
+      (property_decl
+        name: (identifier)
+        type: (type_value
+          (primitive_type))))))

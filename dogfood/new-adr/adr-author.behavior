@@ -1,0 +1,62 @@
+// Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// NOTE: Dogfood modeling exercise — not a shipping agent.
+// Models the /new-adr workflow as a state machine to test DSL expressiveness.
+// States: collect_decision → check_supersession → draft_sections → emit → done
+// Do not pack or run this file.
+
+state collect_decision
+  goal "Understand the decision the ADR will record"
+  guide "Ask the user for the decision as a short noun phrase (e.g. 'REST-first API surface'). Clarify that an ADR records a choice already made, not a proposal. Do not proceed until a clear noun phrase is provided."
+  interact
+  on intent "decision provided"
+    transition to check_supersession
+  on offtopic
+    transition to collect_decision
+
+state check_supersession
+  goal "Determine if this ADR supersedes an existing one"
+  guide "Ask: 'Does this ADR supersede an existing ADR? If yes, provide the ADR number (e.g. 0003).' Wait for an explicit answer before proceeding."
+  interact
+  on intent "supersedes confirmed"
+    set session.supersedes = true
+    transition to draft_sections
+  on intent "no supersession"
+    set session.supersedes = false
+    transition to draft_sections
+  on offtopic
+    transition to check_supersession
+
+state draft_sections
+  run script "scripts/scaffold-adr.js" on failure
+    transition to error
+  transition to emit
+
+state emit
+  run script "scripts/emit-adr.js" on failure
+    transition to error
+  transition to done
+
+state done
+  goal "Confirm the ADR was created and share next steps"
+  guide "Tell the user the ADR file path. If this ADR superseded another, confirm that the old ADR's Status and 'Superseded by' fields were updated (body unchanged). Remind the user that Accepted ADRs are immutable."
+  interact
+  on intent "create another ADR"
+    transition to collect_decision
+  on offtopic
+    transition to done
+
+state error
+  goal "Report the error and offer to retry"
+  guide "Explain what failed. Offer to retry from the beginning or abort."
+  interact
+  on intent "retry"
+    transition to collect_decision
+  on offtopic
+    transition to error

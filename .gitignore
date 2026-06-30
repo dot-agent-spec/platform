@@ -2,3 +2,18 @@
 DSL/vscode-extension/node_modules/
 DSL/vscode-extension/*.vsix
 Deprecated/*
+
+node_modules/
+
+# Rust/Cargo
+**/target/
+Cargo.lock
+
+# Graphify
+graphify-out/
+
+# Dogfood — throwaway artifacts a skill-under-test generates (kept local, never committed).
+# The dogfood's value (.behavior/.description, EXPRESSIVENESS.md, BRIEF.md) IS committed.
+dogfood/**/examples/
+
+tmp/org-spec/

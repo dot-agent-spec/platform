@@ -1,0 +1,130 @@
+================================================================================
+setup state (actions + transition, no interact)
+================================================================================
+
+state prepare_data
+  run script "fetch.sh"
+  set context.cars = "options"
+  transition to car_search
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (run_stmt
+        (run_type)
+        (quoted_string))
+      (memory_stmt
+        (memory_target
+          (memory_domain)
+          (identifier))
+        (assignment_op)
+        (expression
+          (value
+            (with_quotes_string))))
+      (transition_stmt
+        (state_name)))))
+
+================================================================================
+oriented state minimo (goal + interact + intent handler)
+================================================================================
+
+state responsive
+  goal "Help the user"
+  interact
+  on intent "request" transition to responsive
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+oriented state completo (goal + guide + teach + interact + handlers)
+================================================================================
+
+state car_search
+  goal "Find available cars"
+  guide "car_guide.md"
+  teach "premium_features.md"
+  interact
+  on intent "select" transition to reservation
+  on offtopic transition to handle_offtopic
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (guide_stmt
+        (quoted_string))
+      (teach_stmt
+        (filename))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name)))
+      (offtopic_handler
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+state com dotted path name
+================================================================================
+
+state phases.planning.start
+  goal "Start planning"
+  interact
+  on intent "next" transition to phases.planning.end
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (goal_stmt
+        (quoted_string))
+      (interact_stmt)
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name))))))
+
+================================================================================
+permissivo: blocos fora de ordem (grammar aceita, linter barra)
+================================================================================
+
+state chaotic
+  on intent "early" transition to next
+  interact
+  goal "Goal declared after interact"
+
+--------------------------------------------------------------------------------
+
+(behavior_file
+  (state_decl
+    (state_name)
+    (state_body
+      (intent_handler
+        (quoted_string)
+        (transition_stmt
+          (state_name)))
+      (interact_stmt)
+      (goal_stmt
+        (quoted_string)))))

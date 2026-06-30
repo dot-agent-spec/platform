@@ -1,0 +1,66 @@
+{
+  "name": "@dot-agent/parser-dsl",
+  "version": "0.1.0",
+  "description": "Unified DSL parser for dot-agent — parses .behavior and .description files using tree-sitter, providing structured ASTs for compiler, LSP, and runtime consumption",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
+  "homepage": "https://dot-agent.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/platform",
+    "directory": "packages/parser-dsl"
+  },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/platform/issues",
+    "email": "contato@daniloborg.es"
+  },
+  "keywords": [
+    "wasm",
+    "agent",
+    "agents",
+    "llm",
+    "dsl",
+    "parser",
+    "fsm",
+    "scxml",
+    "dot-agent"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/",
+    "pkg/"
+  ],
+  "scripts": {
+    "build": "cargo test -p dot-agent-parser-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup",
+    "build:debug": "cargo test -p dot-agent-parser-dsl && bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "@types/node": "^22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
+

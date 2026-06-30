@@ -1,0 +1,12 @@
+src/
+tests/
+.githooks/
+.github/
+node_modules/
+*.config.ts
+tsconfig.json
+vitest.config.ts
+file structure.md
+plan.md
+.git
+.gitignore

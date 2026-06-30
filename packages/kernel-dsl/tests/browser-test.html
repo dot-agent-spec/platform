@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>kernel-dsl browser test</title></head>
+<body>
+<pre id="output">running...</pre>
+<script type="module">
+import { AgentDSLKernel, init } from '../index.js';
+
+const out = document.getElementById('output');
+const log = (msg) => { out.textContent += '\n' + msg; console.log(msg); };
+
+try {
+  await init();
+  log('✔ init() ok');
+
+  const kernel = new AgentDSLKernel();
+  log('✔ new AgentDSLKernel() ok');
+
+  const behavior = `
+state welcome
+  goal "Welcome"
+  interact
+  on intent "hello" transition to next
+`;
+
+  const effects = JSON.parse(kernel.load_behavior(behavior));
+  log('✔ load_behavior ok — effects: ' + effects.map(e => e.type).join(', '));
+
+  const parseErr = effects.find(e => e.type === 'parse_error');
+  if (parseErr) throw new Error('parse_error: ' + parseErr.message);
+
+  const state = kernel.get_current_state();
+  if (state !== 'welcome') throw new Error('expected state "welcome", got: ' + state);
+  log('✔ get_current_state: ' + state);
+
+  const graph = JSON.parse(kernel.get_graph());
+  log('✔ get_graph ok — states: ' + graph.states.join(', '));
+
+  const intents = kernel.get_valid_intents();
+  log('✔ get_valid_intents: ' + JSON.stringify(intents));
+
+  kernel.free();
+  log('\n✅ all tests passed');
+  document.body.setAttribute('data-done', 'ok');
+} catch (e) {
+  log('\n❌ FAILED: ' + e.message);
+  console.error(e);
+  document.body.setAttribute('data-done', 'fail');
+}
+</script>
+</body>
+</html>

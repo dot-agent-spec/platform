@@ -1,0 +1,2036 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>.agent Spec | Implementation Status</title>
+  
+  <!-- Fonts do dot-agent.ai -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+      --bg-primary: #0B0F19;
+      --bg-secondary: #111827;
+      --text-primary: #E8E6E3;
+      --text-secondary: #9CA3AF;
+      --text-dim: #6B7280;
+      --border-subtle: rgba(255,255,255,0.04);
+      --border-hover: rgba(255,255,255,0.15);
+      
+      /* Cores Oficiais da Marca */
+      --color-green: #5BE87C;   /* Implemented ✅ */
+      --color-yellow: #E8B44D;  /* Partial ⚠️ */
+      --color-red: #E84545;     /* Missing ❌ */
+      --color-cyan: #4DC8E8;    /* Dep/Ref 🔄 → */
+      --color-frozen: #93c5fd;  /* Frozen 🧊 (Icy Blue) */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1F2937; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 32px;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    .brand-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-cyan);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 400;
+      color: var(--text-primary);
+      line-height: 1.12;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-family: var(--font-body);
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 800px; /* Aumentado para não criar viúva */
+      margin: 0 auto;
+    }
+
+    .spectrum-divider {
+      height: 1px;
+      width: 100%;
+      opacity: 0.4;
+      background: linear-gradient(90deg, transparent 0%, #E84545 12%, #E8783F 25%, #E8B44D 40%, #5BE87C 55%, #4DC8E8 72%, #4D7CE8 88%, transparent 100%);
+      margin: 40px 0;
+    }
+
+    /* Timeline */
+    .timeline-container {
+      margin: 48px auto 0;
+      max-width: 80%; /* Timeline mais compacta 80% do width */
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      width: 100%;
+    }
+    
+    .timeline-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 60px;
+      flex-shrink: 0;
+    }
+    
+    .timeline-node .circle {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      border: 2px solid var(--text-dim);
+      margin-bottom: 16px;
+      transition: all 0.3s;
+    }
+    
+    .timeline-node.done .circle {
+      border-color: var(--color-green);
+      background: var(--color-green);
+      box-shadow: 0 0 10px rgba(91, 232, 124, 0.4);
+    }
+    
+    .timeline-node.active .circle {
+      border-color: var(--color-cyan);
+      background: var(--color-cyan);
+      box-shadow: 0 0 12px rgba(77, 200, 232, 0.6);
+    }
+    
+    .timeline-node .label {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .timeline-node.active .label, .timeline-node.done .label {
+      color: var(--text-primary);
+    }
+
+    .timeline-segment {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 8px;
+    }
+
+    .segment-line {
+      width: 100%;
+      height: 2px;
+      background: var(--border-subtle);
+      margin-top: 7px; /* align center of 16px circle */
+      margin-bottom: 15px; /* space between line and badge */
+    }
+    
+    .segment-line.active {
+      background: linear-gradient(90deg, var(--color-green), var(--color-cyan));
+    }
+    
+    .segment-badge {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    
+    .segment-badge.attention {
+      color: var(--color-yellow);
+      border-color: rgba(232, 180, 77, 0.3);
+      background: rgba(232, 180, 77, 0.05);
+    }
+
+    /* Controls & Metrics */
+    .dashboard-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      background: var(--bg-secondary);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .metrics {
+      display: flex;
+      gap: 24px;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      color: var(--text-primary);
+    }
+
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .filter-btn.active {
+      background: rgba(77, 200, 232, 0.1);
+      border-color: rgba(77, 200, 232, 0.4);
+      color: var(--text-primary);
+    }
+
+    input[type="text"] {
+      font-family: var(--font-body);
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(0,0,0,0.2);
+      color: var(--text-primary);
+      width: 250px;
+      font-size: 14px;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--color-cyan);
+    }
+
+    /* Tabs UI */
+    .tabs-container {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-primary); /* Fundo primário para não ver nada atrás */
+      display: flex;
+      gap: 12px;
+      margin: 40px 0 24px;
+      padding: 16px 0 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .tab-btn.active {
+      color: var(--color-cyan);
+      background: rgba(77, 200, 232, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(77, 200, 232, 0.2);
+    }
+
+    /* Typography inside content */
+    main h1 {
+      display: none; /* Hide markdown H1 as we have a custom header */
+    }
+
+    main h2 {
+      position: sticky;
+      top: 64px; /* Abaixo das Tabs */
+      z-index: 90;
+      background: var(--bg-primary); /* Para a tabela não vazar por trás */
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 48px 0 24px;
+      padding: 16px 0;
+    }
+
+    main h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 1px;
+      width: 100%;
+      opacity: 0.4;
+      background: linear-gradient(90deg, transparent 0%, #E84545 12%, #E8783F 25%, #E8B44D 40%, #5BE87C 55%, #4DC8E8 72%, #4D7CE8 88%, transparent 100%);
+    }
+
+    main h3 {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 32px 0 16px;
+    }
+
+    .intro-text {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      max-width: 800px;
+      line-height: 1.6;
+    }
+
+    .legend-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px 24px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 2;
+    }
+
+    .legend-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-cyan);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 8px;
+    }
+    
+    .legend-box code {
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      color: var(--color-cyan);
+      font-size: 11px;
+    }
+
+    main p {
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    blockquote {
+      background: rgba(77, 200, 232, 0.05);
+      border-left: 2px solid var(--color-cyan);
+      padding: 16px 20px;
+      margin: 24px 0;
+      border-radius: 0 8px 8px 0;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    hr {
+      border: none;
+      height: 0;
+      margin: 40px 0;
+    }
+
+    /* Table Styles */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-bottom: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+    }
+
+    main table {
+      display: table;
+      table-layout: auto;
+      width: 100%;
+      min-width: 800px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--bg-secondary);
+      white-space: nowrap;
+      z-index: 80;
+    }
+
+    /* Células de Status */
+    td {
+      transition: all 0.2s ease;
+    }
+
+    .cell-implemented { background-color: rgba(91, 232, 124, 0.08); color: #86efac; }
+    .cell-partial { background-color: rgba(232, 180, 77, 0.08); color: #fde047; }
+    .cell-missing { background-color: rgba(232, 69, 69, 0.08); color: #fca5a5; }
+    .cell-dep { background-color: rgba(77, 200, 232, 0.08); color: #7dd3fc; }
+    
+    /* Azul claro frosty para frozen columns */
+    .cell-frozen { background-color: rgba(147, 197, 253, 0.08); color: var(--color-frozen); }
+
+    /* Elegant dash for empty cells */
+    .empty-dash {
+      color: rgba(77, 200, 232, 0.4); /* Azul sutil/cyan */
+      font-weight: 400;
+      user-select: none;
+    }
+
+    /* Hover "Glow" effect imitando PillarCard */
+    td:hover {
+      background-color: rgba(255,255,255,0.05);
+      position: relative;
+      z-index: 10;
+    }
+    
+    .cell-implemented:hover { box-shadow: inset 0 0 12px rgba(91, 232, 124, 0.2); border-color: var(--color-green); }
+    .cell-partial:hover { box-shadow: inset 0 0 12px rgba(232, 180, 77, 0.2); border-color: var(--color-yellow); }
+    .cell-missing:hover { box-shadow: inset 0 0 12px rgba(232, 69, 69, 0.2); border-color: var(--color-red); }
+    .cell-dep:hover { box-shadow: inset 0 0 12px rgba(77, 200, 232, 0.2); border-color: var(--color-cyan); }
+    .cell-frozen:hover { box-shadow: inset 0 0 12px rgba(147, 197, 253, 0.2); border-color: var(--color-frozen); }
+    
+    img { max-width: 100%; }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="brand-label">ENGINE STATUS</span>
+      <h1>.agent Implementation Matrix</h1>
+      <p class="subtitle">Interactive architecture and feature support overview across all packages.</p>
+      
+      <div class="timeline-container">
+        <div class="timeline-node done">
+          <div class="circle"></div>
+          <div class="label">Start</div>
+        </div>
+        
+        <div class="timeline-segment">
+          <div class="segment-line active" id="line-v01"></div>
+          <div class="segment-badge attention" id="badge-v01"><span id="v01-left">0</span> features left</div>
+        </div>
+        
+        <div class="timeline-node active" id="node-v01">
+          <div class="circle"></div>
+          <div class="label">v0.1</div>
+        </div>
+        
+        <div class="timeline-segment">
+          <div class="segment-line" id="line-v02"></div>
+          <div class="segment-badge" id="badge-v02"><span id="v02-left">0</span> features left</div>
+        </div>
+        
+        <div class="timeline-node" id="node-v02">
+          <div class="circle"></div>
+          <div class="label">v0.2</div>
+        </div>
+        
+        <div class="timeline-segment">
+          <div class="segment-line"></div>
+          <div class="segment-badge">TBD</div>
+        </div>
+        
+        <div class="timeline-node">
+          <div class="circle"></div>
+          <div class="label">v1.0</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="spectrum-divider"></div>
+
+    <div class="dashboard-header">
+      <div class="metrics">
+        <div class="metric-item">
+          <span class="metric-value" id="count-total">0</span>
+          <span class="metric-label">Total Features</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-value" id="count-implemented" style="color: var(--color-green);">0</span>
+          <span class="metric-label">Implemented ✅</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-value" id="count-missing" style="color: var(--color-red);">0</span>
+          <span class="metric-label">Missing ❌</span>
+        </div>
+      </div>
+
+      <div class="filters">
+        <input type="text" id="searchInput" placeholder="Search features or nodes...">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="v0.1">v0.1 (1️⃣)</button>
+        <button class="filter-btn" data-filter="v0.2">v0.2 (2️⃣)</button>
+        <button class="filter-btn" data-filter="missing">Missing (❌)</button>
+      </div>
+    </div>
+
+    <main id="content">
+      <h1>Implementation Status</h1>
+<p>Caniuse-style tracking. Rows = DSL features (tree-sitter is the source of truth). Columns = packages in layer order.</p>
+<p>Legend: 
+☑️ verified ✅ implemented · ⚠️ partial or gap · ❌ missing, should exist · → re-exports or delegates · 🔄 <code>pkg</code> consumes from <code>pkg</code> · ➕ field/type injected at this layer (no upstream DSL source) · 📌 hardcoded value that should derive from the language<br>🗑️ obsolete (POC nodes removed or renamed in grammar)</p>
+<p>1️⃣ v0.1 · 2️⃣ v0.2 · 🗓️ TBD</p>
+<hr>
+<h2>Package freeze status</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>tree-sitter (L0)</th>
+<th>parser-dsl (L1)</th>
+<th>compiler (L2)</th>
+<th>kernel-dsl (L2)</th>
+<th>sdk (L3)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Status</strong></td>
+<td>🧊 Frozen</td>
+<td>🔥 Active</td>
+<td>🔥⚠️ Active</td>
+<td>🧊⚠️ Frozen</td>
+<td>🔥⚠️ Active</td>
+</tr>
+<tr>
+<td><strong>Version</strong></td>
+<td><code>0.4.1</code></td>
+<td><code>0.1.0</code></td>
+<td><code>0.1.0</code></td>
+<td><code>0.1.3</code></td>
+<td><code>0.1.0</code></td>
+</tr>
+<tr>
+<td><strong>Build</strong></td>
+<td><code>tree-sitter-cli</code> — manual npm scripts (<code>generate</code> + <code>build --wasm</code>) + <code>tsup</code></td>
+<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> (<code>scripts/build-wasm.sh</code> central, <code>wasm32-wasip1</code>) + <code>tsup</code></td>
+<td><code>tsup</code> (esm + cjs, <code>dts:true</code>)</td>
+<td>🦀 <code>cargo</code> + <code>wasm-bindgen</code> + <code>wasi-stub</code> (<code>scripts/build-wasm.sh</code> central, <code>wasm32-wasip1</code>) + <code>tsup</code></td>
+<td><code>tsup</code> (esm + cjs, <code>dts:true</code>)</td>
+</tr>
+<tr>
+<td><strong>Exports</strong></td>
+<td>npm (wasm file paths) · 🦀 rlib (via <code>cc</code>)</td>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm <code>cdylib</code> (npm) · 🦀 rlib</td>
+<td>npm only (esm + cjs)</td>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm <code>cdylib</code> (npm) · 🦀 rlib</td>
+<td>npm only (esm + cjs)</td>
+</tr>
+<tr>
+<td><strong>Types (.d.ts)</strong></td>
+<td>✅ <code>tsup</code> auto</td>
+<td>✅ <code>tsup</code> auto (ts-rs AST types)</td>
+<td>✅ <code>tsup</code> auto (full)</td>
+<td>✅ <code>tsup</code> auto (ts-rs Effect types)</td>
+<td>✅ <code>tsup</code> auto (full)</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <strong>Build / packaging gap remanescente</strong> — full history in <a href="pre-release/v0.1/DA00-06-build-pipeline-investigation.md">DA00-06 build-pipeline-investigation</a> (DA00-06 concluído):</p>
+<ul>
+<li>Versions divergem: tree-sitter <code>0.4.1</code>, kernel-dsl <code>0.1.3</code>, others <code>0.1.0</code>.</li>
+</ul>
+</blockquote>
+<hr>
+<h2>tree-sitter package (L0 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️ tree-sitter</th>
+<th>☑️ parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/tree-sitter</td>
+<td>-</td>
+<td>🔄 dependency</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>🦀 dot-agent-tree-sitter</td>
+<td>🔄 dependency</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️ tree-sitter</th>
+<th>☑️ parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>descriptionWasmPath: string</code> (js export)</td>
+<td></td>
+<td>🔄 <code>compiler</code></td>
+<td></td>
+<td></td>
+<td><code>full.initParsers()</code> loads via <code>web-tree-sitter</code>; also for standalone editor extensions</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>behaviorWasmPath: string</code> (js export)</td>
+<td></td>
+<td>🔄 <code>compiler</code></td>
+<td></td>
+<td></td>
+<td><code>full.initParsers()</code> loads via <code>web-tree-sitter</code>; also for standalone editor extensions</td>
+</tr>
+<tr>
+<td>✅1️⃣ 🦀 <code>language_description() → Language</code> (lib fn)</td>
+<td>🔄 <code>parser-dsl</code></td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td><code>description_parser.rs</code> · direct dep in kernel-dsl <code>Cargo.toml</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ 🦀 <code>language_behavior() → Language</code> (lib fn)</td>
+<td>🔄 <code>parser-dsl</code></td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td><code>parser.rs</code> · direct dep in kernel-dsl <code>Cargo.toml</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ 🦀 <code>NODE_TYPES_BEHAVIOR: &amp;str</code> (lib const)</td>
+<td>🔄 <code>parser-dsl</code></td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>build-time in parser-dsl <code>build.rs</code> · direct dep in kernel-dsl</td>
+</tr>
+<tr>
+<td>❌ <code>NODE_TYPES_DESCRIPTION</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>absent from Rust lib</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>parser-dsl package (L1 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️ tree-sitter</th>
+<th>☑️⚠️parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-</td>
+<td>⚠️ not published <br> <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/parser-dsl</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>🔄 dependency</td>
+<td>⚠️ local <br> ⚠️ 🦀 not published</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅ parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>init()</code> → <code>Promise&lt;void&gt;</code> (wasm fn)</td>
+<td>→ <code>full.initParsers()</code></td>
+<td></td>
+<td></td>
+<td>must call before any other wasm fn</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>parse_description(text)</code> → <code>string</code> (wasm fn)</td>
+<td>→ <code>full.parseDescriptionFile(text)</code></td>
+<td></td>
+<td></td>
+<td>JSON <code>{ok: DescriptionFile | null, diagnostics: ParseDiagnostic[]}</code> — DA01-01 breaking change</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>parse_behavior(text)</code> → <code>string</code> (wasm fn)</td>
+<td>→ <code>full.parseBehaviorFile(text)</code></td>
+<td></td>
+<td></td>
+<td>JSON <code>{ok: BehaviorFile | null, diagnostics: ParseDiagnostic[]}</code> — DA01-01 breaking change</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>get_graph(text)</code> → <code>string</code> (wasm fn)</td>
+<td>→ <code>full.getBehaviorScxml(text)</code></td>
+<td></td>
+<td></td>
+<td>W3C SCXML XML; static (no <code>_active</code> annotation)</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>get_states(text)</code> → <code>string</code> (wasm fn)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>JSON <code>string[]</code> in declaration order</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>get_intents_for_state(text, state)</code> → <code>string</code> (wasm fn)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>JSON <code>string[]</code>; empty if state not found</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>parse_behavior(text)</code> → <code>Result&lt;BehaviorFile, ParseError&gt;</code> (rust lib fn)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>crate linkage — called directly by <code>load_behavior</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>parse_description(text)</code> → <code>Result&lt;DescriptionFile, ParseError&gt;</code> (rust lib fn)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>crate linkage</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>mod ast</code> (rust lib)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td><code>BehaviorFile</code>, <code>DescriptionFile</code>, <code>StateDef</code>, <code>Statement</code>, … all serde-tagged AST types</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>ParseError(String)</code> (rust lib)</td>
+<td></td>
+<td>🔄 <code>kernel-dsl</code></td>
+<td></td>
+<td>human-readable message with line/col</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>compiler package (L2 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️ tree-sitter</th>
+<th>☑️ parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>🔄 dependency</td>
+<td>🔄 dependency</td>
+<td>@dot-agent/compiler</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>X</td>
+<td>X</td>
+<td>npm only</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🔥 compiler</th>
+<th>kernel-dsl</th>
+<th>⚠️ sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>core.parseAboutme(json)</code> → <code>AboutMe</code></td>
+<td></td>
+<td>🔄 <code>sdk</code></td>
+<td>sdk imports from <code>compiler/core</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>core.buildAboutme(opts)</code> → <code>AboutMe</code></td>
+<td></td>
+<td></td>
+<td>used internally by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>core.aboutmeToJson(aboutme)</code> → <code>string</code></td>
+<td></td>
+<td></td>
+<td>used internally by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>core.parseId(id)</code> · <code>core.buildId(parts)</code> · <code>core.extractDigest(id)</code> · <code>core.extractName(id)</code></td>
+<td></td>
+<td></td>
+<td>agent ID helpers</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>core.createZip()</code> · <code>core.extractFiles(zip, filter?)</code></td>
+<td></td>
+<td>🔄 <code>sdk</code></td>
+<td>sdk imports from <code>compiler/core</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.parse(langId, text, tree?)</code> → <code>Promise&lt;Tree&gt;</code></td>
+<td></td>
+<td></td>
+<td>raw tree-sitter tree; used by language-server</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.parseSync(langId, text, tree?)</code> → <code>Tree|null</code></td>
+<td></td>
+<td></td>
+<td>sync variant for LSP diagnostics</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.nodesOfType(tree, type)</code> + nav helpers</td>
+<td></td>
+<td></td>
+<td><code>nodeAtOffset</code>, <code>nodeToRange</code>, <code>positionToOffset</code>, <code>getContextNode</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.lintDescription(text, file?)</code> → <code>Promise&lt;LintMessage[]&gt;</code></td>
+<td></td>
+<td></td>
+<td>used by language-server and <code>pack</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.lintBehavior(text, file?, docPath?, consolidated?)</code> → <code>Promise&lt;LintMessage[]&gt;</code></td>
+<td></td>
+<td></td>
+<td>used by language-server and <code>pack</code>; <code>consolidated=true</code> enables E015/E016/W014</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.createLinter()</code> → <code>{lintDescription, lintBehavior}</code></td>
+<td></td>
+<td></td>
+<td>factory; used by language-server</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.buildTypesJson(df)</code> → <code>string</code></td>
+<td></td>
+<td></td>
+<td>JSON Schema 2020-12 from <code>types[]</code> + <code>input[]</code> + <code>output[]</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.readZip(filePath)</code> · <code>full.writeZip(zip, outPath)</code></td>
+<td></td>
+<td></td>
+<td>Node.js; used by <code>pack</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.validateMagicBytes(filePath)</code> · <code>full.validateZipBomb(filePath)</code></td>
+<td></td>
+<td>⚠️ local copies</td>
+<td>Node.js; sdk redefines identical fns in <code>load.ts</code> instead of importing</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.discoverDescriptionFile(dir, explicit?)</code> → <code>Promise&lt;string&gt;</code></td>
+<td></td>
+<td></td>
+<td>Node.js; globs <code>*.description</code> (0 or 2+ → E003); <code>PackOptions.description</code> for override</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.consolidate(agentRoot, entryFile)</code> → <code>Promise&lt;{mergedText, mergeSources}&gt;</code></td>
+<td></td>
+<td></td>
+<td>Node.js; DFS merge graph, topological order; E012/E013/E014</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.collectFiles(dir, descriptionFile, mergedBehaviorText, mergeSources)</code> → <code>Promise&lt;Map&lt;string,string&gt;&gt;</code></td>
+<td></td>
+<td></td>
+<td>Node.js; used by <code>pack</code>; no behaviors/ walk — merge chain is authoritative</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>full.pack(options?)</code> → <code>Promise&lt;PackResult&gt;</code></td>
+<td></td>
+<td></td>
+<td>full pipeline; consumed by CLI <code>pack.ts</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>kernel-dsl package (L2 -&gt; L3)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️ tree-sitter</th>
+<th>☑️ parser-dsl</th>
+<th>compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>🔄 dependency (🦀 <code>language_*</code> + <code>NODE_TYPES_BEHAVIOR</code>)</td>
+<td>🔄 dependency (🦀 rlib: <code>parse_behavior</code>, <code>parse_description</code>, <code>mod ast</code>)</td>
+<td>-</td>
+<td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/kernel-dsl</td>
+<td>🔄 dependency</td>
+<td>dual build: <code>pkg/</code> (node) + <code>pkg-web/</code> (browser)</td>
+</tr>
+<tr>
+<td>🔄 dependency</td>
+<td>🔄 dependency</td>
+<td>-</td>
+<td>🦀 dot-agent-kernel-dsl (rlib, not published)</td>
+<td>🔄 dependency</td>
+<td>links parser-dsl + tree-sitter crates directly</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🔥 kernel-dsl (wasm)</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>init()</code> → <code>Promise&lt;void&gt;</code> (js wrapper)</td>
+<td></td>
+<td><code>src/ts/index.ts</code> via tsup; must run before <code>new AgentDSLKernel()</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>new AgentDSLKernel()</code> (wasm class ctor)</td>
+<td>🔄 <code>sdk</code></td>
+<td>constructed inside <code>AgentSession</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>load_behavior(text)</code> → <code>string</code></td>
+<td>→ <code>start()</code> (single-file)</td>
+<td>🔄 <code>parser-dsl</code> rlib <code>parse_behavior</code>; returns effects JSON; E016 if no <code>init</code> state</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>load_behavior_with_bundle(text, bundle_json)</code> → <code>string</code></td>
+<td>→ <code>start()</code></td>
+<td>flattens <code>merge</code> paths from bundle map; effects JSON; E016 if no <code>init</code> state</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>set_file_resolver(callback: Function)</code></td>
+<td>→ <code>setFileResolver(fn)</code></td>
+<td>Mode B fallback; called when bundle lacks a merge path</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>send_intent(intent)</code> → <code>string</code></td>
+<td>→ <code>sendIntent(intent)</code></td>
+<td>effects JSON</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>send_offtopic()</code> → <code>string</code></td>
+<td>→ <code>sendOfftopic()</code></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>send_event(event)</code> → <code>string</code></td>
+<td>→ <code>sendEvent(event)</code></td>
+<td>matches global <code>trigger_decl</code></td>
+</tr>
+<tr>
+<td>✅🗓️ <code>tick_prompt()</code> → <code>string</code></td>
+<td>→ <code>tickPrompt()</code></td>
+<td>advances turn counter; fires <code>after_stmt</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>send_complete()</code> · <code>send_failed()</code> (removed)</td>
+<td>🗑️ <code>sendComplete()</code> · <code>sendFailed()</code> (removed)</td>
+<td>removed — <code>on failure</code> execution is v0.2; no API entry point</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>get_current_state()</code> → <code>string</code></td>
+<td>→ <code>getState()</code></td>
+<td>current FSM state only</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>get_valid_intents()</code> → <code>js_sys::Array</code></td>
+<td>→ <code>getValidIntents()</code></td>
+<td>intents of current state only</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>get_graph()</code> → <code>string</code></td>
+<td>→ <code>getGraph()</code></td>
+<td>SCXML with runtime <code>_active=&quot;true&quot;</code>; 🔄 <code>parser-dsl</code> <code>to_scxml</code></td>
+</tr>
+<tr>
+<td>✅🗓️ <code>get_memory()</code> → <code>string</code></td>
+<td>❌ not exposed</td>
+<td><code>{domain, key, value}[]</code> snapshot</td>
+</tr>
+<tr>
+<td>✅🗓️ <code>set_memory(domain, key, value_json)</code></td>
+<td>→ <code>injectMemory(domain, key, value)</code></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>observe(callback: Function)</code></td>
+<td>⚠️ replaced by <code>registerHandler</code></td>
+<td>push model; sdk uses pull-style per-effect handlers instead</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>free()</code> (wasm-bindgen auto)</td>
+<td>→ <code>dispose()</code></td>
+<td>WASM memory cleanup</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>sdk package (L3)</h2>
+<table>
+<thead>
+<tr>
+<th>tree-sitter</th>
+<th>parser-dsl</th>
+<th>⚠️☑️✅🔥 compiler</th>
+<th>☑️✅🔥 kernel-dsl</th>
+<th>sdk</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-</td>
+<td>-</td>
+<td>🔄 dependency (<code>compiler/core</code>)</td>
+<td>🔄 dependency (wasm)</td>
+<td>@dot-agent/sdk</td>
+<td>browser-compatible dispatch layer; tsup → esm + cjs</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>☑️✅🔥 sdk export</th>
+<th>source</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>loadAgent(input: Uint8Array | ArrayBuffer)</code> → <code>Promise&lt;AgentBundle&gt;</code></td>
+<td><code>load.ts</code></td>
+<td>🔄 <code>compiler/core</code> <code>parseAboutme</code> + <code>extractFiles</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>AgentSession</code> (class)</td>
+<td><code>session.ts</code></td>
+<td>private ctor; wraps <code>AgentDSLKernel</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>AgentSession.start()</code></td>
+<td></td>
+<td>🔄 <code>kernel.load_behavior_with_bundle</code>; passes <code>files.behaviors[]</code> as bundle</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>AgentSession.setFileResolver(fn)</code></td>
+<td></td>
+<td>🔄 <code>kernel.set_file_resolver</code>; Mode B fallback for missing merge paths</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>AgentSession.registerHandler(type, handler)</code></td>
+<td></td>
+<td>pull-style replacement for kernel <code>observe</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>sendIntent</code> · <code>sendEvent</code> · <code>sendOfftopic</code> · <code>tickPrompt</code></td>
+<td></td>
+<td>thin wrappers → <code>dispatchRaw(kernel.*)</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>getState()</code> · <code>getValidIntents()</code> · <code>getGraph()</code></td>
+<td></td>
+<td>🔄 <code>kernel.get_current_state</code> / <code>get_valid_intents</code> / <code>get_graph</code></td>
+</tr>
+<tr>
+<td>✅🗓️ <code>injectMemory(domain, key, value)</code></td>
+<td></td>
+<td>🔄 <code>kernel.set_memory</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>dispose()</code></td>
+<td></td>
+<td>🔄 <code>kernel.free</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ types: <code>AgentBundle</code>, <code>AgentFiles</code>, <code>Effect</code>, <code>EffectHandler</code>, <code>AboutMe</code></td>
+<td><code>types.js</code></td>
+<td>re-exported from <code>index.ts</code></td>
+</tr>
+<tr>
+<td>⚠️ <code>validateMagicBytes</code> · <code>validateZipBomb</code></td>
+<td><code>load.ts</code> (local)</td>
+<td>duplicated — compiler exports identical fns in <code>zip.ts</code>, not imported</td>
+</tr>
+<tr>
+<td>❌ read memory (<code>get_memory</code>)</td>
+<td></td>
+<td>kernel exposes it; sdk does not surface it</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Description DSL</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 DSL</th>
+<th>☑️ Tree-sitter node</th>
+<th>☑️✅parser-dsl</th>
+<th>⚠️☑️✅🔥 compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>agent</code></td>
+<td>✅ <code>agent_name</code></td>
+<td>✅ <code>AgentDecl.name</code></td>
+<td>✅ lint + <code>aboutme.name</code> + agent <code>id</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.schemaVersion</code> — 📌 hardcoded <code>&#39;dot-agent/1.0&#39;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.id</code> — <code>buildId({namespace=domain, name, version, digest=commit})</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>⚠️ <code>aboutme.purpose</code> — 📌 hardcoded <code>&#39;unknown&#39;</code>; never wired to any DSL field</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.compiler</code> — 📌 hardcoded <code>&#39;dot-agent/1.0.0&#39;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.version</code> — from <code>PackOptions.version</code> / git (<code>resolveVersion</code>), not DSL</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.commit</code> — from <code>PackOptions.commit</code> / git (<code>resolveCommit</code>), not DSL</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>➕</td>
+<td></td>
+<td></td>
+<td>✅ <code>aboutme.integrity { sha256: string, types?: string, files?: string }</code> — <code>sha256</code> = hex of concatenated file contents; <code>types</code>/<code>files</code> = 📌 fixed paths <code>.agent/types.json</code> · <code>.agent/files.json</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>domain</code></td>
+<td>✅ <code>agent_meta[domain]</code></td>
+<td>✅ <code>AgentDecl.domain</code></td>
+<td>✅ lint W003/W007 · <code>aboutme.domain</code> · <code>id</code> prefix</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>license</code></td>
+<td>✅ <code>agent_meta[license]</code></td>
+<td>✅ <code>AgentDecl.license</code></td>
+<td>✅ <code>aboutme.license</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>terms</code></td>
+<td>✅ <code>agent_meta[terms]</code></td>
+<td>✅ <code>AgentDecl.terms</code></td>
+<td>⚠️ parsed, not written to <code>aboutme.json</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>privacy</code></td>
+<td>✅ <code>agent_meta[privacy]</code></td>
+<td>✅ <code>AgentDecl.privacy</code></td>
+<td>⚠️ parsed, not written to <code>aboutme.json</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>description</code></td>
+<td>✅ <code>description_block</code></td>
+<td>✅ <code>DescriptionFile.description</code></td>
+<td>✅ <code>aboutme.description</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>persona</code></td>
+<td>✅ <code>persona_block</code></td>
+<td>✅ <code>DescriptionFile.persona</code></td>
+<td>✅ <code>aboutme.persona</code> — 📌 falls back to <code>&#39;SOUL.md&#39;</code> when block absent</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>behavior</code></td>
+<td>✅ <code>behavior_block</code></td>
+<td>✅ <code>DescriptionFile.behavior</code></td>
+<td>✅ required — entry file for <code>consolidate()</code>; validated (E_DESC if absent); E014 check on path</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅2️⃣ <code>require</code></td>
+<td>✅ <code>requires_block[]</code></td>
+<td>✅ <code>DescriptionFile.requires[]</code></td>
+<td>✅ <code>aboutme.requires[]</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅2️⃣ <code>input</code></td>
+<td>✅ <code>input_block[]</code></td>
+<td>✅ <code>DescriptionFile.input[]</code></td>
+<td>✅ <code>types.json input</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>capabilities</code></td>
+<td>✅ <code>capabilities_block[]</code></td>
+<td>✅ <code>DescriptionFile.capabilities[]</code> (<code>AnnotatedRef {name, description}</code>)</td>
+<td>✅ <code>aboutme.capabilities[]</code> (<code>Capability {id, description}</code> — field <code>name</code>→<code>id</code>)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅2️⃣ <code>output</code></td>
+<td>✅ <code>output_block[]</code></td>
+<td>✅ <code>DescriptionFile.output[]</code></td>
+<td>✅ <code>types.json output</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>type</code> (inline)</td>
+<td>✅ <code>type_decl[]</code></td>
+<td>✅ <code>DescriptionFile.types[]</code></td>
+<td>✅ <code>buildTypesJson(df)</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>📌 <strong>Hardcoded values in <code>compiler/pack.ts</code> that should derive from the language — needs fixing</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Hardcoded as</th>
+<th>Should be</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><del><code>files.json</code> <code>behavior</code></del></td>
+<td><del><code>&#39;agent.behavior&#39;</code></del></td>
+<td>✅ fixed DA01-02: <code>&#39;agent.behavior&#39;</code> is the canonical consolidated output; source entry file is <code>df.behavior</code> (used by <code>consolidate</code>)</td>
+</tr>
+<tr>
+<td><del><code>files.json</code> <code>description</code></del></td>
+<td><del><code>&#39;agent.description&#39;</code></del></td>
+<td>✅ fixed DA01-02: real filename from <code>discoverDescriptionFile</code></td>
+</tr>
+<tr>
+<td><code>aboutme.purpose</code></td>
+<td><code>&#39;unknown&#39;</code></td>
+<td>a real DSL field — none exists yet (no <code>purpose</code> in grammar)</td>
+</tr>
+<tr>
+<td><code>aboutme.persona</code></td>
+<td>falls back to <code>&#39;SOUL.md&#39;</code></td>
+<td>required from the <code>persona</code> block, no silent default</td>
+</tr>
+<tr>
+<td><code>aboutme.schemaVersion</code></td>
+<td><code>&#39;dot-agent/1.0&#39;</code></td>
+<td>sourced constant, not a literal</td>
+</tr>
+<tr>
+<td><code>aboutme.compiler</code></td>
+<td><code>&#39;dot-agent/1.0.0&#39;</code></td>
+<td>the compiler package version</td>
+</tr>
+<tr>
+<td><code>aboutme.integrity.types</code> / <code>.files</code></td>
+<td><code>&#39;.agent/types.json&#39;</code> · <code>&#39;.agent/files.json&#39;</code></td>
+<td>fixed bundle paths — acceptable, but centralize the constants</td>
+</tr>
+</tbody></table>
+</blockquote>
+<hr>
+<h2>TypeDefinition DSL (in v0.2)</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 DSL</th>
+<th>☑️ Tree-sitter node</th>
+<th>☑️ parser-dsl</th>
+<th>☑️✅🔥 compiler</th>
+<th>kernel-dsl</th>
+<th>sdk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅ <code>type</code></td>
+<td>✅ <code>type_decl</code></td>
+<td>✅ <code>TypeDefinition</code></td>
+<td>✅ <code>types.json $defs</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>category</code></td>
+<td>✅ <code>category_prop</code></td>
+<td>✅ <code>TypeDefinition.category</code> (OntologyRef)</td>
+<td>✅ <code>x-category</code> · <code>x-category-label</code> in JSON Schema</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>concept</code></td>
+<td>✅ <code>concept_prop</code></td>
+<td>✅ <code>TypeDefinition.concept</code> (OntologyRef)</td>
+<td>✅ <code>x-concept</code> · <code>x-concept-label</code> in JSON Schema</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>prop: Type</code></td>
+<td>✅ <code>property_decl</code></td>
+<td>✅ <code>PropertyDecl</code></td>
+<td>✅ schema <code>properties</code> entry</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>prop: Type &quot;doc&quot;</code></td>
+<td>✅ <code>property_decl.description</code></td>
+<td>✅ <code>PropertyDecl.description?</code></td>
+<td>✅ <code>description</code> in schema property</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>?</code></td>
+<td>✅ <code>optional_marker</code></td>
+<td>✅ <code>PropertyDecl.is_optional</code></td>
+<td>✅ omitted from <code>required[]</code> in schema</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>string | number | …</code></td>
+<td>✅ <code>type_value</code> → primitive</td>
+<td>✅ <code>PropertyType::Primitive</code></td>
+<td>✅ <code>{ &quot;type&quot;: &quot;...&quot; }</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>TypeName</code></td>
+<td>✅ <code>type_value</code> → reference</td>
+<td>✅ <code>PropertyType::Reference</code></td>
+<td>✅ <code>{ &quot;$ref&quot;: &quot;...&quot; }</code> (std. or local <code>#/$defs/</code>)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>[TypeName]</code></td>
+<td>✅ <code>type_value</code> → array</td>
+<td>✅ <code>PropertyType::Array</code></td>
+<td>✅ <code>{ &quot;type&quot;: &quot;array&quot;, &quot;items&quot;: ... }</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>Enum(a, b)</code></td>
+<td>✅ <code>type_value</code> → enum</td>
+<td>✅ <code>PropertyType::Enum</code></td>
+<td>✅ <code>{ &quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [...] }</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Behavior DSL</h2>
+<table>
+<thead>
+<tr>
+<th>☑️✅🧊 DSL</th>
+<th>☑️ Tree-sitter node</th>
+<th>☑️ parser-dsl</th>
+<th>☑️✅🔥 compiler</th>
+<th>⚠️ kernel-dsl</th>
+<th>⚠️ sdk</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>✅1️⃣ <code>merge</code></td>
+<td>✅ <code>merge_decl</code></td>
+<td>✅ <code>BehaviorFile.merges[]</code></td>
+<td>✅ resolves for transition lint</td>
+<td>✅ <code>load_behavior_with_bundle</code> flattens via bundle (Mode A) or <code>set_file_resolver</code> callback (Mode B); missing paths return <code>Err</code></td>
+<td>✅ <code>files.behaviors[]</code> passed as bundle; <code>setFileResolver()</code> for Mode B fallback</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>state</code></td>
+<td>✅ <code>state_decl</code></td>
+<td>✅ <code>StateDef</code></td>
+<td>✅ lint + FSM validation</td>
+<td>✅ FSM state map</td>
+<td>✅ transparent via kernel</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>goal</code></td>
+<td>✅ <code>goal_stmt</code></td>
+<td>✅ <code>Statement::Goal</code></td>
+<td>✅ lint W002 (&gt;280 chars)</td>
+<td>✅ → <code>Effect::Goal {text}</code></td>
+<td>✅ <code>registerHandler(&quot;goal&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>guide</code></td>
+<td>✅ <code>guide_stmt</code></td>
+<td>✅ <code>Statement::Guide</code></td>
+<td>✅ lint W010 (&gt;280 chars)</td>
+<td>✅ → <code>Effect::Guide {text}</code></td>
+<td>✅ <code>registerHandler(&quot;guide&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>teach</code></td>
+<td>✅ <code>teach_stmt</code></td>
+<td>✅ <code>Statement::Teach</code></td>
+<td></td>
+<td>✅ → <code>Effect::Teach {text}</code></td>
+<td>✅ <code>registerHandler(&quot;teach&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>interact</code></td>
+<td>✅ <code>interact_stmt</code></td>
+<td>✅ <code>Statement::Interact</code></td>
+<td>✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal w/o interact) · E009 (no intent handlers)</td>
+<td>✅ → <code>Effect::RequestInteract</code></td>
+<td>✅ <code>registerHandler(&quot;request_interact&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>on intent &quot;…&quot;</code></td>
+<td>✅ <code>intent_handler</code></td>
+<td>✅ <code>Statement::OnIntent</code></td>
+<td>✅ lint E005/W005 (dangling transition)</td>
+<td>✅ <code>send_intent()</code> dispatches body</td>
+<td>✅ → <code>sendIntent(intent)</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>on offtopic</code></td>
+<td>✅ <code>offtopic_handler</code></td>
+<td>✅ <code>Statement::OnOfftopic</code></td>
+<td>✅ lint (missing offtopic)</td>
+<td>✅ <code>send_offtopic()</code> dispatches body</td>
+<td>✅ → <code>sendOfftopic()</code></td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>transition to</code></td>
+<td>✅ <code>transition_stmt</code></td>
+<td>✅ <code>Statement::Transition</code></td>
+<td>✅ lint E005/W005</td>
+<td>✅ → <code>Effect::Transition {from, to}</code></td>
+<td>✅ <code>registerHandler(&quot;transition&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>after N prompts</code></td>
+<td>✅ <code>after_stmt</code></td>
+<td>✅ <code>Statement::After</code></td>
+<td>✅ lint E011 (<code>after 0</code> never fires)</td>
+<td>✅ <code>tick_prompt()</code> fires at N turns</td>
+<td>✅ → <code>tickPrompt()</code></td>
+</tr>
+<tr>
+<td>✅ <code>run script</code></td>
+<td>✅ <code>run_stmt[script]</code></td>
+<td>✅ <code>RunStmt { kind: Script }</code></td>
+<td></td>
+<td>✅ → <code>Effect::RunScript {target, parameters, silent}</code></td>
+<td>✅ <code>registerHandler(&quot;run_script&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>run subagent</code></td>
+<td>✅ <code>run_stmt[subagent]</code></td>
+<td>✅ <code>RunStmt { kind: Subagent }</code></td>
+<td></td>
+<td>✅ → <code>Effect::RunSubagent {target, parameters, background}</code></td>
+<td>✅ <code>registerHandler(&quot;run_subagent&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>run tool</code></td>
+<td>✅ <code>run_stmt[tool]</code></td>
+<td>✅ <code>RunStmt { kind: Tool }</code></td>
+<td></td>
+<td>✅ → <code>Effect::RunTool {target, parameters}</code></td>
+<td>✅ <code>registerHandler(&quot;run_tool&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>run … each</code></td>
+<td>🗑️ <code>run_stmt[each]</code></td>
+<td>🗑️ removed</td>
+<td></td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>✅ <code>set</code></td>
+<td>✅ <code>memory_stmt</code></td>
+<td>✅ <code>Statement::Set</code></td>
+<td></td>
+<td>✅ → <code>Effect::SetMemory</code> + writes <code>MemoryStore</code></td>
+<td>✅ <code>registerHandler(&quot;set_memory&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>if … end</code></td>
+<td>✅ <code>conditional_stmt</code></td>
+<td>✅ <code>Statement::If</code></td>
+<td></td>
+<td>✅ <code>eval_condition()</code> resolves at runtime</td>
+<td>✅ transparent (no effect emitted)</td>
+</tr>
+<tr>
+<td>✅ <code>apply css</code></td>
+<td>✅ <code>apply_stmt</code></td>
+<td>✅ <code>Statement::Apply</code></td>
+<td></td>
+<td>✅ → <code>Effect::ApplyCss {value}</code></td>
+<td>✅ <code>registerHandler(&quot;apply_css&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>remove css</code></td>
+<td>✅ <code>remove_stmt</code></td>
+<td>✅ <code>Statement::Remove</code></td>
+<td></td>
+<td>✅ → <code>Effect::RemoveCss {value}</code></td>
+<td>✅ <code>registerHandler(&quot;remove_css&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>✅ <code>on failure</code> (run)</td>
+<td>✅ <code>failure_stmt</code> (sub-node of <code>run_stmt</code>)</td>
+<td>✅ <code>RunStmt.on_failure</code></td>
+<td></td>
+<td>⚠️ field parsed, ignored at runtime (v0.2)</td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>on failure</code> (apply/remove)</td>
+<td>✅ <code>failure_stmt</code> (sub-node of <code>apply_stmt</code>/<code>remove_stmt</code>)</td>
+<td>✅ <code>Apply.on_failure</code> / <code>Remove.on_failure</code></td>
+<td></td>
+<td>⚠️ field parsed, ignored at runtime (v0.2)</td>
+<td></td>
+</tr>
+<tr>
+<td>✅ <code>parallel</code></td>
+<td>✅ <code>parallel_stmt</code></td>
+<td>✅ <code>Statement::Parallel</code></td>
+<td>✅ lint E010 (no <code>run</code> stmts)</td>
+<td>⚠️ body executed sequentially (WASM single-threaded)</td>
+<td>✅ <code>registerHandler(&quot;run_script&quot; / &quot;run_subagent&quot; / &quot;run_tool&quot;, fn)</code></td>
+</tr>
+<tr>
+<td>🗑️ <code>parallel on success</code> (removed v0.1)</td>
+<td>🗑️ <code>success_stmt</code> (removed — no <code>on success</code>)</td>
+<td>🗑️ removed</td>
+<td></td>
+<td>🗑️ removed</td>
+<td>🗑️ removed</td>
+</tr>
+<tr>
+<td>✅ <code>parallel on failure</code></td>
+<td>✅ <code>on_failure</code> field (block) of <code>parallel_stmt</code></td>
+<td>✅ <code>Parallel.on_failure</code></td>
+<td></td>
+<td>⚠️ field parsed, ignored at runtime (v0.2)</td>
+<td></td>
+</tr>
+<tr>
+<td>🗑️ <code>on complete</code></td>
+<td>🗑️ <code>on_complete_stmt</code></td>
+<td>🗑️ removed</td>
+<td></td>
+<td>🗑️ removed</td>
+<td>🗑️ removed</td>
+</tr>
+<tr>
+<td>🗑️ <code>on failed</code></td>
+<td>🗑️ <code>on_failed_stmt</code></td>
+<td>🗑️ removed</td>
+<td></td>
+<td>🗑️ removed</td>
+<td>🗑️ removed</td>
+</tr>
+<tr>
+<td>✅ <code>on event &quot;…&quot;</code></td>
+<td>✅ <code>trigger_decl</code></td>
+<td>✅ <code>TriggerDecl</code></td>
+<td></td>
+<td>✅ <code>send_event(name)</code> dispatches matching triggers</td>
+<td>✅ → <code>sendEvent(name)</code></td>
+</tr>
+</tbody></table>
+
+    </main>
+  </div>
+
+  <script>
+    // -1. Wrap tables for full width and responsive scrolling
+    document.querySelectorAll('main > table').forEach(table => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrapper';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+
+    // 0. Partition Markdown content into Tabs
+    const mainContent = document.getElementById('content');
+    const childNodes = Array.from(mainContent.childNodes);
+    
+    const panePackages = document.createElement('div');
+    panePackages.id = 'pane-packages';
+    panePackages.className = 'tab-pane';
+    panePackages.style.display = 'block';
+    
+    const paneDsl = document.createElement('div');
+    paneDsl.id = 'pane-dsl';
+    paneDsl.className = 'tab-pane';
+    paneDsl.style.display = 'none';
+
+    let currentPane = null; // null means preamble
+    const preambleNodes = [];
+    
+    childNodes.forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'H2') {
+        const title = node.textContent.toLowerCase();
+        if (title.includes('dsl') && !title.includes('package')) {
+          currentPane = paneDsl;
+        } else {
+          currentPane = panePackages;
+        }
+      }
+      
+      if (currentPane) {
+        currentPane.appendChild(node);
+      } else {
+        preambleNodes.push(node);
+      }
+    });
+
+    // Style the preamble nodes
+    preambleNodes.forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'P') {
+        const text = node.textContent;
+        // Remove second legend block and redundant intro text
+        if (text.includes('1️⃣') || text.includes('Caniuse-style')) {
+          node.style.display = 'none';
+        } else if (text.includes('Legend:')) {
+          node.classList.add('legend-box');
+          node.innerHTML = node.innerHTML.replace('Legend:', '<strong class="legend-title">LEGEND</strong>');
+        } else {
+          node.classList.add('intro-text');
+        }
+      }
+    });
+
+    // Create Tabs Container right above the panes
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'tabs-container';
+    tabsContainer.innerHTML = `
+      <button class="tab-btn active" data-target="pane-packages">📦 Packages Layer</button>
+      <button class="tab-btn" data-target="pane-dsl">📝 DSL Specification</button>
+    `;
+
+    mainContent.appendChild(tabsContainer);
+    mainContent.appendChild(panePackages);
+    mainContent.appendChild(paneDsl);
+
+    // Tab Event Listeners
+    tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        tabsContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        panePackages.style.display = 'none';
+        paneDsl.style.display = 'none';
+        
+        const targetId = e.target.getAttribute('data-target');
+        document.getElementById(targetId).style.display = 'block';
+      });
+    });
+
+
+    // 1. Classify cells and calculate metrics
+    document.querySelectorAll('td').forEach(td => {
+      const text = td.textContent.trim();
+      
+      // Padroniza celulas vazias ou com '---'
+      if (text === '' || text === '-' || text === '--' || text === '---') {
+        td.innerHTML = '<span class="empty-dash">&mdash;</span>';
+        td.style.textAlign = 'center';
+      } else {
+        // Classifica cores principais
+        if (text.includes('✅') || text.includes('☑️')) {
+          td.classList.add('cell-implemented');
+        } else if (text.includes('⚠️')) {
+          td.classList.add('cell-partial');
+        } else if (text.includes('❌')) {
+          td.classList.add('cell-missing');
+        } else if (text.includes('🔄') || text.includes('→')) {
+          td.classList.add('cell-dep');
+        } else if (text.includes('🧊')) {
+          td.classList.add('cell-frozen'); // Célula específica com ícone
+        }
+      }
+    });
+
+    // 1.5 Colore colunas baseadas na tabela Package Freeze Status
+    const frozenPackages = new Set();
+    const allTables = document.querySelectorAll('table');
+    let freezeTable = null;
+    
+    // Encontra a tabela de freeze status
+    allTables.forEach(t => {
+      if (t.textContent.includes('🧊 Frozen') || t.textContent.includes('🔥 Active')) {
+        freezeTable = t;
+      }
+    });
+
+    if (freezeTable) {
+      const headers = Array.from(freezeTable.querySelectorAll('th')).map(th => th.textContent.trim().toLowerCase());
+      const statusRow = freezeTable.querySelector('tbody tr');
+      if (statusRow) {
+        const cells = Array.from(statusRow.children);
+        cells.forEach((cell, i) => {
+          if (cell.textContent.includes('🧊')) {
+            const headerText = headers[i];
+            if (headerText) {
+              const pkgName = headerText.split(' ')[0]; // pega o nome base (ex: tree-sitter)
+              if (pkgName) frozenPackages.add(pkgName);
+            }
+          }
+        });
+      }
+    }
+
+    // Aplica o azul nas colunas dos pacotes congelados em todas as tabelas
+    allTables.forEach(table => {
+      let frozenCols = new Set();
+      
+      // Verifica quais colunas DESTA tabela pertencem a um pacote frozen
+      table.querySelectorAll('th').forEach((th, i) => {
+        const thText = th.textContent.toLowerCase();
+        frozenPackages.forEach(pkg => {
+          if (thText.includes(pkg)) frozenCols.add(i);
+        });
+      });
+      
+      // Aplica frozen em toda a coluna
+      table.querySelectorAll('tr').forEach(row => {
+        Array.from(row.children).forEach((cell, i) => {
+          if (frozenCols.has(i)) {
+            // A regra do !important: só não aplica se a celula tiver um semáforo de prioridade
+            if (!cell.classList.contains('cell-implemented') && 
+                !cell.classList.contains('cell-partial') && 
+                !cell.classList.contains('cell-missing') &&
+                !cell.classList.contains('cell-dep')) {
+              cell.classList.add('cell-frozen');
+            }
+          }
+        });
+      });
+    });
+
+    // Update metrics by counting rows
+    const tbodyRows = document.querySelectorAll('tbody tr');
+    let rowTotal = 0, rowOk = 0, rowMissing = 0;
+    let v01Missing = 0, v02Missing = 0;
+    
+    tbodyRows.forEach(row => {
+        if(!row.querySelector('td')) return; // skip headers if any
+        rowTotal++;
+        const text = row.textContent;
+        // Se a linha tem um X ou Aviso (se considerarmos missing), contamos
+        if(text.includes('❌') || text.includes('⚠️')) {
+          if (text.includes('❌')) rowMissing++; // metric global
+          if (text.includes('1️⃣')) v01Missing++;
+          if (text.includes('2️⃣')) v02Missing++;
+        }
+        // Se não tem X nem Aviso e tem check, consideramos ok
+        else if(text.includes('✅') || text.includes('☑️')) rowOk++;
+    });
+
+    document.getElementById('count-total').textContent = rowTotal;
+    document.getElementById('count-implemented').textContent = rowOk;
+    document.getElementById('count-missing').textContent = rowMissing;
+    
+    // Update timeline
+    document.getElementById('v01-left').textContent = v01Missing;
+    document.getElementById('v02-left').textContent = v02Missing;
+    
+    // Dynamic styles for timeline if finished
+    if (v01Missing === 0) {
+      document.getElementById('badge-v01').classList.remove('attention');
+      document.getElementById('badge-v01').textContent = "DONE";
+      document.getElementById('badge-v01').style.color = "var(--color-green)";
+      document.getElementById('badge-v01').style.borderColor = "rgba(91, 232, 124, 0.3)";
+      document.getElementById('badge-v01').style.background = "rgba(91, 232, 124, 0.05)";
+      document.getElementById('node-v01').classList.add('done');
+      document.getElementById('node-v01').classList.remove('active');
+      document.getElementById('line-v01').style.background = "var(--color-green)";
+      
+      document.getElementById('line-v02').classList.add('active');
+      document.getElementById('badge-v02').classList.add('attention');
+      document.getElementById('node-v02').classList.add('active');
+    }
+
+    // 2. Search & Filter Logic
+    const searchInput = document.getElementById('searchInput');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    let currentFilter = 'all';
+
+    function applyFilters() {
+      const term = searchInput.value.toLowerCase();
+      
+      // Pass 1: Ocultar/Mostrar Linhas (tr)
+      document.querySelectorAll('tbody tr').forEach(row => {
+        if (row.querySelector('th')) return; // ignore sub-headers inside tbody
+        
+        const rowText = row.textContent.toLowerCase();
+        let matchesSearch = rowText.includes(term);
+        let matchesFilter = true;
+
+        if (currentFilter === 'v0.1') {
+          matchesFilter = rowText.includes('1️⃣');
+        } else if (currentFilter === 'v0.2') {
+          matchesFilter = rowText.includes('2️⃣');
+        } else if (currentFilter === 'missing') {
+          matchesFilter = rowText.includes('❌') || rowText.includes('⚠️');
+        }
+
+        row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+      });
+
+      // Pass 2: Ocultar Tabelas e Títulos de Seções Vazias
+      [panePackages, paneDsl].forEach(pane => {
+        let currentH2 = null;
+        let sectionNodes = [];
+        let hasVisibleRowsInSection = false;
+
+        const nodes = Array.from(pane.children);
+        
+        nodes.forEach((node, index) => {
+          if (node.tagName === 'H2') {
+            // Commit a seção anterior e decide se vai escondê-la
+            if (currentH2) {
+              const displayStyle = hasVisibleRowsInSection ? '' : 'none';
+              currentH2.style.display = displayStyle;
+              sectionNodes.forEach(n => n.style.display = displayStyle);
+            }
+            // Inicia nova seção
+            currentH2 = node;
+            sectionNodes = [];
+            hasVisibleRowsInSection = false;
+          } else {
+            if (currentH2) {
+              sectionNodes.push(node);
+              // Verifica se a tabela tem algo visível
+              if (node.classList && node.classList.contains('table-wrapper')) {
+                const tableNode = node.querySelector('table');
+                const visibleRows = Array.from(tableNode.querySelectorAll('tbody tr')).filter(r => r.style.display !== 'none');
+                if (visibleRows.length === 0) {
+                  node.style.display = 'none'; // Esconde o wrapper inteiro
+                } else {
+                  node.style.display = ''; // Mostra o wrapper
+                  hasVisibleRowsInSection = true;
+                }
+              }
+            }
+          }
+          
+          // Trata o final da lista (última seção)
+          if (index === nodes.length - 1 && currentH2) {
+            const displayStyle = hasVisibleRowsInSection ? '' : 'none';
+            currentH2.style.display = displayStyle;
+            sectionNodes.forEach(n => n.style.display = displayStyle);
+          }
+        });
+      });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.getAttribute('data-filter');
+        applyFilters();
+      });
+    });
+
+  </script>
+</body>
+</html>
+  

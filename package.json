@@ -1,0 +1,26 @@
+{
+  "name": "dot-agent-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "dot-agent DSL Monorepo Workspace",
+  "workspaces": [
+    "packages/*",
+    "apps/dot-agent-cli",
+    "apps/vscode-extension",
+    "apps/zed-agent",
+    "dsl/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w packages/tree-sitter && npm run build -w packages/parser-dsl && npm run build -w packages/kernel-dsl && npm run build -w packages/compiler && npm run build -w packages/sdk && npm run build -w packages/language-server && npm run build -w apps/dot-agent-cli",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present",
+    "generate:dashboard": "node scripts/generate-dashboard.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "marked": "^18.0.5"
+  }
+}

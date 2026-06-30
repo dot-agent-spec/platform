@@ -1,0 +1,97 @@
+{
+  "name": "@dot-agent/tree-sitter",
+  "version": "0.4.1",
+  "description": "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Danilo Borges",
+    "email": "contato@daniloborg.es",
+    "url": "https://daniloborg.es"
+  },
+  "contributors": [
+    {
+      "name": "Danilo Borges",
+      "email": "contato@daniloborg.es",
+      "url": "https://daniloborg.es"
+    }
+  ],
+  "homepage": "https://dot-agent.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-agent-spec/platform",
+    "directory": "packages/tree-sitter"
+  },
+  "bugs": {
+    "url": "https://github.com/dot-agent-spec/platform/issues",
+    "email": "contato@daniloborg.es"
+  },
+  "keywords": [
+    "tree-sitter",
+    "agent",
+    "agents",
+    "llm",
+    "dot-agent",
+    "dsl",
+    "parser",
+    "grammar"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "tree-sitter-description/grammar.js",
+    "tree-sitter-description/tree-sitter.json",
+    "tree-sitter-description/queries/",
+    "tree-sitter-description/src/node-types.json",
+    "tree-sitter-behavior/grammar.js",
+    "tree-sitter-behavior/tree-sitter.json",
+    "tree-sitter-behavior/queries/",
+    "tree-sitter-behavior/src/node-types.json"
+  ],
+  "scripts": {
+    "generate-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter generate",
+    "generate-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter generate",
+    "generate": "npm run generate-description && npm run generate-behavior",
+    "test-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter test",
+    "test-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter test",
+    "test": "npm run test-description && npm run test-behavior",
+    "clean": "node scripts/clean.js",
+    "prebuild": "npm run clean",
+    "build:wasm-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-description.wasm ../dist/",
+    "build:wasm-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
+    "build:wasm": "npm run build:wasm-description && npm run build:wasm-behavior",
+    "build": "npm run build:wasm && tsup",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.10",
+    "tsup": "^8.0.0",
+    "@types/node": "^22.0.0"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.description",
+      "file-types": [
+        "description",
+        "type"
+      ]
+    },
+    {
+      "scope": "source.behavior",
+      "file-types": [
+        "behavior"
+      ]
+    }
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

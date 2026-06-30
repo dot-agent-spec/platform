@@ -1,4 +1,0 @@
-name = "Agent DSL"
-grammar = "agent"
-path_suffixes = ["agent", "type"]
-line_comments = ["// "]

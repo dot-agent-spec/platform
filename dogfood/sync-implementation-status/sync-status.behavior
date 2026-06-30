@@ -1,0 +1,80 @@
+// Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// NOTE: Dogfood modeling exercise — not a shipping agent.
+// Models the /sync-implementation-status workflow as a state machine to test DSL expressiveness.
+// States: initialize → extract_features → verify_parser_dsl → verify_compiler →
+//         verify_kernel_dsl → verify_sdk → review_drift → apply_update → done
+// parallel was the natural shape for verification stages but fails to parse (see EXPRESSIVENESS.md G1).
+// Do not pack or run this file.
+
+state initialize
+  run script "scripts/sync-status/init.js" on failure
+    transition to error
+  transition to extract_features
+
+state extract_features
+  run script "scripts/sync-status/extract-features.js" on failure
+    transition to error
+  transition to verify_parser_dsl
+
+state verify_parser_dsl
+  run script "scripts/sync-status/verify-parser-dsl.js" on failure
+    transition to error
+  transition to verify_compiler
+
+state verify_compiler
+  run script "scripts/sync-status/verify-compiler.js" on failure
+    transition to error
+  transition to verify_kernel_dsl
+
+state verify_kernel_dsl
+  run script "scripts/sync-status/verify-kernel-dsl.js" on failure
+    transition to error
+  transition to verify_sdk
+
+state verify_sdk
+  run script "scripts/sync-status/verify-sdk.js" on failure
+    transition to error
+  transition to review_drift
+
+state review_drift
+  goal "Review the drift report before changes are written to the doc"
+  guide "Present the complete drift report: changed cells (with code references), new rows, dead nodes (🗑️), ambiguous cells (?), and sections with no drift. Ask the user to approve the update or cancel."
+  interact
+  on intent "approved"
+    transition to apply_update
+  on intent "cancelled"
+    transition to done
+  on intent "correction"
+    transition to review_drift
+  on offtopic
+    transition to review_drift
+
+state apply_update
+  run script "scripts/sync-status/write-doc.js" on failure
+    transition to error
+  transition to done
+
+state done
+  goal "Confirm the sync result"
+  guide "Tell the user: (1) whether the doc was updated or confirmed stable, (2) how many cells changed, (3) any ? entries that still need human review."
+  interact
+  on intent "run again"
+    transition to initialize
+  on offtopic
+    transition to done
+
+state error
+  goal "Report what failed and offer to retry"
+  guide "Name the script or step that failed. Ask whether to retry from the beginning or abort."
+  interact
+  on intent "retry"
+    transition to initialize
+  on offtopic
+    transition to error

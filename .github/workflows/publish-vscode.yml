@@ -1,0 +1,36 @@
+name: Publish VS Code Extension
+
+on:
+  push:
+    tags: ['vscode@*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript packages
+        run: |
+          npm run build --workspace=packages/compiler
+          npm run build --workspace=packages/language-server
+          npm run build --workspace=packages/sdk
+
+      - name: Package extension
+        run: npm run package
+        working-directory: apps/vscode-extension
+
+      - name: Upload vsix to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/vscode-extension/*.vsix

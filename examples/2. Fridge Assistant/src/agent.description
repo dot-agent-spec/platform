@@ -1,0 +1,14 @@
+agent Fridge Assistant
+  domain dot-agent.ai
+  license Apache-2.0
+
+  description
+    An assistant that checks your fridge contents and suggests vegetarian recipes.
+
+  behavior "fridge_logic.behavior"
+  
+  input
+    string "List of ingredients in your fridge"
+
+  output
+    string "Recipe recommendation"

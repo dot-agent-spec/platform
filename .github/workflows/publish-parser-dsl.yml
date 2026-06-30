@@ -1,0 +1,46 @@
+name: Publish parser-dsl
+
+on:
+  push:
+    tags: ['parser-dsl@*']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build WASM (release)
+        run: npm run build
+        working-directory: packages/parser-dsl
+        env:
+          CC_wasm32_wasip1: zig cc -target wasm32-wasi
+          CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
+          AR_wasm32_wasip1: zig ar
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        working-directory: packages/parser-dsl
