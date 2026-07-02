@@ -12,10 +12,17 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | In Progress — Tracks 1–3 implemented in code; one Track 1 item and the §5 verification checklist still open (see Current State) |
 | Date | 2026-06-27 |
 | Deciders | Danilo Borges |
 | Related | DA01-01, DA01-02 |
+
+## Current State (verified against source 2026-07-02)
+
+- **Track 1 — Run Refactor:** done except one item. `bundleFromDir()` exists (`packages/compiler/src/bundle.ts`), exported from `compiler/src/index.ts`, and used by `apps/dot-agent-cli/src/commands/run.ts`. `AgentContext` is fully removed (no references remain in `apps/dot-agent-cli/src`). **Open:** §3.3 version pinning — `scripts/release.mjs` still has no logic to resolve `@dot-agent/compiler: "*"` / `@dot-agent/sdk: "*"` to exact versions before publish; the CLI's `package.json` still declares both as `"*"`.
+- **Track 2 — MCP Server:** `apps/dot-agent-cli/src/commands/mcp-server.ts` exists and is substantial (~7KB) — matches the tools/resources spec in shape. Not re-verified line-by-line against §3.6/§3.7.
+- **Track 3 — LLM Context:** `apps/dot-agent-cli/assets/helper.agent` and `helper-src/{helper.behavior,helper.description}` exist; `apps/dot-agent-cli/skills/dot-agent/SKILL.md` exists; `install-skill.ts` command exists. Matches Track 3's shipped-asset shape.
+- **Not run:** the §5 verification checklist (behavioral tests — e.g. actually starting the MCP server and driving intents) was not executed as part of this check; the above is static evidence (files exist, are wired together) not a behavioral confirmation.
 
 | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) | cli (L4) |
 |---|---|---|---|---|---|

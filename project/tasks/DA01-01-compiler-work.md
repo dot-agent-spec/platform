@@ -6,7 +6,7 @@
 | Created | 2026-06-25 |
 | Author | Danilo Borges |
 | Decision Log | [DA01-01: Forgiving Syntax and Prettifier](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
-| Depends on | `DA01-01-grammar-unfreeze.md` (for items 2–4) |
+| Depends on | grammar unfreeze (for items 2–4) — completed, task file removed |
 
 Items 2–4 require the grammar unfreeze to be complete. Item 1 (Native States) has no grammar dependency and can ship now.
 

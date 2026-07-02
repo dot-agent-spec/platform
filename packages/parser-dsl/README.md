@@ -28,7 +28,7 @@ This is **Layer 1** of the dot-agent tooling hierarchy — it sits directly abov
 > depends on `wasm-bindgen` without a `target_arch = "wasm32"` gate, so a native consumer would
 > get a crate that either fails to build or exposes a useless API. It's consumed today only as a
 > path dependency by `kernel-dsl`. Publishing natively would require extracting a
-> wasm-bindgen-free core crate first — see `project/tasks/DA01-01-update-version-and-packages.md`.
+> wasm-bindgen-free core crate first.
 
 ---
 

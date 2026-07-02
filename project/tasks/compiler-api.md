@@ -87,7 +87,7 @@ export function resolveMerges(
 
 **Note:** The linter already does a shallow version of this (collecting state names for duplicate detection via `collectMergedStates` in `linter.ts`). `resolveMerges` is the full version — it returns the complete flattened `BehaviorFile`, not just state names.
 
-**Scope:** This function is for transpiler use (RFC-0018 pipeline) and compiler tooling — it is **not** a prerequisite for the kernel runtime. The kernel resolves merges internally via `load_behavior_with_bundle` / `set_file_resolver` (see `DA01-01-kernel-runtime.md` §1).
+**Scope:** This function is for transpiler use (RFC-0018 pipeline) and compiler tooling — it is **not** a prerequisite for the kernel runtime. The kernel resolves merges internally via `load_behavior_with_bundle` / `set_file_resolver` (see `packages/kernel-dsl/src/lib.rs` and `src/engine/mod.rs`).
 
 ---
 

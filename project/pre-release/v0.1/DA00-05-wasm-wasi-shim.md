@@ -261,4 +261,4 @@ If `wasi-stub` is fixed in a future release, the `build-wasm.sh` and `index.js`/
 ## Related
 
 - [DA00-05: Monorepo flatten](../../adr/DA00-05-monorepo-flatten.md) — the monorepo work that exposed this build breakage
-- [DA01-01-kernel-runtime.md](../../tasks/DA01-01-kernel-runtime.md) — ongoing kernel runtime task; this fix unblocks fresh kernel-dsl builds needed to validate §1 (`merge`) and §2 (native states)
+- DA01-01 kernel runtime task (completed, task file removed per the task lifecycle) — this fix unblocked fresh kernel-dsl builds needed to validate §1 (`merge`) and §2 (native states)

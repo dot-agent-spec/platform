@@ -15,7 +15,7 @@
 | Status | Accepted |
 | Created | 2026-06-27 |
 | Author | Danilo Borges |
-| Related | [ADR-0006](../adr/DA00-06-ts-rs-for-ast-json-contract.md), [DA00-06-ts-rs-implementation](../tasks/DA00-06-ts-rs-implementation.md) |
+| Related | [ADR-0006](../adr/DA00-06-ts-rs-for-ast-json-contract.md) — implementation task completed and removed per the task lifecycle |
 
 <!-- Package impact table — see rfcs/AGENTS.md for the symbol legend (— · ⚠️ · 🔄 · ?). -->
 
@@ -255,5 +255,5 @@ None — all questions raised during investigation are resolved in **Decisions C
 ## Related
 
 - [ADR-0006 — Use ts-rs as the Single Source of Truth for AST JSON Contracts](../adr/DA00-06-ts-rs-for-ast-json-contract.md)
-- [DA00-06 Implementation Task](../tasks/DA00-06-ts-rs-implementation.md)
+- Implementation task completed 2026-06-27 and removed per the task lifecycle (`project/tasks/AGENTS.md`)
 - `package-architecture-investigation.md` — companion brief on runtime dependency structure
