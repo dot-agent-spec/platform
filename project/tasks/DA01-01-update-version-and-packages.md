@@ -76,10 +76,10 @@ Audit that produced this task found the pipeline is not actually ready to publis
 | 3 | P0 | Fix `repository` metadata everywhere | tree-sitter, parser-dsl, kernel-dsl | S | ✅ |
 | 4 | P0 | Remove/comment phantom `apps/zed-agent` workspace entry | root | XS | ✅ |
 | 5 | P0 | Reconcile kernel-dsl `Cargo.toml`/`package.json` version drift | kernel-dsl | XS | ✅ |
-| 6 | P1 | Write `packages/sdk/README.md` | sdk | S | pending |
-| 7 | P1 | Document parser-dsl/kernel-dsl crates.io non-publish decision | parser-dsl, kernel-dsl | XS | pending |
+| 6 | P1 | Write `packages/sdk/README.md` | sdk | S | ✅ |
+| 7 | P1 | Document parser-dsl/kernel-dsl crates.io non-publish decision | parser-dsl, kernel-dsl | XS | ✅ |
 | 8 | P1 | Run the pre-alpha rehearsal bump + publish (`-alpha.1`, `alpha` dist-tag) | all packages | M | pending — needs explicit go-ahead (pushes tags, triggers real registry publishes) |
-| 9 | P1 | Add real VS Code Marketplace publish step | vscode-extension | M | pending — needs `VSCE_PAT` confirmed first |
+| 9 | P1 | Add real VS Code Marketplace publish step | vscode-extension | M | code done; needs `VSCE_PAT`/`OVSX_PAT` secrets added before it can actually run |
 | 10 | P2 | Capture lessons learned, archive this task, open the real `0.10.0` task | — | XS | pending |
 
 ---
@@ -236,15 +236,19 @@ each `publish-*.yml` run; confirm packages land under the `alpha` dist-tag / as 
 
 ### 9. Add real VS Code Marketplace publish step — P1
 
-**What:** Extend `.github/workflows/publish-vscode.yml` to run `vsce publish --pre-release` (in addition
-to, or instead of, just uploading the `.vsix` to a GitHub Release), gated by a `VSCE_PAT` secret.
-Optionally mirror to Open VSX with `ovsx publish`.
+**What:** Extended `.github/workflows/publish-vscode.yml` with `vsce publish` (in addition to, not
+instead of, uploading the `.vsix` to a GitHub Release) plus a best-effort `ovsx publish` mirror to Open
+VSX (`continue-on-error: true` — a missing `OVSX_PAT` shouldn't fail the whole release). The `--pre-release`
+flag is computed from `GITHUB_REF_NAME` the same way the npm dist-tag is: any tag containing a `-`
+publishes as Marketplace pre-release, matching the odd-minor-number convention noted in item 8.
 
 **Why:** Without this, "publishing" the extension only ever means side-loading a `.vsix` manually —
 nobody finds or auto-updates it through the normal VS Code extensions UI.
 
-**Change:** `.github/workflows/publish-vscode.yml`; requires a Marketplace publisher PAT to be added as
-a repo secret (manual, external, one-time — confirm before relying on it in CI).
+**Change:** `.github/workflows/publish-vscode.yml`. **Still requires action before item 8 can actually
+exercise this path:** `VSCE_PAT` (and optionally `OVSX_PAT`) must be added as repo secrets — a manual,
+external, one-time step this session cannot do. Until then this step will fail loudly with an auth
+error, which is the correct behavior (better than silently skipping).
 
 ---
 

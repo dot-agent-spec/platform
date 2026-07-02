@@ -34,3 +34,27 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: apps/vscode-extension/*.vsix
+
+      - name: Determine pre-release flag
+        id: prerelease
+        run: |
+          # VS Code Marketplace has no semver-prerelease concept in the `version` field — its own
+          # convention is an odd minor number published with `--pre-release`. Tags without a `-`
+          # suffix (e.g. this rehearsal's `vscode@0.5.1`) are treated as pre-release; a tag with an
+          # even minor and no rehearsal marker is a stable release.
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            echo "flag=--pre-release" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to VS Code Marketplace
+        run: npx vsce publish ${{ steps.prerelease.outputs.flag }} --pat "$VSCE_PAT" --packagePath apps/vscode-extension/*.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: npx ovsx publish apps/vscode-extension/*.vsix -p "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        continue-on-error: true

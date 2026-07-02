@@ -6,6 +6,14 @@
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 
+//! **Not published to crates.io, by design.** This crate depends on `wasm-bindgen` without a
+//! `#[cfg(target_arch = "wasm32")]` gate and exports `#[wasm_bindgen]` items directly, so a
+//! native (non-wasm) consumer would get a crate that either fails to build or ships a useless
+//! API. It's consumed today only as a path dependency (`dot-agent-kernel-dsl` links it as an
+//! rlib) and compiled to `cdylib` for the npm-distributed WASM build. Publishing natively would
+//! require first extracting a wasm-bindgen-free core crate — real work, not a CI checkbox. See
+//! `dot-agent-spec/project/tasks/DA01-01-update-version-and-packages.md` item 7.
+
 pub mod ast;
 mod parser;
 mod analysis;

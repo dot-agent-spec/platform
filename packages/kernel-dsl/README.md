@@ -2,6 +2,12 @@
 
 Execution engine for the **agent behavior DSL** (`.description` and `.behavior` files), written in Rust and compiled to **WebAssembly**. Implements a Finite State Machine (FSM) that interprets `.behavior` files according to the full dot-agent-spec, running entirely in-memory on the client side (browser or Node.js).
 
+> **The Rust crate (`dot-agent-kernel-dsl`) is deliberately not published to crates.io.** It
+> depends on `wasm-bindgen` without a `target_arch = "wasm32"` gate, so a native consumer would
+> get a crate that either fails to build or exposes a useless API. Publishing natively would
+> require extracting a wasm-bindgen-free core crate first — see
+> `project/tasks/DA01-01-update-version-and-packages.md`.
+
 ## Quick Start
 
 ### Installation
