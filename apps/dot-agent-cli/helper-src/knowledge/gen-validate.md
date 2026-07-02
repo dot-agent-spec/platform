@@ -12,20 +12,28 @@ This lints the .description and .behavior files, applies the same checks as `dot
 
 | Code | Meaning | Fix |
 |------|---------|-----|
-| E003 | `agent` block missing `name` field | Add `agent my-name` as first line |
-| E004 | Parse error in .behavior syntax | Check quotes, keywords, string chars |
-| E012 | Capability declared but no matching intent handler | Add `on intent "capability-name"` or remove capability |
-| E014 | Unknown field in .description block | Remove unrecognized keyword |
-| E015 | Duplicate state name (across merged files) | Rename one of the states |
-| E016 | No `init` state in behavior | Add `state init` |
+| E003 | `.description` file missing (or more than one found) | Add exactly one `*.description` file, or pass `PackOptions.description` to disambiguate |
+| E004 | Parse error (tree-sitter `ERROR`/`MISSING` node) in .description or .behavior | Check quotes, keywords, `end` terminators — the message includes position and a grammar hint |
+| E005 | `transition to <name>` targets an undeclared state | Fix the typo, or declare the target state (comes with an H002 hint on close matches) |
+| E009 | Oriented state (`interact`) has zero `on intent` handlers | Add at least one `on intent "..."` |
+| E012 | `merge "path"` target not found on disk | Fix the path or create the file |
+| E014 | `merge` or `behavior <path>` escapes the agent root | Use a relative path that stays inside the agent directory |
+| E016 | No `init` state in the consolidated behavior | Add `state init` |
+| E017 | More than one `behavior` declaration in `.description` | Keep one `behavior` line; use `merge` inside `.behavior` to combine files |
 
 ## Common lint warnings
 
 | Code | Meaning |
 |------|---------|
-| W008 | State has no intent handlers and no `on offtopic` |
-| W009 | `interact` called but no intent handlers follow in same state |
-| W013 | Unreachable state (no transitions point to it) |
+| W001 | Isolated state — no incoming and no outgoing transitions |
+| W006 | Dead-end `interact` — no `on intent`/`on offtopic` handlers, agent will trap |
+| W008 | Duplicate `on intent "label"` in the same state — **error-severity despite the `W` prefix, blocks pack** |
+| W009 | Unreachable state — nothing transitions to it and it isn't the entry state |
+| W011 | `on intent` handler transitions back to its own enclosing state |
+| W012 | `goal` in a state without `interact` — add `interact` or remove `goal` |
+| W013 | `interact` without `goal` — add `goal "..."` before `interact` |
+
+Full reference: `packages/compiler/docs/reference/lint-codes.md`.
 
 ## Typical validate workflow
 
@@ -34,5 +42,5 @@ dot-agent run ./my-agent-dir
 # fix lint errors shown in output
 dot-agent run ./my-agent-dir
 # green -> proceed to pack
-dot-agent pack ./my-agent-dir --out my-agent.agent
+dot-agent pack --dir ./my-agent-dir --out my-agent.agent
 ```

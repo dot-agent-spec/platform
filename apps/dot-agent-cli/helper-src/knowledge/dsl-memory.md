@@ -14,11 +14,17 @@
 ```
 state capture_name
   on intent "done"
+    set context.name = ""
     transition to init
-    set_memory context.name ""
+  end
 ```
 
-Note: `set_memory` stores an empty string as placeholder; the actual value is injected by the host.
+`set <target> <op> <value>` — target is `domain.var` (domain is one of the 4 above) or a bare
+local var; op is `=`, `+=`, or `-=`. Note: a handler with 2+ actions needs the closing `end`.
+
+Here `set` stores an empty string as a placeholder so it shows up in `dot-agent://memory`
+immediately; the actual value is typically injected by the host via `inject_memory` after
+interpreting free-form user input.
 
 ## Inject from host (MCP)
 

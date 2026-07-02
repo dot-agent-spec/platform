@@ -2,7 +2,7 @@
 
 ```
 state init
-  goal "I am ready. Send an intent to begin."
+  guide "I am ready. Send an intent to begin."
   on intent "start"
     transition to working
   on intent "help"
@@ -11,6 +11,7 @@ state init
     transition to init
 
 state working
+  goal "Find out what the user needs and help with it."
   guide "Tell me what you need."
   interact
   on intent "done"
