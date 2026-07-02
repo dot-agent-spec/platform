@@ -8,6 +8,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { buildAboutme, parseAboutme, aboutmeToJson } from '../src/manifest.js'
+import { DSL_VERSION } from '../src/generated-version.js'
 
 const BASE_OPTS = {
   id: 'health.example.com/doctor:v1.0~a1b2c3d4',
@@ -21,9 +22,9 @@ const BASE_OPTS = {
 } as const
 
 describe('buildAboutme', () => {
-  it('sets schemaVersion to dot-agent/1.0', () => {
+  it('sets dslVersion from DSL_VERSION', () => {
     const a = buildAboutme(BASE_OPTS)
-    expect(a.schemaVersion).toBe('dot-agent/1.0')
+    expect(a.dslVersion).toBe(`dot-agent/${DSL_VERSION}`)
   })
 
   it('propagates all required fields', () => {
@@ -76,7 +77,7 @@ describe('buildAboutme', () => {
 
 describe('parseAboutme', () => {
   const VALID_JSON = {
-    schemaVersion: 'dot-agent/1.0',
+    dslVersion: 'dot-agent/1.0',
     id: 'health.example.com/doctor:v1.0~a1b2c3d4',
     name: 'Doctor',
     description: 'Clinical diagnostic agent',
@@ -94,7 +95,7 @@ describe('parseAboutme', () => {
   it('parses a valid aboutme JSON', () => {
     const a = parseAboutme(VALID_JSON)
     expect(a.name).toBe('Doctor')
-    expect(a.schemaVersion).toBe('dot-agent/1.0')
+    expect(a.dslVersion).toBe('dot-agent/1.0')
     expect(a.capabilities).toEqual([])
   })
 
@@ -105,7 +106,7 @@ describe('parseAboutme', () => {
     expect(parsed).toEqual(original)
   })
 
-  it.each(['schemaVersion', 'id', 'name', 'description', 'version', 'domain', 'persona', 'compiler'])(
+  it.each(['dslVersion', 'id', 'name', 'description', 'version', 'domain', 'persona', 'compiler'])(
     'throws when required field "%s" is missing',
     field => {
       const incomplete = { ...VALID_JSON, [field]: undefined }
@@ -130,7 +131,7 @@ describe('aboutmeToJson', () => {
   it('returns a pretty-printed JSON string', () => {
     const a = buildAboutme(BASE_OPTS)
     const json = aboutmeToJson(a)
-    expect(json).toContain('"schemaVersion": "dot-agent/1.0"')
+    expect(json).toContain(`"dslVersion": "dot-agent/${DSL_VERSION}"`)
     expect(json).toContain('"name": "Doctor"')
     expect(() => JSON.parse(json)).not.toThrow()
   })

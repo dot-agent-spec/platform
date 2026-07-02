@@ -19,6 +19,7 @@ import { tmpdir } from 'os'
 import { pack, collectFiles, consolidate, discoverDescriptionFile } from '../src/pack.js'
 import { readZip, extractFiles } from '../src/zip.js'
 import { parseAboutme } from '../src/manifest.js'
+import { DSL_VERSION } from '../src/generated-version.js'
 
 let tmpDir: string
 
@@ -144,7 +145,7 @@ describe('pack — happy path', () => {
     expect(aboutme.name).toBe('Doctor')
     expect(aboutme.domain).toBe('health.example.com')
     expect(aboutme.version).toBe('v1.0.0')
-    expect(aboutme.schemaVersion).toBe('dot-agent/1.0')
+    expect(aboutme.dslVersion).toBe(`dot-agent/${DSL_VERSION}`)
     expect(aboutme.integrity.sha256).toHaveLength(64)
   })
 

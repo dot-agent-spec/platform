@@ -15,6 +15,7 @@ import { lintDescription, lintBehavior } from './linter.js'
 import { buildId } from './id.js'
 import { buildAboutme } from './manifest.js'
 import { initBehaviorParser, parseDescriptionFile } from './parser.js'
+import { COMPILER_VERSION } from './generated-version.js'
 
 const GITKEEP = new Set(['guides/.gitkeep', 'knowledge/.gitkeep'])
 
@@ -76,7 +77,7 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     license: df.agent.license ?? '',
     persona: df.persona ?? 'SOUL.md',
     purpose: 'development',
-    compiler: 'dot-agent/1.0.0',
+    compiler: `dot-agent/${COMPILER_VERSION}`,
     capabilities: df.capabilities.map(c => ({ id: c.name, description: c.description ?? '' })),
     requires: df.requires,
     integrity: { sha256, files: '.agent/files.json' },

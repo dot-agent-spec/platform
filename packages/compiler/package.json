@@ -54,9 +54,12 @@
     "dist"
   ],
   "scripts": {
+    "prebuild": "node scripts/embed-version.mjs",
     "build": "tsup",
     "dev": "tsup --watch",
+    "pretypecheck": "node scripts/embed-version.mjs",
     "typecheck": "tsc --noEmit",
+    "pretest": "node scripts/embed-version.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

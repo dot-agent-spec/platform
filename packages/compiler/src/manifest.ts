@@ -7,9 +7,10 @@
 //     http://www.apache.org/licenses/LICENSE-2.0
 
 import type { AboutMe, BuildAboutmeOptions } from './types.js'
+import { DSL_VERSION } from './generated-version.js'
 
 export function parseAboutme(json: any): AboutMe {
-  if (!json.schemaVersion) throw new Error('Missing schemaVersion in aboutme.json')
+  if (!json.dslVersion) throw new Error('Missing dslVersion in aboutme.json')
   if (!json.id) throw new Error('Missing id in aboutme.json')
   if (!json.name) throw new Error('Missing name in aboutme.json')
   if (!json.description) throw new Error('Missing description in aboutme.json')
@@ -22,7 +23,7 @@ export function parseAboutme(json: any): AboutMe {
   if (!json.integrity) throw new Error('Missing integrity in aboutme.json')
 
   return {
-    schemaVersion: json.schemaVersion,
+    dslVersion: json.dslVersion,
     id: json.id,
     name: json.name,
     description: json.description,
@@ -41,7 +42,7 @@ export function parseAboutme(json: any): AboutMe {
 
 export function buildAboutme(opts: BuildAboutmeOptions): AboutMe {
   return {
-    schemaVersion: 'dot-agent/1.0',
+    dslVersion: `dot-agent/${DSL_VERSION}`,
     id: opts.id,
     name: opts.name,
     description: opts.description,

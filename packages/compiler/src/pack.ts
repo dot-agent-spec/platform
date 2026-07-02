@@ -18,6 +18,7 @@ import { buildAboutme, aboutmeToJson } from './manifest.js'
 import { initBehaviorParser, parseDescriptionFile, parseBehaviorFile } from './parser.js'
 import { buildTypesJson } from './schema.js'
 import { writeZip } from './zip.js'
+import { COMPILER_VERSION } from './generated-version.js'
 
 function gitDescribeTags(): string | null {
   try {
@@ -268,7 +269,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     license: df.agent.license ?? '',
     persona: df.persona ?? 'SOUL.md',
     purpose: 'unknown',
-    compiler: 'dot-agent/1.0.0',
+    compiler: `dot-agent/${COMPILER_VERSION}`,
     commit,
     capabilities: df.capabilities.map(c => ({ id: c.name, description: c.description ?? '' })),
     requires: df.requires,

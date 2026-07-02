@@ -39,6 +39,12 @@ Conflating them forces a bad trade: either lockstep churn (bumping packages that
 keep numbers aligned), or an opaque set of package versions that gives users no single "language
 version" to cite.
 
+A third pressure sits underneath both: a built `.agent` bundle has to record, mechanically, which
+language it was authored against and which package built it — not just as a documentation convention,
+but as data stamped into `aboutme.json` at pack time. Any versioning policy that only talks about git
+tags and registry numbers, without saying what gets written into the bundle itself, leaves that
+provenance question unanswered.
+
 ## Decision
 
 Track **two independent version axes**:
@@ -52,6 +58,28 @@ At each public release the **package tens digit mirrors the DSL milestone**: `0.
 minor/patch freedom. All packages make a one-time jump to `0.10.x` at the first public publish. The
 grammar is *preview* while `0.x`; the public stability commitment is `v1.0`.
 
+### Provenance stamping
+
+Each axis has exactly one concrete carrier, and each bundle stamps both:
+
+- **DSL axis** — `dsl/VERSION`, a single-line file living alongside the spec itself
+  (`dsl/explanation`, `dsl/reference`, `dsl/tutorials`), the language's own manifest in the same sense
+  that a `Cargo.toml`/`package.json` is a package's. Stamped into every built bundle as
+  `aboutme.json`'s `dslVersion` field.
+- **Package axis** — the real, installed version of whatever package produced the bundle (e.g.
+  `@dot-agent/compiler`). Stamped as `aboutme.json`'s `compiler` field.
+
+`dslVersion` is not split into a separate "schema version" field for the envelope format. The DSL exists
+solely to serve this one bundle format — there is no consumer of `aboutme.json`'s structure independent
+of the language it serializes. The relationship is the same as an HTML document's DOCTYPE: one version
+number coordinates syntax *and* tooling at once, not two numbers that could drift apart. A bundle that
+says `dslVersion: 0.1` is making exactly one claim — "parse and run me under v0.1 rules" — and that claim
+covers both the grammar and the envelope shape together.
+
+This is small but load-bearing: [`ROADMAP.md` § Evolution after v1.0 — editions](../../ROADMAP.md)
+depends on every bundle honestly recording which language version it speaks, from v0.1 onward. The
+editions escape hatch only works if that provenance was never optional.
+
 ## Options considered
 
 - **A — Lockstep all packages to one version.** Simple mental model, but forces version churn on
@@ -62,17 +90,28 @@ grammar is *preview* while `0.x`; the public stability commitment is `v1.0`.
   independent semver; the tens digit gives an at-a-glance "which milestone" signal without lockstep
   churn. Best of A's legibility and B's independence.
 
+For the provenance carrier specifically, the alternative considered was **splitting `dslVersion` from a
+separate `schemaVersion`** (envelope format vs. language capability, versioned independently).
+Rejected: this project has no envelope consumer that isn't also a language consumer, so the split adds a
+number with no independent audience — it only recreates the same conflation problem this ADR exists to
+resolve, one layer down.
+
 ## Consequences
 
 - **Easier:** docs and authors reference one DSL version; a glance at a package's tens digit reveals
-  which DSL milestone it targets; packages still release on their own cadence.
+  which DSL milestone it targets; packages still release on their own cadence; every bundle is
+  self-describing about which language rules it was authored under.
 - **Accepted costs:** the tens-digit mapping is a manual discipline (remember to bump by tens at
-  milestone boundaries); a one-time coordinated jump to `0.10.x` is required at first publish.
+  milestone boundaries); a one-time coordinated jump to `0.10.x` is required at first publish;
+  `dsl/VERSION` must be bumped deliberately at each DSL milestone, in lockstep with the tens-digit jump
+  it triggers on the package axis.
 - **Follow-up:** add a release-time check (CI) that the package tens digit matches the current DSL
   milestone; revisit this ADR at `v1.0`, when both axes converge.
 
 ## Related
 
 - [`tasks/pre-public-consolidation.md`](../tasks/pre-public-consolidation.md) — B2, where this decision was recorded inline
-- [`ROADMAP.md`](../ROADMAP.md) — § Two version axes (the policy in the roadmap)
-- [`GOVERNANCE.md`](../GOVERNANCE.md) — § Versioning & stability
+- [`tasks/DA01-01-dsl-spec-versioning.md`](../tasks/DA01-01-dsl-spec-versioning.md) — implements the DSL-axis provenance stamping described here
+- [`tasks/DA01-01-update-version-and-packages.md`](../tasks/DA01-01-update-version-and-packages.md) — implements the package-axis rehearsal and publish mechanism
+- [`ROADMAP.md`](../../ROADMAP.md) — § Two version axes (the policy in the roadmap)
+- [`GOVERNANCE.md`](../../GOVERNANCE.md) — § Versioning & stability

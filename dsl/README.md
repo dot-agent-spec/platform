@@ -4,6 +4,8 @@ Language specification for the dot-agent ecosystem. Everything here is about **w
 
 For package internals (compiler, kernel, SDK APIs), see [`docs/`](../docs/).
 
+The current language capability tier is recorded in [`VERSION`](VERSION) — the DSL's own version, independent of any package's semver (see [DA00-02](../project/adr/DA00-02-two-axis-versioning.md)). Every `.agent` bundle stamps this value into `aboutme.json`'s `dslVersion` field at pack time.
+
 ---
 
 ## Structure

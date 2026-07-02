@@ -78,7 +78,7 @@ export interface Integrity {
 }
 
 export interface AboutMe {
-  schemaVersion: string
+  dslVersion: string
   id: string
   name: string
   description: string
