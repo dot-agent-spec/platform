@@ -5,7 +5,7 @@ agent Text Assistant
 description 
 Reviews and summarizes texts. Can adjust the tone and clarity of a text according to the objective, or generate a summary at different levels of detail.
 
-behavior main.behavior
+behavior agent.behavior
 
 
 capabilities
@@ -13,7 +13,7 @@ capabilities
   SummarizeAction "Summarizes a text at the desired level of detail (executive, full, or bullet points)."
 
 input
-  string "List of ingredients in your fridge"
+  string "The text to be reviewed or summarized"
 
 output
-  string "Recipe recommendation"
+  string "The revised or summarized text"

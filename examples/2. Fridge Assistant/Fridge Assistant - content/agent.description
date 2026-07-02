@@ -5,7 +5,7 @@ agent Fridge Assistant
   description
     An assistant that checks your fridge contents and suggests vegetarian recipes.
 
-  behavior "fridge_logic.behavior"
+  behavior agent.behavior
   
   input
     string "List of ingredients in your fridge"

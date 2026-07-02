@@ -1,7 +1,9 @@
 {
   "description": "agent.description",
   "behavior": "agent.behavior",
-  "behaviors": [],
+  "behaviors": [
+    "behaviors/agent.behavior"
+  ],
   "guides": [],
   "knowledge": []
 }

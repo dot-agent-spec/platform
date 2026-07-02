@@ -1,15 +1,27 @@
+state init
+  transition to responsive
+
 state responsive
-  goal "Initiate text summarization"
-  guide "Greet the user and request the text they wish to have summarized. Be concise and maintain a helpful tone."
+  goal "Initiate the interaction and identify whether the user wants their text summarized or revised"
+  guide "Greet the user and ask them to share the text along with whether they'd like a summary or a tone/clarity revision. Be concise and maintain a helpful tone."
   interact
-  on intent "proceed" transition to summary
+  on intent "summarize" transition to summary
+  on intent "revise" transition to revise
   on intent "end" transition to goodbye
   on offtopic transition to responsive
 
 state summary
   goal "Generate and present the summary"
-  guide "Analyze the provided text to generate a clear, accurate summary. Present the result and invite the user to provide a new text or conclude the session."
+  guide "Analyze the provided text to generate a clear, accurate summary at the level of detail requested (executive, full, or bullet points). Present the result and invite the user to provide a new text or conclude the session."
   teach "maintopics.md"
+  interact
+  on intent "new_text" transition to responsive
+  on intent "end" transition to goodbye
+  on offtopic transition to responsive
+
+state revise
+  goal "Revise the text's tone and clarity according to the user's objective"
+  guide "If the user hasn't stated the desired tone or objective, ask for it. Rewrite the text to match that tone while preserving its original meaning and improving clarity. Present the revised text and invite the user to request further changes or conclude the session."
   interact
   on intent "new_text" transition to responsive
   on intent "end" transition to goodbye
