@@ -44,6 +44,19 @@ When an agent is running with `--mcp`:
 4. If `request_interact` is present, collect user input and call `send_intent` or `send_offtopic`
 5. Repeat from step 1
 
+## Agent Simulation / Emulation Mode
+
+When the user asks you to "simulate" or "emulate" an interaction with a specific `.agent`, you MUST act as a proxy (an echo) between the running MCP server and the user. **DO NOT run the interaction loop on your own.**
+
+**CRITICAL RULES FOR EMULATION:**
+1. **Never invent user input.** You must stop and wait for the human to reply.
+2. **Read State & Intents:** Read `dot-agent://state` and `dot-agent://intents`. 
+3. **Internalize Goals:** Absorb any `goal` effect silently to guide your persona.
+4. **Present the Persona:** Surface any `guide` text or `teach` files to the user in a natural, conversational way, acting as the agent.
+5. **HALT EXECUTION:** If the state expects user input (has valid intents or a `request_interact` effect), STOP tool execution. Present the agent's message to the user and wait.
+6. **Map Response:** When the user replies in the chat, map their natural language to one of the available `intents` and call `send_intent`. If it doesn't match, call `send_offtopic`.
+7. Repeat the cycle, always pausing for the human.
+
 ## Authoring a new agent
 
 1. `dot-agent init --name my-agent --domain example.com` — scaffold project
