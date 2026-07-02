@@ -45,6 +45,15 @@ jobs:
         run: npm run build
         working-directory: ${{ needs.resolve.outputs.directory }}
 
+      - name: Determine npm dist-tag
+        id: npm_tag
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag ${{ steps.npm_tag.outputs.tag }}
         working-directory: ${{ needs.resolve.outputs.directory }}

@@ -57,6 +57,15 @@ jobs:
           done
           echo "All artifacts present."
 
+      - name: Determine npm dist-tag
+        id: npm_tag
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        run: npm publish --provenance
+        run: npm publish --provenance --tag ${{ steps.npm_tag.outputs.tag }}
         working-directory: packages/kernel-dsl

@@ -6,6 +6,18 @@ import readline from 'readline';
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const ask = (query) => new Promise((resolve) => rl.question(query, resolve));
 
+// Packages that don't live under `packages/<pkg>` — the tag prefix (left of `@version`
+// pushed to git, matched by each `.github/workflows/publish-*.yml`) doesn't always equal
+// the directory name.
+const PACKAGE_PATHS = {
+  cli: 'apps/dot-agent-cli',
+  vscode: 'apps/vscode-extension',
+};
+
+function resolvePackagePath(pkg) {
+  return PACKAGE_PATHS[pkg] ?? path.join('packages', pkg);
+}
+
 function run(cmd, cwd = process.cwd()) {
   console.log(`\x1b[36m> ${cmd}\x1b[0m`);
   execSync(cmd, { stdio: 'inherit', cwd });
@@ -24,7 +36,7 @@ async function main() {
   console.log('Running tests across all packages to ensure stability...');
   try {
     // Adjust this to the global workspace test command
-    run('npm run test'); 
+    run('npm run test');
   } catch (e) {
     console.error('\x1b[31m❌ Tests failed! Release aborted.\x1b[0m');
     process.exit(1);
@@ -34,12 +46,12 @@ async function main() {
   console.log('\n--- Phase 2: Versioning ---');
   const pkgStr = await ask('Which packages do you want to update? (e.g., tree-sitter, parser-dsl): ');
   const packages = pkgStr.split(',').map(p => p.trim());
-  const version = await ask('What is the new version? (e.g., 0.5.0): ');
+  const version = await ask('What is the new version? (e.g., 0.5.0-alpha.1): ');
 
   console.log('\nUpdating files...');
   for (const pkg of packages) {
-    const pkgPath = path.join('packages', pkg);
-    
+    const pkgPath = resolvePackagePath(pkg);
+
     // Update package.json
     const packageJsonPath = path.join(pkgPath, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
@@ -72,19 +84,13 @@ async function main() {
     }
   }
 
-  // --- PHASE 4: Publish ---
-  console.log('\n--- Phase 4: Publish ---');
-  const confirmPublish = await ask(`Do you want to publish the packages ${packages.join(', ')} now? (y/N): `);
-  if (confirmPublish.toLowerCase() === 'y') {
-    for (const pkg of packages) {
-      console.log(`Publishing ${pkg}...`);
-      run('npm publish --access public', path.join('packages', pkg));
-    }
-  }
+  // --- PHASE 4: Tag & hand off to CI ---
+  // No local `npm publish` here on purpose: every publish-*.yml workflow authenticates via
+  // OIDC trusted publishing (`--provenance`), which only works from within GitHub Actions.
+  // A local publish would either fail or produce an unsigned, non-provenance package —
+  // publishing is CI's job, triggered by the tag this phase creates.
+  console.log('\n--- Phase 4: Git Tag, Freeze and Cleanup ---');
 
-  // --- PHASE 5: Freeze & Tag ---
-  console.log('\n--- Phase 5: Git Tag, Freeze and Cleanup ---');
-  
   // Clean up the Release Markdown Task
   const taskPath = await ask('What is the path of the Release Markdown task file to delete? (leave empty if none): ');
   if (taskPath && fs.existsSync(taskPath)) {
@@ -92,17 +98,18 @@ async function main() {
     console.log(`🗑️  Task ${taskPath} removed.`);
   }
 
-  console.log('\n[Reminder] Manually update the table in `docs/explanation/architecture/implementation-status.md` to "🧊 Frozen".');
+  console.log('\n[Reminder] Manually update the table in `project/implementation-status.md` to "🧊 Frozen".');
   const confirmCommit = await ask('Do you want to commit and generate the Git Tag now? (Y/n): ');
-  
+
   if (confirmCommit.toLowerCase() !== 'n') {
-    run('git add packages/ docs/ project/tasks/ Cargo.lock package-lock.json');
+    run('git add packages/ apps/ project/tasks/ Cargo.lock package-lock.json');
     run(`git commit -m "chore(release): bump ${packages.join(', ')} to ${version}"`);
-    
+
     for (const pkg of packages) {
-      run(`git tag @dot-agent/${pkg}@${version}`);
+      run(`git tag ${pkg}@${version}`);
     }
-    console.log(`\n🎉 Release ${version} successfully completed and 'Frozen'! Remember to run git push --tags.`);
+    console.log(`\n🎉 Tagged ${version} for ${packages.join(', ')}.`);
+    console.log('Run `git push --tags` to hand off to CI — that\'s what actually publishes.');
   }
 
   rl.close();

@@ -41,6 +41,15 @@ jobs:
           CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
           AR_wasm32_wasip1: zig ar
 
+      - name: Determine npm dist-tag
+        id: npm_tag
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag ${{ steps.npm_tag.outputs.tag }}
         working-directory: packages/parser-dsl

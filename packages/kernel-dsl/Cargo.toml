@@ -1,13 +1,13 @@
 [package]
 name = "dot-agent-kernel-dsl"
-version = "0.1.0"
+version = "0.1.3"
 edition = "2021"
 description = "WebAssembly kernel for parsing and executing agent behavior DSL with deterministic FSM orchestration"
 license = "Apache-2.0"
 authors = ["Danilo Borges <contato@daniloborg.es>"]
-repository = "https://github.com/dot-agent-spec/kernel-dsl"
-homepage = "https://github.com/dot-agent-spec/kernel-dsl"
-documentation = "https://github.com/dot-agent-spec/kernel-dsl#readme"
+repository = "https://github.com/dot-agent-spec/platform"
+homepage = "https://dot-agent.ai"
+documentation = "https://github.com/dot-agent-spec/platform/tree/main/packages/kernel-dsl#readme"
 readme = "README.md"
 keywords = ["wasm", "agent", "dsl", "parser", "fsm", "state-machine"]
 categories = ["wasm", "parser-implementations"]

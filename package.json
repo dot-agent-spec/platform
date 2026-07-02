@@ -7,7 +7,6 @@
     "packages/*",
     "apps/dot-agent-cli",
     "apps/vscode-extension",
-    "apps/zed-agent",
     "dsl/*"
   ],
   "scripts": {
