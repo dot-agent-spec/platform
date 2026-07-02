@@ -37,7 +37,7 @@ The dot-agent specification defines two foundational DSL files per agent: the `.
 
 Currently, the parsing pipeline is asymmetrical:
 1. **Behavior Parsing:** Structured and robust. `@dot-agent/behavior-parser` (Rust/WASM) parses `.behavior` files into a typed `BehaviorFile`.
-2. **Description Parsing:** Fragile and incomplete. The compiler uses a simple regex helper [`parseDescriptionMeta`](file:///Users/danilo/Development/entelekheia/dot-agent-spec/packages/compiler/src/pack.ts#L90) inside [`packages/compiler/src/pack.ts`](file:///Users/danilo/Development/entelekheia/dot-agent-spec/packages/compiler/src/pack.ts) to match domain, name, and description. This approach:
+2. **Description Parsing:** Fragile and incomplete. The compiler uses a simple regex helper [`parseDescriptionMeta`](../../../packages/compiler/src/pack.ts#L90) inside [`packages/compiler/src/pack.ts`](../../../packages/compiler/src/pack.ts) to match domain, name, and description. This approach:
    - Breaks easily when users format files with inline comments, variable spacing, or complex newlines.
    - Ignores critical declarations in `.description` (like `capabilities`, `requires`, `input`, `output`, and custom `type` blocks) during compilation, leaving them hardcoded or empty in the generated `aboutme.json`.
    - Prevents the compiler and runtimes from validating if the actions executed in `.behavior` align with the contract declared in `.description`.
@@ -73,7 +73,7 @@ To complete the toolchain architecture, we need a formal, tree-sitter-backed par
 
 ### 1. AST Schema (Rust)
 
-In `packages/parser-dsl/src/ast.rs`, the existing `BehaviorFile` types remain unchanged. The following `DescriptionFile` types are added, mapping directly to the [tree-sitter-description grammar](file:///Users/danilo/Development/entelekheia/dot-agent-spec/packages/tree-sitter/tree-sitter-description/grammar.js):
+In `packages/parser-dsl/src/ast.rs`, the existing `BehaviorFile` types remain unchanged. The following `DescriptionFile` types are added, mapping directly to the [tree-sitter-description grammar](../../../packages/tree-sitter/tree-sitter-description/grammar.js):
 
 ```rust
 use serde::{Deserialize, Serialize};
@@ -168,7 +168,7 @@ export function get_states(source: string): string;                        // JS
 export function get_intents_for_state(source: string, state: string): string; // JSON string[]
 ```
 
-**Breaking change:** `parse()` is renamed to `parse_behavior()`. The single consumer, [`packages/compiler/src/parser.ts`](file:///Users/danilo/Development/entelekheia/dot-agent-spec/packages/compiler/src/parser.ts), updates its import accordingly.
+**Breaking change:** `parse()` is renamed to `parse_behavior()`. The single consumer, [`packages/compiler/src/parser.ts`](../../../packages/compiler/src/parser.ts), updates its import accordingly.
 
 ### 3. TypeScript Canonical Names
 
@@ -210,7 +210,7 @@ export interface AboutMe {
 
 ### 1. Compiler Pack Integration
 
-The compiler's packaging step ([`packages/compiler/src/pack.ts`](file:///Users/danilo/Development/entelekheia/dot-agent-spec/packages/compiler/src/pack.ts)) will:
+The compiler's packaging step ([`packages/compiler/src/pack.ts`](../../../packages/compiler/src/pack.ts)) will:
 
 - Replace `parseDescriptionMeta()` (regex) with `parse_description()` from `@dot-agent/parser-dsl`.
 - Populate `aboutme.json` dynamically:
@@ -225,7 +225,7 @@ The JSON Schema generation logic (`TypeDefinition → JSON Schema 2020-12`, incl
 
 ### 2. Validation Locus
 
-Cross-file semantic validations (e.g., checking if a `run tool` statement in `.behavior` references a capability declared in `.description`) are implemented in [`packages/compiler/src/core.ts`](file:///Users/danilo/Development/entelekheia/dot-agent-spec/packages/compiler/src/core.ts), exported via the `@dot-agent/compiler/core` sub-path (already configured in `package.json`).
+Cross-file semantic validations (e.g., checking if a `run tool` statement in `.behavior` references a capability declared in `.description`) are implemented in [`packages/compiler/src/core.ts`](../../../packages/compiler/src/core.ts), exported via the `@dot-agent/compiler/core` sub-path (already configured in `package.json`).
 
 Namespace-prefix validation (e.g., `std.Prompt` vs `Prompt`) is handled by the compiler linter, not the parser. The parser accepts any syntactically valid `type_reference` and concatenates namespace qualifiers into a single string.
 

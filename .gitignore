@@ -9,6 +9,16 @@ node_modules/
 **/target/
 Cargo.lock
 
+# Build output
+**/dist/
+
+# Env files
+.env
+.env.*
+
+# Claude Code local settings (machine-specific, never shared)
+.claude/settings.local.json
+
 # Graphify
 graphify-out/
 
@@ -16,4 +26,4 @@ graphify-out/
 # The dogfood's value (.behavior/.description, EXPRESSIVENESS.md, BRIEF.md) IS committed.
 dogfood/**/examples/
 
-tmp/org-spec/
+tmp/

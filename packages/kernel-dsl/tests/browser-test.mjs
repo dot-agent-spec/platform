@@ -1,4 +1,4 @@
-import { chromium } from '/Users/danilo/.npm/_npx/e41f203b7505f1fb/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { readFile } from 'fs/promises';
 import { extname, join } from 'path';
