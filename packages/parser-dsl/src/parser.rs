@@ -563,6 +563,22 @@ fn node_to_value(node: Node, source: &str) -> Value {
             }
         }
 
+        // ── Condition (inside if) ──────────────────────────────────────────────
+        "condition" => {
+            let mut parts = Vec::new();
+            let mut current_op = None;
+            let mut cursor = node.walk();
+            for child in node.named_children(&mut cursor) {
+                if child.kind() == "logical_op" {
+                    current_op = Some(node_to_value(child, source));
+                } else if child.kind() == "expression" {
+                    parts.push(json!([current_op.take(), node_to_value(child, source)]));
+                }
+            }
+            map.insert("parts".to_string(), json!(parts));
+            type_name = "condition".to_string();
+        }
+
         _ => {
             // Generic handling: iterate all children and extract field names
             let mut cursor = node.walk();
