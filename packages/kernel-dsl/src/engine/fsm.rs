@@ -63,9 +63,10 @@ impl Fsm {
         }
     }
 
-    // Exec only the non-handler statements at entry (goal, guide, teach, interact, run, set, if, apply, remove).
+    // Exec only the non-handler statements at entry (goal, guide, teach, interact, run, set, if, apply, remove, transition).
     fn exec_entry_statements(&mut self, stmts: &[Statement], mem: &mut MemoryStore) -> Vec<Effect> {
         let mut effects = Vec::new();
+        let initial_state = self.current_state.clone();
         for stmt in stmts {
             match stmt {
                 Statement::Goal { .. }
@@ -77,10 +78,14 @@ impl Fsm {
                 | Statement::If { .. }
                 | Statement::Apply { .. }
                 | Statement::Remove { .. }
+                | Statement::Transition { .. }
                 | Statement::Parallel { .. } => {
                     effects.extend(self.exec_single(stmt, mem));
+                    if self.current_state != initial_state {
+                        break;
+                    }
                 }
-                // handlers and transition are not auto-executed at entry
+                // handlers are not auto-executed at entry
                 _ => {}
             }
         }
@@ -165,8 +170,12 @@ impl Fsm {
     fn exec_statements(&mut self, stmts: &[Statement], mem: &mut MemoryStore) -> Vec<Effect> {
         let stmts = stmts.to_vec();
         let mut effects = Vec::new();
+        let initial_state = self.current_state.clone();
         for stmt in &stmts {
             effects.extend(self.exec_single(stmt, mem));
+            if self.current_state != initial_state {
+                break;
+            }
         }
         effects
     }
@@ -355,37 +364,53 @@ impl Fsm {
 fn collect_scxml_transitions(_from: &str, stmts: &[Statement], out: &mut Vec<(Option<String>, String)>) {
     for stmt in stmts {
         match stmt {
-            Statement::OnIntent { intent, body } => {
-                let to = match body {
-                    IntentBody::Next(t) => t.clone(),
-                    IntentBody::Block(inner) => find_transition_in_block(inner).unwrap_or_default(),
-                };
-                if !to.is_empty() {
-                    out.push((Some(intent.clone()), to));
-                }
+            Statement::Transition { target } => {
+                out.push((None, target.clone()));
             }
+            Statement::OnIntent { intent, body } => match body {
+                IntentBody::Next(target) => {
+                    out.push((Some(intent.clone()), target.clone()));
+                }
+                IntentBody::Block(inner) => {
+                    let mut inner_out = Vec::new();
+                    collect_scxml_transitions(_from, inner, &mut inner_out);
+                    for (_, target) in inner_out {
+                        out.push((Some(intent.clone()), target));
+                    }
+                }
+            },
             Statement::OnOfftopic { body: stmts } => {
-                if let Some(to) = find_transition_in_block(stmts) {
-                    out.push((Some("offtopic".to_string()), to));
+                let mut inner_out = Vec::new();
+                collect_scxml_transitions(_from, stmts, &mut inner_out);
+                for (_, target) in inner_out {
+                    out.push((Some("offtopic".to_string()), target));
                 }
             }
-            Statement::After { body, .. } => {
-                if let Some(to) = find_transition_in_block(body) {
-                    out.push((Some("after".to_string()), to));
+            Statement::After { prompts, body } => {
+                let mut inner_out = Vec::new();
+                collect_scxml_transitions(_from, body, &mut inner_out);
+                for (_, target) in inner_out {
+                    out.push((Some(format!("after_{}_prompts", prompts)), target));
                 }
+            }
+            Statement::If { then_body, else_body, .. } => {
+                collect_scxml_transitions(_from, then_body, out);
+                if let Some(stmts) = else_body {
+                    collect_scxml_transitions(_from, stmts, out);
+                }
+            }
+            Statement::Parallel { body, on_failure } => {
+                collect_scxml_transitions(_from, body, out);
+                if let Some(stmts) = on_failure {
+                    collect_scxml_transitions(_from, stmts, out);
+                }
+            }
+            Statement::Interact { handlers } => {
+                collect_scxml_transitions(_from, handlers, out);
             }
             _ => {}
         }
     }
-}
-
-fn find_transition_in_block(stmts: &[Statement]) -> Option<String> {
-    for stmt in stmts {
-        if let Statement::Transition { target } = stmt {
-            return Some(target.clone());
-        }
-    }
-    None
 }
 
 fn escape_xml(s: &str) -> String {
