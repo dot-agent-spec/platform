@@ -72,8 +72,8 @@ Tracked in [`tasks/pre-public-consolidation.md`](tasks/pre-public-consolidation.
 - Resolve `merge` at runtime (kernel load path).
 - `.description` honesty: write `terms`/`privacy`, wire the `behavior` block, **drop** the placeholder `purpose` field (returns later as a real feature — see *Distribution & identity*).
 - Remove dead grammar/AST nodes (`on complete`/`on failed` standalone, `run … each`).
-- **Stamp provenance into `aboutme.json`** — the *real* compiler version (today hardcoded `'dot-agent/1.0.0'`) and the **DSL version the bundle targets** (e.g. `0.1`). A bundle must record the language version it was authored against. This is small now but load-bearing: it is the seed that makes *editions* possible later (see [Evolution after v1.0](#evolution-after-v10--editions)). Also source `schemaVersion` from a constant instead of a literal.
-- Packaging gates: `parser-dsl` `publishConfig`, and the version policy above.
+- ✅ **Stamp provenance into `aboutme.json`** — done. `dslVersion` (renamed from `schemaVersion`, DA00-02) is sourced from `dsl/VERSION` and `compiler` from `@dot-agent/compiler`'s real package version; both are build-time constants, no more hardcoded literals.
+- ✅ Packaging gates: the version policy above (two-axis, coordinated tens-digit bump, `alpha`/`latest` npm dist-tags) was rehearsed end-to-end under `0.5.0-alpha.1` and published for real to npm, crates.io (`tree-sitter`), and the VS Code Marketplace/Open VSX — see `project/pre-release/v0.1/`. The pipeline is proven; the real `0.10.x` jump is the next and only remaining step.
 
 ---
 

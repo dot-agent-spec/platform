@@ -74,7 +74,10 @@ Note the two **direct** edges into `tree-sitter`: one from `parser-dsl` (Rust) a
 | `tree-sitter-description.wasm` | 42,659 |
 | `parser-dsl` WASM | 604,094 |
 | `kernel-dsl` WASM (`pkg/`, embeds parser-dsl) | 2,272,385 |
-| `kernel-dsl` WASM (`pkg-web/`, older) | 1,830,452 |
+
+> `pkg-web/` (a separate, older build target, 1,830,452 bytes as of this brief) was removed during
+> the DA00-06 build-pipeline consolidation (2026-07-02) — `pkg/` is now the only kernel-dsl WASM
+> output.
 
 `kernel-dsl` (2.17 MB) statically embeds the `parser-dsl` rlib. The same parser logic therefore exists twice in a deployment that loads both `parser-dsl` WASM (via compiler) and `kernel-dsl` WASM (via sdk): once standalone (590 KB) and once embedded inside the kernel.
 
@@ -105,6 +108,11 @@ So the `[build-dependencies]` entry is justified, but the two `[dependencies]` e
 ## 7. Version skew (verified)
 
 Independent versions across packages that ship together: `tree-sitter` 0.4.1, `kernel-dsl` 0.1.3, `parser-dsl` 0.1.0, `compiler` 0.1.0, `sdk` 0.1.0. There is no lockstep versioning; a consumer composes them by `"*"` ranges (see each `package.json` `dependencies`).
+
+> This is now a deliberate, written policy rather than organic drift — see
+> [DA00-02: two-axis versioning](../../../project/adr/DA00-02-two-axis-versioning.md). Independent
+> per-package semver is kept on purpose (option C in that ADR); the "tens digit mirrors the DSL
+> milestone" rule is the only coordination point, applied at each public release.
 
 ---
 

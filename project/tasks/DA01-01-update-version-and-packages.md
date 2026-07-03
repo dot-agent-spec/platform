@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress — all P0 items done (including 9a), P1 items 6–7–9 done (Marketplace/Open VSX secrets added, extension verified in a real Extension Host, tree-sitter/language-server build gaps fixed), item 8 (actual publish) awaiting go-ahead |
+| Status | In Progress — all P0/P1 items done. Item 8 (rehearsal) executed and completed successfully 2026-07-03: all 7 npm packages + tree-sitter crate + vscode-dot-agent published under `0.5.0-alpha.1`/`0.5.1`. See [`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md) for the full bug list found and fixed along the way. Only item 10 (lessons-learned archive) remains before this task file itself can be removed. |
 | Created | 2026-06-25 |
 | Updated | 2026-07-02 |
 | Author | Danilo Borges |
@@ -78,7 +78,7 @@ Audit that produced this task found the pipeline is not actually ready to publis
 | 5 | P0 | Reconcile kernel-dsl `Cargo.toml`/`package.json` version drift | kernel-dsl | XS | ✅ |
 | 6 | P1 | Write `packages/sdk/README.md` | sdk | S | ✅ |
 | 7 | P1 | Document parser-dsl/kernel-dsl crates.io non-publish decision | parser-dsl, kernel-dsl | XS | ✅ |
-| 8 | P1 | Run the pre-alpha rehearsal bump + publish (`-alpha.1`, `alpha` dist-tag) | all packages | M | pending — needs explicit go-ahead (pushes tags, triggers real registry publishes) |
+| 8 | P1 | Run the pre-alpha rehearsal bump + publish (`-alpha.1`, `alpha` dist-tag) | all packages | M | ✅ done 2026-07-03 — all 8 targets published; 9 real bugs found+fixed along the way, see log |
 | 9 | P1 | Add real VS Code Marketplace publish step | vscode-extension | M | ✅ `VSCE_PAT`/`OVSX_PAT` secrets added; extension packaged, installed, and activated successfully in a real VS Code Extension Host |
 | 9a | P0 | Fix `vsce package` (couldn't build a VSIX at all — npm workspaces bug) | vscode-extension | L | ✅ verified via headless LSP test against the packaged VSIX |
 | 10 | P2 | Capture lessons learned, archive this task, open the real `0.10.0` task | — | XS | pending |
@@ -352,10 +352,16 @@ P0:  1 (fix tag format + drop local publish)
 P1:  6 (sdk README)                       } can run in parallel with 7, 9
      7 (document crates.io non-publish decision)
      9 (vscode Marketplace CI step) — ✅ done, secrets added
-     8 (rehearsal bump + publish) — gated on ALL of P0 being done; this is the actual test, ready to run
+     8 (rehearsal bump + publish) — ✅ done 2026-07-03
 
 P2:  10 (lessons learned, archive this task, open the real 0.10.0 task)
 ```
 
-Item 8 is the checkpoint: if it reveals more pipeline breakage, fix and re-rehearse under `-alpha.2`
-before ever touching the real `0.10.0` numbers.
+Item 8 was the checkpoint, and it did its job: it surfaced nine real bugs (tag-push batching,
+lockfile corruption, an install-script allowlist gate, a fragile binary path, a missing
+cross-package build chain, a wrong script name, a missing `files` entry that would have shipped a
+kernel with no WASM, an `if: always()` gap, and an external PAT scope issue) — all fixed in place,
+no need for an `-alpha.2` re-rehearsal. Full account in
+[`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md).
+The real `0.10.0` jump is next, whenever the maintainer is ready — item 10 (lessons learned +
+archiving this task) is the only thing left here.

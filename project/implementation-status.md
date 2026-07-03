@@ -153,10 +153,10 @@ Legend:
 | ☑️✅🧊 DSL| ☑️ Tree-sitter node | ☑️✅parser-dsl | ⚠️☑️✅🔥 compiler | kernel-dsl | sdk |
 |---|---|---|---|---|---|
 | ✅1️⃣ `agent` | ✅ `agent_name` | ✅ `AgentDecl.name` | ✅ lint + `aboutme.name` + agent `id` | | |
-| ➕ | | | ✅ `aboutme.schemaVersion` — 📌 hardcoded `'dot-agent/1.0'` | | |
+| ➕ | | | ✅ `aboutme.dslVersion` — ✅ sourced from `dsl/VERSION` via the `DSL_VERSION` constant (renamed from `schemaVersion`, DA00-02) | | |
 | ➕ | | | ✅ `aboutme.id` — `buildId({namespace=domain, name, version, digest=commit})` | | |
 | ➕ | | | ⚠️ `aboutme.purpose` — 📌 hardcoded `'unknown'`; never wired to any DSL field | | |
-| ➕ | | | ✅ `aboutme.compiler` — 📌 hardcoded `'dot-agent/1.0.0'` | | |
+| ➕ | | | ✅ `aboutme.compiler` — ✅ sourced from `@dot-agent/compiler`'s own package version via the `COMPILER_VERSION` constant | | |
 | ➕ | | | ✅ `aboutme.version` — from `PackOptions.version` / git (`resolveVersion`), not DSL | | |
 | ➕ | | | ✅ `aboutme.commit` — from `PackOptions.commit` / git (`resolveCommit`), not DSL | | |
 | ➕ | | | ✅ `aboutme.integrity { sha256: string, types?: string, files?: string }` — `sha256` = hex of concatenated file contents; `types`/`files` = 📌 fixed paths `.agent/types.json` · `.agent/files.json` | | |
@@ -181,8 +181,8 @@ Legend:
 > | ~~`files.json` `description`~~ | ~~`'agent.description'`~~ | ✅ fixed DA01-02: real filename from `discoverDescriptionFile` |
 > | `aboutme.purpose` | `'unknown'` | a real DSL field — none exists yet (no `purpose` in grammar) |
 > | `aboutme.persona` | falls back to `'SOUL.md'` | required from the `persona` block, no silent default |
-> | `aboutme.schemaVersion` | `'dot-agent/1.0'` | sourced constant, not a literal |
-> | `aboutme.compiler` | `'dot-agent/1.0.0'` | the compiler package version |
+> | ~~`aboutme.schemaVersion`~~ | ~~`'dot-agent/1.0'`~~ | ✅ fixed: renamed to `dslVersion`, sourced from `dsl/VERSION` (DA00-02, `DA01-01-dsl-spec-versioning.md`) |
+> | ~~`aboutme.compiler`~~ | ~~`'dot-agent/1.0.0'`~~ | ✅ fixed: sourced from `@dot-agent/compiler`'s real package version |
 > | `aboutme.integrity.types` / `.files` | `'.agent/types.json'` · `'.agent/files.json'` | fixed bundle paths — acceptable, but centralize the constants |
 
 ---
