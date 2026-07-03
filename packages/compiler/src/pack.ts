@@ -173,7 +173,17 @@ export async function collectFiles(
   }
 
   files.set(descriptionFile, await readFile(join(dir, descriptionFile), 'utf-8'))
-  files.set('agent.behavior', mergedBehaviorText)
+  // mergedBehaviorText is a literal concatenation of every merged file's raw
+  // source (see consolidate() above), so a `merge "..."` line from the entry
+  // file survives verbatim even though every state it would pull in is
+  // already inlined by the concatenation. Left in, a runtime that re-parses
+  // this flat file (e.g. AgentSession.start() in @dot-agent/sdk) treats it as
+  // a live merge directive and tries to re-resolve it against a differently
+  // keyed bundle, failing with "files not found". It's dead once flattened —
+  // strip it. Safe to do after linting (above), which already ran on the
+  // unstripped text.
+  const flatBehaviorText = mergedBehaviorText.replace(/^\s*merge\s+"[^"]*"\s*$/gm, '')
+  files.set('agent.behavior', flatBehaviorText)
 
   for (const relPath of mergeSources) {
     files.set(`behaviors/${relPath}`, await readFile(join(dir, relPath), 'utf-8'))
