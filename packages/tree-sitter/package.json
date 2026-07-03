@@ -57,16 +57,16 @@
     "tree-sitter-behavior/src/node-types.json"
   ],
   "scripts": {
-    "generate-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter generate",
-    "generate-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter generate",
+    "generate-description": "cd tree-sitter-description && tree-sitter generate",
+    "generate-behavior": "cd tree-sitter-behavior && tree-sitter generate",
     "generate": "npm run generate-description && npm run generate-behavior",
-    "test-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter test",
-    "test-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter test",
+    "test-description": "cd tree-sitter-description && tree-sitter test",
+    "test-behavior": "cd tree-sitter-behavior && tree-sitter test",
     "test": "npm run test-description && npm run test-behavior",
     "clean": "node scripts/clean.js",
     "prebuild": "npm run clean",
-    "build:wasm-description": "cd tree-sitter-description && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-description.wasm ../dist/",
-    "build:wasm-behavior": "cd tree-sitter-behavior && ../node_modules/.bin/tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
+    "build:wasm-description": "cd tree-sitter-description && tree-sitter build --wasm . && mv tree-sitter-description.wasm ../dist/",
+    "build:wasm-behavior": "cd tree-sitter-behavior && tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
     "build:wasm": "npm run build:wasm-description && npm run build:wasm-behavior",
     "build": "npm run build:wasm && tsup",
     "prepublishOnly": "npm run build"
