@@ -37,12 +37,14 @@
     "language-server",
     "syntax-highlighting"
   ],
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
   "engines": {
     "vscode": "^1.91.0"
   },
   "scripts": {
-    "package": "vsce package",
+    "compile": "node scripts/build.mjs",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --no-dependencies",
     "install-ext": "code --install-extension vscode-dot-agent-*.vsix"
   },
   "dependencies": {
@@ -53,7 +55,8 @@
     "vscode-languageclient": "^10.0.0"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.9.2"
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.21.5"
   },
   "categories": [
     "Programming Languages"

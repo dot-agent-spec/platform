@@ -1,17 +1,15 @@
 .vscode/**
 .git/**
 *.vsix
-**/*.ts
-!**/*.d.ts
 **/*.map
 .gitignore
 tsconfig.json
-../../packages/*/node_modules
-../../packages/*/src
-../../packages/*/target
-../../packages/*/Cargo.toml
-../../packages/*/Cargo.lock
-../../packages/*/build.rs
-../../packages/*/scripts
-../../packages/*/docs
-../../packages/*/tests
+
+# Source files superseded by the esbuild output in dist/ (scripts/build.mjs).
+# Packaging uses `vsce package --no-dependencies` — the real runtime deps are
+# copied into dist/node_modules/ by the build script itself, not vsce's
+# automatic dependency walk (which breaks on this npm-workspaces monorepo —
+# see project/tasks/DA01-01-update-version-and-packages.md item 9).
+extension.js
+scripts/**
+/node_modules/**

@@ -17,14 +17,42 @@ jobs:
         with:
           node-version: '24.x'
 
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version "=0.2.122" --locked
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Build TypeScript packages
-        run: |
-          npm run build --workspace=packages/compiler
-          npm run build --workspace=packages/language-server
-          npm run build --workspace=packages/sdk
+      # The extension bundles tree-sitter and parser-dsl's compiled WASM output
+      # directly (scripts/build.mjs in apps/vscode-extension) rather than relying
+      # on vsce's automatic dependency packaging, which breaks on this npm
+      # workspaces monorepo (see DA01-01-update-version-and-packages.md item 9).
+      # That means both Rust→WASM packages must be built here first — this
+      # workflow previously skipped them entirely and additionally tried to run
+      # a "build" script on language-server, which doesn't have one (it ships
+      # JS source directly, no compile step).
+      - name: Build tree-sitter (WASM)
+        run: npm run build
+        working-directory: packages/tree-sitter
+
+      - name: Build parser-dsl (WASM)
+        run: npm run build
+        working-directory: packages/parser-dsl
+        env:
+          CC_wasm32_wasip1: zig cc -target wasm32-wasi
+          CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
+          AR_wasm32_wasip1: zig ar
+
+      - name: Build compiler
+        run: npm run build --workspace=packages/compiler
 
       - name: Package extension
         run: npm run package

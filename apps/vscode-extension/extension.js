@@ -95,7 +95,7 @@ let client;
 
 function activate(context) {
     // ── Language Client (LSP) ───────────────────────────────────────────────
-    const serverModule = context.asAbsolutePath(path.join('node_modules', '@dot-agent', 'language-server', 'server.js'));
+    const serverModule = context.asAbsolutePath(path.join('dist', 'server.mjs'));
     client = new LanguageClient(
         'agentDsl',
         '.agent DSL Language Server',

@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress — all P0 items done, P1 items 6–9 pending, item 8 (actual publish) awaiting go-ahead |
+| Status | In Progress — all P0 items done (including 9a), P1 items 6–7 done, item 9's Marketplace/Open VSX secrets still need external setup, item 8 (actual publish) awaiting go-ahead |
 | Created | 2026-06-25 |
 | Updated | 2026-07-02 |
 | Author | Danilo Borges |
@@ -80,6 +80,7 @@ Audit that produced this task found the pipeline is not actually ready to publis
 | 7 | P1 | Document parser-dsl/kernel-dsl crates.io non-publish decision | parser-dsl, kernel-dsl | XS | ✅ |
 | 8 | P1 | Run the pre-alpha rehearsal bump + publish (`-alpha.1`, `alpha` dist-tag) | all packages | M | pending — needs explicit go-ahead (pushes tags, triggers real registry publishes) |
 | 9 | P1 | Add real VS Code Marketplace publish step | vscode-extension | M | code done; needs `VSCE_PAT`/`OVSX_PAT` secrets added before it can actually run |
+| 9a | P0 | Fix `vsce package` (couldn't build a VSIX at all — npm workspaces bug) | vscode-extension | L | ✅ verified via headless LSP test against the packaged VSIX |
 | 10 | P2 | Capture lessons learned, archive this task, open the real `0.10.0` task | — | XS | pending |
 
 ---
@@ -249,6 +250,80 @@ nobody finds or auto-updates it through the normal VS Code extensions UI.
 exercise this path:** `VSCE_PAT` (and optionally `OVSX_PAT`) must be added as repo secrets — a manual,
 external, one-time step this session cannot do. Until then this step will fail loudly with an auth
 error, which is the correct behavior (better than silently skipping).
+
+#### 9a. Fix: `vsce package` could not build a VSIX at all — P0 (discovered, blocked everything above)
+
+**What discovered:** Actually running `npm run package` (both locally and as CI would) failed outright —
+`vsce` refused to package with `ERROR: The following files have the same case insensitive path, which
+isn't supported by the VSIX format`, listing every file under `node_modules/@dot-agent/*` twice. This
+reproduces after a fully clean `rm -rf node_modules && npm install` from the repo root, so it isn't a
+stale-install artifact — it's `@vscode/vsce`'s dependency-tree walker double-counting files on this npm
+workspaces monorepo, a known class of `vsce`/workspaces incompatibility. Since the VSIX format's
+case-collision rule is enforced regardless of host OS, this would fail identically in CI (Ubuntu), not
+just locally.
+
+**Also found and fixed along the way:** `apps/vscode-extension/package-lock.json` (and five other
+per-package lockfiles: `apps/dot-agent-cli`, `packages/{compiler,kernel-dsl,language-server,tree-sitter}`)
+were committed leftovers from before these were monorepo workspace members — npm workspaces uses exactly
+one lockfile, at the root. Removed the extension's; the other five are a known remaining cleanup, not
+addressed here (out of scope for this item).
+
+**Root-cause assessment — not a bug in the dependencies:** `@dot-agent/parser-dsl` locates its `.wasm`
+via `new URL('../pkg/...', import.meta.url)`, and `web-tree-sitter` locates its own engine WASM via
+similar self-relative resolution. Both are the correct, standard way for an ESM package to find an asset
+next to itself — the only reason it breaks is that naively bundling flattens the package into a
+different file at a different location, severing that relative link. This is universal friction for
+*any* WASM/native npm package under a bundler (sharp, better-sqlite3, esbuild itself), not something to
+"fix" in parser-dsl or web-tree-sitter.
+
+**Fix — hybrid bundle, verified working end-to-end:** New `apps/vscode-extension/scripts/build.mjs`
+(esbuild, invoked automatically via the `vscode:prepublish` npm lifecycle hook before `vsce package`):
+
+- Bundles `extension.js` → `dist/extension.js` (CJS, external: `vscode` only).
+- Bundles `packages/language-server/server.js` → `dist/server.mjs` — **ESM, not CJS**: both
+  `language-server/parser.js` and compiler's built output do `createRequire(import.meta.url)` to reach
+  `@dot-agent/tree-sitter`, and esbuild's CJS output leaves `import.meta` unconditionally empty (it warns
+  about exactly this), which would throw at runtime. ESM keeps it real. `vscode-languageserver` also
+  makes a `require()` call esbuild can't statically convert in ESM output ("Dynamic require of ... is not
+  supported") — fixed with a `banner` that defines a real `require` via `createRequire(import.meta.url)`
+  before the bundle's own code runs; esbuild's internal shim checks for exactly this and uses it instead
+  of throwing.
+- Keeps `@dot-agent/parser-dsl`, `@dot-agent/tree-sitter`, and `web-tree-sitter` **external** and copies
+  each package's real runtime files (verified against their actual built `dist/`/`pkg/` output, not
+  guessed) into `dist/node_modules/`, preserving the exact relative layout their own code expects.
+- `package.json`: `main` → `dist/extension.js`; `package` script → `vsce package --no-dependencies` (the
+  manual copy above replaces vsce's buggy auto-walk entirely).
+- `.vscodeignore`: excludes source `extension.js`, `scripts/**`, and the top-level `node_modules/**`
+  (anchored so it doesn't also exclude `dist/node_modules/**`).
+
+**Verification performed (not just "it builds"):** booted the bundled `dist/server.mjs` headlessly over
+stdio, sent a real LSP `initialize` + `textDocument/didOpen` for a `.behavior` file, and got back correct
+`publishDiagnostics` (W011, I001 — real lint codes) — proving the WASM-loading path actually works, not
+just that the process doesn't crash. Repeated the same test against the server extracted from the
+**packaged VSIX itself** (not the pre-package `dist/`), confirming nothing breaks in the zip round-trip.
+`vsce package --no-dependencies` now produces a complete 1.16MB / 40-file VSIX with no packaging error.
+**Not verified:** actual activation inside a real VS Code Extension Host (syntax highlighting, hover,
+completion, the graph webview command) — there's no VS Code UI available in this environment. Do a manual
+smoke test in a real window before the first real publish.
+
+**Also fixed, discovered while wiring the build order:** `publish-vscode.yml` never built
+`@dot-agent/tree-sitter` or `@dot-agent/parser-dsl` at all (no Rust/zig/wasm-bindgen toolchain steps —
+unlike `publish-parser-dsl.yml`/`publish-kernel-dsl.yml`, which do have them), and additionally tried to
+run `npm run build --workspace=packages/language-server`, which errors — that package has no `build`
+script (it ships JS source directly, confirmed in the DA00-06 investigation log). On a fresh CI checkout
+with empty `dist/`/`pkg/` directories, packaging would have failed before even reaching the `vsce` bug
+above. Added the same Rust/zig/wasm-bindgen-cli setup as the other WASM-publish workflows, build steps
+for tree-sitter and parser-dsl, kept the compiler build, and dropped the broken language-server/sdk build
+lines (sdk was never a dependency of this extension in the first place).
+
+**Separate, unresolved finding — flag for item 8, not fixed here:** `publish-tree-sitter.yml`'s npm job
+runs `npm run generate` before publishing, not `npm run build`. `generate` only regenerates the C parser
+from the grammar; `build` (`build:wasm && tsup`) is what actually produces `dist/index.js` and the two
+`.wasm` files that get published. `dist/` is git-ignored, so on a fresh CI checkout this looks like it
+would publish an incomplete package. Verify/fix this before item 8 actually runs the tree-sitter publish.
+
+**Change:** `apps/vscode-extension/{package.json,.vscodeignore,extension.js,scripts/build.mjs}`,
+`.github/workflows/publish-vscode.yml`, deleted `apps/vscode-extension/package-lock.json`.
 
 ---
 
