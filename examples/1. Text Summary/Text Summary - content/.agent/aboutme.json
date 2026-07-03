@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "dot-agent/1.0",
-  "id": "dot-agent.ai/Text Assistant:v0.4.1~bb1c808",
+  "dslVersion": "dot-agent/0.1-alpha",
+  "id": "dot-agent.ai/Text Assistant:v0.4.1~0c77ba8",
   "name": "Text Assistant",
   "description": "Reviews and summarizes texts. Can adjust the tone and clarity of a text according to the objective, or generate a summary at different levels of detail.",
   "version": "v0.4.1",
@@ -8,8 +8,8 @@
   "license": "Apache-2.0",
   "persona": "SOUL.md",
   "purpose": "unknown",
-  "compiler": "dot-agent/1.0.0",
-  "commit": "bb1c808",
+  "compiler": "dot-agent/0.1.0",
+  "commit": "0c77ba8",
   "capabilities": [
     {
       "id": "ReviseAction",
