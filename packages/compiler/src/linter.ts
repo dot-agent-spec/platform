@@ -245,6 +245,8 @@ export async function lintBehavior(
   file = 'agent.behavior',
   docPath?: string,
   consolidated = false,
+  externalStates?: Set<string>,
+  mergedText?: string,
 ): Promise<LintMessage[]> {
   await initBehaviorParser()
   if (!text.endsWith('\n')) text = text + '\n'
@@ -424,6 +426,14 @@ export async function lintBehavior(
     }
   }
 
+  // Fragment files (merged INTO another file, with no merge of their own)
+  // don't see the parent's states via collectMergedStates, which only walks
+  // forward. Callers that resolve the merge root can pass its consolidated
+  // state set here so dangling-transition checks see the whole tree.
+  if (externalStates) {
+    for (const name of externalStates) definedStates.add(name)
+  }
+
   const stateNameList = Array.from(definedStates)
   for (const transitionNode of nodesOfType(tree, 'transition_stmt')) {
     const stateNode = transitionNode.childForFieldName('state')
@@ -463,7 +473,9 @@ export async function lintBehavior(
     }
   }
 
-  // Semantic FSM validation via behavior-parser WASM
+  // Semantic FSM validation via behavior-parser WASM. This always parses the
+  // file's own `text` — never `mergedText` — so E006 and node positions below
+  // (W009) stay anchored to real locations in the file the editor has open.
   const fsmResult = parseBehaviorFile(text)
   if (fsmResult.ok === null) {
     const firstMsg = fsmResult.diagnostics[0]?.message ?? 'Parse error'
@@ -475,7 +487,14 @@ export async function lintBehavior(
   }
 
   const fsm = fsmResult.ok
-  const allTargets = new Set(collectTransitionTargets(fsm.states.flatMap(s => s.body)))
+
+  // Reachability (used by W001/W009) should see the whole merge component
+  // when it's known, so a state only ever reached from a merged sibling file
+  // isn't wrongly flagged — but we still only *report* on states declared in
+  // this file, at positions from this file's own tree.
+  const wholeFsm = mergedText !== undefined ? parseBehaviorFile(mergedText).ok : null
+  const reachabilityStates = wholeFsm?.states ?? fsm.states
+  const allTargets = new Set(collectTransitionTargets(reachabilityStates.flatMap(s => s.body)))
 
   // W001: isolated state (no incoming and no outgoing transitions)
   for (const state of fsm.states) {
@@ -504,9 +523,15 @@ export async function lintBehavior(
   }
 
   if (consolidated) {
+    // E015/E016/W014 are whole-tree facts. When `mergedText` is given, derive
+    // them from it instead of the local `fsm` — this is the only place a
+    // merged-text FSM should be consulted, and it never affects positions
+    // (all three report at a synthetic line 1 col 1, never a node position).
+    const wholeTreeFsm = wholeFsm ?? fsm
+
     // E015: duplicate state name across merged files
     const seenStates = new Set<string>()
-    for (const state of fsm.states) {
+    for (const state of wholeTreeFsm.states) {
       if (seenStates.has(state.name)) {
         messages.push({
           file, line: 1, col: 1, severity: 'error', code: 'E015',
@@ -518,7 +543,7 @@ export async function lintBehavior(
     }
 
     // E016: init state missing
-    if (!fsm.states.some(s => s.name === 'init')) {
+    if (!wholeTreeFsm.states.some(s => s.name === 'init')) {
       messages.push({
         file, line: 1, col: 1, severity: 'error', code: 'E016',
         message: `Required 'init' state is missing. Add a state named 'init' as the entry point of your behavior.`,
@@ -527,7 +552,7 @@ export async function lintBehavior(
 
     // W014: duplicate global trigger event across merged files
     const seenTriggers = new Set<string>()
-    for (const trigger of fsm.global_triggers) {
+    for (const trigger of wholeTreeFsm.global_triggers) {
       if (seenTriggers.has(trigger.event)) {
         messages.push({
           file, line: 1, col: 1, severity: 'warning', code: 'W014',

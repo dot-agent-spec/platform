@@ -24,9 +24,10 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { init as bpInit, get_graph } from '@dot-agent/parser-dsl';
 import { consolidate } from '@dot-agent/compiler';
 import { fileURLToPath } from 'url';
-import { dirname, basename } from 'node:path';
+import { dirname, relative } from 'node:path';
 
 import { initParsers, parse, evict, nodesOfType } from './parser.js';
+import { setWorkspaceRoots, findAgentRoot } from './merge-graph.js';
 
 import { provideHover }           from './features/hover.js';
 import { provideCompletions }     from './features/completions.js';
@@ -45,9 +46,16 @@ const documents  = new TextDocuments(TextDocument);
 
 // web-tree-sitter and behavior-parser are strictly async — await before
 // advertising capabilities so no feature handler fires before parsers are ready.
-connection.onInitialize(async () => {
+connection.onInitialize(async (params) => {
     await initParsers();
     await bpInit();
+    const roots = (params.workspaceFolders ?? [])
+        .map(f => { try { return fileURLToPath(f.uri); } catch { return null; } })
+        .filter(Boolean);
+    if (roots.length === 0 && params.rootUri) {
+        try { roots.push(fileURLToPath(params.rootUri)); } catch { /* non-file root, ignore */ }
+    }
+    setWorkspaceRoots(roots);
     return {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -174,7 +182,8 @@ connection.onRequest('agent/behaviorGraph', async ({ uri }) => {
         try {
             let filePath;
             try { filePath = fileURLToPath(uri); } catch { filePath = uri; }
-            const { mergedText } = await consolidate(dirname(filePath), basename(filePath));
+            const agentRoot = (await findAgentRoot(dirname(filePath))) ?? dirname(filePath);
+            const { mergedText } = await consolidate(agentRoot, relative(agentRoot, filePath));
             return get_graph(mergedText);
         } catch { /* fallback to single-file graph */ }
     }

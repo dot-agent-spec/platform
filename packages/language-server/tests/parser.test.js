@@ -75,6 +75,23 @@ describe('parse', () => {
         const tree = parse('uri:valid.behavior', 'behavior', BEHAVIOR_TEXT, 2)
         expect(tree.rootNode.hasError).toBe(false)
     })
+
+    // Regression: parse() used to hand the previous version's tree to
+    // tree-sitter as an incremental-reuse hint without ever calling
+    // tree.edit() first, which tree-sitter requires to keep node byte ranges
+    // valid. Without it, node.text silently returns garbled/truncated
+    // strings after an edit shifts content — surfaced as "name must not be
+    // falsy" when the language server converted a corrupted state name to a
+    // DocumentSymbol.
+    it('does not corrupt node text across an edit at the same uri', () => {
+        const uri = 'uri:edited.behavior'
+        parse(uri, 'behavior', BEHAVIOR_TEXT, 1)
+        const editedText = 'state prepended\n  transition to init\n\n' + BEHAVIOR_TEXT
+        const tree = parse(uri, 'behavior', editedText, 2)
+        const names = nodesOfType(tree, 'state_decl').map(n => n.childForFieldName('name')?.text)
+        expect(names).toEqual(['prepended', 'init', 'next'])
+        expect(names.every(n => n && n.length > 0)).toBe(true)
+    })
 })
 
 // ── evict ─────────────────────────────────────────────────────────────────────

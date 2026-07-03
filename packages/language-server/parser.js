@@ -45,7 +45,13 @@ export function parse(uri, langId, text, version) {
     if (prev?.version === version) return prev.tree;
     const parser = langId === 'behavior' ? behaviorParser : descriptionParser;
     if (!parser) return null;
-    const tree = parser.parse(text, prev?.tree);   // incremental reuse when possible
+    // Full reparse: reusing prev.tree here would be tree-sitter's incremental
+    // mode, which requires calling tree.edit() with the exact change range
+    // beforehand. We don't have that range (TextDocuments only hands us the
+    // post-change text), so passing the stale tree as a hint corrupts node
+    // byte ranges — .text on a shifted node silently returns garbled or
+    // empty strings (surfaces as "name must not be falsy" in documentSymbol).
+    const tree = parser.parse(text);
     cache.set(uri, { version, tree });
     return tree;
 }

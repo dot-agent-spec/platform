@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import { lintBehavior, lintDescription, consolidate } from '@dot-agent/compiler';
+import { lintBehavior, lintDescription, consolidate, parseBehaviorFile } from '@dot-agent/compiler';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { fileURLToPath } from 'url';
-import { dirname, basename } from 'node:path';
+import { dirname, relative } from 'node:path';
+import { findMergeRoot, findAgentRoot } from '../merge-graph.js';
 
 function toDiagnostic(msg) {
     const severity =
@@ -57,19 +58,46 @@ export async function diagnose(uri, langId, text) {
         return msgs.map(toDiagnostic);
     }
 
+    // Agent root = nearest ancestor directory (bounded by the client's
+    // workspace folder) with a *.description file — same convention pack.ts
+    // uses to define an agent bundle. Falls back to the file's own directory
+    // when no manifest is found, e.g. a lone .behavior file opened outside
+    // an agent.
+    const agentRoot = (await findAgentRoot(dirname(filePath))) ?? dirname(filePath);
+    const entryFile = relative(agentRoot, filePath);
+
     // behavior: run consolidated lint when the file uses merge declarations
     if (!hasMerge(text)) {
+        // This file has no merge of its own, but it might be a fragment that
+        // another file merges in (e.g. a shared sub-flow). Walk merge edges
+        // backward within the agent root to find that root and borrow its
+        // consolidated state set, so cross-file transitions don't show as
+        // dangling (E005) and this fragment isn't wrongly held to whole-tree
+        // rules like E016 (init required) that only make sense at the root.
+        const root = await findMergeRoot(agentRoot, entryFile);
+        if (root) {
+            try {
+                const { mergedText } = await consolidate(agentRoot, root);
+                const externalStates = new Set((parseBehaviorFile(mergedText).ok?.states ?? []).map(s => s.name));
+                const msgs = await lintBehavior(text, filePath, filePath, false, externalStates, mergedText);
+                return msgs.map(toDiagnostic);
+            } catch {
+                // root's own merge chain is broken — fall back to local-only lint below
+            }
+        }
         const msgs = await lintBehavior(text, filePath, filePath, true);
         return msgs.map(toDiagnostic);
     }
 
-    // multi-file behavior: attempt consolidation to surface E012/E013/E014/E015/E016
+    // multi-file behavior: attempt consolidation to surface E012/E013/E014/E015/E016.
+    // Local diagnostics still run against this file's own `text` — never the
+    // merged blob — so positions stay correct; `mergedText` is only consulted
+    // for whole-tree facts (E015/E016/W014) and W001/W009 reachability.
     const consolidationDiags = [];
-    let behaviorText = text;
+    let mergedText;
     let isConsolidated = false;
     try {
-        const { mergedText } = await consolidate(dirname(filePath), basename(filePath));
-        behaviorText = mergedText;
+        ({ mergedText } = await consolidate(agentRoot, entryFile));
         isConsolidated = true;
     } catch (err) {
         const m = /^(E\d+):\s*(.+)/.exec(err.message);
@@ -83,6 +111,6 @@ export async function diagnose(uri, langId, text) {
         }
     }
 
-    const msgs = await lintBehavior(behaviorText, filePath, filePath, isConsolidated);
+    const msgs = await lintBehavior(text, filePath, filePath, isConsolidated, undefined, mergedText);
     return [...consolidationDiags, ...msgs.map(toDiagnostic)];
 }
