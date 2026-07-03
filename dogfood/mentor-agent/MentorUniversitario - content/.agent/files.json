@@ -1,0 +1,11 @@
+{
+  "description": "agent.description",
+  "behavior": "agent.behavior",
+  "behaviors": [
+    "behaviors/agent.behavior"
+  ],
+  "guides": [
+    "guides/tarefa.md"
+  ],
+  "knowledge": []
+}

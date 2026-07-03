@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "dot-agent/1.0",
+  "id": "mentor.pessoal.agent/MentorUniversitario:1.4.1",
+  "name": "MentorUniversitario",
+  "description": "Mentor Acadêmico e Estrategista de Aprendizado. Focado na geração de grades de estudo baseadas em Matriz de Aderência Temática e Peso Cognitivo. (Versão do Prompt original: 1.4.0)",
+  "version": "1.4.1",
+  "domain": "mentor.pessoal.agent",
+  "license": "Apache-2.0",
+  "persona": "SOUL.md",
+  "purpose": "unknown",
+  "compiler": "dot-agent/1.0.0",
+  "capabilities": [
+    {
+      "id": "AnalisarMatriz",
+      "description": "Classifica conteúdos em Aderência Temática vs. Peso Cognitivo"
+    },
+    {
+      "id": "MontarGrade",
+      "description": "Organiza a grade de estudo baseada na hierarquia de prazos e fluxo"
+    },
+    {
+      "id": "GerarRacional",
+      "description": "Explica as escolhas pedagógicas tomadas"
+    }
+  ],
+  "requires": [],
+  "integrity": {
+    "sha256": "afccf00de38ff893e8779940ceb2f4679310a09cde0747bff224007c326db0ab",
+    "files": ".agent/files.json"
+  }
+}

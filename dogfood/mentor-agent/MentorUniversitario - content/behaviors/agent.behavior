@@ -1,0 +1,18 @@
+state init
+  interact
+  on intent "iniciar" transition to recebendo_insumos
+
+state recebendo_insumos
+  goal "Aguardar planilhas, links ou descrições de conteúdo e gerar a Matriz de Planejamento."
+  interact
+  on intent "insumos_recebidos" transition to planejamento
+
+state planejamento
+  goal "Aplicar o CoT, gerar a Matriz de Planejamento, Grade Sugerida e Racional do Mentor."
+  interact
+  on intent "grade_aprovada" transition to acompanhamento
+
+state acompanhamento
+  goal "Adaptar a grade de estudos, encorajar o aluno e recalcular o peso cognitivo conforme necessário."
+  interact
+  on intent "novo_curso" transition to recebendo_insumos

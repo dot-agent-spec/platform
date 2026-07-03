@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/language-server",
-  "version": "0.5.0-alpha.1",
+  "version": "0.5.0-alpha.2",
   "description": "LSP server for .agent DSL files",
   "license": "Apache-2.0",
   "author": {
@@ -46,9 +46,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@dot-agent/parser-dsl": "*",
-    "@dot-agent/compiler": "*",
-    "@dot-agent/tree-sitter": "*",
+    "@dot-agent/parser-dsl": "0.5.0-alpha.1",
+    "@dot-agent/compiler": "0.5.0-alpha.2",
+    "@dot-agent/tree-sitter": "0.5.0-alpha.1",
     "vscode-languageserver": "^10.0.0",
     "vscode-languageserver-textdocument": "^1.0.12",
     "web-tree-sitter": "^0.26.9"
