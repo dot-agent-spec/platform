@@ -2,7 +2,7 @@
   "name": "vscode-dot-agent",
   "displayName": ".agent DSL",
   "description": "Syntax highlighting, hover docs, and snippets for .agent DSL files",
-  "version": "0.3.3",
+  "version": "0.5.1",
   "publisher": "dot-agent",
   "license": "Apache-2.0",
   "author": {

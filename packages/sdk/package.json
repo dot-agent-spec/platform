@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/sdk",
-  "version": "0.1.0",
+  "version": "0.5.0-alpha.1",
   "description": "Browser-compatible SDK for loading and running dot-agent bundles",
   "license": "Apache-2.0",
   "author": {

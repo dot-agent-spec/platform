@@ -1,6 +1,6 @@
 [package]
 name = "dot-agent-parser-dsl"
-version = "0.1.0"
+version = "0.5.0-alpha.1"
 edition = "2021"
 description = "Unified DSL parser for dot-agent — parses .behavior and .description files using tree-sitter, compiles to WASM for compiler/tooling and as rlib for kernel-dsl"
 license = "Apache-2.0"

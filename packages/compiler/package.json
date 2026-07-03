@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/compiler",
-  "version": "0.1.0",
+  "version": "0.5.0-alpha.1",
   "license": "Apache-2.0",
   "description": "Compiler for the dot-agent DSL: AST parsing, linting, graph extraction and .agent packaging",
   "author": {
