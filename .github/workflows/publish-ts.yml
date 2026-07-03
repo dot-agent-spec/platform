@@ -53,13 +53,13 @@ jobs:
         run: npm ci
 
       # compiler, sdk, and cli all import types (and, for sdk, runtime WASM)
-      # transitively from tree-sitter -> parser-dsl -> compiler -> kernel-dsl.
-      # This workflow only checks out source — none of that chain is
-      # prebuilt — so it must be built here regardless of which package the
-      # pushed tag targets, or tsup's dts step fails with "Cannot find
-      # module" (compiler/sdk) or a cascaded implicit-any (cli). Cheap/
-      # idempotent to always run; language-server's own "build" is a no-op
-      # so it's unaffected either way.
+      # transitively down the chain tree-sitter -> parser-dsl -> kernel-dsl ->
+      # compiler -> sdk -> cli. This workflow only checks out source — none of
+      # that chain is prebuilt — so it must be built here regardless of which
+      # package the pushed tag targets, or tsup's dts step fails with "Cannot
+      # find module" (compiler/sdk/cli) or a cascaded implicit-any. Cheap/
+      # idempotent to always run; language-server's own "build" is a no-op so
+      # it's unaffected either way.
       - name: Build tree-sitter (WASM)
         run: npm run build
         working-directory: packages/tree-sitter
@@ -83,6 +83,12 @@ jobs:
       - name: Build compiler
         run: npm run build
         working-directory: packages/compiler
+
+      # cli depends on sdk (which itself depends on compiler, already built
+      # above) for @dot-agent/sdk's types.
+      - name: Build sdk
+        run: npm run build
+        working-directory: packages/sdk
 
       - name: Build
         run: npm run build
