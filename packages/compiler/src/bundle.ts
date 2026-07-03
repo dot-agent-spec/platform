@@ -85,7 +85,10 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
 
   const files: AgentFiles = {
     description: descriptionText,
-    behavior: mergedText,
+    // Reuse collectFiles()'s 'agent.behavior' entry rather than the raw
+    // mergedText — it has redundant `merge "..."` lines stripped (see
+    // collectFiles() for why they're dead weight once flattened).
+    behavior: allFiles.get('agent.behavior') ?? mergedText,
     soul: allFiles.get('SOUL.md'),
     guides: Array.from(allFiles.entries())
       .filter(([p]) => p.startsWith('guides/') && !GITKEEP.has(p))
