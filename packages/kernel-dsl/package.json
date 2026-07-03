@@ -43,7 +43,8 @@
     "dot-agent"
   ],
   "files": [
-    "dist/"
+    "dist/",
+    "pkg/"
   ],
   "exports": {
     ".": {

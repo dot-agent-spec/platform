@@ -41,20 +41,25 @@ jobs:
           npm run build
         working-directory: packages/kernel-dsl
 
+      # dist/index.js loads its WASM via `new URL('../pkg/..._bg.wasm', import.meta.url)`
+      # at runtime — pkg/ has to actually ship (package.json "files") or a real
+      # `npm install` consumer gets an ENOENT the first time init() runs, even
+      # though everything looks fine inside this monorepo checkout where dist/
+      # and pkg/ just happen to sit next to each other on disk either way.
       - name: Verify build artifacts
         working-directory: packages/kernel-dsl
         run: |
-          for f in index.js \
-                    scripts/discover-wasm-imports.js \
-                    scripts/patch-wasm-bindgen.js \
+          for f in dist/index.js \
+                    dist/index.cjs \
+                    dist/index.d.ts \
                     pkg/dot_agent_kernel_dsl.js \
                     pkg/dot_agent_kernel_dsl.d.ts \
                     pkg/dot_agent_kernel_dsl_bg.js \
                     pkg/dot_agent_kernel_dsl_bg.wasm \
-                    pkg/dot_agent_kernel_dsl_bg.wasm.d.ts \
-                    pkg/package.json; do
+                    pkg/dot_agent_kernel_dsl_bg.wasm.d.ts; do
             [ -f "$f" ] || { echo "MISSING: $f"; exit 1; }
           done
+          node -e "if (!require('./package.json').files.includes('pkg/')) { console.error('package.json \"files\" must include pkg/ or the WASM binary never ships'); process.exit(1) }"
           echo "All artifacts present."
 
       - name: Determine npm dist-tag
