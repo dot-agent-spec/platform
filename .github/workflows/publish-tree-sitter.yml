@@ -22,8 +22,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Regenerate parsers
-        run: npm run generate
+      # `build` (not `generate`) is required here: `generate` only regenerates
+      # parser.c from grammar.js, it never produces `dist/` (wasm + tsup output),
+      # which is what package.json's main/exports/files actually ship. `dist/`
+      # is gitignored, so without this step a fresh CI checkout would publish
+      # a package with no dist/ at all. `tree-sitter build --wasm` needs
+      # emscripten; when `emcc` isn't on PATH it falls back to running the
+      # build in Docker automatically (verified locally), which is why no
+      # separate emsdk setup step is needed on GitHub's Docker-equipped runners.
+      - name: Build (wasm + dist)
+        run: npm run build
         working-directory: packages/tree-sitter
 
       - name: Determine npm dist-tag

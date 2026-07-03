@@ -41,6 +41,7 @@
   },
   "scripts": {
     "start": "node server.js --stdio",
+    "build": "echo 'language-server ships JS source directly, no build step needed'",
     "test": "vitest run",
     "test:watch": "vitest"
   },

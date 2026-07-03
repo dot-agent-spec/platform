@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress — all P0 items done (including 9a), P1 items 6–7 done, item 9's Marketplace/Open VSX secrets still need external setup, item 8 (actual publish) awaiting go-ahead |
+| Status | In Progress — all P0 items done (including 9a), P1 items 6–7–9 done (Marketplace/Open VSX secrets added, extension verified in a real Extension Host, tree-sitter/language-server build gaps fixed), item 8 (actual publish) awaiting go-ahead |
 | Created | 2026-06-25 |
 | Updated | 2026-07-02 |
 | Author | Danilo Borges |
@@ -79,7 +79,7 @@ Audit that produced this task found the pipeline is not actually ready to publis
 | 6 | P1 | Write `packages/sdk/README.md` | sdk | S | ✅ |
 | 7 | P1 | Document parser-dsl/kernel-dsl crates.io non-publish decision | parser-dsl, kernel-dsl | XS | ✅ |
 | 8 | P1 | Run the pre-alpha rehearsal bump + publish (`-alpha.1`, `alpha` dist-tag) | all packages | M | pending — needs explicit go-ahead (pushes tags, triggers real registry publishes) |
-| 9 | P1 | Add real VS Code Marketplace publish step | vscode-extension | M | code done; needs `VSCE_PAT`/`OVSX_PAT` secrets added before it can actually run |
+| 9 | P1 | Add real VS Code Marketplace publish step | vscode-extension | M | ✅ `VSCE_PAT`/`OVSX_PAT` secrets added; extension packaged, installed, and activated successfully in a real VS Code Extension Host |
 | 9a | P0 | Fix `vsce package` (couldn't build a VSIX at all — npm workspaces bug) | vscode-extension | L | ✅ verified via headless LSP test against the packaged VSIX |
 | 10 | P2 | Capture lessons learned, archive this task, open the real `0.10.0` task | — | XS | pending |
 
@@ -302,9 +302,9 @@ stdio, sent a real LSP `initialize` + `textDocument/didOpen` for a `.behavior` f
 just that the process doesn't crash. Repeated the same test against the server extracted from the
 **packaged VSIX itself** (not the pre-package `dist/`), confirming nothing breaks in the zip round-trip.
 `vsce package --no-dependencies` now produces a complete 1.16MB / 40-file VSIX with no packaging error.
-**Not verified:** actual activation inside a real VS Code Extension Host (syntax highlighting, hover,
-completion, the graph webview command) — there's no VS Code UI available in this environment. Do a manual
-smoke test in a real window before the first real publish.
+**Also verified live:** installed the packaged VSIX into a real VS Code (`code --install-extension`),
+opened a real `.behavior` file from `examples/`, and confirmed via `exthost.log` that the extension
+activated (`onLanguage:behavior`) with zero errors — user confirmed the language features work visually.
 
 **Also fixed, discovered while wiring the build order:** `publish-vscode.yml` never built
 `@dot-agent/tree-sitter` or `@dot-agent/parser-dsl` at all (no Rust/zig/wasm-bindgen toolchain steps —
@@ -316,14 +316,26 @@ above. Added the same Rust/zig/wasm-bindgen-cli setup as the other WASM-publish 
 for tree-sitter and parser-dsl, kept the compiler build, and dropped the broken language-server/sdk build
 lines (sdk was never a dependency of this extension in the first place).
 
-**Separate, unresolved finding — flag for item 8, not fixed here:** `publish-tree-sitter.yml`'s npm job
-runs `npm run generate` before publishing, not `npm run build`. `generate` only regenerates the C parser
-from the grammar; `build` (`build:wasm && tsup`) is what actually produces `dist/index.js` and the two
-`.wasm` files that get published. `dist/` is git-ignored, so on a fresh CI checkout this looks like it
-would publish an incomplete package. Verify/fix this before item 8 actually runs the tree-sitter publish.
+**Two more gaps found and fixed while smoke-testing before item 8:**
+
+- `publish-tree-sitter.yml`'s npm job ran `npm run generate` before publishing, not `npm run build`.
+  `generate` only regenerates the C parser from the grammar; `build` (`build:wasm && tsup`) is what
+  actually produces `dist/index.js` and the two `.wasm` files that get published, and `dist/` is
+  git-ignored — a fresh CI checkout would have published an incomplete package. Reproduced locally
+  (`npm run build` inside `packages/tree-sitter`, confirmed `tree-sitter build --wasm` transparently
+  falls back to Docker when `emcc` isn't on `PATH`, no extra emsdk setup needed on GitHub's
+  Docker-equipped runners) and fixed by swapping the step to `npm run build`.
+- `publish-ts.yml` unconditionally runs `npm run build` for whichever package the tag resolves to, but
+  `packages/language-server/package.json` had no `build` script at all — a `language-server@*` tag would
+  have failed CI outright with "Missing script: build". Added a no-op `build` script there (matches the
+  DA00-06 finding that this package ships JS source directly, no compile step) so the shared workflow
+  stays uniform instead of branching per-package in YAML.
+
+**Change:** `.github/workflows/publish-tree-sitter.yml`, `packages/language-server/package.json`.
 
 **Change:** `apps/vscode-extension/{package.json,.vscodeignore,extension.js,scripts/build.mjs}`,
-`.github/workflows/publish-vscode.yml`, deleted `apps/vscode-extension/package-lock.json`.
+`.github/workflows/publish-vscode.yml`, `.github/workflows/publish-tree-sitter.yml`,
+`packages/language-server/package.json`, deleted `apps/vscode-extension/package-lock.json`.
 
 ---
 
@@ -339,8 +351,8 @@ P0:  1 (fix tag format + drop local publish)
 
 P1:  6 (sdk README)                       } can run in parallel with 7, 9
      7 (document crates.io non-publish decision)
-     9 (vscode Marketplace CI step) — needs VSCE_PAT confirmed first
-     8 (rehearsal bump + publish) — gated on ALL of P0 being done; this is the actual test
+     9 (vscode Marketplace CI step) — ✅ done, secrets added
+     8 (rehearsal bump + publish) — gated on ALL of P0 being done; this is the actual test, ready to run
 
 P2:  10 (lessons learned, archive this task, open the real 0.10.0 task)
 ```
