@@ -93,8 +93,8 @@
         ],
         "configuration": "./language-configuration.json",
         "icon": {
-          "light": "./agent-icon.svg",
-          "dark": "./agent-icon.svg"
+          "light": "./description-icon.svg",
+          "dark": "./description-icon.svg"
         }
       },
       {
@@ -110,6 +110,20 @@
         "icon": {
           "light": "./behavior-icon-light.svg",
           "dark": "./behavior-icon.svg"
+        }
+      },
+      {
+        "id": "agent",
+        "aliases": [
+          "Agent",
+          "agent"
+        ],
+        "extensions": [
+          ".agent"
+        ],
+        "icon": {
+          "light": "./agent-icon-light.svg",
+          "dark": "./agent-icon.svg"
         }
       }
     ],
