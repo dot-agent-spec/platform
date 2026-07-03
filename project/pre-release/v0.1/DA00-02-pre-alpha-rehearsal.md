@@ -48,7 +48,7 @@ dist-tag, exactly as designed.
 
 ## Bugs found and fixed
 
-Nine distinct, real bugs surfaced only by actually running the pipeline — none were visible from
+Ten distinct, real bugs surfaced only by actually running the pipeline — none were visible from
 reading the workflow files or from local `npm test`/`npm run build`:
 
 1. **GitHub silently drops tag-push events past 3 per `git push`.** Pushing all 8 tags in one
@@ -95,6 +95,19 @@ reading the workflow files or from local `npm test`/`npm run build`:
    scope issue, fixed by regenerating the token with the correct scope. Not a code bug, but the
    reason the very first `vscode@0.5.1` run needed a manual "re-run failed jobs" after the token
    was fixed.
+10. **Internal package deps used `"*"` ranges, resolved to stale `latest` tags in clean installs.**
+    `compiler`, `sdk`, `cli`, and `language-server` all depend on other `@dot-agent/*` packages
+    with the wildcard version range `"*"`. Since the rehearsal published only to the `alpha`
+    dist-tag (by design, never touching `latest`), a real `npm install` of `sdk@0.5.0-alpha.1`
+    from outside the monorepo resolved its internal deps to `latest`: `compiler@0.1.0`,
+    `parser-dsl@0.1.0`, `kernel-dsl@0.1.3`, `tree-sitter@0.4.1`. The smoke test caught this as
+    an incompatibility: a clean environment couldn't import; `sdk` pulling old `compiler` caused
+    a wasm-bindgen signature mismatch. Fixed by pinning exact versions in all 4 packages:
+    `compiler` and `sdk` bumped to `0.5.0-alpha.2`, `cli` and `language-server` also bumped to
+    `0.5.0-alpha.2` (to pull the fixed `compiler@0.5.0-alpha.2`), with their internal deps
+    pointing to the exact `0.5.0-alpha.1` or `0.5.0-alpha.2` versions they expect. A second,
+    minimal rehearsal (`0.5.0-alpha.2`) validated the fix: clean installs now resolve the correct
+    versions, and CommonJS transitivity (important for consumers like murici) works.
 
 Two more real bugs were found and fixed in the same session but *before* the tags were first
 pushed (caught by running the full test suite ahead of the bump, not by the rehearsal's CI runs
