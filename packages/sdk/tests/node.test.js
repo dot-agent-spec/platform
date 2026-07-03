@@ -5,7 +5,7 @@ import { loadAgent } from '../dist/index.js'
 import { AgentSession } from '../dist/index.js'
 
 const ABOUTME = {
-  schemaVersion: 'dot-agent/1.0',
+  dslVersion: 'dot-agent/0.1-alpha',
   id: 'test/sdk-test:0.1.0:abc123',
   name: 'sdk-test',
   description: 'SDK integration test agent',
