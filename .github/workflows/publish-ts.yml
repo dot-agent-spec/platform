@@ -38,8 +38,51 @@ jobs:
           node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
 
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.13.0
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version "=0.2.122" --locked
+
       - name: Install dependencies
         run: npm ci
+
+      # compiler, sdk, and cli all import types (and, for sdk, runtime WASM)
+      # transitively from tree-sitter -> parser-dsl -> compiler -> kernel-dsl.
+      # This workflow only checks out source — none of that chain is
+      # prebuilt — so it must be built here regardless of which package the
+      # pushed tag targets, or tsup's dts step fails with "Cannot find
+      # module" (compiler/sdk) or a cascaded implicit-any (cli). Cheap/
+      # idempotent to always run; language-server's own "build" is a no-op
+      # so it's unaffected either way.
+      - name: Build tree-sitter (WASM)
+        run: npm run build
+        working-directory: packages/tree-sitter
+
+      - name: Build parser-dsl (WASM)
+        run: npm run build
+        working-directory: packages/parser-dsl
+        env:
+          CC_wasm32_wasip1: zig cc -target wasm32-wasi
+          CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
+          AR_wasm32_wasip1: zig ar
+
+      - name: Build kernel-dsl (WASM)
+        run: npm run build
+        working-directory: packages/kernel-dsl
+        env:
+          CC_wasm32_wasip1: zig cc -target wasm32-wasi
+          CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
+          AR_wasm32_wasip1: zig ar
+
+      - name: Build compiler
+        run: npm run build
+        working-directory: packages/compiler
 
       - name: Build
         run: npm run build

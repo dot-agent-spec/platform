@@ -82,6 +82,11 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
+        # always(): Marketplace and Open VSX are independent registries — a
+        # failure/auth problem on one (continue-on-error only protects the
+        # job's own outcome, it doesn't make GitHub run a step after a prior
+        # one failed) shouldn't skip the other.
+        if: always()
         run: npx ovsx publish apps/vscode-extension/*.vsix -p "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
