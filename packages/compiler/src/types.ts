@@ -85,7 +85,7 @@ export interface AboutMe {
   version: string
   domain: string
   license: string
-  persona: string
+  persona?: string
   purpose: string
   compiler: string
   commit?: string
@@ -97,7 +97,7 @@ export interface AboutMe {
 export interface AgentFiles {
   description: string
   behavior: string
-  soul?: string
+  persona?: string
   guides: Array<{ path: string; content: string }>
   knowledge: Array<{ path: string; content: string }>
   behaviors: Array<{ path: string; content: string }>
@@ -130,7 +130,7 @@ export interface BuildAboutmeOptions {
   version: string
   domain: string
   license?: string
-  persona: string
+  persona?: string
   purpose?: string
   compiler: string
   commit?: string

@@ -12,56 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { mkdir, writeFile, stat } from 'fs/promises'
-import { join, basename } from 'path'
+import { existsSync } from 'fs'
+import { mkdir, writeFile, readFile, readdir, stat } from 'fs/promises'
+import { join, basename, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { InitOptions, InitResult } from '../types.js'
 
-const AGENT_DESCRIPTION_TEMPLATE = (name: string, domain: string) => `agent ${name}
-  domain ${domain}
-  license MIT
+// templates/ ships as a sibling of dist/ in the published package (no "files"
+// allowlist in package.json, so it's included by default). Its depth relative
+// to this module differs between running from source (src/commands/init.ts,
+// two levels up) and from the bundled build (tsup flattens everything into
+// dist/index.js, one level up) — try both instead of hardcoding one.
+function resolveTemplatesDir(): string {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const candidates = [join(here, 'templates'), join(here, '..', 'templates'), join(here, '..', '..', 'templates')]
+  const found = candidates.find(existsSync)
+  if (!found) throw new Error(`Could not locate templates/ directory (looked in: ${candidates.join(', ')})`)
+  return found
+}
 
-description
-  Describe what this agent does.
+function applyTokens(content: string, tokens: Record<string, string>): string {
+  return content.replace(/\{\{(\w+)\}\}/g, (match, key) => tokens[key] ?? match)
+}
 
-behavior agent.behavior
-
-capabilities
-  ActionName "Describe this capability"
-`
-
-const AGENT_BEHAVIOR_TEMPLATE = `state init
-  transition to responsive
-
-state responsive
-  goal "Help the user with their task."
-  interact
-  on intent "done" transition to init
-`
-
-const SOUL_TEMPLATE = (name: string) => `# ${name} — Persona
-
-## Voice and Tone
-
-Describe the agent's voice, personality, and communication style.
-`
-
-const README_TEMPLATE = (name: string) => `# ${name}
-
-Brief description of what this agent does.
-
-## Usage
-
-Example of how to use this agent.
-`
-
-const LICENSE = `Copyright <YEAR> <COPYRIGHT HOLDER>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-`
+async function copyTemplateTree(srcDir: string, destDir: string, tokens: Record<string, string>, files: string[], prefix = ''): Promise<void> {
+  const entries = await readdir(srcDir)
+  for (const entry of entries) {
+    const srcPath = join(srcDir, entry)
+    const relPath = prefix ? `${prefix}/${entry}` : entry
+    const stats = await stat(srcPath)
+    if (stats.isDirectory()) {
+      await mkdir(join(destDir, relPath), { recursive: true })
+      await copyTemplateTree(srcPath, destDir, tokens, files, relPath)
+      continue
+    }
+    const content = await readFile(srcPath, 'utf-8')
+    await writeFile(join(destDir, relPath), applyTokens(content, tokens))
+    files.push(relPath)
+  }
+}
 
 export async function init(options: InitOptions = {}): Promise<InitResult> {
   const dir = options.dir || process.cwd()
@@ -83,36 +72,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
   }
 
   const files: string[] = []
-
-  await writeFile(agentDescriptionPath, AGENT_DESCRIPTION_TEMPLATE(name, domain))
-  files.push('agent.description')
-
-  await writeFile(join(dir, 'agent.behavior'), AGENT_BEHAVIOR_TEMPLATE)
-  files.push('agent.behavior')
-
-  await writeFile(join(dir, 'SOUL.md'), SOUL_TEMPLATE(name))
-  files.push('SOUL.md')
-
-  await writeFile(join(dir, 'README.md'), README_TEMPLATE(name))
-  files.push('README.md')
-
-  await writeFile(join(dir, 'LICENSE'), LICENSE)
-  files.push('LICENSE')
-
-  await mkdir(join(dir, 'behaviors'), { recursive: true })
-  await writeFile(join(dir, 'behaviors', '.gitkeep'), '')
-  files.push('behaviors/.gitkeep')
-
-  await mkdir(join(dir, 'guides'), { recursive: true })
-  await writeFile(join(dir, 'guides', '.gitkeep'), '')
-  files.push('guides/.gitkeep')
-
-  await mkdir(join(dir, 'knowledge'), { recursive: true })
-  await writeFile(join(dir, 'knowledge', '.gitkeep'), '')
-  files.push('knowledge/.gitkeep')
-
-  await writeFile(join(dir, 'AGENTS.md'), '')
-  files.push('AGENTS.md')
+  await copyTemplateTree(resolveTemplatesDir(), dir, { name, domain }, files)
 
   return { dir, files }
 }

@@ -1,0 +1,13 @@
+agent {{name}}
+  domain {{domain}}
+  license MIT
+
+description
+  Describe what this agent does.
+
+persona SOUL.md
+
+behavior agent.behavior
+
+capabilities
+  ActionName "Describe this capability"

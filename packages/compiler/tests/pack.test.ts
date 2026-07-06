@@ -30,7 +30,7 @@ async function makeAgentDir(opts?: { domain?: string; extraFiles?: Record<string
 
   await writeFile(
     join(tmpDir, 'agent.description'),
-    `agent Doctor\n  domain ${domain}\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\nbehavior agent.behavior\n\ninput Patient\noutput Prescription\n`
+    `agent Doctor\n  domain ${domain}\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\npersona SOUL.md\n\nbehavior agent.behavior\n\ninput Patient\noutput Prescription\n`
   )
   await writeFile(
     join(tmpDir, 'agent.behavior'),
@@ -73,11 +73,31 @@ describe('collectFiles', () => {
     expect(files.get('agent.behavior')).toBe(MERGED_TEXT)
   })
 
-  it('collects SOUL.md when present', async () => {
+  it('collects the persona file by its declared filename when passed', async () => {
     const dir = await makeAgentDir()
-    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [], 'SOUL.md')
     expect(files.has('SOUL.md')).toBe(true)
     expect(files.get('SOUL.md')).toContain('Doctor')
+  })
+
+  it('does not read a persona file when none is declared, even if present on disk', async () => {
+    const dir = await makeAgentDir()
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
+    expect(files.has('SOUL.md')).toBe(false)
+  })
+
+  it('throws when a declared persona file does not exist on disk', async () => {
+    const dir = await makeAgentDir()
+    await expect(
+      collectFiles(dir, 'agent.description', MERGED_TEXT, [], 'missing-persona.md')
+    ).rejects.toThrow()
+  })
+
+  it('throws when the declared persona path escapes the agent root', async () => {
+    const dir = await makeAgentDir()
+    await expect(
+      collectFiles(dir, 'agent.description', MERGED_TEXT, [], '../../outside.md')
+    ).rejects.toThrow('E014')
   })
 
   it('collects files from guides/ subdir', async () => {
@@ -147,6 +167,7 @@ describe('pack — happy path', () => {
     expect(aboutme.version).toBe('v1.0.0')
     expect(aboutme.dslVersion).toBe(`dot-agent/${DSL_VERSION}`)
     expect(aboutme.integrity.sha256).toHaveLength(64)
+    expect(aboutme.persona).toBe('SOUL.md')
   })
 
   it('ZIP contains .agent/files.json', async () => {
@@ -160,6 +181,7 @@ describe('pack — happy path', () => {
     const filesJson = JSON.parse(files.get('.agent/files.json')!)
     expect(filesJson.description).toBe('agent.description')
     expect(filesJson.behavior).toBe('agent.behavior')
+    expect(filesJson.persona).toBe('SOUL.md')
     expect(Array.isArray(filesJson.behaviors)).toBe(true)
   })
 
@@ -180,6 +202,55 @@ describe('pack — happy path', () => {
     const result = await pack({ dir, version: 'v1.0.0' })
     const errors = result.warnings.filter(m => m.severity === 'error')
     expect(errors).toHaveLength(0)
+  })
+})
+
+describe('pack — persona resolution', () => {
+  it('omits persona entirely when not declared, even if SOUL.md exists on disk', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.description'),
+      `agent Doctor\n  domain health.example.com\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\nbehavior agent.behavior\n\ninput Patient\noutput Prescription\n`
+    )
+    const result = await pack({ dir, version: 'v1.0.0' })
+
+    const zip = await readZip(result.path)
+    const files = await extractFiles(zip)
+    const aboutmeRaw = files.get('.agent/aboutme.json')
+    const filesJson = JSON.parse(files.get('.agent/files.json')!)
+    const aboutme = parseAboutme(JSON.parse(aboutmeRaw!))
+
+    expect(aboutme.persona).toBeUndefined()
+    expect(filesJson.persona).toBeUndefined()
+    expect(files.has('SOUL.md')).toBe(false)
+  })
+
+  it('resolves a custom persona filename declared in the description', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.description'),
+      `agent Doctor\n  domain health.example.com\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\npersona analyst-persona.md\n\nbehavior agent.behavior\n\ninput Patient\noutput Prescription\n`
+    )
+    await writeFile(join(dir, 'analyst-persona.md'), '# Analyst\nBe precise and terse.')
+
+    const result = await pack({ dir, version: 'v1.0.0' })
+    const zip = await readZip(result.path)
+    const files = await extractFiles(zip)
+    const aboutme = parseAboutme(JSON.parse(files.get('.agent/aboutme.json')!))
+    const filesJson = JSON.parse(files.get('.agent/files.json')!)
+
+    expect(aboutme.persona).toBe('analyst-persona.md')
+    expect(filesJson.persona).toBe('analyst-persona.md')
+    expect(files.get('analyst-persona.md')).toContain('Analyst')
+  })
+
+  it('throws when the description declares a persona file that does not exist', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(
+      join(dir, 'agent.description'),
+      `agent Doctor\n  domain health.example.com\n  license MIT\n\ndescription\n  Clinical diagnostic agent.\n\npersona missing-persona.md\n\nbehavior agent.behavior\n`
+    )
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow()
   })
 })
 

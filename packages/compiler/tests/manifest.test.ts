@@ -58,6 +58,12 @@ describe('buildAboutme', () => {
     expect(a.requires).toEqual([])
   })
 
+  it('leaves persona undefined when omitted', () => {
+    const { persona, ...withoutPersona } = BASE_OPTS
+    const a = buildAboutme(withoutPersona)
+    expect(a.persona).toBeUndefined()
+  })
+
   it('carries optional commit through', () => {
     const a = buildAboutme({ ...BASE_OPTS, commit: 'abc1234' })
     expect(a.commit).toBe('abc1234')
@@ -106,13 +112,19 @@ describe('parseAboutme', () => {
     expect(parsed).toEqual(original)
   })
 
-  it.each(['dslVersion', 'id', 'name', 'description', 'version', 'domain', 'persona', 'compiler'])(
+  it.each(['dslVersion', 'id', 'name', 'description', 'version', 'domain', 'compiler'])(
     'throws when required field "%s" is missing',
     field => {
       const incomplete = { ...VALID_JSON, [field]: undefined }
       expect(() => parseAboutme(incomplete)).toThrow()
     }
   )
+
+  it('does not throw when persona is missing, and returns it as undefined', () => {
+    const { persona, ...withoutPersona } = VALID_JSON
+    const a = parseAboutme(withoutPersona)
+    expect(a.persona).toBeUndefined()
+  })
 
   it('throws when capabilities is not an array', () => {
     expect(() => parseAboutme({ ...VALID_JSON, capabilities: 'nope' })).toThrow('Missing capabilities array')

@@ -150,6 +150,7 @@ export async function collectFiles(
   descriptionFile: string,
   mergedBehaviorText: string,
   mergeSources: string[],
+  personaFile?: string,
 ): Promise<Map<string, string>> {
   const files = new Map<string, string>()
 
@@ -189,10 +190,17 @@ export async function collectFiles(
     files.set(`behaviors/${relPath}`, await readFile(join(dir, relPath), 'utf-8'))
   }
 
-  try {
-    files.set('SOUL.md', await readFile(join(dir, 'SOUL.md'), 'utf-8'))
-  } catch {
-    // optional
+  if (personaFile) {
+    if (isExternalPath(dir, personaFile)) {
+      throw new Error(`E014: persona path '${personaFile}' in '${descriptionFile}' is absolute or escapes the agent root`)
+    }
+    let personaText: string
+    try {
+      personaText = await readFile(join(dir, personaFile), 'utf-8')
+    } catch {
+      throw new Error(`E_DESC: persona file '${personaFile}' declared in '${descriptionFile}' not found`)
+    }
+    files.set(personaFile, personaText)
   }
 
   await walk(join(dir, 'guides'), 'guides')
@@ -255,7 +263,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   // 8. Collect all files for the bundle
   const version = await resolveVersion(options.version)
   const commit = await resolveCommit(options.commit)
-  const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources)
+  const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources, df.persona ?? undefined)
 
   const contentForHash = Array.from(allFiles.values()).join('')
   const sha256 = createHash('sha256').update(contentForHash).digest('hex')
@@ -277,7 +285,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     version,
     domain: df.agent.domain ?? '',
     license: df.agent.license ?? '',
-    persona: df.persona ?? 'SOUL.md',
+    persona: df.persona ?? undefined,
     purpose: 'unknown',
     compiler: `dot-agent/${COMPILER_VERSION}`,
     commit,
@@ -298,6 +306,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const filesJson = {
     description: descriptionFileName,
     behavior: 'agent.behavior',
+    ...(df.persona ? { persona: df.persona } : {}),
     behaviors: Array.from(allFiles.keys()).filter(f => f.startsWith('behaviors/')),
     guides: Array.from(allFiles.keys()).filter(f => f.startsWith('guides/') && !gitkeepPaths.has(f)),
     knowledge: Array.from(allFiles.keys()).filter(f => f.startsWith('knowledge/') && !gitkeepPaths.has(f)),

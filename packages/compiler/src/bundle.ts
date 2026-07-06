@@ -60,7 +60,7 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     process.stderr.write(`\x1b[33m⚠\x1b[0m ${w.file}:${w.line}:${w.col} ${w.code} ${w.message}\n`)
   }
 
-  const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources)
+  const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources, df.persona ?? undefined)
 
   const sha256 = createHash('sha256')
     .update(Array.from(allFiles.values()).join(''))
@@ -75,7 +75,7 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     version: 'dev',
     domain: df.agent.domain ?? '',
     license: df.agent.license ?? '',
-    persona: df.persona ?? 'SOUL.md',
+    persona: df.persona ?? undefined,
     purpose: 'development',
     compiler: `dot-agent/${COMPILER_VERSION}`,
     capabilities: df.capabilities.map(c => ({ id: c.name, description: c.description ?? '' })),
@@ -89,7 +89,7 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     // mergedText — it has redundant `merge "..."` lines stripped (see
     // collectFiles() for why they're dead weight once flattened).
     behavior: allFiles.get('agent.behavior') ?? mergedText,
-    soul: allFiles.get('SOUL.md'),
+    persona: df.persona ? allFiles.get(df.persona) : undefined,
     guides: Array.from(allFiles.entries())
       .filter(([p]) => p.startsWith('guides/') && !GITKEEP.has(p))
       .map(([path, content]) => ({ path, content })),

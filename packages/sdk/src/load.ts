@@ -33,6 +33,7 @@ export async function loadAgent(input: Uint8Array | ArrayBuffer): Promise<AgentB
   const filesJson = JSON.parse(await filesJsonFile.async('text')) as {
     description: string
     behavior: string
+    persona?: string
     behaviors?: string[]
     guides?: string[]
     knowledge?: string[]
@@ -43,7 +44,7 @@ export async function loadAgent(input: Uint8Array | ArrayBuffer): Promise<AgentB
   if (!descFile) throw new Error(`Missing ${filesJson.description} in bundle`)
   if (!behavFile) throw new Error(`Missing ${filesJson.behavior} in bundle`)
 
-  const soulFile = zip.file('SOUL.md')
+  const personaFile = filesJson.persona ? zip.file(filesJson.persona) : null
   const allFiles = await extractFiles(zip)
 
   const guides: Array<{ path: string; content: string }> = []
@@ -66,7 +67,7 @@ export async function loadAgent(input: Uint8Array | ArrayBuffer): Promise<AgentB
     files: {
       description: await descFile.async('text'),
       behavior: await behavFile.async('text'),
-      soul: soulFile ? await soulFile.async('text') : undefined,
+      persona: personaFile ? await personaFile.async('text') : undefined,
       guides,
       knowledge,
       behaviors,

@@ -89,7 +89,7 @@ describe('CLI Commands Integration', () => {
 
     expect(result.bundle.id).toContain('my-agent')
     expect(result.bundle.aboutme.name).toBe('my-agent')
-    expect(result.bundle.files.soul).toContain('# my-agent')
+    expect(result.bundle.files.persona).toContain('# my-agent')
     expect(result.session.getState()).toBeTruthy()
   })
 

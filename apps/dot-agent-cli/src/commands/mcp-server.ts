@@ -82,8 +82,8 @@ function registerResources(
   server.resource('graph', 'dot-agent://graph', { description: 'SCXML with active state annotated' }, async () => text(session.getGraph()))
   server.resource('memory', 'dot-agent://memory', { description: 'Full memory store (4 domains)' }, async () => json(session.getMemory()))
 
-  if (opts.exposePersona && bundle.files.soul) {
-    server.resource('persona', 'dot-agent://persona', { description: 'Agent persona (SOUL.md)' }, async () => text(bundle.files.soul!))
+  if (opts.exposePersona && bundle.files.persona) {
+    server.resource('persona', 'dot-agent://persona', { description: 'Agent persona' }, async () => text(bundle.files.persona!))
   }
 
   if (bundle.files.guides.length > 0) {
