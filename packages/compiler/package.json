@@ -64,6 +64,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "@dot-agent/parser-dsl": "0.5.0-alpha.1",
     "@dot-agent/tree-sitter": "0.5.0-alpha.1",
     "jszip": "^3.10.1",

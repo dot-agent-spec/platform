@@ -146,10 +146,24 @@ describe('pack — happy path', () => {
     expect(s.size).toBeGreaterThan(0)
   })
 
+  it('appends .agent to --out when the extension is left off', async () => {
+    const dir = await makeAgentDir()
+    const outNoExt = join(dir, 'my-bundle')
+    const result = await pack({ dir, version: 'v1.0.0', out: outNoExt })
+    expect(result.path).toBe(`${outNoExt}.agent`)
+  })
+
+  it('leaves --out untouched when it already ends in .agent', async () => {
+    const dir = await makeAgentDir()
+    const outWithExt = join(dir, 'my-bundle.agent')
+    const result = await pack({ dir, version: 'v1.0.0', out: outWithExt })
+    expect(result.path).toBe(outWithExt)
+  })
+
   it('result contains a valid agent ID', async () => {
     const dir = await makeAgentDir()
     const result = await pack({ dir, version: 'v1.0.0' })
-    expect(result.id).toMatch(/^health\.example\.com\/Doctor:v1\.0\.0~[0-9a-f]{7,}$/)
+    expect(result.id).toMatch(/^health\.example\.com\/doctor:v1\.0\.0~[0-9a-f]{7,}$/)
   })
 
   it('ZIP contains .agent/aboutme.json with correct fields', async () => {
@@ -168,6 +182,25 @@ describe('pack — happy path', () => {
     expect(aboutme.dslVersion).toBe(`dot-agent/${DSL_VERSION}`)
     expect(aboutme.integrity.sha256).toHaveLength(64)
     expect(aboutme.persona).toBe('SOUL.md')
+  })
+
+  it('produces a bare (form A) id when no --version and no TTY is available — no hardcoded default', async () => {
+    const dir = await makeAgentDir()
+    // vitest's process has no interactive stdin/stdout, so this exercises
+    // the non-TTY branch of resolveVersionInteractive() without needing to
+    // mock @clack/prompts.
+    const result = await pack({ dir })
+    expect(result.id).toBe('health.example.com/doctor')
+
+    const zip = await readZip(result.path)
+    const files = await extractFiles(zip, ['.agent/'])
+    const aboutme = parseAboutme(JSON.parse(files.get('.agent/aboutme.json')!))
+    expect(aboutme.version).toBe('')
+  })
+
+  it('throws on an invalid explicit --version', async () => {
+    const dir = await makeAgentDir()
+    await expect(pack({ dir, version: 'not-a-version' })).rejects.toThrow('E019')
   })
 
   it('ZIP contains .agent/files.json', async () => {

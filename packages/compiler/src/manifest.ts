@@ -14,7 +14,6 @@ export function parseAboutme(json: any): AboutMe {
   if (!json.id) throw new Error('Missing id in aboutme.json')
   if (!json.name) throw new Error('Missing name in aboutme.json')
   if (!json.description) throw new Error('Missing description in aboutme.json')
-  if (!json.version) throw new Error('Missing version in aboutme.json')
   if (!json.domain) throw new Error('Missing domain in aboutme.json')
   if (!json.compiler) throw new Error('Missing compiler in aboutme.json')
   if (!Array.isArray(json.capabilities)) throw new Error('Missing capabilities array in aboutme.json')
@@ -26,7 +25,7 @@ export function parseAboutme(json: any): AboutMe {
     id: json.id,
     name: json.name,
     description: json.description,
-    version: json.version,
+    version: json.version ?? '',
     domain: json.domain,
     license: json.license ?? '',
     persona: json.persona,

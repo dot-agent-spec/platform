@@ -13,24 +13,12 @@ import { createHash } from 'crypto'
 import JSZip from 'jszip'
 import type { PackOptions, PackResult, Statement } from './types.js'
 import { lintDescription, lintBehavior } from './linter.js'
-import { buildId } from './id.js'
+import { buildId, slugify, isValidVersion } from './id.js'
 import { buildAboutme, aboutmeToJson } from './manifest.js'
 import { initBehaviorParser, parseDescriptionFile, parseBehaviorFile } from './parser.js'
 import { buildTypesJson } from './schema.js'
 import { writeZip } from './zip.js'
 import { COMPILER_VERSION } from './generated-version.js'
-
-function gitDescribeTags(): string | null {
-  try {
-    // --match restricts to plain vX.Y.Z release tags. Without it, a monorepo
-    // with namespaced tags (e.g. `<pkg>@<version>`) would resolve to whatever
-    // package tag happens to be nearest in history — unrelated to the agent
-    // actually being packed.
-    return execSync("git describe --tags --abbrev=0 --match 'v[0-9]*'", { stdio: 'pipe', encoding: 'utf-8' }).trim()
-  } catch {
-    return null
-  }
-}
 
 function gitRevParseShort(): string | null {
   try {
@@ -40,14 +28,101 @@ function gitRevParseShort(): string | null {
   }
 }
 
-async function resolveVersion(explicit?: string): Promise<string> {
-  if (explicit) return explicit
-  return gitDescribeTags() ?? 'v1.0.0'
-}
-
 async function resolveCommit(explicit?: string): Promise<string | undefined> {
   if (explicit) return explicit
   return gitRevParseShort() ?? undefined
+}
+
+// ── Version resolution ────────────────────────────────────────────────────────
+
+interface VersionCandidate {
+  version: string
+  label: string
+}
+
+// The repo's tags are all monorepo-style `<pkg>@<version>` (there is no plain
+// vX.Y.Z release tag convention here). Rather than guess which tag belongs to
+// the directory being packed, list the most recent tags with their package
+// context and let a human pick — precision comes from judgment, not a
+// heuristic that can silently attribute the wrong package's version.
+function recentTagCandidates(limit = 5): VersionCandidate[] {
+  let tags: string[]
+  try {
+    tags = execSync('git tag --sort=-creatordate', { stdio: 'pipe', encoding: 'utf-8' })
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+  } catch {
+    return []
+  }
+  return tags
+    .slice(0, limit)
+    .map((tag): VersionCandidate => {
+      const atIdx = tag.lastIndexOf('@')
+      const version = atIdx === -1 ? tag : tag.slice(atIdx + 1)
+      const label = atIdx === -1 ? tag : `${version}   (tag: ${tag})`
+      return { version, label }
+    })
+    .filter(c => isValidVersion(c.version))
+}
+
+// String sentinels (not symbols) — @clack/prompts' select() types `value` as
+// `string`, and these are extremely unlikely to collide with a real tag-derived version.
+const CUSTOM_VERSION = '__dot-agent-custom-version__'
+const BARE_VERSION = '__dot-agent-bare-version__'
+
+// No hardcoded version default — an unresolved version produces a form A
+// (bare) id per docs/reference/agent-id.md, rather than fabricating one.
+async function resolveVersionInteractive(explicit?: string): Promise<string | undefined> {
+  if (explicit) {
+    if (!isValidVersion(explicit)) {
+      throw new Error(`E019: Invalid version format '${explicit}' — expected vX.Y[.Z][-prerelease] or X.Y[.Z][-prerelease]`)
+    }
+    return explicit
+  }
+
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    process.stderr.write('[dot-agent] no TTY and no --version — packing without a version\n')
+    return undefined
+  }
+
+  const candidates = recentTagCandidates()
+
+  // @clack/prompts is ESM-only — dynamic import() resolves it correctly
+  // regardless of whether this package itself is consumed as ESM or CJS
+  // (a static import would break `require()` callers), and it also means the
+  // non-interactive paths above never pay to load it at all.
+  const clack = await import('@clack/prompts')
+
+  const choice = await clack.select({
+    message: 'Choose a version for this package',
+    options: [
+      ...candidates.map(c => ({ value: c.version, label: c.label })),
+      { value: CUSTOM_VERSION, label: 'Type a custom version…' },
+      { value: BARE_VERSION, label: 'None (bare — no version)' },
+    ],
+  })
+
+  if (clack.isCancel(choice)) {
+    clack.cancel('Pack cancelled.')
+    process.exit(1)
+  }
+
+  if (choice === BARE_VERSION) return undefined
+
+  if (choice === CUSTOM_VERSION) {
+    const typed = await clack.text({
+      message: 'Version',
+      validate: v => (v && isValidVersion(v) ? undefined : 'Invalid version format — expected vX.Y[.Z][-prerelease] or X.Y[.Z][-prerelease]'),
+    })
+    if (clack.isCancel(typed)) {
+      clack.cancel('Pack cancelled.')
+      process.exit(1)
+    }
+    return typed
+  }
+
+  return choice as string
 }
 
 // ── Path safety ──────────────────────────────────────────────────────────────
@@ -278,9 +353,15 @@ export async function collectFiles(
   return files
 }
 
+// The bundle extension is always .agent — append it when the caller left it off
+// rather than requiring `--out foo.agent` to be typed out every time.
+function withAgentExtension(path: string): string {
+  return path.endsWith('.agent') ? path : `${path}.agent`
+}
+
 export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const dir = options.dir ?? process.cwd()
-  const outPath = options.out ?? join(dir, `${basename(dir)}.agent`)
+  const outPath = withAgentExtension(options.out ?? join(dir, basename(dir)))
 
   // 1. Discover and read description file
   const descriptionFileName = await discoverDescriptionFile(dir, options.description)
@@ -330,7 +411,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   }
 
   // 8. Collect all files for the bundle
-  const version = await resolveVersion(options.version)
+  const version = await resolveVersionInteractive(options.version)
   const commit = await resolveCommit(options.commit)
   const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources, df.persona ?? undefined)
 
@@ -338,7 +419,9 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const sha256 = createHash('sha256').update(contentForHash).digest('hex')
 
   const namespace = df.agent.domain ?? 'unknown'
-  const id = buildId({ namespace, name: df.agent.name, version, digest: commit })
+  // digest requires version (buildId's own invariant) — a bare (versionless)
+  // id never carries a digest either, even if a commit sha is available.
+  const id = buildId({ namespace, name: slugify(df.agent.name), version, digest: version ? commit : undefined })
 
   const typesJson = buildTypesJson(df)
   const integrity = {
@@ -351,7 +434,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     id,
     name: df.agent.name,
     description: df.description ?? '',
-    version,
+    version: version ?? '',
     domain: df.agent.domain ?? '',
     license: df.agent.license ?? '',
     persona: df.persona ?? undefined,

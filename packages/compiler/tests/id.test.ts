@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { describe, it, expect } from 'vitest'
-import { parseId, buildId, extractDigest, extractName } from '../src/id.js'
+import { parseId, buildId, extractDigest, extractName, slugify, isValidVersion } from '../src/id.js'
 
 // ── parseId — form D (full) ──────────────────────────────────────────────────
 
@@ -237,6 +237,64 @@ describe('buildId', () => {
   it('round-trips sr.ht tilde username (form D)', () => {
     const original = 'sr.ht/~reykjalin/doctor:v1.0~a1b2c3d4'
     expect(buildId(parseId(original))).toBe(original)
+  })
+
+  it('lowercases the assembled id — ids are always lowercase', () => {
+    expect(buildId({ namespace: 'GitHub.com/DaniloBorges', name: 'Doctor', version: 'V1.0', digest: 'A1B2C3D4' })).toBe(
+      'github.com/daniloborges/doctor:v1.0~a1b2c3d4',
+    )
+  })
+})
+
+// ── slugify ───────────────────────────────────────────────────────────────────
+
+describe('slugify', () => {
+  it('lowercases and hyphenates spaces', () => {
+    expect(slugify('Fridge Assistant')).toBe('fridge-assistant')
+  })
+
+  it('collapses runs of non-alphanumeric characters into a single hyphen', () => {
+    expect(slugify('Text   Summary!!')).toBe('text-summary')
+  })
+
+  it('trims leading and trailing hyphens', () => {
+    expect(slugify('  Doctor  ')).toBe('doctor')
+  })
+
+  it('leaves an already-clean slug untouched', () => {
+    expect(slugify('doctor')).toBe('doctor')
+  })
+})
+
+// ── isValidVersion ────────────────────────────────────────────────────────────
+
+describe('isValidVersion', () => {
+  it('accepts vX.Y.Z', () => {
+    expect(isValidVersion('v1.0.0')).toBe(true)
+  })
+
+  it('accepts vX.Y', () => {
+    expect(isValidVersion('v1.0')).toBe(true)
+  })
+
+  it('accepts a version with no leading v (monorepo tag style)', () => {
+    expect(isValidVersion('0.5.0-alpha.1')).toBe(true)
+  })
+
+  it('accepts a prerelease suffix', () => {
+    expect(isValidVersion('v1.0.0-alpha.1')).toBe(true)
+  })
+
+  it('accepts a build metadata suffix', () => {
+    expect(isValidVersion('v1.0.0+build.5')).toBe(true)
+  })
+
+  it('rejects a non-version tag', () => {
+    expect(isValidVersion('release-42')).toBe(false)
+  })
+
+  it('rejects an empty string', () => {
+    expect(isValidVersion('')).toBe(false)
   })
 })
 

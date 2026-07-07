@@ -114,7 +114,29 @@ export function buildId(parts: IdParts): string {
     result += `:${version}`
     if (digest) result += `~${digest}`
   }
-  return result
+  // Ids are always lowercase — domains, platform usernames (GitHub/GitLab/
+  // Codeberg/Sourcehut) and email local-parts are all case-insensitive in
+  // practice, so normalizing here is safe and gives every id a single shape.
+  return result.toLowerCase()
+}
+
+// Turns a human display name (e.g. "Fridge Assistant", from `agent Fridge
+// Assistant` in the DSL — spaces/capitalization are deliberate there) into
+// the kebab-case slug used for an id's name segment.
+export function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+// Accepts optional leading 'v' (id spec examples use it; monorepo tags after
+// their '@' split don't), 1-3 dot-separated numeric groups, and optional
+// -prerelease / +build suffixes — e.g. v1.0, 2.3.1, v1.0.0-alpha.1, 1.0+build.
+const VERSION_RE = /^v?\d+(\.\d+){0,2}(-[0-9A-Za-z.]+)?(\+[0-9A-Za-z.]+)?$/i
+
+export function isValidVersion(version: string): boolean {
+  return VERSION_RE.test(version)
 }
 
 export function extractDigest(id: string): string {

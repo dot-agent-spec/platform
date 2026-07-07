@@ -5,5 +5,7 @@
     "behaviors/agent.behavior"
   ],
   "guides": [],
-  "knowledge": []
+  "knowledge": [
+    "knowledge/maintopics.md"
+  ]
 }

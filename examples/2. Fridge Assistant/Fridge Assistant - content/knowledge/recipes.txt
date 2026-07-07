@@ -1,0 +1,13 @@
+# Vegetarian Recipes Catalog
+
+1. Vegetable Stir-fry:
+Ingredients: bell peppers, broccoli, carrots, soy sauce, tofu.
+Instructions: Sauté vegetables with tofu and soy sauce.
+
+2. Omelette:
+Ingredients: eggs, cheese, spinach, onions.
+Instructions: Whisk eggs, add ingredients, cook in a pan until set.
+
+3. Pasta Primavera:
+Ingredients: pasta, zucchini, cherry tomatoes, olive oil, parmesan cheese.
+Instructions: Boil pasta, sauté vegetables, toss together with oil and cheese.

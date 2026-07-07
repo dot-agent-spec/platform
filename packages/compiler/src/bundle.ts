@@ -12,7 +12,7 @@ import { createHash } from 'crypto'
 import type { AgentBundle, AgentFiles } from './types.js'
 import { discoverDescriptionFile, consolidate, collectFiles } from './pack.js'
 import { lintDescription, lintBehavior } from './linter.js'
-import { buildId } from './id.js'
+import { buildId, slugify } from './id.js'
 import { buildAboutme } from './manifest.js'
 import { initBehaviorParser, parseDescriptionFile } from './parser.js'
 import { COMPILER_VERSION } from './generated-version.js'
@@ -66,7 +66,7 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     .update(Array.from(allFiles.values()).join(''))
     .digest('hex')
 
-  const id = buildId({ namespace: df.agent.domain ?? 'local', name: df.agent.name, version: 'dev' })
+  const id = buildId({ namespace: df.agent.domain ?? 'unknown', name: slugify(df.agent.name), version: 'dev' })
 
   const aboutme = buildAboutme({
     id,

@@ -112,13 +112,19 @@ describe('parseAboutme', () => {
     expect(parsed).toEqual(original)
   })
 
-  it.each(['dslVersion', 'id', 'name', 'description', 'version', 'domain', 'compiler'])(
+  it.each(['dslVersion', 'id', 'name', 'description', 'domain', 'compiler'])(
     'throws when required field "%s" is missing',
     field => {
       const incomplete = { ...VALID_JSON, [field]: undefined }
       expect(() => parseAboutme(incomplete)).toThrow()
     }
   )
+
+  it('defaults version to empty string when missing (bare/form-A ids have no version)', () => {
+    const { version, ...withoutVersion } = VALID_JSON
+    const a = parseAboutme(withoutVersion)
+    expect(a.version).toBe('')
+  })
 
   it('does not throw when persona is missing, and returns it as undefined', () => {
     const { persona, ...withoutPersona } = VALID_JSON
