@@ -10,7 +10,7 @@ import { readFile, stat } from 'fs/promises'
 import { loadAgent, AgentSession } from '@dot-agent/sdk'
 import { bundleFromDir } from '@dot-agent/compiler'
 import { loadMcpConfig } from '../config.js'
-import { startMcpServer } from './mcp-server.js'
+import { startMcpServer } from './mcp-run.js'
 import type { RunOptions, RunResult } from '../types.js'
 
 export async function run(options: RunOptions): Promise<RunResult> {

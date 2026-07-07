@@ -18,10 +18,9 @@ import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import * as p from '@clack/prompts'
-import { init, pack, unpack, run, installSkill } from './index.js'
 
-const require = createRequire(import.meta.url)
-const { version } = require('../package.json')
+import { version } from './version.js'
+import { init, pack, unpack, run, configure, startDevMcpServer } from './index.js'
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -90,17 +89,19 @@ async function main() {
       formatSuccess(`Unpacked to ${result.dir}`)
       console.log(`  ID: ${result.id}`)
       console.log(`  Files: ${result.files.length}`)
-    } else if (command === 'install-skill') {
+    } else if (command === 'configure') {
       const claude = args.includes('--claude')
       const gemini = args.includes('--gemini')
       const agy = args.includes('--agy')
+      const skill = args.includes('--skill')
       const mcp = args.includes('--mcp')
 
       const hasTarget = claude || gemini || agy
 
       let targetClaude = claude
       let targetGemini = gemini || agy
-      let configureMcp = mcp
+      let configSkill = skill
+      let configMcp = mcp
 
       if (!hasTarget) {
         if (!process.stdout.isTTY || !process.stdin.isTTY) {
@@ -108,7 +109,7 @@ async function main() {
           process.exit(1)
         }
 
-        p.intro('dot-agent - Skill Installer')
+        p.intro('dot-agent - Client Configurer')
 
         const targetOption = await p.select({
           message: 'Select target platform:',
@@ -120,42 +121,111 @@ async function main() {
         })
 
         if (p.isCancel(targetOption)) {
-          p.cancel('Installation cancelled.')
+          p.cancel('Configuration cancelled.')
           process.exit(0)
         }
 
-        const mcpOption = await p.confirm({
-          message: 'Configure MCP server for the selected platform(s)? (Optional)',
-          initialValue: false,
+        const configTypeOption = await p.select({
+          message: 'Select what to configure:',
+          options: [
+            { value: 'both', label: 'Both Skill and MCP (Recommended)' },
+            { value: 'skill', label: 'Skill only' },
+            { value: 'mcp', label: 'MCP configuration only' },
+          ],
         })
 
-        if (p.isCancel(mcpOption)) {
-          p.cancel('Installation cancelled.')
+        if (p.isCancel(configTypeOption)) {
+          p.cancel('Configuration cancelled.')
           process.exit(0)
         }
 
         targetClaude = targetOption === 'claude' || targetOption === 'both'
         targetGemini = targetOption === 'gemini' || targetOption === 'both'
-        configureMcp = mcpOption === true
+        configSkill = configTypeOption === 'skill' || configTypeOption === 'both'
+        configMcp = configTypeOption === 'mcp' || configTypeOption === 'both'
+      } else {
+        if (!skill && !mcp) {
+          configSkill = true
+          configMcp = true
+        }
       }
 
-      const results = await installSkill({
+      const results = await configure({
         claude: targetClaude,
         gemini: targetGemini,
-        mcp: configureMcp,
+        skill: configSkill,
+        mcp: configMcp,
       })
 
       for (const result of results) {
-        formatSuccess(`Skill installed → ${result.dest}`)
-        if (result.dest.includes('.claude')) {
-          console.log(`  Add to CLAUDE.md: @~/.claude/skills/dot-agent/SKILL.md`)
-        } else {
-          console.log(`  Skill is now globally active in Gemini/AGY config directory.`)
+        if (result.skillInstalled && result.dest) {
+          formatSuccess(`Skill installed → ${result.dest}`)
+          if (result.dest.includes('.claude')) {
+            console.log(`  Add to CLAUDE.md: @~/.claude/skills/dot-agent/SKILL.md`)
+          } else {
+            console.log(`  Skill is now globally active in Gemini/AGY config directory.`)
+          }
         }
         if (result.mcpConfigured && result.mcpConfigPath) {
-          formatSuccess(`MCP server configured → ${result.mcpConfigPath}`)
+          formatSuccess(`MCP servers (helper and dev) registered → ${result.mcpConfigPath}`)
         }
       }
+    } else if (command === 'server-mcp') {
+      const mcpTransportIdx = args.indexOf('--mcp-transport')
+      const mcpPortIdx = args.indexOf('--mcp-port')
+
+      let mcpTransport = mcpTransportIdx !== -1 ? args[mcpTransportIdx + 1] as 'stdio' | 'http' : undefined
+      let mcpPort = mcpPortIdx !== -1 ? parseInt(args[mcpPortIdx + 1], 10) : undefined
+
+      if (!mcpTransport) {
+        if (!process.stdout.isTTY || !process.stdin.isTTY) {
+          formatError('Error: Missing transport parameter (use --mcp-transport stdio|http) in non-TTY environment.')
+          process.exit(1)
+        }
+
+        p.intro('dot-agent - Utility MCP Server')
+
+        const transportOption = await p.select({
+          message: 'Select MCP transport type:',
+          options: [
+            { value: 'stdio', label: 'stdio (Standard Stdin/Stdout)' },
+            { value: 'http', label: 'http (Server SSE)' },
+          ],
+        })
+
+        if (p.isCancel(transportOption)) {
+          p.cancel('Server launch cancelled.')
+          process.exit(0)
+        }
+
+        mcpTransport = transportOption as 'stdio' | 'http'
+
+        if (mcpTransport === 'http') {
+          const portOption = await p.text({
+            message: 'Enter HTTP server port:',
+            placeholder: '3000',
+            defaultValue: '3000',
+            validate: (val) => {
+              const num = parseInt(val, 10)
+              if (isNaN(num) || num <= 0 || num > 65535) {
+                return 'Please enter a valid port number (1-65535).'
+              }
+            }
+          })
+
+          if (p.isCancel(portOption)) {
+            p.cancel('Server launch cancelled.')
+            process.exit(0)
+          }
+
+          mcpPort = parseInt(portOption, 10)
+        }
+      }
+
+      await startDevMcpServer({
+        transport: mcpTransport,
+        port: mcpPort ?? 3000,
+      })
     } else if (command === 'run') {
       const isHelper = args.includes('--helper')
       const sourceArg = isHelper ? undefined : args[1]
@@ -190,7 +260,8 @@ Usage:
   dot-agent unpack <file.agent> [--out <dir>] [--force]
   dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
-  dot-agent install-skill [--claude] [--gemini] [--agy] [--mcp]
+  dot-agent configure [--claude] [--gemini] [--agy] [--skill] [--mcp]
+  dot-agent server-mcp [--mcp-transport stdio|http] [--mcp-port <n>]
 `)
     }
   } catch (err: any) {

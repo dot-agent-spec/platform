@@ -12,27 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { init } from './commands/init.js'
-export { pack } from './commands/pack.js'
-export { unpack } from './commands/unpack.js'
-export { run } from './commands/run.js'
-export { configure } from './commands/configure.js'
-export { startDevMcpServer } from './commands/server-mcp.js'
-
-export type {
-  InitOptions,
-  InitResult,
-  PackOptions,
-  PackResult,
-  UnpackOptions,
-  UnpackResult,
-  RunOptions,
-  RunResult,
-  LintMessage,
-  AboutMe,
-  AgentBundle,
-  Skill,
-  Integrity,
-  ParsedDescription,
-  ParsedBehavior,
-} from './types.js'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+export const version: string = require('../package.json').version
