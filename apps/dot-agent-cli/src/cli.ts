@@ -17,6 +17,7 @@
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
+import * as p from '@clack/prompts'
 import { init, pack, unpack, run, installSkill } from './index.js'
 
 const require = createRequire(import.meta.url)
@@ -90,9 +91,71 @@ async function main() {
       console.log(`  ID: ${result.id}`)
       console.log(`  Files: ${result.files.length}`)
     } else if (command === 'install-skill') {
-      const result = await installSkill()
-      formatSuccess(`Skill installed → ${result.dest}`)
-      console.log(`  Add to CLAUDE.md: @~/.claude/skills/dot-agent/SKILL.md`)
+      const claude = args.includes('--claude')
+      const gemini = args.includes('--gemini')
+      const agy = args.includes('--agy')
+      const mcp = args.includes('--mcp')
+
+      const hasTarget = claude || gemini || agy
+
+      let targetClaude = claude
+      let targetGemini = gemini || agy
+      let configureMcp = mcp
+
+      if (!hasTarget) {
+        if (!process.stdout.isTTY || !process.stdin.isTTY) {
+          formatError('Error: Missing target platform parameter (use --claude, --gemini, or --agy) in non-TTY environment.')
+          process.exit(1)
+        }
+
+        p.intro('dot-agent - Skill Installer')
+
+        const targetOption = await p.select({
+          message: 'Select target platform:',
+          options: [
+            { value: 'claude', label: 'Claude Code' },
+            { value: 'gemini', label: 'Gemini / AGY' },
+            { value: 'both', label: 'Both platforms' },
+          ],
+        })
+
+        if (p.isCancel(targetOption)) {
+          p.cancel('Installation cancelled.')
+          process.exit(0)
+        }
+
+        const mcpOption = await p.confirm({
+          message: 'Configure MCP server for the selected platform(s)? (Optional)',
+          initialValue: false,
+        })
+
+        if (p.isCancel(mcpOption)) {
+          p.cancel('Installation cancelled.')
+          process.exit(0)
+        }
+
+        targetClaude = targetOption === 'claude' || targetOption === 'both'
+        targetGemini = targetOption === 'gemini' || targetOption === 'both'
+        configureMcp = mcpOption === true
+      }
+
+      const results = await installSkill({
+        claude: targetClaude,
+        gemini: targetGemini,
+        mcp: configureMcp,
+      })
+
+      for (const result of results) {
+        formatSuccess(`Skill installed → ${result.dest}`)
+        if (result.dest.includes('.claude')) {
+          console.log(`  Add to CLAUDE.md: @~/.claude/skills/dot-agent/SKILL.md`)
+        } else {
+          console.log(`  Skill is now globally active in Gemini/AGY config directory.`)
+        }
+        if (result.mcpConfigured && result.mcpConfigPath) {
+          formatSuccess(`MCP server configured → ${result.mcpConfigPath}`)
+        }
+      }
     } else if (command === 'run') {
       const isHelper = args.includes('--helper')
       const sourceArg = isHelper ? undefined : args[1]
@@ -127,7 +190,7 @@ Usage:
   dot-agent unpack <file.agent> [--out <dir>] [--force]
   dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
-  dot-agent install-skill
+  dot-agent install-skill [--claude] [--gemini] [--agy] [--mcp]
 `)
     }
   } catch (err: any) {
