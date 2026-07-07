@@ -11,7 +11,7 @@ import { join, basename, resolve, relative, isAbsolute, normalize, dirname } fro
 import { execSync } from 'child_process'
 import { createHash } from 'crypto'
 import JSZip from 'jszip'
-import type { PackOptions, PackResult } from './types.js'
+import type { PackOptions, PackResult, Statement } from './types.js'
 import { lintDescription, lintBehavior } from './linter.js'
 import { buildId } from './id.js'
 import { buildAboutme, aboutmeToJson } from './manifest.js'
@@ -22,7 +22,11 @@ import { COMPILER_VERSION } from './generated-version.js'
 
 function gitDescribeTags(): string | null {
   try {
-    return execSync('git describe --tags --abbrev=0', { stdio: 'pipe', encoding: 'utf-8' }).trim()
+    // --match restricts to plain vX.Y.Z release tags. Without it, a monorepo
+    // with namespaced tags (e.g. `<pkg>@<version>`) would resolve to whatever
+    // package tag happens to be nearest in history — unrelated to the agent
+    // actually being packed.
+    return execSync("git describe --tags --abbrev=0 --match 'v[0-9]*'", { stdio: 'pipe', encoding: 'utf-8' }).trim()
   } catch {
     return null
   }
@@ -143,6 +147,47 @@ export async function consolidate(agentRoot: string, entryFile: string): Promise
   }
 }
 
+// ── guide/teach file references ───────────────────────────────────────────────
+
+// `guide "..."` / `teach "..."` text is either inline orientation prose or a
+// filename to bundle alongside the agent (e.g. `teach "recipes.txt"`). A
+// trailing .txt/.md is the only signal we have to tell them apart — anything
+// else stays literal, embedded verbatim in the flattened agent.behavior.
+const FILE_REF_RE = /\.(txt|md)$/i
+
+interface FileRef {
+  kind: 'guide' | 'teach'
+  text: string
+}
+
+function collectFileRefs(stmts: Statement[], out: Map<string, FileRef>): void {
+  for (const s of stmts) {
+    switch (s.type) {
+      case 'guide_stmt':
+        if (FILE_REF_RE.test(s.text)) out.set(`guide:${s.text}`, { kind: 'guide', text: s.text })
+        break
+      case 'teach_stmt':
+        if (FILE_REF_RE.test(s.text)) out.set(`teach:${s.text}`, { kind: 'teach', text: s.text })
+        break
+      case 'interact_stmt':
+        collectFileRefs(s.handlers, out)
+        break
+      case 'intent_handler':
+        if (Array.isArray(s.body)) collectFileRefs(s.body, out)
+        break
+      case 'offtopic_handler':
+      case 'after_stmt':
+      case 'parallel_stmt':
+        collectFileRefs(s.body, out)
+        break
+      case 'conditional_stmt':
+        collectFileRefs(s.then, out)
+        if (s.else) collectFileRefs(s.else, out)
+        break
+    }
+  }
+}
+
 // ── File collection ───────────────────────────────────────────────────────────
 
 export async function collectFiles(
@@ -205,6 +250,30 @@ export async function collectFiles(
 
   await walk(join(dir, 'guides'), 'guides')
   await walk(join(dir, 'knowledge'), 'knowledge')
+
+  // `guide "notes.md"` / `teach "recipes.txt"` reference files that usually
+  // sit next to agent.behavior rather than under guides/knowledge — bundle
+  // those too, erroring instead of silently dropping them if missing.
+  await initBehaviorParser()
+  const behaviorAst = parseBehaviorFile(mergedBehaviorText).ok
+  if (behaviorAst) {
+    const refs = new Map<string, FileRef>()
+    for (const state of behaviorAst.states) collectFileRefs(state.body, refs)
+    for (const trigger of behaviorAst.global_triggers) collectFileRefs(trigger.body, refs)
+
+    for (const { kind, text } of refs.values()) {
+      if (isExternalPath(dir, text)) {
+        throw new Error(`E014: '${kind}' path '${text}' is absolute or escapes the agent root`)
+      }
+      let content: string
+      try {
+        content = await readFile(join(dir, text), 'utf-8')
+      } catch {
+        throw new Error(`E018: '${kind}' file '${text}' referenced in agent.behavior not found in ${dir}`)
+      }
+      files.set(`${kind === 'guide' ? 'guides' : 'knowledge'}/${text}`, content)
+    }
+  }
 
   return files
 }

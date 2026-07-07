@@ -64,8 +64,6 @@ export async function unpack(options: UnpackOptions): Promise<UnpackResult> {
   const extractedFiles: string[] = []
 
   for (const [path, content] of files) {
-    if (path.startsWith('.agent/')) continue
-
     const fullPath = join(outDir, path)
     const dir = fullPath.substring(0, fullPath.lastIndexOf('/'))
 
