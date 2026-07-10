@@ -17,12 +17,14 @@ Legend:
 |---|---|---|---|---|---|
 | **Status** | 🧊 Frozen | 🧊 Frozen | 🧊⚠️ Frozen | 🧊⚠️ Frozen | 🧊⚠️ Frozen |
 | **Package** | npm: `@dot-agent/tree-sitter`<br>crate: `dot-agent-tree-sitter` | npm: `@dot-agent/parser-dsl`<br>crate: `dot-agent-parser-dsl` | npm: `@dot-agent/compiler` | npm: `@dot-agent/kernel-dsl`<br>crate: `dot-agent-kernel-dsl` | npm: `@dot-agent/sdk` |
-| **Version** | `0.5.0-alpha.1` | `0.5.0-alpha.1` | `0.5.0-alpha.2` | `0.5.0-alpha.1` | `0.5.0-alpha.2` |
+| **Version** | `0.10.0` | `0.10.0` | `0.10.0` | `0.10.0` | `0.10.0` |
 | **Build** | `tree-sitter-cli` — manual npm scripts (`generate` + `build --wasm`) + `tsup` | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`scripts/build-wasm.sh` central, `wasm32-wasip1`) + `tsup` | `tsup` (esm + cjs, `dts:true`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`scripts/build-wasm.sh` central, `wasm32-wasip1`) + `tsup` | `tsup` (esm + cjs, `dts:true`) |
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
 | **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
 > ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](pre-release/v0.1/compliance-check-2026-06-27.md).
+>
+> 🚀 **First public release: `0.10.0`** — the one-time version jump decided in [DA00-02](adr/DA00-02-two-axis-versioning.md), published to the `latest` npm dist-tag (not `alpha`) after the pipeline was proven end-to-end by the [pre-alpha rehearsal](pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md).
 
 ---
 

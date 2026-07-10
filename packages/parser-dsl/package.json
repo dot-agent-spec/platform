@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/parser-dsl",
-  "version": "0.5.0-alpha.1",
+  "version": "0.10.0",
   "description": "Unified DSL parser for dot-agent — parses .behavior and .description files using tree-sitter, providing structured ASTs for compiler, LSP, and runtime consumption",
   "type": "module",
   "main": "dist/index.cjs",

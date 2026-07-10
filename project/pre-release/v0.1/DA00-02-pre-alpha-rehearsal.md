@@ -14,7 +14,7 @@
 |---|---|
 | ADR | [DA00-02: two-axis versioning](../../adr/DA00-02-two-axis-versioning.md) |
 | Date | 2026-07-03 |
-| Task | `project/tasks/DA01-01-update-version-and-packages.md` (item 8) |
+| Task | `project/tasks/DA01-01-update-version-and-packages.md` (item 8) — task file removed after the real `0.10.0` release completed its item 10 |
 
 ---
 
@@ -127,6 +127,18 @@ real, green run behind it: the `<pkg>@<version>` tag format, the `alpha`/`latest
 split, OIDC trusted publishing on both npm and crates.io, and the VS Code Marketplace/Open VSX
 publish step. The real `0.10.0` jump should be mechanically identical to this rehearsal — bump,
 tag, push (one at a time), watch CI.
+
+## Update: the real `0.10.0` jump
+
+Executed exactly as predicted above — mechanically identical to the rehearsal, no new bugs. All
+eight packages bumped in lockstep to `0.10.0` (internal `@dot-agent/*` deps pinned to exact
+`0.10.0`, same fix as the alpha.2 round), `dsl/VERSION` dropped its `-alpha` suffix (`0.1-alpha` →
+`0.1`, since the public v0.1 milestone is no longer a rehearsal), and every package published for
+real under the `latest` npm dist-tag (`vscode-dot-agent` as a real Marketplace release, not
+pre-release — its version no longer contains a `-`, so `publish-vscode.yml`'s pre-release
+detection resolves to false as intended). The `DA01-01-update-version-and-packages.md` task file
+was removed as part of this release commit; this log and [DA00-02](../../adr/DA00-02-two-axis-versioning.md)
+are its permanent record.
 
 ## Not addressed here (deliberately out of scope)
 

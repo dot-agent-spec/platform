@@ -18,7 +18,7 @@
 | Version axis | DSL |
 | Sources | [ROADMAP.md § Work to close v0.1](../../ROADMAP.md) (the "Stamp provenance into `aboutme.json`" bullet), [DA00-02: two-axis versioning](../adr/DA00-02-two-axis-versioning.md) |
 | Depends on | none — can start independently |
-| Sibling task(s) | [DA01-01-update-version-and-packages.md](DA01-01-update-version-and-packages.md) — that task owns package version numbers and the publish mechanism; this task owns how bundle provenance is *derived and stamped*, not what any package's number is |
+| Sibling task(s) | The package-version/publish-mechanism task (`DA01-01-update-version-and-packages.md`, removed after completing the real `0.10.0` release — see [`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md)) owned package version numbers and the publish mechanism; this task owns how bundle provenance is *derived and stamped*, not what any package's number is |
 
 ---
 
@@ -165,8 +165,10 @@ rehearsing "does provenance stamping work end to end."
 
 This task owns **how** `pack.ts`/`bundle.ts`/`manifest.ts` derive and stamp provenance values, and where
 the DSL version's source of truth lives (`dsl/VERSION`). It does **not** own what any package's version
-number is or how packages get published — that's
-[DA01-01-update-version-and-packages.md](DA01-01-update-version-and-packages.md) in full. The only
-coupling point: that sibling task's rehearsal bump (item 8 there) determines the real
-`@dot-agent/compiler` version this task's build-time script will embed — so re-run the embedding step
-(item 4 here) after any package version bump, not just once.
+number is or how packages get published — that was the now-completed and removed
+`DA01-01-update-version-and-packages.md` task (see the [pre-alpha rehearsal log](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md)
+for its full history) in full. The only coupling point: that sibling task's release bumps determine the
+real `@dot-agent/compiler` version this task's build-time script will embed — so re-run the embedding
+step (item 4 here) after any package version bump, not just once. `dsl/VERSION` itself was bumped from
+`0.1-alpha` to `0.1` as part of the real `0.10.0` package jump, since the public v0.1 milestone is no
+longer a rehearsal.

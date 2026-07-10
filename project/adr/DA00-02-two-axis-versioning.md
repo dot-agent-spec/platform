@@ -112,7 +112,6 @@ resolve, one layer down.
 
 - [`tasks/pre-public-consolidation.md`](../tasks/pre-public-consolidation.md) — B2, where this decision was recorded inline
 - [`tasks/DA01-01-dsl-spec-versioning.md`](../tasks/DA01-01-dsl-spec-versioning.md) — implements the DSL-axis provenance stamping described here
-- [`tasks/DA01-01-update-version-and-packages.md`](../tasks/DA01-01-update-version-and-packages.md) — implements the package-axis rehearsal and publish mechanism
-- [`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md) — long-form log of the `0.5.0-alpha.1` rehearsal that validated this ADR's publish mechanism end-to-end
+- [`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md) — long-form log of the `0.5.0-alpha.1`/`alpha.2` rehearsal that validated this ADR's publish mechanism end-to-end, and of the real `0.10.0` jump that followed it (the task file that implemented both, `DA01-01-update-version-and-packages.md`, was removed once that jump completed)
 - [`ROADMAP.md`](../../ROADMAP.md) — § Two version axes (the policy in the roadmap)
 - [`GOVERNANCE.md`](../../GOVERNANCE.md) — § Versioning & stability

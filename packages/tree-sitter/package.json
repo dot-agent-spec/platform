@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/tree-sitter",
-  "version": "0.5.0-alpha.1",
+  "version": "0.10.0",
   "description": "Tree-sitter grammars for the .agent DSL (.description / .type / .behavior)",
   "license": "Apache-2.0",
   "author": {
