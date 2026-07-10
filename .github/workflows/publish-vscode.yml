@@ -70,7 +70,11 @@ jobs:
           # convention is an odd minor number published with `--pre-release`. Tags without a `-`
           # suffix (e.g. this rehearsal's `vscode@0.5.1`) are treated as pre-release; a tag with an
           # even minor and no rehearsal marker is a stable release.
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          # GITHUB_REF_NAME is "vscode@<version>" — check only the version portion after "@" for
+          # "-", not the whole ref (a hyphenated package name would otherwise false-positive here,
+          # as it did in the npm dist-tag detection of the sibling publish-*.yml workflows).
+          VERSION="${GITHUB_REF_NAME#*@}"
+          if [[ "$VERSION" == *-* ]]; then
             echo "flag=--pre-release" >> "$GITHUB_OUTPUT"
           else
             echo "flag=" >> "$GITHUB_OUTPUT"

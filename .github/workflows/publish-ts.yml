@@ -97,7 +97,12 @@ jobs:
       - name: Determine npm dist-tag
         id: npm_tag
         run: |
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          # GITHUB_REF_NAME is "<pkg>@<version>" — package names here can contain
+          # hyphens themselves (language-server), so checking the whole ref for "-"
+          # falsely flags a real, non-prerelease version as alpha. Only the version
+          # portion after "@" determines prerelease-ness.
+          VERSION="${GITHUB_REF_NAME#*@}"
+          if [[ "$VERSION" == *-* ]]; then
             echo "tag=alpha" >> "$GITHUB_OUTPUT"
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
