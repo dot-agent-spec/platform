@@ -570,7 +570,7 @@
 <p>Legend: 
 ☑️ verified ✅ implemented · ⚠️ partial or gap · ❌ missing, should exist · → re-exports or delegates · 🔄 <code>pkg</code> consumes from <code>pkg</code> · ➕ field/type injected at this layer (no upstream DSL source) · 📌 hardcoded value that should derive from the language<br>🗑️ obsolete (POC nodes removed or renamed in grammar)</p>
 <p>1️⃣ v0.1 · 2️⃣ v0.2 · 🗓️ TBD</p>
-<hr>
+<p>🧊 Frozen  · 🔥 Active</p>
 <h2>Package freeze status</h2>
 <table>
 <thead>
@@ -586,18 +586,26 @@
 <tbody><tr>
 <td><strong>Status</strong></td>
 <td>🧊 Frozen</td>
-<td>🔥 Active</td>
-<td>🔥⚠️ Active</td>
-<td>🧊⚠️ Frozen</td>
-<td>🔥⚠️ Active</td>
+<td>🧊 Frozen</td>
+<td>🧊 Frozen</td>
+<td>🧊 Frozen</td>
+<td>🧊 Frozen</td>
+</tr>
+<tr>
+<td><strong>Package</strong></td>
+<td>npm: <code>@dot-agent/tree-sitter</code><br>crate: <code>dot-agent-tree-sitter</code></td>
+<td>npm: <code>@dot-agent/parser-dsl</code><br>crate: <code>dot-agent-parser-dsl</code></td>
+<td>npm: <code>@dot-agent/compiler</code></td>
+<td>npm: <code>@dot-agent/kernel-dsl</code><br>crate: <code>dot-agent-kernel-dsl</code></td>
+<td>npm: <code>@dot-agent/sdk</code></td>
 </tr>
 <tr>
 <td><strong>Version</strong></td>
-<td><code>0.4.1</code></td>
-<td><code>0.1.0</code></td>
-<td><code>0.1.0</code></td>
-<td><code>0.1.3</code></td>
-<td><code>0.1.0</code></td>
+<td><code>0.5.0-alpha.1</code></td>
+<td><code>0.5.0-alpha.1</code></td>
+<td><code>0.5.0-alpha.2</code></td>
+<td><code>0.5.0-alpha.1</code></td>
+<td><code>0.5.0-alpha.2</code></td>
 </tr>
 <tr>
 <td><strong>Build</strong></td>
@@ -625,10 +633,7 @@
 </tr>
 </tbody></table>
 <blockquote>
-<p>⚠️ <strong>Build / packaging gap remanescente</strong> — full history in <a href="pre-release/v0.1/DA00-06-build-pipeline-investigation.md">DA00-06 build-pipeline-investigation</a> (DA00-06 concluído):</p>
-<ul>
-<li>Versions divergem: tree-sitter <code>0.4.1</code>, kernel-dsl <code>0.1.3</code>, others <code>0.1.0</code>.</li>
-</ul>
+<p>✅ <strong>Compliance check 2026-06-27</strong> — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM <code>RuntimeError: unreachable</code> (P3) resolved via <code>BTreeMap</code>/<code>BTreeSet</code>; node-compat import path (P2) corrected; <code>CONTRIBUTING.md</code> created. See <a href="pre-release/v0.1/compliance-check-2026-06-27.md">compliance-check-2026-06-27.md</a>.</p>
 </blockquote>
 <hr>
 <h2>tree-sitter package (L0 -&gt; L3)</h2>
@@ -951,8 +956,8 @@
 <tr>
 <td>✅1️⃣ <code>full.validateMagicBytes(filePath)</code> · <code>full.validateZipBomb(filePath)</code></td>
 <td></td>
-<td>⚠️ local copies</td>
-<td>Node.js; sdk redefines identical fns in <code>load.ts</code> instead of importing</td>
+<td>✅ sdk wraps</td>
+<td>Node.js; sdk imports <code>Core</code> variants from <code>compiler/core</code> and wraps for async file I/O</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>full.discoverDescriptionFile(dir, explicit?)</code> → <code>Promise&lt;string&gt;</code></td>
@@ -1084,7 +1089,7 @@
 </tr>
 <tr>
 <td>✅🗓️ <code>get_memory()</code> → <code>string</code></td>
-<td>❌ not exposed</td>
+<td>→ <code>getMemory()</code></td>
 <td><code>{domain, key, value}[]</code> snapshot</td>
 </tr>
 <tr>
@@ -1184,14 +1189,14 @@
 <td>re-exported from <code>index.ts</code></td>
 </tr>
 <tr>
-<td>⚠️ <code>validateMagicBytes</code> · <code>validateZipBomb</code></td>
-<td><code>load.ts</code> (local)</td>
-<td>duplicated — compiler exports identical fns in <code>zip.ts</code>, not imported</td>
+<td>✅1️⃣ <code>validateMagicBytes</code> · <code>validateZipBomb</code></td>
+<td><code>load.ts</code> (wrappers)</td>
+<td>delegates to <code>compiler/core</code> — C5 resolved 2026-06-27</td>
 </tr>
 <tr>
-<td>❌ read memory (<code>get_memory</code>)</td>
+<td>✅🗓️ <code>getMemory()</code></td>
 <td></td>
-<td>kernel exposes it; sdk does not surface it</td>
+<td>🔄 <code>kernel.get_memory</code></td>
 </tr>
 </tbody></table>
 <hr>
@@ -1219,7 +1224,7 @@
 <td>➕</td>
 <td></td>
 <td></td>
-<td>✅ <code>aboutme.schemaVersion</code> — 📌 hardcoded <code>&#39;dot-agent/1.0&#39;</code></td>
+<td>✅ <code>aboutme.dslVersion</code> — ✅ sourced from <code>dsl/VERSION</code> via the <code>DSL_VERSION</code> constant (renamed from <code>schemaVersion</code>, DA00-02)</td>
 <td></td>
 <td></td>
 </tr>
@@ -1243,7 +1248,7 @@
 <td>➕</td>
 <td></td>
 <td></td>
-<td>✅ <code>aboutme.compiler</code> — 📌 hardcoded <code>&#39;dot-agent/1.0.0&#39;</code></td>
+<td>✅ <code>aboutme.compiler</code> — ✅ sourced from <code>@dot-agent/compiler</code>&#39;s own package version via the <code>COMPILER_VERSION</code> constant</td>
 <td></td>
 <td></td>
 </tr>
@@ -1399,14 +1404,14 @@
 <td>required from the <code>persona</code> block, no silent default</td>
 </tr>
 <tr>
-<td><code>aboutme.schemaVersion</code></td>
-<td><code>&#39;dot-agent/1.0&#39;</code></td>
-<td>sourced constant, not a literal</td>
+<td><del><code>aboutme.schemaVersion</code></del></td>
+<td><del><code>&#39;dot-agent/1.0&#39;</code></del></td>
+<td>✅ fixed: renamed to <code>dslVersion</code>, sourced from <code>dsl/VERSION</code> (DA00-02, <code>DA01-01-dsl-spec-versioning.md</code>)</td>
 </tr>
 <tr>
-<td><code>aboutme.compiler</code></td>
-<td><code>&#39;dot-agent/1.0.0&#39;</code></td>
-<td>the compiler package version</td>
+<td><del><code>aboutme.compiler</code></del></td>
+<td><del><code>&#39;dot-agent/1.0.0&#39;</code></del></td>
+<td>✅ fixed: sourced from <code>@dot-agent/compiler</code>&#39;s real package version</td>
 </tr>
 <tr>
 <td><code>aboutme.integrity.types</code> / <code>.files</code></td>
@@ -1729,6 +1734,47 @@
 <td></td>
 <td>✅ <code>send_event(name)</code> dispatches matching triggers</td>
 <td>✅ → <code>sendEvent(name)</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Node-name discrepancies (Grammar vs. Serde AST)</h2>
+<table>
+<thead>
+<tr>
+<th>Grammar node</th>
+<th>Parser serde name</th>
+<th>Status / Note</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>run_stmt</code> field <code>type</code></td>
+<td><code>RunStmt.kind</code></td>
+<td>Discrepancy — grammar uses <code>type</code> for run kind, but AST uses <code>kind</code></td>
+</tr>
+<tr>
+<td><code>oriented_state_body</code></td>
+<td>—</td>
+<td>Internal grammar grouping, not represented in AST</td>
+</tr>
+<tr>
+<td><code>intent_handler</code></td>
+<td><code>intent_handler</code></td>
+<td>✅ Resolved (formerly <code>intent_trigger</code> in v0.1)</td>
+</tr>
+<tr>
+<td><code>offtopic_handler</code></td>
+<td><code>offtopic_handler</code></td>
+<td>✅ Resolved (formerly <code>offtopic_stmt</code> in v0.1)</td>
+</tr>
+<tr>
+<td><code>temporal_stmt</code></td>
+<td><code>after_stmt</code></td>
+<td>✅ Resolved (grammar node renamed to <code>after_stmt</code> in v0.1)</td>
+</tr>
+<tr>
+<td><code>run_stmt</code> field <code>parameters</code></td>
+<td><code>RunStmt.parameters</code></td>
+<td>✅ Resolved (formerly <code>RunStmt.label</code> in v0.1)</td>
 </tr>
 </tbody></table>
 

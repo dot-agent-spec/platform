@@ -1,0 +1,30 @@
+state init
+  goal "Route the user to car searching or booking."
+  guide "Welcome! I can help you search for cars or start a booking. What would you like to do?"
+  interact
+  on intent "search_cars"   transition to car_search
+  on intent "start_booking" transition to car_reservation
+  on intent "goodbye"       transition to completed
+  on offtopic               transition to init
+
+state car_search
+  goal "Help the user find available cars."
+  guide "Ask about destination, dates, and vehicle preferences. Present matching options with prices."
+  interact
+  on intent "select_car"     transition to car_reservation
+  on intent "goodbye"        transition to completed
+  on offtopic                 transition to car_search
+
+state car_reservation
+  goal "Collect all reservation details."
+  guide "Ask for pickup location, dropoff location, dates, and confirm the selected car. Confirm all details before finalizing."
+  interact
+  on intent "confirm_booking" transition to completed
+  on offtopic                 transition to car_reservation
+
+state completed
+  goal "Close the session gracefully."
+  guide "Thank the user. Summarize the booking if one was made."
+  interact
+  on intent "restart" transition to init
+  on offtopic         transition to init

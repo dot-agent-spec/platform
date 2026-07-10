@@ -1,0 +1,28 @@
+{
+  "dslVersion": "dot-agent/0.1-alpha",
+  "id": "carrent.com/car-renting",
+  "name": "Car Renting",
+  "description": "Help users search for available cars, select a vehicle, and complete a booking rental workflow.",
+  "version": "",
+  "domain": "carrent.com",
+  "license": "Apache-2.0",
+  "purpose": "unknown",
+  "compiler": "dot-agent/0.5.0-alpha.2",
+  "commit": "d6df56c",
+  "capabilities": [
+    {
+      "id": "SearchAction",
+      "description": "Search for available cars based on user preferences"
+    },
+    {
+      "id": "BookingAction",
+      "description": "Book a car rental based on user selection"
+    }
+  ],
+  "requires": [],
+  "integrity": {
+    "sha256": "bc96366c8e5560e2f6fd17b08974d12f706096c7102374bb854e812fae29206b",
+    "types": ".agent/types.json",
+    "files": ".agent/files.json"
+  }
+}

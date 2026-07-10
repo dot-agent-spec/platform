@@ -8,22 +8,21 @@ Legend:
 
 1️⃣ v0.1 · 2️⃣ v0.2 · 🗓️ TBD
 
----
+🧊 Frozen  · 🔥 Active
+
 
 ## Package freeze status
 
 | | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
 |---|---|---|---|---|---|
-| **Status** | 🧊 Frozen | 🔥 Active  | 🔥⚠️ Active | 🧊⚠️ Frozen | 🔥⚠️ Active |
-| **Version** | `0.4.1` | `0.1.0` | `0.1.0` | `0.1.3` | `0.1.0` |
+| **Status** | 🧊 Frozen | 🧊 Frozen | 🧊⚠️ Frozen | 🧊⚠️ Frozen | 🧊⚠️ Frozen |
+| **Package** | npm: `@dot-agent/tree-sitter`<br>crate: `dot-agent-tree-sitter` | npm: `@dot-agent/parser-dsl`<br>crate: `dot-agent-parser-dsl` | npm: `@dot-agent/compiler` | npm: `@dot-agent/kernel-dsl`<br>crate: `dot-agent-kernel-dsl` | npm: `@dot-agent/sdk` |
+| **Version** | `0.5.0-alpha.1` | `0.5.0-alpha.1` | `0.5.0-alpha.2` | `0.5.0-alpha.1` | `0.5.0-alpha.2` |
 | **Build** | `tree-sitter-cli` — manual npm scripts (`generate` + `build --wasm`) + `tsup` | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`scripts/build-wasm.sh` central, `wasm32-wasip1`) + `tsup` | `tsup` (esm + cjs, `dts:true`) | 🦀 `cargo` + `wasm-bindgen` + `wasi-stub` (`scripts/build-wasm.sh` central, `wasm32-wasip1`) + `tsup` | `tsup` (esm + cjs, `dts:true`) |
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
 | **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
-> ⚠️ **Gap remanescente** — full history in [DA00-06 build-pipeline-investigation](pre-release/v0.1/DA00-06-build-pipeline-investigation.md):
-> - Versions divergem: tree-sitter `0.4.1`, kernel-dsl `0.1.3`, others `0.1.0` → bump para `0.10.0` pendente (DA00-02).
->
-> ✅ **Compliance check 2026-06-27** — todos os testes verdes: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolvido via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrigido; `CONTRIBUTING.md` criado. Ver [compliance-check-2026-06-27.md](pre-release/v0.1/compliance-check-2026-06-27.md).
+> ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](pre-release/v0.1/compliance-check-2026-06-27.md).
 
 ---
 
@@ -118,7 +117,7 @@ Legend:
 | ✅1️⃣ `get_current_state()` → `string` | → `getState()` | current FSM state only |
 | ✅1️⃣ `get_valid_intents()` → `js_sys::Array` | → `getValidIntents()` | intents of current state only |
 | ✅1️⃣ `get_graph()` → `string` | → `getGraph()` | SCXML with runtime `_active="true"`; 🔄 `parser-dsl` `to_scxml` |
-| ✅🗓️ `get_memory()` → `string` | ❌ not exposed | `{domain, key, value}[]` snapshot |
+| ✅🗓️ `get_memory()` → `string` | → `getMemory()` | `{domain, key, value}[]` snapshot |
 | ✅🗓️ `set_memory(domain, key, value_json)` | → `injectMemory(domain, key, value)` | |
 | ✅1️⃣ `observe(callback: Function)` | ⚠️ replaced by `registerHandler` | push model; sdk uses pull-style per-effect handlers instead |
 | ✅1️⃣ `free()` (wasm-bindgen auto) | → `dispose()` | WASM memory cleanup |
@@ -144,7 +143,7 @@ Legend:
 | ✅1️⃣ `dispose()` | | 🔄 `kernel.free` |
 | ✅1️⃣ types: `AgentBundle`, `AgentFiles`, `Effect`, `EffectHandler`, `AboutMe` | `types.js` | re-exported from `index.ts` |
 | ✅1️⃣ `validateMagicBytes` · `validateZipBomb` | `load.ts` (wrappers) | delegates to `compiler/core` — C5 resolved 2026-06-27 |
-| ❌ read memory (`get_memory`) | | kernel exposes it; sdk does not surface it |
+| ✅🗓️ `getMemory()` | | 🔄 `kernel.get_memory` |
 
 ---
 
@@ -234,4 +233,17 @@ Legend:
 | 🗑️ `on complete` | 🗑️ `on_complete_stmt` | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
 | 🗑️ `on failed` | 🗑️ `on_failed_stmt` | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
 | ✅ `on event "…"` | ✅ `trigger_decl` | ✅ `TriggerDecl` | | ✅ `send_event(name)` dispatches matching triggers | ✅ → `sendEvent(name)` |
+
+---
+
+## Node-name discrepancies (Grammar vs. Serde AST)
+
+| Grammar node | Parser serde name | Status / Note |
+|---|---|---|
+| `run_stmt` field `type` | `RunStmt.kind` | Discrepancy — grammar uses `type` for run kind, but AST uses `kind` |
+| `oriented_state_body` | — | Internal grammar grouping, not represented in AST |
+| `intent_handler` | `intent_handler` | ✅ Resolved (formerly `intent_trigger` in v0.1) |
+| `offtopic_handler` | `offtopic_handler` | ✅ Resolved (formerly `offtopic_stmt` in v0.1) |
+| `temporal_stmt` | `after_stmt` | ✅ Resolved (grammar node renamed to `after_stmt` in v0.1) |
+| `run_stmt` field `parameters` | `RunStmt.parameters` | ✅ Resolved (formerly `RunStmt.label` in v0.1) |
 

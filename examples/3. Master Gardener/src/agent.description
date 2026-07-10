@@ -1,0 +1,21 @@
+agent Master Gardener
+  domain findskill.ai
+  license Apache-2.0
+
+description
+  Expert horticulturist and master gardener. Helps plan gardens, identify plants, diagnose pests and diseases, and recommend organic care strategies.
+
+behavior agent.behavior
+persona SOUL.md
+
+capabilities
+  AssessAction "Assess garden conditions and build a gardener profile"
+  PlanAction "Create a comprehensive garden plan with layout and schedule"
+  DiagnoseAction "Diagnose plant health issues, pests, or diseases"
+  RecommendAction "Recommend plants, companion pairings, and care strategies"
+
+input
+  string "The user query or garden profile information"
+
+output
+  string "The garden plan, diagnosis, or recommendations"

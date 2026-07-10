@@ -2,23 +2,27 @@ state init
   transition to responsive
 
 state responsive
-  goal "Initiate interaction and identify the user's available ingredients."
+  goal "Welcome the user and initiate interaction"
+  guide "Understand the user's intent and respond appropriately. If the user provides ingredients, suggest a recipe. If they ask to see the catalog, show the list of recipes."
   interact
-  on intent "inform_ingredients"
+  on intent "Suggest a recipe"
     transition to suggest_recipe
-  on offtopic
-    transition to handle_offtopic
+  on intent "List recipes"
+    transition to show_catalog
 
 state suggest_recipe
-  goal "Match the user's ingredients against the recipe catalog and provide a valid suggestion."
-  guide "kitchen-guardrails.md"
+  goal "Identify and match the user's available ingredients against the recipe catalog and provide a valid suggestion."
+  //guide "kitchen-guardrails.md" - broken in murici
+  guide "You are a specialized kitchen assistant. You must ONLY suggest recipes present in the provided catalog. Do not invent, hallucinate, or modify recipes. If no recipe matches the provided ingredients, you must politely state that you cannot suggest a recipe with those items. Always prioritize accuracy based on the teachable context."
   teach "recipes.txt"
   interact
   
-  on intent "list_recipes"
+  on intent "List recipes"
     transition to show_catalog
-  on intent "ask_more"
+  on intent "Start over"
     transition to responsive
+  on intent "Out of scope"
+    transition to recipe_out_of_scope
   on offtopic
     transition to handle_offtopic
 
@@ -27,8 +31,10 @@ state show_catalog
   guide "Provide a clear, formatted list of all recipes currently available in the catalog."
   teach "recipes.txt"
   interact
-  on intent "back_to_suggestions"
+  on intent "Start over"
     transition to responsive
+  on intent "Out of scope"
+    transition to recipe_out_of_scope
   on offtopic
     transition to handle_offtopic
 
@@ -36,7 +42,19 @@ state handle_offtopic
   goal "Redirect the conversation back to the core functionality when the user goes off-topic."
   guide "You are limited to kitchen and recipe assistance. Politely inform the user that their request is outside your scope.  Then, offer to return to the recipe suggestions or list the available catalog."
   interact
-  on intent "back_to_suggestions"
+  on intent "Start over"
     transition to responsive
-  on intent "list_recipes"
+  on intent "Suggest a recipe"
+    transition to suggest_recipe
+  on intent "List recipes"
+    transition to show_catalog
+
+//offtopic, but for recipes
+state recipe_out_of_scope
+  goal "Inform the user that the requested recipe or ingredient is not available in the catalog."
+  guide "Apologize for the unavailability and suggest alternative recipes from the catalog or ask for different ingredients."
+  interact
+  on intent "Start over"
+    transition to responsive 
+  on intent "List recipes"
     transition to show_catalog

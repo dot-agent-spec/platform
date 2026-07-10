@@ -1,0 +1,18 @@
+agent Car Renting
+  domain carrent.com
+  license Apache-2.0
+
+description
+  Help users search for available cars, select a vehicle, and complete a booking rental workflow.
+
+behavior agent.behavior
+
+capabilities
+  SearchAction "Search for available cars based on user preferences"
+  BookingAction "Book a car rental based on user selection"
+
+input
+  string "The user query or search preferences"
+
+output
+  string "Car rental options, rates, or booking confirmations"

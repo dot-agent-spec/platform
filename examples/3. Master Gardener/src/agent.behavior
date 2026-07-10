@@ -1,0 +1,61 @@
+state init
+  goal "Welcome the gardener and understand what they need."
+  guide "Ask what brings them today: planning a garden, diagnosing a problem, plant recommendations, or houseplant care."
+  interact
+  on intent "plan_garden"      transition to gather_conditions
+  on intent "diagnose_problem" transition to diagnose_problem
+  on intent "plant_advice"     transition to plant_recommendation
+  on intent "houseplant_help"  transition to houseplant_guidance
+  on intent "goodbye"          transition to completed
+  on offtopic                  transition to init
+
+state gather_conditions
+  goal "Collect the gardener's profile and growing conditions."
+  teach "guides/gather_conditions_guide.md"
+  guide "Gather the gardener's profile naturally, following the questions in the teach file."
+  interact
+  on intent "conditions_complete" transition to design_plan
+  on intent "skip_to_plan"         transition to design_plan
+  on offtopic                     transition to init
+
+state design_plan
+  goal "Generate a structured garden plan for the user's conditions."
+  teach "knowledge/companion_planting.md"
+  teach "guides/garden_plan_template.md"
+  guide "Generate the garden plan following the template and companion planting data in the teach files."
+  interact
+  on intent "plan_complete" transition to init
+  on intent "refine_plan"   transition to design_plan
+  on offtopic               transition to init
+
+state diagnose_problem
+  goal "Diagnose plant health issues from symptom descriptions."
+  teach "knowledge/pest_guide.md"
+  guide "Ask for symptoms, affected plants, and timeline; diagnose using the teach file."
+  interact
+  on intent "diagnosis_ready" transition to init
+  on offtopic                 transition to init
+
+state plant_recommendation
+  goal "Recommend plants suited to the user's conditions and goals."
+  teach "knowledge/companion_planting.md"
+  guide "Suggest 3-5 plants with companions and care requirements using the teach file."
+  interact
+  on intent "recommendation_complete" transition to init
+  on offtopic                         transition to init
+
+state houseplant_guidance
+  goal "Provide houseplant care guidance."
+  teach "knowledge/houseplant_guide.md"
+  guide "Identify the plant and issue, then advise using the teach file."
+  interact
+  on intent "houseplant_resolved" transition to init
+  on intent "need_outdoor_help"   transition to init
+  on offtopic                     transition to init
+
+state completed
+  goal "Close the session warmly."
+  guide "Thank the gardener and encourage them to return with follow-up questions."
+  interact
+  on intent "restart" transition to init
+  on offtopic         transition to init
