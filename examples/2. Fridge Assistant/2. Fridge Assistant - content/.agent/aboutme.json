@@ -1,18 +1,18 @@
 {
-  "dslVersion": "dot-agent/0.1-alpha",
-  "id": "dot-agent.ai/fridge-assistant",
+  "dslVersion": "dot-agent/0.1",
+  "id": "dot-agent.ai/fridge-assistant:0.10.0~fe59dde",
   "name": "Fridge Assistant",
   "description": "An assistant that checks your fridge contents and suggests vegetarian recipes.",
-  "version": "",
+  "version": "0.10.0",
   "domain": "dot-agent.ai",
   "license": "Apache-2.0",
   "purpose": "unknown",
-  "compiler": "dot-agent/0.5.0-alpha.2",
-  "commit": "a96738c",
+  "compiler": "dot-agent/0.10.0",
+  "commit": "fe59dde",
   "capabilities": [],
   "requires": [],
   "integrity": {
-    "sha256": "72099163fa097e9f0269eadd8d9f86387f4dea1665c1523686d70ebbbe00bac0",
+    "sha256": "9f072f749e43a48c53022e88ba2b7d17fe9f5db9a7e2b9c3ad7555e7dcb40acc",
     "types": ".agent/types.json",
     "files": ".agent/files.json"
   }

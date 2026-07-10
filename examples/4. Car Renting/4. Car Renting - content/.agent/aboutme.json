@@ -1,14 +1,14 @@
 {
-  "dslVersion": "dot-agent/0.1-alpha",
-  "id": "carrent.com/car-renting",
+  "dslVersion": "dot-agent/0.1",
+  "id": "carrent.com/car-renting:0.10.0~fe59dde",
   "name": "Car Renting",
   "description": "Help users search for available cars, select a vehicle, and complete a booking rental workflow.",
-  "version": "",
+  "version": "0.10.0",
   "domain": "carrent.com",
   "license": "Apache-2.0",
   "purpose": "unknown",
-  "compiler": "dot-agent/0.5.0-alpha.2",
-  "commit": "d6df56c",
+  "compiler": "dot-agent/0.10.0",
+  "commit": "fe59dde",
   "capabilities": [
     {
       "id": "SearchAction",

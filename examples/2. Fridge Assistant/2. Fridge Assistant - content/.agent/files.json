@@ -4,9 +4,7 @@
   "behaviors": [
     "behaviors/agent.behavior"
   ],
-  "guides": [
-    "guides/kitchen-guardrails.md"
-  ],
+  "guides": [],
   "knowledge": [
     "knowledge/recipes.txt"
   ]
