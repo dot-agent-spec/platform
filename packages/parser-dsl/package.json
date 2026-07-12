@@ -51,13 +51,12 @@
     "dist/",
     "pkg/"
   ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "cargo test -p dot-agent-parser-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup",
     "build:debug": "cargo test -p dot-agent-parser-dsl && bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup"
-  },
-  "devDependencies": {
-    "tsup": "^8.0.0",
-    "@types/node": "^22.0.0"
   },
   "publishConfig": {
     "access": "public"

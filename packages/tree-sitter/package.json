@@ -71,10 +71,11 @@
     "build": "npm run build:wasm && tsup",
     "prepublishOnly": "npm run build"
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "devDependencies": {
-    "tree-sitter-cli": "^0.25.10",
-    "tsup": "^8.0.0",
-    "@types/node": "^22.0.0"
+    "tree-sitter-cli": "^0.25.10"
   },
   "tree-sitter": [
     {

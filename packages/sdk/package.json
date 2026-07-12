@@ -49,6 +49,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -59,11 +62,6 @@
     "@dot-agent/compiler": "0.10.0",
     "@dot-agent/kernel-dsl": "0.10.1",
     "jszip": "^3.10.1"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -54,16 +54,12 @@
     }
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "build": "cargo test -p dot-agent-kernel-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_kernel_dsl && tsup",
     "build:debug": "cargo test -p dot-agent-kernel-dsl && bash ../../scripts/build-wasm.sh dot_agent_kernel_dsl && tsup",
     "test:node": "node --test tests/*.test.js"
-  },
-  "devDependencies": {
-    "tsup": "^8.0.0",
-    "@types/node": "^22.0.0"
   },
   "publishConfig": {
     "access": "public"

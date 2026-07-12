@@ -35,12 +35,14 @@ const registeredTools: Record<string, Function> = {}
 
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
   return {
-    McpServer: vi.fn().mockImplementation(() => ({
-      tool: vi.fn().mockImplementation((name: string, desc: string, schema: any, handler: Function) => {
-        registeredTools[name] = handler
-      }),
-      connect: vi.fn().mockResolvedValue(undefined),
-    }))
+    McpServer: vi.fn().mockImplementation(function () {
+      return {
+        tool: vi.fn().mockImplementation((name: string, desc: string, schema: any, handler: Function) => {
+          registeredTools[name] = handler
+        }),
+        connect: vi.fn().mockResolvedValue(undefined),
+      }
+    })
   }
 })
 

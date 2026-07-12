@@ -53,6 +53,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "prebuild": "node scripts/embed-version.mjs",
     "build": "tsup",
@@ -69,12 +72,6 @@
     "@dot-agent/tree-sitter": "0.10.0",
     "jszip": "^3.10.1",
     "web-tree-sitter": "^0.26.9"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.6.0"
   },
   "publishConfig": {
     "access": "public"
