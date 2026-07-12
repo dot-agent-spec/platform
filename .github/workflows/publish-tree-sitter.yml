@@ -23,7 +23,7 @@ jobs:
         run: npm ci
 
       # `build` (not `generate`) is required here: `generate` only regenerates
-      # parser.c from grammar.js, it never produces `dist/` (wasm + tsup output),
+      # parser.c from grammar.js, it never produces `dist/` (wasm + tsdown output),
       # which is what package.json's main/exports/files actually ship. `dist/`
       # is gitignored, so without this step a fresh CI checkout would publish
       # a package with no dist/ at all. `tree-sitter build --wasm` needs

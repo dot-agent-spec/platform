@@ -21,10 +21,6 @@ export default defineConfig({
     // (web-tree-sitter initializes a shared WebAssembly module that can't be
     // transferred across worker threads or re-initialized cleanly in the same process)
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    fileParallelism: false,
   },
 })

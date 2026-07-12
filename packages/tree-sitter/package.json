@@ -35,14 +35,20 @@
     "parser",
     "grammar"
   ],
-  "main": "dist/index.js",
+  "type": "module",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -63,18 +69,19 @@
     "test-description": "cd tree-sitter-description && tree-sitter test",
     "test-behavior": "cd tree-sitter-behavior && tree-sitter test",
     "test": "npm run test-description && npm run test-behavior",
-    "clean": "node scripts/clean.js",
+    "clean": "node scripts/clean.cjs",
     "prebuild": "npm run clean",
     "build:wasm-description": "cd tree-sitter-description && tree-sitter build --wasm . && mv tree-sitter-description.wasm ../dist/",
     "build:wasm-behavior": "cd tree-sitter-behavior && tree-sitter build --wasm . && mv tree-sitter-behavior.wasm ../dist/",
     "build:wasm": "npm run build:wasm-description && npm run build:wasm-behavior",
-    "build": "npm run build:wasm && tsup",
+    "build": "npm run build:wasm && tsdown",
     "prepublishOnly": "npm run build"
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "devDependencies": {
-    "tree-sitter-cli": "^0.25.10",
-    "tsup": "^8.0.0",
-    "@types/node": "^22.0.0"
+    "tree-sitter-cli": "^0.25.10"
   },
   "tree-sitter": [
     {

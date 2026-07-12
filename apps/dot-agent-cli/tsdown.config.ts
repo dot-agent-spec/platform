@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { defineConfig } from 'tsup'
+import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/core.ts'],
+  entry: ['src/index.ts', 'src/cli.ts'],
   format: ['esm', 'cjs'],
   dts: true,
   shims: true,

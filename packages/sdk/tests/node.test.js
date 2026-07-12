@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import JSZip from 'jszip'
-import { loadAgent } from '../dist/index.js'
-import { AgentSession } from '../dist/index.js'
+import { loadAgent } from '../dist/index.mjs'
+import { AgentSession } from '../dist/index.mjs'
 
 const ABOUTME = {
   dslVersion: 'dot-agent/0.1-alpha',

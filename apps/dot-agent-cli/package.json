@@ -41,19 +41,26 @@
     "dot-agent"
   ],
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
   "bin": {
-    "dot-agent": "dist/cli.js"
+    "dot-agent": "dist/cli.mjs"
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.0",
@@ -61,18 +68,12 @@
     "@dot-agent/sdk": "0.10.0",
     "@modelcontextprotocol/sdk": "^1.29.0"
   },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.4.0",
-    "vitest": "^1.6.0"
-  },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "prepublishOnly": "npm run build && npm run test",
-    "build": "tsup",
+    "build": "tsdown",
     "test": "vitest run",
-    "dev": "tsup --watch"
+    "dev": "tsdown --watch"
   },
   "publishConfig": {
     "access": "public"

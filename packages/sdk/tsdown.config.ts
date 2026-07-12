@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -7,5 +7,7 @@ export default defineConfig({
   shims: true,
   sourcemap: true,
   clean: true,
-  external: ['@dot-agent/compiler', '@dot-agent/kernel-dsl'],
+  deps: {
+    neverBundle: ['@dot-agent/compiler', '@dot-agent/kernel-dsl'],
+  },
 })
