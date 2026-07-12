@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/sdk",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Browser-compatible SDK for loading and running dot-agent bundles",
   "license": "Apache-2.0",
   "author": {
@@ -57,7 +57,7 @@
   },
   "dependencies": {
     "@dot-agent/compiler": "0.10.0",
-    "@dot-agent/kernel-dsl": "0.10.0",
+    "@dot-agent/kernel-dsl": "0.10.1",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

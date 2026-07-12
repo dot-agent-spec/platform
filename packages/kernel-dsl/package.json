@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/kernel-dsl",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "WASM kernel for parsing and executing the agent behavior DSL",
   "type": "module",
   "main": "dist/index.cjs",
@@ -59,7 +59,7 @@
   "scripts": {
     "build": "cargo test -p dot-agent-kernel-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_kernel_dsl && tsup",
     "build:debug": "cargo test -p dot-agent-kernel-dsl && bash ../../scripts/build-wasm.sh dot_agent_kernel_dsl && tsup",
-    "test:node": "node --test tests/node-compat.test.js"
+    "test:node": "node --test tests/*.test.js"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
