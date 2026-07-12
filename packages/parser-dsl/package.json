@@ -4,8 +4,8 @@
   "description": "Unified DSL parser for dot-agent — parses .behavior and .description files using tree-sitter, providing structured ASTs for compiler, LSP, and runtime consumption",
   "type": "module",
   "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
   "license": "Apache-2.0",
   "author": {
     "name": "Danilo Borges",
@@ -42,9 +42,14 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -55,8 +60,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "cargo test -p dot-agent-parser-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup",
-    "build:debug": "cargo test -p dot-agent-parser-dsl && bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsup"
+    "build": "cargo test -p dot-agent-parser-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsdown",
+    "build:debug": "cargo test -p dot-agent-parser-dsl && bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsdown"
   },
   "publishConfig": {
     "access": "public"

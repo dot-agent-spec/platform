@@ -21,8 +21,8 @@ import { InitOptions, InitResult } from '../types.js'
 // templates/ ships as a sibling of dist/ in the published package (no "files"
 // allowlist in package.json, so it's included by default). Its depth relative
 // to this module differs between running from source (src/commands/init.ts,
-// two levels up) and from the bundled build (tsup flattens everything into
-// dist/index.js, one level up) — try both instead of hardcoding one.
+// two levels up) and from the bundled build (tsdown flattens everything into
+// dist/index.mjs, one level up) — try both instead of hardcoding one.
 function resolveTemplatesDir(): string {
   const here = dirname(fileURLToPath(import.meta.url))
   const candidates = [join(here, 'templates'), join(here, '..', 'templates'), join(here, '..', '..', 'templates')]

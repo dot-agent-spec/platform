@@ -56,7 +56,7 @@ jobs:
       # transitively down the chain tree-sitter -> parser-dsl -> kernel-dsl ->
       # compiler -> sdk -> cli. This workflow only checks out source — none of
       # that chain is prebuilt — so it must be built here regardless of which
-      # package the pushed tag targets, or tsup's dts step fails with "Cannot
+      # package the pushed tag targets, or tsdown's dts step fails with "Cannot
       # find module" (compiler/sdk/cli) or a cascaded implicit-any. Cheap/
       # idempotent to always run; language-server's own "build" is a no-op so
       # it's unaffected either way.
