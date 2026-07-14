@@ -10,14 +10,12 @@ import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { createHash } from 'crypto'
 import type { AgentBundle, AgentFiles } from './types.js'
-import { discoverDescriptionFile, consolidate, collectFiles } from './pack.js'
+import { discoverDescriptionFile, consolidate, collectFiles, findOrphanContentFiles } from './pack.js'
 import { lintDescription, lintBehavior } from './linter.js'
 import { buildId, slugify } from './id.js'
 import { buildAboutme } from './manifest.js'
 import { initBehaviorParser, parseDescriptionFile } from './parser.js'
 import { COMPILER_VERSION } from './generated-version.js'
-
-const GITKEEP = new Set(['guides/.gitkeep', 'knowledge/.gitkeep'])
 
 export async function bundleFromDir(dir: string): Promise<AgentBundle> {
   const descriptionFileName = await discoverDescriptionFile(dir)
@@ -46,7 +44,8 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
   const { mergedText, mergeSources } = await consolidate(dir, df.behavior)
 
   const behaviorMessages = await lintBehavior(mergedText, 'agent.behavior', undefined, true)
-  const allMessages = [...descMessages, ...behaviorMessages]
+  const orphanMessages = await findOrphanContentFiles(dir, mergedText)
+  const allMessages = [...descMessages, ...behaviorMessages, ...orphanMessages]
   const errors = allMessages.filter(m => m.severity === 'error')
   const warnings = allMessages.filter(m => m.severity === 'warning')
 
@@ -91,10 +90,10 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     behavior: allFiles.get('agent.behavior') ?? mergedText,
     persona: df.persona ? allFiles.get(df.persona) : undefined,
     guides: Array.from(allFiles.entries())
-      .filter(([p]) => p.startsWith('guides/') && !GITKEEP.has(p))
+      .filter(([p]) => p.startsWith('guides/'))
       .map(([path, content]) => ({ path, content })),
     knowledge: Array.from(allFiles.entries())
-      .filter(([p]) => p.startsWith('knowledge/') && !GITKEEP.has(p))
+      .filter(([p]) => p.startsWith('knowledge/'))
       .map(([path, content]) => ({ path, content })),
     behaviors: Array.from(allFiles.entries())
       .filter(([p]) => p.startsWith('behaviors/'))
