@@ -271,6 +271,10 @@ Usage:
   dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent configure [--claude] [--gemini] [--agy] [--skill] [--mcp]
   dot-agent server-mcp [--mcp-transport stdio|http] [--mcp-port <n>]
+
+Note: --mcp-transport http binds to 127.0.0.1 and keeps one shared FSM/memory instance for
+the life of the process — a debug convenience (reconnect without losing state), not
+multi-client isolation. Restart the process for a clean state.
 `)
     }
   } catch (err: any) {

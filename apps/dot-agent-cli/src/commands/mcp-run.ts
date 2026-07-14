@@ -7,6 +7,7 @@
 //     http://www.apache.org/licenses/LICENSE-2.0
 
 import { createServer } from 'http'
+import { randomUUID } from 'node:crypto'
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
@@ -118,6 +119,40 @@ function registerResources(
   }
 }
 
+const UNKNOWN_SESSION = Symbol('unknown-session')
+
+// Routes a request to the transport for its Mcp-Session-Id. A request with no session id is
+// treated as a fresh session bootstrap: the transport itself parses the body and rejects it with
+// "Bad Request: Server not initialized" if it doesn't turn out to be an `initialize` call.
+export async function getOrCreateTransport(
+  sessions: Map<string, StreamableHTTPServerTransport>,
+  sessionId: string | undefined,
+  session: AgentSession,
+  bundle: AgentBundle,
+  opts: McpServerOptions,
+): Promise<StreamableHTTPServerTransport | typeof UNKNOWN_SESSION> {
+  if (sessionId) {
+    return sessions.get(sessionId) ?? UNKNOWN_SESSION
+  }
+
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: () => randomUUID(),
+    // Store only once the SDK confirms initialization, avoiding a race where a second request
+    // could arrive before the session id is known.
+    onsessioninitialized: sid => sessions.set(sid, transport),
+  })
+  transport.onclose = () => {
+    if (transport.sessionId) sessions.delete(transport.sessionId)
+  }
+
+  const perConn = new McpServer({ name: 'dot-agent', version: '1.0.0' }, { instructions: HOWTO })
+  registerTools(perConn, session)
+  registerResources(perConn, session, bundle, opts)
+  await perConn.connect(transport)
+
+  return transport
+}
+
 export async function startMcpServer(
   session: AgentSession,
   bundle: AgentBundle,
@@ -137,30 +172,24 @@ export async function startMcpServer(
     process.stderr.write(`[dot-agent] MCP server ready (stdio)\n`)
     await new Promise<void>(() => {})  // block until process exit
   } else {
-    const sessions = new Map<string, { transport: StreamableHTTPServerTransport }>()
+    const sessions = new Map<string, StreamableHTTPServerTransport>()
 
     const httpServer = createServer(async (req, res) => {
-      const connId = `${req.socket.remoteAddress}:${req.socket.remotePort}`
+      const sessionId = req.headers['mcp-session-id'] as string | undefined
+      const transport = await getOrCreateTransport(sessions, sessionId, session, bundle, opts)
 
-      if (!sessions.has(connId)) {
-        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => connId })
-        sessions.set(connId, { transport })
-        req.socket.on('close', () => {
-          sessions.delete(connId)
-          transport.close()
-        })
-        const perConn = new McpServer({ name: 'dot-agent', version: '1.0.0' }, { instructions: HOWTO })
-        registerTools(perConn, session)
-        registerResources(perConn, session, bundle, opts)
-        await perConn.connect(transport)
+      if (transport === UNKNOWN_SESSION) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: unknown Mcp-Session-Id' }, id: null }))
+        return
       }
 
-      const { transport } = sessions.get(connId)!
       await transport.handleRequest(req, res)
     })
 
-    httpServer.listen(opts.port, () => {
-      process.stderr.write(`[dot-agent] MCP server ready (http) on port ${opts.port}\n`)
+    httpServer.listen(opts.port, '127.0.0.1', () => {
+      process.stderr.write(`[dot-agent] MCP server ready (http) on 127.0.0.1:${opts.port}\n`)
+      process.stderr.write(`[dot-agent] Debug mode: one shared FSM/memory instance for this process's lifetime — reconnecting clients resume where they left off, but concurrent distinct clients drive the same conversation. Not for multi-client isolation; restart the process for a clean state.\n`)
     })
 
     await new Promise<void>((_, reject) => httpServer.on('error', reject))
