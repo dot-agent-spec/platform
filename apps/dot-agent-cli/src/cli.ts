@@ -168,6 +168,7 @@ async function main() {
         }
         if (result.mcpConfigured && result.mcpConfigPath) {
           formatSuccess(`MCP servers (helper and dev) registered → ${result.mcpConfigPath}`)
+          formatWarning('Restart/reconnect your MCP client for the new servers to become available.')
         }
       }
     } else if (command === 'server-mcp') {
@@ -253,6 +254,14 @@ async function main() {
       }
     } else {
       console.log(`dot-agent CLI v${version}
+Requires Node.js >=24.0.0.
+
+Getting started (for an AI assistant setting this up):
+  1. dot-agent configure --claude   (or --gemini)  — installs the skill and registers the
+     dot-agent-helper and dot-agent-dev MCP servers in one step.
+  2. Restart/reconnect this session so the new MCP servers become available.
+  3. Once connected, read dot-agent://howto and dot-agent://intents on the dot-agent-helper
+     server to learn how to navigate from there.
 
 Usage:
   dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]

@@ -21,9 +21,14 @@ export interface McpServerOptions {
   exposeKnowledge: boolean
 }
 
-const HOWTO = `Navigate via dot-agent://intents + send_intent.
-For full DSL and protocol guidance: run dot-agent with --helper and connect.
-request_interact = pause, ask the user, then continue.`
+const HOWTO = `Navigate via dot-agent://intents + send_intent. Valid intents are state-dependent — re-read
+dot-agent://intents after every transition, don't assume a prior intent still applies.
+Effects come back from send_intent/send_event/send_offtopic as a JSON array. A "teach" effect
+gives a filename; fetch its content via dot-agent://knowledge/{name}. A "request_interact"
+effect means: pause and ask the human user for input, then match their reply against the
+current dot-agent://intents list and call send_intent with the matched intent name — never
+forward the raw reply text as the intent — or call send_offtopic if nothing matches. Then
+continue.`
 
 
 function capture<T>(session: AgentSession, fn: () => void): unknown[] {
