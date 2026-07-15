@@ -20,7 +20,7 @@ import { join, dirname } from 'path'
 import * as p from '@clack/prompts'
 
 import { version } from './version.js'
-import { init, pack, unpack, run, configure, startDevMcpServer } from './index.js'
+import { init, pack, unpack, run, configure, startDevMcpServer, listAgents, getAgentPath } from './index.js'
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -93,19 +93,21 @@ async function main() {
       const claude = args.includes('--claude')
       const gemini = args.includes('--gemini')
       const agy = args.includes('--agy')
+      const murici = args.includes('--murici')
       const skill = args.includes('--skill')
       const mcp = args.includes('--mcp')
 
-      const hasTarget = claude || gemini || agy
+      const hasTarget = claude || gemini || agy || murici
 
       let targetClaude = claude
       let targetGemini = gemini || agy
+      let targetMurici = murici
       let configSkill = skill
       let configMcp = mcp
 
       if (!hasTarget) {
         if (!process.stdout.isTTY || !process.stdin.isTTY) {
-          formatError('Error: Missing target platform parameter (use --claude, --gemini, or --agy) in non-TTY environment.')
+          formatError('Error: Missing target platform parameter (use --claude, --gemini, --agy, or --murici) in non-TTY environment.')
           process.exit(1)
         }
 
@@ -116,7 +118,8 @@ async function main() {
           options: [
             { value: 'claude', label: 'Claude Code' },
             { value: 'gemini', label: 'Gemini / AGY' },
-            { value: 'both', label: 'Both platforms' },
+            { value: 'murici', label: 'Murici' },
+            { value: 'all', label: 'All platforms' },
           ],
         })
 
@@ -139,8 +142,9 @@ async function main() {
           process.exit(0)
         }
 
-        targetClaude = targetOption === 'claude' || targetOption === 'both'
-        targetGemini = targetOption === 'gemini' || targetOption === 'both'
+        targetClaude = targetOption === 'claude' || targetOption === 'all'
+        targetGemini = targetOption === 'gemini' || targetOption === 'all'
+        targetMurici = targetOption === 'murici' || targetOption === 'all'
         configSkill = configTypeOption === 'skill' || configTypeOption === 'both'
         configMcp = configTypeOption === 'mcp' || configTypeOption === 'both'
       } else {
@@ -153,6 +157,7 @@ async function main() {
       const results = await configure({
         claude: targetClaude,
         gemini: targetGemini,
+        murici: targetMurici,
         skill: configSkill,
         mcp: configMcp,
       })
@@ -166,8 +171,13 @@ async function main() {
             console.log(`  Skill is now globally active in Gemini/AGY config directory.`)
           }
         }
+        if (result.skillSkippedReason) {
+          formatWarning(result.skillSkippedReason)
+        }
         if (result.mcpConfigured && result.mcpConfigPath) {
-          formatSuccess(`MCP servers (helper and dev) registered → ${result.mcpConfigPath}`)
+          const serverLabels = (result.registeredServers ?? []).map(s => s.replace('dot-agent-', '')).join(' and ')
+          formatSuccess(`MCP servers (${serverLabels}) registered → ${result.mcpConfigPath}`)
+          formatWarning('Restart/reconnect your MCP client for the new servers to become available.')
         }
       }
     } else if (command === 'server-mcp') {
@@ -251,8 +261,33 @@ async function main() {
         formatSuccess(`Agent loaded: ${result.bundle.id}`)
         console.log(`  State: ${result.session.getState()}`)
       }
+    } else if (command === 'agents') {
+      const sub = args[1]
+      if (sub === 'list') {
+        const agents = await listAgents()
+        agents.forEach(a => console.log(a.name))
+      } else if (sub === 'path') {
+        const name = args[2]
+        if (!name) {
+          formatError('Usage: dot-agent agents path <name>')
+          process.exit(1)
+        }
+        console.log(await getAgentPath(name))
+      } else {
+        formatError('Usage: dot-agent agents list')
+        formatError('       dot-agent agents path <name>')
+        process.exit(1)
+      }
     } else {
       console.log(`dot-agent CLI v${version}
+Requires Node.js >=24.0.0.
+
+Getting started (for an AI assistant setting this up):
+  1. dot-agent configure --claude   (or --gemini)  — installs the skill and registers the
+     dot-agent-helper and dot-agent-dev MCP servers in one step.
+  2. Restart/reconnect this session so the new MCP servers become available.
+  3. Once connected, read dot-agent://howto and dot-agent://intents on the dot-agent-helper
+     server to learn how to navigate from there.
 
 Usage:
   dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]
@@ -260,8 +295,14 @@ Usage:
   dot-agent unpack <file.agent> [--out <dir>] [--force]
   dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
-  dot-agent configure [--claude] [--gemini] [--agy] [--skill] [--mcp]
+  dot-agent configure [--claude] [--gemini] [--agy] [--murici] [--skill] [--mcp]
   dot-agent server-mcp [--mcp-transport stdio|http] [--mcp-port <n>]
+  dot-agent agents list
+  dot-agent agents path <name>
+
+Note: --mcp-transport http binds to 127.0.0.1 and keeps one shared FSM/memory instance for
+the life of the process — a debug convenience (reconnect without losing state), not
+multi-client isolation. Restart the process for a clean state.
 `)
     }
   } catch (err: any) {

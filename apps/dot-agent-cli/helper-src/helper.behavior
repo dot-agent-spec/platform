@@ -1,3 +1,5 @@
+// Changed intents/topics here? Also update skills/dot-agent/SKILL.md's "Interactive helper"
+// section, then run `npm run repack-helper`.
 state init
   guide "dot-agent: a text DSL for FSM agents, not JSON. Topics: dsl, gen, cli, pack — or just read the teach below for everything at a glance."
   teach "init-overview.md"

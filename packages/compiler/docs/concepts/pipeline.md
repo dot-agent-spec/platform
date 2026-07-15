@@ -94,9 +94,24 @@ It is used by the language server to render the Mermaid flow-graph panel and by 
       → fail on errors
 6. collectFiles(dir, descriptionFile, mergedText, mergeSources)
       → description file, agent.behavior (consolidated), behaviors/<relpath> sources,
-         SOUL.md, guides/, knowledge/
-7. hash + buildAboutme + JSZip → write .agent bundle
+         SOUL.md, and every file named by a guide/teach statement (E018 if missing)
+7. findOrphanContentFiles(dir, mergedText)
+      → W015 for files in guides//knowledge/ that no statement references
+8. hash + buildAboutme + JSZip → write .agent bundle
 ```
+
+### What gets bundled: the linked-only rule
+
+Content files are **not** swept out of `guides/` and `knowledge/`. A file ships only when a
+`guide "x.md"` or `teach "x.txt"` statement names it, so the bundle is a function of the behavior
+graph rather than of whatever happens to sit in the directory. Each reference resolves against its
+namespace directory first (`guides/x.md`, `knowledge/x.md` — the recommended layout), then falls back
+to a file sitting loose next to `agent.behavior`; either way it lands under `<namespace>/` in the
+bundle. A reference that resolves to neither is `E018`; a file that no reference names is `W015`.
+
+The rule exists because an unreferenced content file is unreachable at runtime anyway: the kernel's
+`teach` effect hands the host a bare filename, and the MCP server exposes `dot-agent://knowledge/{name}`
+with no listing endpoint, so nothing can discover a name the behavior never mentions.
 
 ### Bundle structure
 
@@ -108,8 +123,8 @@ It is used by the language server to render the Mermaid flow-graph panel and by 
 agent.behavior       — consolidated output (all merges flattened, always this name)
 behaviors/           — source files from merge chain (behaviors/main.behavior, behaviors/shared.behavior, …)
 SOUL.md              — persona (optional)
-guides/              — (optional)
-knowledge/           — (optional)
+guides/              — files named by a `guide` statement (optional)
+knowledge/           — files named by a `teach` statement (optional)
 ```
 
 `agent.behavior` is always the canonical consolidated name regardless of what the entry file is called. `files.json.behaviors` lists the merge-chain source paths for reference.

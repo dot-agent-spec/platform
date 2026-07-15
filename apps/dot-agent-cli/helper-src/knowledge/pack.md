@@ -52,6 +52,19 @@ dot-agent pack --dir ./my-agent-dir --out agent.agent
 dot-agent run agent.agent                 # verify the archive loads correctly
 ```
 
+## What gets packed: only what the behavior links
+
+Guides and knowledge files are not swept out of their directories. A file is bundled only when a
+`guide "x.md"` or `teach "x.md"` statement names it. Each reference resolves against its namespace
+directory first (`guides/x.md`, `knowledge/x.md`), then against a file sitting loose next to the
+`.behavior`; either way it lands under `guides/` or `knowledge/` in the archive.
+
+- A reference that resolves to neither place fails with `E018`.
+- A file in `guides/` or `knowledge/` that no statement names gets `W015` and is **left out** of the
+  archive. That is intentional: at runtime the host only ever learns a filename from a `teach` effect,
+  and there is no way to list the knowledge directory, so an unreferenced file is unreachable.
+- Only `.md` and `.txt` count as file references. `teach "some prose"` stays inline literal text.
+
 ## Notes
 
 - Lint errors block pack (same as run)

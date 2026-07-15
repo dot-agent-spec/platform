@@ -11,7 +11,7 @@ import { join, basename, resolve, relative, isAbsolute, normalize, dirname } fro
 import { execSync } from 'child_process'
 import { createHash } from 'crypto'
 import JSZip from 'jszip'
-import type { PackOptions, PackResult, Statement } from './types.js'
+import type { LintMessage, PackOptions, PackResult, Statement } from './types.js'
 import { lintDescription, lintBehavior } from './linter.js'
 import { buildId, slugify, isValidVersion } from './id.js'
 import { buildAboutme, aboutmeToJson } from './manifest.js'
@@ -265,6 +265,81 @@ function collectFileRefs(stmts: Statement[], out: Map<string, FileRef>): void {
 
 // ── File collection ───────────────────────────────────────────────────────────
 
+function namespaceOf(kind: FileRef['kind']): 'guides' | 'knowledge' {
+  return kind === 'guide' ? 'guides' : 'knowledge'
+}
+
+async function collectBehaviorFileRefs(mergedBehaviorText: string): Promise<Map<string, FileRef>> {
+  await initBehaviorParser()
+  const refs = new Map<string, FileRef>()
+  const behaviorAst = parseBehaviorFile(mergedBehaviorText).ok
+  if (!behaviorAst) return refs
+  for (const state of behaviorAst.states) collectFileRefs(state.body, refs)
+  for (const trigger of behaviorAst.global_triggers) collectFileRefs(trigger.body, refs)
+  return refs
+}
+
+// Every file under guides/ or knowledge/, keyed by the bundle path it *would*
+// occupy. Nothing here reaches the bundle on its own — only a guide/teach
+// reference pulls a file in (see collectFiles) — so this exists solely to let
+// findOrphanContentFiles report the files that never make it.
+async function listContentFiles(dir: string, ns: 'guides' | 'knowledge'): Promise<string[]> {
+  const found: string[] = []
+
+  async function walk(subdir: string, prefix: string) {
+    let entries: string[]
+    try {
+      entries = await readdir(subdir)
+    } catch {
+      return  // directory doesn't exist or can't be read
+    }
+    for (const entry of entries) {
+      if (entry.startsWith('.')) continue
+      const fullPath = join(subdir, entry)
+      const relativePath = `${prefix}/${entry}`
+      if ((await stat(fullPath)).isDirectory()) {
+        await walk(fullPath, relativePath)
+      } else {
+        found.push(relativePath)
+      }
+    }
+  }
+
+  await walk(join(dir, ns), ns)
+  return found
+}
+
+// A file in guides/ or knowledge/ that no guide/teach statement names is absent
+// from the bundle under the linked-only rule — and would be unreachable at runtime
+// even if it were bundled, since the kernel hands the LLM a bare filename via the
+// teach effect and the MCP server exposes no listing endpoint. W015 is what keeps
+// that from being a silent drop, including for something like knowledge/data.csv
+// that FILE_REF_RE never recognises as a file reference to begin with.
+export async function findOrphanContentFiles(
+  dir: string,
+  mergedBehaviorText: string,
+): Promise<LintMessage[]> {
+  const refs = await collectBehaviorFileRefs(mergedBehaviorText)
+  const referenced = new Set<string>()
+  for (const { kind, text } of refs.values()) referenced.add(`${namespaceOf(kind)}/${text}`)
+
+  const onDisk = [
+    ...(await listContentFiles(dir, 'guides')),
+    ...(await listContentFiles(dir, 'knowledge')),
+  ]
+
+  return onDisk
+    .filter(path => !referenced.has(path))
+    .map((path): LintMessage => ({
+      file: path,
+      line: 1,
+      col: 1,
+      severity: 'warning',
+      code: 'W015',
+      message: `'${path}' is not referenced by any guide or teach statement — it will not be included in the bundle`,
+    }))
+}
+
 export async function collectFiles(
   dir: string,
   descriptionFile: string,
@@ -273,25 +348,6 @@ export async function collectFiles(
   personaFile?: string,
 ): Promise<Map<string, string>> {
   const files = new Map<string, string>()
-
-  async function walk(subdir: string, prefix = '') {
-    try {
-      const entries = await readdir(subdir)
-      for (const entry of entries) {
-        if (entry === '.gitkeep' || entry.startsWith('.')) continue
-        const fullPath = join(subdir, entry)
-        const stats = await stat(fullPath)
-        const relativePath = prefix ? `${prefix}/${entry}` : entry
-        if (stats.isDirectory()) {
-          await walk(fullPath, relativePath)
-        } else {
-          files.set(relativePath, await readFile(fullPath, 'utf-8'))
-        }
-      }
-    } catch {
-      // directory doesn't exist or can't be read
-    }
-  }
 
   files.set(descriptionFile, await readFile(join(dir, descriptionFile), 'utf-8'))
   // mergedBehaviorText is a literal concatenation of every merged file's raw
@@ -323,31 +379,37 @@ export async function collectFiles(
     files.set(personaFile, personaText)
   }
 
-  await walk(join(dir, 'guides'), 'guides')
-  await walk(join(dir, 'knowledge'), 'knowledge')
-
-  // `guide "notes.md"` / `teach "recipes.txt"` reference files that usually
-  // sit next to agent.behavior rather than under guides/knowledge — bundle
-  // those too, erroring instead of silently dropping them if missing.
-  await initBehaviorParser()
-  const behaviorAst = parseBehaviorFile(mergedBehaviorText).ok
-  if (behaviorAst) {
-    const refs = new Map<string, FileRef>()
-    for (const state of behaviorAst.states) collectFileRefs(state.body, refs)
-    for (const trigger of behaviorAst.global_triggers) collectFileRefs(trigger.body, refs)
-
-    for (const { kind, text } of refs.values()) {
-      if (isExternalPath(dir, text)) {
-        throw new Error(`E014: '${kind}' path '${text}' is absolute or escapes the agent root`)
-      }
-      let content: string
-      try {
-        content = await readFile(join(dir, text), 'utf-8')
-      } catch {
-        throw new Error(`E018: '${kind}' file '${text}' referenced in agent.behavior not found in ${dir}`)
-      }
-      files.set(`${kind === 'guide' ? 'guides' : 'knowledge'}/${text}`, content)
+  // A `guide "intro.md"` / `teach "recipes.txt"` reference is the only thing that
+  // pulls a content file into the bundle — guides/ and knowledge/ are not swept
+  // wholesale, so the bundle is a function of the behavior graph rather than of
+  // whatever happens to sit in the directory. Resolve against the recommended
+  // layout (guides/<text>, knowledge/<text>) first, then fall back to a file
+  // sitting loose next to agent.behavior; either way it lands under <ns>/ in the
+  // bundle. findOrphanContentFiles() reports what this loop leaves behind.
+  const refs = await collectBehaviorFileRefs(mergedBehaviorText)
+  for (const { kind, text } of refs.values()) {
+    if (isExternalPath(dir, text)) {
+      throw new Error(`E014: '${kind}' path '${text}' is absolute or escapes the agent root`)
     }
+    const ns = namespaceOf(kind)
+    const nsPath = `${ns}/${text}`
+
+    let content: string | undefined
+    for (const candidate of [join(dir, ns, text), join(dir, text)]) {
+      try {
+        content = await readFile(candidate, 'utf-8')
+        break
+      } catch {
+        // fall through to the next candidate
+      }
+    }
+    if (content === undefined) {
+      throw new Error(
+        `E018: '${kind}' file '${text}' referenced in agent.behavior not found in ${dir} — looked for '${nsPath}' and '${text}'`
+      )
+    }
+
+    files.set(nsPath, content)
   }
 
   return files
@@ -402,7 +464,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const behaviorMessages = await lintBehavior(mergedText, 'agent.behavior', undefined, true)
   const allMessages = [...descriptionMessages, ...behaviorMessages]
   const errors = allMessages.filter(m => m.severity === 'error')
-  const warnings = allMessages.filter(m => m.severity === 'warning')
+  const lintWarnings = allMessages.filter(m => m.severity === 'warning')
 
   if (errors.length > 0) {
     throw new Error(
@@ -414,6 +476,7 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const version = await resolveVersionInteractive(options.version)
   const commit = await resolveCommit(options.commit)
   const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources, df.persona ?? undefined)
+  const warnings = [...lintWarnings, ...(await findOrphanContentFiles(dir, mergedText))]
 
   const contentForHash = Array.from(allFiles.values()).join('')
   const sha256 = createHash('sha256').update(contentForHash).digest('hex')
@@ -454,14 +517,13 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     agentFolder.file('types.json', typesJson)
   }
 
-  const gitkeepPaths = new Set(['guides/.gitkeep', 'knowledge/.gitkeep'])
   const filesJson = {
     description: descriptionFileName,
     behavior: 'agent.behavior',
     ...(df.persona ? { persona: df.persona } : {}),
     behaviors: Array.from(allFiles.keys()).filter(f => f.startsWith('behaviors/')),
-    guides: Array.from(allFiles.keys()).filter(f => f.startsWith('guides/') && !gitkeepPaths.has(f)),
-    knowledge: Array.from(allFiles.keys()).filter(f => f.startsWith('knowledge/') && !gitkeepPaths.has(f)),
+    guides: Array.from(allFiles.keys()).filter(f => f.startsWith('guides/')),
+    knowledge: Array.from(allFiles.keys()).filter(f => f.startsWith('knowledge/')),
   }
   agentFolder.file('files.json', JSON.stringify(filesJson, null, 2))
 

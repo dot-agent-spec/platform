@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { createServer } from 'http'
+import { randomUUID } from 'node:crypto'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
@@ -83,18 +84,28 @@ export async function startDevMcpServer(opts: DevMcpServerOptions): Promise<void
       await new Promise<void>(() => {}) // block until process exit
     }
   } else {
-    const sessions = new Map<string, { transport: StreamableHTTPServerTransport }>()
+    const sessions = new Map<string, StreamableHTTPServerTransport>()
 
     const httpServer = createServer(async (req, res) => {
-      const connId = `${req.socket.remoteAddress}:${req.socket.remotePort}`
+      const sessionId = req.headers['mcp-session-id'] as string | undefined
+      let transport = sessionId ? sessions.get(sessionId) : undefined
 
-      if (!sessions.has(connId)) {
-        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => connId })
-        sessions.set(connId, { transport })
-        req.socket.on('close', () => {
-          sessions.delete(connId)
-          transport.close()
+      if (!transport) {
+        if (sessionId) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: unknown Mcp-Session-Id' }, id: null }))
+          return
+        }
+
+        transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          // Store only once the SDK confirms initialization, avoiding a race where a second
+          // request could arrive before the session id is known.
+          onsessioninitialized: sid => sessions.set(sid, transport!),
         })
+        transport.onclose = () => {
+          if (transport!.sessionId) sessions.delete(transport!.sessionId)
+        }
         const perConn = new McpServer(
           { name: 'dot-agent-dev', version },
           { instructions: 'Development utilities for dot-agent: scaffolding, linting, packaging, and setup.' }
@@ -142,12 +153,11 @@ export async function startDevMcpServer(opts: DevMcpServerOptions): Promise<void
         await perConn.connect(transport)
       }
 
-      const { transport } = sessions.get(connId)!
       await transport.handleRequest(req, res)
     })
 
-    httpServer.listen(opts.port, () => {
-      process.stderr.write(`[dot-agent-dev] MCP server ready (http) on port ${opts.port}\n`)
+    httpServer.listen(opts.port, '127.0.0.1', () => {
+      process.stderr.write(`[dot-agent-dev] MCP server ready (http) on 127.0.0.1:${opts.port}\n`)
     })
 
     await new Promise<void>((_, reject) => httpServer.on('error', reject))

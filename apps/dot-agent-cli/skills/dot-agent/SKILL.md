@@ -27,12 +27,12 @@ For DSL reference, authoring templates, and MCP interaction guidance, run the em
 dot-agent run --helper
 ```
 
-This starts a stdio MCP server. Connect to it and send intents to navigate topics:
-- `about` — platform overview
-- `dsl` — .description and .behavior format
-- `mcp` — tools, resources, interaction loop
-- `generate` — authoring a new agent step by step
-- `example` — complete minimal agent
+This starts a stdio MCP server. After connecting, always read `dot-agent://intents` first —
+valid intents are state-dependent and change between releases, so treat any topic list below
+as illustrative, not authoritative. As of this writing, the top-level topics from `init` are
+roughly: `dsl` (the .description/.behavior format), `gen` (authoring a new agent), `cli`
+(CLI/MCP usage), `pack` (packaging). Re-read `dot-agent://intents` after every `send_intent`
+call — do not assume a topic name still applies after a transition.
 
 ## MCP interaction loop
 
@@ -43,6 +43,9 @@ When an agent is running with `--mcp`:
 3. Read the `effects` array in the response: `goal`, `guide`, `teach` (fetch via `dot-agent://knowledge/{name}`), `request_interact`
 4. If `request_interact` is present, collect user input and call `send_intent` or `send_offtopic`
 5. Repeat from step 1
+
+Topic/intent names are state-dependent and may change between releases — the list in
+"Interactive helper" above is illustrative only, never authoritative.
 
 ## Agent Simulation / Emulation Mode
 

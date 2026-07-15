@@ -27,7 +27,7 @@ This creates a scaffold with:
 - `agent.behavior` — FSM state machine definition
 - `SOUL.md` — Agent persona and voice
 - `README.md`, `LICENSE` — Project metadata
-- `behaviors/`, `guides/`, `knowledge/` — Content directories
+- `behaviors/`, `guides/`, `knowledge/` — Content directories (only files referenced by a `guide`/`teach` statement are packed)
 
 ### 2. Edit your agent
 
@@ -175,10 +175,16 @@ my-agent.agent (ZIP)
 ├── agent.description       ← Agent manifest
 ├── agent.behavior          ← FSM definition
 ├── behaviors/              ← Behavior includes
-├── guides/                 ← Procedural guides
-├── knowledge/              ← Knowledge base / RAG
+├── guides/                 ← Files named by a `guide "x.md"` statement
+├── knowledge/              ← Files named by a `teach "x.md"` statement
 └── SOUL.md                 ← Agent persona
 ```
+
+Only files the behavior actually references are bundled. `pack` resolves each `guide "x.md"` /
+`teach "x.md"` against `guides/x.md` / `knowledge/x.md` first, then against a file sitting loose next
+to `agent.behavior`; a reference that resolves to neither fails with `E018`. A file left in `guides/`
+or `knowledge/` that no statement names is reported as `W015` and **left out of the bundle** — nothing
+could reach it at runtime anyway, since the host only ever learns a filename from a `teach` effect.
 
 ### `aboutme.json`
 

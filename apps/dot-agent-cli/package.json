@@ -70,8 +70,9 @@
   },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
-    "prepublishOnly": "npm run build && npm run test",
+    "prepublishOnly": "npm run build && npm run repack-helper && npm run test",
     "build": "tsdown",
+    "repack-helper": "node dist/cli.mjs pack --dir helper-src --out assets/helper.agent",
     "test": "vitest run",
     "dev": "tsdown --watch"
   },

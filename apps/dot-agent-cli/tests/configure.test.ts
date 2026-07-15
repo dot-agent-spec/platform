@@ -91,4 +91,38 @@ describe('configure command', () => {
     expect(results.map(r => r.mcpConfigPath)).toContain('/mock/home/.claude.json')
     expect(results.map(r => r.mcpConfigPath)).toContain('/mock/home/.gemini/config/mcp_config.json')
   })
+
+  it('registers only dot-agent-helper for murici, using its stdio transport schema, with no skill file', async () => {
+    const results = await configure({ murici: true })
+    expect(results).toHaveLength(1)
+    expect(results[0].dest).toBeUndefined()
+    expect(results[0].skillInstalled).toBeUndefined()
+    expect(results[0].mcpConfigured).toBe(true)
+    expect(results[0].mcpConfigPath).toBe('/mock/home/.config/murici/mcp.json')
+    expect(results[0].registeredServers).toEqual(['dot-agent-helper'])
+
+    const config = JSON.parse(mockFiles['/mock/home/.config/murici/mcp.json'])
+    expect(config.mcpServers['dot-agent-helper']).toEqual({
+      transport: 'stdio',
+      command: 'dot-agent',
+      args: ['run', '--helper'],
+    })
+    expect(config.mcpServers['dot-agent-dev']).toBeUndefined()
+  })
+
+  it('warns instead of writing anything when skill-only is requested for murici', async () => {
+    const results = await configure({ murici: true, skill: true, mcp: false })
+    expect(results).toHaveLength(1)
+    expect(results[0].skillInstalled).toBeUndefined()
+    expect(results[0].mcpConfigured).toBeUndefined()
+    expect(results[0].skillSkippedReason).toMatch(/murici has no skill file/)
+    expect(mockFiles['/mock/home/.config/murici/mcp.json']).toBeUndefined()
+  })
+
+  it('configures claude and murici together with distinct config paths', async () => {
+    const results = await configure({ claude: true, murici: true })
+    expect(results).toHaveLength(2)
+    expect(results.map(r => r.mcpConfigPath)).toContain('/mock/home/.claude.json')
+    expect(results.map(r => r.mcpConfigPath)).toContain('/mock/home/.config/murici/mcp.json')
+  })
 })

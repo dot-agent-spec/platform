@@ -1,7 +1,9 @@
 # .behavior file format and package composition
 
 An agent project has: a `.description` file (metadata), a `.behavior` file (the FSM), an optional
-`SOUL.md` persona, and optional `guides/` and `knowledge/` directories.
+`SOUL.md` persona, and optional `guides/` and `knowledge/` directories. Only files that a `guide` or
+`teach` statement names are packed from those directories — an unreferenced one is reported (`W015`)
+and left out of the bundle.
 
 Minimal valid `.behavior` (init state required):
 

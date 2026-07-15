@@ -59,10 +59,12 @@ The old `{ "error": string }` envelope is removed.
 | `E011` | `.behavior` | ✅ | **`after 0 prompts`.** Zero prompts will never trigger. Use `after 1` or higher. |
 | `E012` | `.behavior` | Planned (DA01-02) | **Merge target not found.** Path declared in `merge` does not exist on disk. |
 | `E013` | `.behavior` | Planned (DA01-02) | **Circular merge dependency.** DFS detected a cycle in the merge graph. |
-| `E014` | `.behavior` / `.description` | Planned (DA01-02) | **External path.** `merge` path or `behavior <path>` escapes the agent root (relative `../..` escape or absolute path). |
+| `E014` | `.behavior` / `.description` | Planned (DA01-02) | **External path.** A `merge`, `behavior <path>`, `persona`, `guide` or `teach` path escapes the agent root (relative `../..` escape or absolute path). |
 | `E015` | `.behavior` (consolidated) | Planned (DA01-02) | **Duplicate state name across merged files.** Two or more files in the merge chain declare the same state. |
 | `E016` | `.behavior` (consolidated) | Planned (DA01-02) | **`init` state missing.** The consolidated behavior has no state named `init`. |
 | `E017` | `.description` | Planned (DA01-02) | **Multiple `behavior` declarations.** Only one `behavior` block is allowed per `.description` file. To combine multiple files, use `merge` in your `.behavior` file. Emitted in `description_parser.rs` on the second `behavior_block` node. Resolves [platform#1](https://github.com/dot-agent-spec/platform/issues/1). |
+| `E018` | `.behavior` | Unstructured | **Referenced `guide`/`teach` file not found.** A `guide "x.md"` / `teach "x.txt"` statement names a file that exists neither under its namespace directory (`guides/x.md`, `knowledge/x.md`) nor loose at the agent root. Thrown by `collectFiles()` in `compiler/src/pack.ts`, not emitted as a `LintMessage`. See W015 for the inverse case. |
+| `E019` | — | Unstructured | **Invalid version format.** An explicit `--version` does not match `vX.Y[.Z][-prerelease]` or `X.Y[.Z][-prerelease]`. Thrown by `pack()` in `compiler/src/pack.ts`. |
 
 ---
 
@@ -83,6 +85,8 @@ The old `{ "error": string }` envelope is removed.
 | `W011` | `.behavior` | ✅ | **`on intent` self-transition.** Handler transitions back to its own enclosing state. The user expressed an intent but receives no progress. |
 | `W012` | `.behavior` | ✅ | **`goal` in non-oriented state.** `goal` is only valid in states that also have `interact`. The prettifier can adjust this. |
 | `W013` | `.behavior` | ✅ | **`interact` without `goal`.** The prettifier will insert one. Supersedes E008 (same condition, downgraded to Warning). |
+| `W014` | `.behavior` (consolidated) | ✅ | **Duplicate global trigger event across merged files.** Two files in the merge chain declare a top-level `on <event>` for the same event. Only fires when `lintBehavior` runs with `consolidated=true`. |
+| `W015` | `guides/` / `knowledge/` | ✅ | **Unreferenced content file.** A file under `guides/` or `knowledge/` that no `guide`/`teach` statement names. It is **not** included in the bundle: a content file only ships when the behavior references it, and an unreferenced one would be unreachable at runtime anyway (the `teach` effect hands the host a bare filename, and the MCP server exposes no listing endpoint). Also catches files that `guide`/`teach` could never reference, such as `knowledge/data.csv` — only `.md` and `.txt` are treated as file references. Emitted by `findOrphanContentFiles()` in `compiler/src/pack.ts`. Inverse of E018. |
 
 ---
 

@@ -16,7 +16,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtemp, rm, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { pack, collectFiles, consolidate, discoverDescriptionFile } from '../src/pack.js'
+import { pack, collectFiles, consolidate, discoverDescriptionFile, findOrphanContentFiles } from '../src/pack.js'
 import { readZip, extractFiles } from '../src/zip.js'
 import { parseAboutme } from '../src/manifest.js'
 import { DSL_VERSION } from '../src/generated-version.js'
@@ -64,6 +64,10 @@ afterEach(async () => {
 
 const MERGED_TEXT = `state init\n  transition to responsive\n`
 
+// A content file only enters the bundle when a guide/teach statement names it,
+// so any fixture exercising guides/ or knowledge/ has to carry the reference.
+const mergedWith = (stmt: string) => `state init\n  ${stmt}\n  transition to responsive\n`
+
 describe('collectFiles', () => {
   it('stores description under its filename and behavior as agent.behavior', async () => {
     const dir = await makeAgentDir()
@@ -100,10 +104,10 @@ describe('collectFiles', () => {
     ).rejects.toThrow('E014')
   })
 
-  it('collects files from guides/ subdir', async () => {
+  it('collects a guides/ file that a guide statement references', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'guides/intro.md': '# Intro' } })
-    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
-    expect(files.has('guides/intro.md')).toBe(true)
+    const files = await collectFiles(dir, 'agent.description', mergedWith('guide "intro.md"'), [])
+    expect(files.get('guides/intro.md')).toBe('# Intro')
   })
 
   it('stores merge sources under behaviors/ prefix', async () => {
@@ -130,6 +134,94 @@ describe('collectFiles', () => {
     const dir = await makeAgentDir()
     await rm(join(dir, 'agent.description'))
     await expect(collectFiles(dir, 'agent.description', MERGED_TEXT, [])).rejects.toThrow()
+  })
+})
+
+// ── guide/teach file references (linked-only rule) ────────────────────────────
+
+describe('collectFiles — guide/teach references', () => {
+  it('bundles a teach file that already lives under knowledge/', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/init-overview.md': '# Overview' } })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "init-overview.md"'), [])
+    expect(files.get('knowledge/init-overview.md')).toBe('# Overview')
+  })
+
+  it('bundles a loose teach file sitting next to agent.behavior', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'recipes.txt': 'sourdough' } })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "recipes.txt"'), [])
+    expect(files.get('knowledge/recipes.txt')).toBe('sourdough')
+  })
+
+  it('resolves the knowledge/ copy ahead of a same-named file at the root', async () => {
+    const dir = await makeAgentDir({
+      extraFiles: { 'knowledge/notes.md': 'from knowledge', 'notes.md': 'from root' },
+    })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "notes.md"'), [])
+    expect(files.get('knowledge/notes.md')).toBe('from knowledge')
+  })
+
+  it('bundles a nested teach reference under its namespace', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/sub/deep.md': '# Deep' } })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "sub/deep.md"'), [])
+    expect(files.get('knowledge/sub/deep.md')).toBe('# Deep')
+  })
+
+  it('throws E018 when a teach file exists nowhere', async () => {
+    const dir = await makeAgentDir()
+    await expect(
+      collectFiles(dir, 'agent.description', mergedWith('teach "ghost.md"'), [])
+    ).rejects.toThrow('E018')
+  })
+
+  it('throws E014 when a teach path escapes the agent root', async () => {
+    const dir = await makeAgentDir()
+    await expect(
+      collectFiles(dir, 'agent.description', mergedWith('teach "../../outside.md"'), [])
+    ).rejects.toThrow('E014')
+  })
+
+  it('leaves guides/ and knowledge/ files that nothing references out of the bundle', async () => {
+    const dir = await makeAgentDir({
+      extraFiles: { 'knowledge/orphan.md': 'unused', 'guides/orphan.md': 'unused' },
+    })
+    const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
+    expect(files.has('knowledge/orphan.md')).toBe(false)
+    expect(files.has('guides/orphan.md')).toBe(false)
+  })
+})
+
+// ── findOrphanContentFiles (W015) ─────────────────────────────────────────────
+
+describe('findOrphanContentFiles', () => {
+  it('reports W015 for a knowledge file no statement references', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/orphan.md': 'unused' } })
+    const messages = await findOrphanContentFiles(dir, MERGED_TEXT)
+    expect(messages).toHaveLength(1)
+    expect(messages[0]).toMatchObject({
+      file: 'knowledge/orphan.md',
+      code: 'W015',
+      severity: 'warning',
+    })
+  })
+
+  it('stays silent when every content file is referenced', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/used.md': 'used' } })
+    const messages = await findOrphanContentFiles(dir, mergedWith('teach "used.md"'))
+    expect(messages).toEqual([])
+  })
+
+  it('reports a file whose extension teach could never reference', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/data.csv': 'a,b' } })
+    const messages = await findOrphanContentFiles(dir, MERGED_TEXT)
+    expect(messages.map(m => m.file)).toEqual(['knowledge/data.csv'])
+  })
+
+  it('does not report .gitkeep or hidden files', async () => {
+    const dir = await makeAgentDir()
+    await writeFile(join(dir, 'knowledge/.gitkeep'), '')
+    await writeFile(join(dir, 'guides/.hidden'), 'secret')
+    const messages = await findOrphanContentFiles(dir, MERGED_TEXT)
+    expect(messages).toEqual([])
   })
 })
 
@@ -220,6 +312,10 @@ describe('pack — happy path', () => {
 
   it('ZIP contains source files', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'guides/intro.md': '# Intro' } })
+    await writeFile(
+      join(dir, 'agent.behavior'),
+      `state init\n  guide "intro.md"\n  transition to responsive\n\nstate responsive\n  goal "How can I help?"\n  interact\n  on intent "done" transition to init\n  on offtopic transition to responsive\n`
+    )
     const result = await pack({ dir, version: 'v1.0.0' })
 
     const zip = await readZip(result.path)
@@ -228,6 +324,16 @@ describe('pack — happy path', () => {
     expect(allFiles.has('agent.behavior')).toBe(true)
     expect(allFiles.has('SOUL.md')).toBe(true)
     expect(allFiles.has('guides/intro.md')).toBe(true)
+  })
+
+  it('surfaces W015 in the result warnings for an unreferenced content file', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/orphan.md': 'unused' } })
+    const result = await pack({ dir, version: 'v1.0.0' })
+
+    expect(result.warnings.map(w => w.code)).toContain('W015')
+    const zip = await readZip(result.path)
+    const allFiles = await extractFiles(zip)
+    expect(allFiles.has('knowledge/orphan.md')).toBe(false)
   })
 
   it('returns no errors (warnings array may be empty)', async () => {
