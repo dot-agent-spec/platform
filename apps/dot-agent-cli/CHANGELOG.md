@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.11.0] - 2026-07-14
 
 ### Fixed
 - `dot-agent pack` and `dot-agent run <dir>` failed with a false-positive `E018` for any agent whose `teach`/`guide` targets lived under `knowledge/` or `guides/` — including this package's own `helper-src/`. Fixed in `@dot-agent/compiler`; see its changelog for the root cause. Until now, `npm run repack-helper` (and therefore `prepublishOnly`) could not succeed.
@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--mcp-transport http` (both `dot-agent run --mcp` and `dot-agent server-mcp`) now binds to `127.0.0.1` explicitly instead of listening on every interface by default — this is a single-machine debug tool, not something meant to be reachable from the network.
 - `dot-agent run --mcp --mcp-transport http`'s ready message now states explicitly that one shared FSM/memory instance lives for the process's whole lifetime: reconnecting clients resume where they left off (the intended debug workflow — no need to re-advance the FSM after a client restart), but concurrent distinct clients drive the same conversation. This was already the behavior; it just wasn't documented anywhere a client would see it at runtime.
 - `configure.ts`'s per-target logic (MCP config path/shape, skill destination) was consolidated from five separate hardcoded branches into a small target-definition table, since `murici` needed a genuinely different MCP entry shape rather than just a different file path. The `configure` result's MCP-registration message now lists which servers were actually registered instead of a hardcoded "(helper and dev)", since murici only gets `dot-agent-helper`.
+- Build tooling migrated from `tsup` to `tsdown`; upgraded to TypeScript 7. No output-shape change.
+- `@dot-agent/compiler` and `@dot-agent/sdk` pins bumped to `0.10.1` and `0.10.2` respectively, to pick up their own fixes from this release round.
 
 ### Documentation
 - `README.md` and the helper's own knowledge (`helper-src/knowledge/pack.md`, `dsl-overview.md`) now state the linked-only rule: a file in `guides/`/`knowledge/` is packed only when the behavior names it, and an unreferenced one is reported (`W015`) and left out. An unreferenced file would be unreachable at runtime anyway — the host only ever learns a filename from a `teach` effect, and there is no way to list the knowledge directory.

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.10.1] - 2026-07-14
 
 ### Fixed
 - **`E018` false positive on the recommended layout.** Any agent whose `guide "x.md"` / `teach "x.md"` targets lived under `guides/` or `knowledge/` — the layout the docs and `dot-agent init` recommend — failed to pack. `collectFiles()` bundled those directories wholesale, then independently re-read every reference from the *agent root*, and threw when the root read missed. Regression from `a96738c`, which added the reference loop for loose files without checking what the directory walk had already collected.
@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   The rule follows from runtime reachability: the kernel's `teach` effect hands the host a bare filename, and the MCP server exposes `dot-agent://knowledge/{name}` with **no listing endpoint**, so nothing can discover a file the behavior never mentions. An unreferenced file was dead weight in the ZIP, the `sha256`, and `files.json`, with no path to being read.
 - `E014` now also covers `guide`/`teach` paths that escape the agent root, not just `merge` / `behavior` / `persona`.
+- Build tooling migrated from `tsup` to `tsdown`; upgraded to TypeScript 7. No output-shape change.
+- `@dot-agent/parser-dsl` and `@dot-agent/tree-sitter` pins bumped to `0.10.1` to pick up their own fixes from this release round.
 
 ### Added
 - **`W015` — unreferenced content file.** A file under `guides/` or `knowledge/` that no `guide`/`teach` statement names is reported and left out of the bundle. This is the safety net for the change above: without it, the linked-only rule would drop files silently. It also catches files that `guide`/`teach` could never reference at all, such as `knowledge/data.csv` — only `.md` and `.txt` are treated as file references.
