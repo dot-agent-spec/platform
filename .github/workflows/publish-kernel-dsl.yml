@@ -41,17 +41,22 @@ jobs:
           npm run build
         working-directory: packages/kernel-dsl
 
-      # dist/index.js loads its WASM via `new URL('../pkg/..._bg.wasm', import.meta.url)`
+      # dist/index.mjs loads its WASM via `new URL('../pkg/..._bg.wasm', import.meta.url)`
       # at runtime — pkg/ has to actually ship (package.json "files") or a real
       # `npm install` consumer gets an ENOENT the first time init() runs, even
       # though everything looks fine inside this monorepo checkout where dist/
       # and pkg/ just happen to sit next to each other on disk either way.
+      #
+      # File names below match tsdown's dual ESM/CJS output (dist/index.mjs +
+      # dist/index.cjs, no plain dist/index.js) — this list went stale when the
+      # build tool migrated from tsup, and nothing caught it until this package's
+      # next real publish.
       - name: Verify build artifacts
         working-directory: packages/kernel-dsl
         run: |
-          for f in dist/index.js \
+          for f in dist/index.mjs \
                     dist/index.cjs \
-                    dist/index.d.ts \
+                    dist/index.d.mts \
                     pkg/dot_agent_kernel_dsl.js \
                     pkg/dot_agent_kernel_dsl.d.ts \
                     pkg/dot_agent_kernel_dsl_bg.js \
