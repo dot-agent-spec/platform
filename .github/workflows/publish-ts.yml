@@ -94,6 +94,15 @@ jobs:
         run: npm run build
         working-directory: ${{ needs.resolve.outputs.directory }}
 
+      # Test whatever package this tag publishes. For sdk this runs the
+      # browser-bundle guard, which bundles the whole sdk → kernel-dsl chain for
+      # a browser target and catches a `node:` scheme leak — the tsup→tsdown
+      # regression that broke Murici's webpack build in 0.10.2. A Node-only test
+      # can't see it. --if-present so packages without a test script are skipped.
+      - name: Run tests
+        run: npm test --if-present
+        working-directory: ${{ needs.resolve.outputs.directory }}
+
       - name: Determine npm dist-tag
         id: npm_tag
         run: |
