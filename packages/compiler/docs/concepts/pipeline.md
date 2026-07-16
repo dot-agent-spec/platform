@@ -103,15 +103,16 @@ It is used by the language server to render the Mermaid flow-graph panel and by 
 ### What gets bundled: the linked-only rule
 
 Content files are **not** swept out of `guides/` and `knowledge/`. A file ships only when a
-`guide "x.md"` or `teach "x.txt"` statement names it, so the bundle is a function of the behavior
-graph rather than of whatever happens to sit in the directory. Each reference resolves against its
-namespace directory first (`guides/x.md`, `knowledge/x.md` — the recommended layout), then falls back
-to a file sitting loose next to `agent.behavior`; either way it lands under `<namespace>/` in the
-bundle. A reference that resolves to neither is `E018`; a file that no reference names is `W015`.
+`guide "guides/x.md"` or `teach "knowledge/x.txt"` statement names it, so the bundle is a function of
+the behavior graph rather than of whatever happens to sit in the directory. A reference is a path
+relative to the agent root, resolved literally and bundled verbatim at that same path — the namespace
+comes from the path, not the keyword. A reference that resolves to no file is `E018`; a file that no
+reference names is `W015`; a reference that resolves outside `guides/`/`knowledge/` is `W016`
+(bundled, but unreachable — only those two prefixes are served at runtime).
 
 The rule exists because an unreferenced content file is unreachable at runtime anyway: the kernel's
-`teach` effect hands the host a bare filename, and the MCP server exposes `dot-agent://knowledge/{name}`
-with no listing endpoint, so nothing can discover a name the behavior never mentions.
+`teach` effect hands the host the reference path, and the MCP server exposes `dot-agent://knowledge/{+name}`
+with no listing endpoint, so nothing can discover a path the behavior never mentions.
 
 ### Bundle structure
 

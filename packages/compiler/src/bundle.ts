@@ -16,6 +16,7 @@ import { buildId, slugify } from './id.js'
 import { buildAboutme } from './manifest.js'
 import { initBehaviorParser, parseDescriptionFile } from './parser.js'
 import { COMPILER_VERSION } from './generated-version.js'
+import { classifyContentPath } from './namespace.js'
 
 export async function bundleFromDir(dir: string): Promise<AgentBundle> {
   const descriptionFileName = await discoverDescriptionFile(dir)
@@ -90,10 +91,10 @@ export async function bundleFromDir(dir: string): Promise<AgentBundle> {
     behavior: allFiles.get('agent.behavior') ?? mergedText,
     persona: df.persona ? allFiles.get(df.persona) : undefined,
     guides: Array.from(allFiles.entries())
-      .filter(([p]) => p.startsWith('guides/'))
+      .filter(([p]) => classifyContentPath(p) === 'guides')
       .map(([path, content]) => ({ path, content })),
     knowledge: Array.from(allFiles.entries())
-      .filter(([p]) => p.startsWith('knowledge/'))
+      .filter(([p]) => classifyContentPath(p) === 'knowledge')
       .map(([path, content]) => ({ path, content })),
     behaviors: Array.from(allFiles.entries())
       .filter(([p]) => p.startsWith('behaviors/'))

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+- `loadAgent()`'s guides/knowledge classification now uses `classifyContentPath()` from `@dot-agent/compiler/core` instead of its own inline `startsWith('guides/')`/`startsWith('knowledge/')` checks — same behavior, one shared source of truth with the packer and `bundleFromDir()`.
+
+---
+
 ## [0.10.2] - 2026-07-14
 
 ### Changed

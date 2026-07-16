@@ -6,17 +6,12 @@
     "behaviors/agent.behavior"
   ],
   "guides": [
-    "guides/garden_plan_template.md",
-    "guides/gather_conditions_guide.md"
+    "guides/gather_conditions_guide.md",
+    "guides/garden_plan_template.md"
   ],
   "knowledge": [
     "knowledge/companion_planting.md",
-    "knowledge/houseplant_guide.md",
     "knowledge/pest_guide.md",
-    "knowledge/guides/gather_conditions_guide.md",
-    "knowledge/knowledge/companion_planting.md",
-    "knowledge/guides/garden_plan_template.md",
-    "knowledge/knowledge/pest_guide.md",
-    "knowledge/knowledge/houseplant_guide.md"
+    "knowledge/houseplant_guide.md"
   ]
 }

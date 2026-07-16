@@ -1,15 +1,15 @@
 {
   "dslVersion": "dot-agent/0.1",
-  "id": "findskill.ai/master-gardener:0.10.0~fe59dde",
+  "id": "findskill.ai/master-gardener",
   "name": "Master Gardener",
   "description": "Expert horticulturist and master gardener. Helps plan gardens, identify plants, diagnose pests and diseases, and recommend organic care strategies.",
-  "version": "0.10.0",
+  "version": "",
   "domain": "findskill.ai",
   "license": "Apache-2.0",
   "persona": "SOUL.md",
   "purpose": "unknown",
-  "compiler": "dot-agent/0.10.0",
-  "commit": "fe59dde",
+  "compiler": "dot-agent/0.10.1",
+  "commit": "0e4e5b7",
   "capabilities": [
     {
       "id": "AssessAction",
@@ -30,7 +30,7 @@
   ],
   "requires": [],
   "integrity": {
-    "sha256": "f393ec1069e34d377575ca4e9e51e1d677f42fbf7091b260d93d066484658b0f",
+    "sha256": "c41dd1878185d1c47c0afd239d5f1865ecf3cd23187674104f0d991e5b0b1577",
     "types": ".agent/types.json",
     "files": ".agent/files.json"
   }

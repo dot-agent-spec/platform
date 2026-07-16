@@ -175,16 +175,21 @@ my-agent.agent (ZIP)
 ├── agent.description       ← Agent manifest
 ├── agent.behavior          ← FSM definition
 ├── behaviors/              ← Behavior includes
-├── guides/                 ← Files named by a `guide "x.md"` statement
-├── knowledge/              ← Files named by a `teach "x.md"` statement
+├── guides/                 ← Files named by a `guide "guides/x.md"` statement
+├── knowledge/              ← Files named by a `teach "knowledge/x.md"` statement
 └── SOUL.md                 ← Agent persona
 ```
 
-Only files the behavior actually references are bundled. `pack` resolves each `guide "x.md"` /
-`teach "x.md"` against `guides/x.md` / `knowledge/x.md` first, then against a file sitting loose next
-to `agent.behavior`; a reference that resolves to neither fails with `E018`. A file left in `guides/`
-or `knowledge/` that no statement names is reported as `W015` and **left out of the bundle** — nothing
-could reach it at runtime anyway, since the host only ever learns a filename from a `teach` effect.
+Only files the behavior actually references are bundled. A `guide "..."` / `teach "..."` file
+reference is a **path relative to the agent root**, resolved literally and bundled verbatim at that
+same path — the namespace comes from the path itself (`knowledge/x.md`, `guides/x.md`), not from the
+keyword. Put content under `knowledge/` or `guides/` and reference it there; those two directories are
+the only ones the runtime serves content from. A reference that resolves to no file fails with `E018`;
+one whose path escapes the agent root fails with `E014`. A file left in `guides/` or `knowledge/` that
+no statement names is reported as `W015` and **left out of the bundle** — nothing could reach it at
+runtime anyway, since the host only ever learns a path from a `teach`/`guide` effect. A reference that
+resolves *outside* `guides/`/`knowledge/` is bundled but reported as `W016`: the runtime can't serve it,
+so move it under one of those directories.
 
 ### `aboutme.json`
 

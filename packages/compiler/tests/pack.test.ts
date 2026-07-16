@@ -106,7 +106,7 @@ describe('collectFiles', () => {
 
   it('collects a guides/ file that a guide statement references', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'guides/intro.md': '# Intro' } })
-    const files = await collectFiles(dir, 'agent.description', mergedWith('guide "intro.md"'), [])
+    const files = await collectFiles(dir, 'agent.description', mergedWith('guide "guides/intro.md"'), [])
     expect(files.get('guides/intro.md')).toBe('# Intro')
   })
 
@@ -140,40 +140,59 @@ describe('collectFiles', () => {
 // ── guide/teach file references (linked-only rule) ────────────────────────────
 
 describe('collectFiles — guide/teach references', () => {
-  it('bundles a teach file that already lives under knowledge/', async () => {
+  // A reference is a path relative to the agent root, bundled verbatim at that
+  // same path. The namespace comes from the path, not the keyword — so the key,
+  // the on-disk location, and the reference are one value.
+  it('bundles a teach file at its literal knowledge/ path', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'knowledge/init-overview.md': '# Overview' } })
-    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "init-overview.md"'), [])
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "knowledge/init-overview.md"'), [])
     expect(files.get('knowledge/init-overview.md')).toBe('# Overview')
   })
 
-  it('bundles a loose teach file sitting next to agent.behavior', async () => {
-    const dir = await makeAgentDir({ extraFiles: { 'recipes.txt': 'sourdough' } })
-    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "recipes.txt"'), [])
-    expect(files.get('knowledge/recipes.txt')).toBe('sourdough')
+  // Regression: a `knowledge/`-prefixed reference must NOT be re-prefixed into
+  // `knowledge/knowledge/…`. This is the double-nesting bug the explicit-path
+  // model removes.
+  it('does not double-nest a namespace-prefixed reference', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/local-models.md': '# Local' } })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "knowledge/local-models.md"'), [])
+    expect(files.get('knowledge/local-models.md')).toBe('# Local')
+    expect(files.has('knowledge/knowledge/local-models.md')).toBe(false)
   })
 
-  it('resolves the knowledge/ copy ahead of a same-named file at the root', async () => {
-    const dir = await makeAgentDir({
-      extraFiles: { 'knowledge/notes.md': 'from knowledge', 'notes.md': 'from root' },
-    })
-    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "notes.md"'), [])
-    expect(files.get('knowledge/notes.md')).toBe('from knowledge')
+  // Regression: the keyword (`teach`) no longer routes the namespace — a
+  // `teach "guides/…"` reference lands under guides/, classified as a guide by
+  // its path prefix, not corrupted into knowledge/guides/…. Mirrors the shipped
+  // Master Gardener example.
+  it('honors the path namespace over the keyword', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'guides/gather.md': '# Gather' } })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "guides/gather.md"'), [])
+    expect(files.get('guides/gather.md')).toBe('# Gather')
+    expect(files.has('knowledge/guides/gather.md')).toBe(false)
   })
 
-  it('bundles a nested teach reference under its namespace', async () => {
+  it('bundles a nested reference at its literal path', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'knowledge/sub/deep.md': '# Deep' } })
-    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "sub/deep.md"'), [])
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "knowledge/sub/deep.md"'), [])
     expect(files.get('knowledge/sub/deep.md')).toBe('# Deep')
   })
 
-  it('throws E018 when a teach file exists nowhere', async () => {
+  // A reference outside guides//knowledge/ is bundled verbatim (it exists), but
+  // W016 flags it as unreachable — see findOrphanContentFiles tests below.
+  it('bundles a reference that resolves outside guides//knowledge/ at its literal path', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'recipes.md': 'sourdough' } })
+    const files = await collectFiles(dir, 'agent.description', mergedWith('teach "recipes.md"'), [])
+    expect(files.get('recipes.md')).toBe('sourdough')
+    expect(files.has('knowledge/recipes.md')).toBe(false)
+  })
+
+  it('throws E018 when a referenced file exists nowhere', async () => {
     const dir = await makeAgentDir()
     await expect(
-      collectFiles(dir, 'agent.description', mergedWith('teach "ghost.md"'), [])
+      collectFiles(dir, 'agent.description', mergedWith('teach "knowledge/ghost.md"'), [])
     ).rejects.toThrow('E018')
   })
 
-  it('throws E014 when a teach path escapes the agent root', async () => {
+  it('throws E014 when a reference escapes the agent root', async () => {
     const dir = await makeAgentDir()
     await expect(
       collectFiles(dir, 'agent.description', mergedWith('teach "../../outside.md"'), [])
@@ -187,6 +206,25 @@ describe('collectFiles — guide/teach references', () => {
     const files = await collectFiles(dir, 'agent.description', MERGED_TEXT, [])
     expect(files.has('knowledge/orphan.md')).toBe(false)
     expect(files.has('guides/orphan.md')).toBe(false)
+  })
+
+  // Regression: nothing constrains a reference's bundlePath to guides/knowledge,
+  // so it can collide with a reserved key (a merge source under behaviors/, the
+  // description file, agent.behavior, the persona) already set earlier in the
+  // Map — silently overwriting real merge-source content the kernel depends on.
+  it('throws E020 when a reference collides with a reserved bundle path', async () => {
+    const dir = await makeAgentDir({
+      extraFiles: {
+        // The real merge source, read from the agent root by relPath.
+        'shared.md': 'state shared\n  transition to init\n',
+        // A distinct file that a `teach "behaviors/shared.md"` reference reads
+        // literally — its bundle KEY collides with the one above's `behaviors/${relPath}`.
+        'behaviors/shared.md': 'unrelated content',
+      },
+    })
+    await expect(
+      collectFiles(dir, 'agent.description', mergedWith('teach "behaviors/shared.md"'), ['shared.md'])
+    ).rejects.toThrow('E020')
   })
 })
 
@@ -204,10 +242,33 @@ describe('findOrphanContentFiles', () => {
     })
   })
 
-  it('stays silent when every content file is referenced', async () => {
+  it('stays silent when every content file is referenced by its literal path', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'knowledge/used.md': 'used' } })
-    const messages = await findOrphanContentFiles(dir, mergedWith('teach "used.md"'))
+    const messages = await findOrphanContentFiles(dir, mergedWith('teach "knowledge/used.md"'))
     expect(messages).toEqual([])
+  })
+
+  it('does not report W015 for a namespace-prefixed reference (no phantom orphan)', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'knowledge/local-models.md': 'x' } })
+    const messages = await findOrphanContentFiles(dir, mergedWith('teach "knowledge/local-models.md"'))
+    expect(messages.filter(m => m.code === 'W015')).toEqual([])
+  })
+
+  it('reports W016 for a reference that resolves outside guides//knowledge/', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'recipes.md': 'sourdough' } })
+    const messages = await findOrphanContentFiles(dir, mergedWith('teach "recipes.md"'))
+    const w016 = messages.filter(m => m.code === 'W016')
+    expect(w016).toHaveLength(1)
+    expect(w016[0]).toMatchObject({ file: 'recipes.md', code: 'W016', severity: 'warning' })
+  })
+
+  // Regression: a reference outside guides//knowledge/ that doesn't exist on disk
+  // at all gets E018 from collectFiles(), not W016 — W016's message claims "it
+  // will be bundled", which would be false for a file that's simply missing.
+  it('does not report W016 for a reference that resolves to no file on disk', async () => {
+    const dir = await makeAgentDir()
+    const messages = await findOrphanContentFiles(dir, mergedWith('teach "ghost.md"'))
+    expect(messages.filter(m => m.code === 'W016')).toEqual([])
   })
 
   it('reports a file whose extension teach could never reference', async () => {
@@ -314,7 +375,7 @@ describe('pack — happy path', () => {
     const dir = await makeAgentDir({ extraFiles: { 'guides/intro.md': '# Intro' } })
     await writeFile(
       join(dir, 'agent.behavior'),
-      `state init\n  guide "intro.md"\n  transition to responsive\n\nstate responsive\n  goal "How can I help?"\n  interact\n  on intent "done" transition to init\n  on offtopic transition to responsive\n`
+      `state init\n  guide "guides/intro.md"\n  transition to responsive\n\nstate responsive\n  goal "How can I help?"\n  interact\n  on intent "done" transition to init\n  on offtopic transition to responsive\n`
     )
     const result = await pack({ dir, version: 'v1.0.0' })
 

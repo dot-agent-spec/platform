@@ -18,6 +18,8 @@
 export { parseAboutme, buildAboutme, aboutmeToJson } from './manifest.js'
 export { parseId, buildId, extractDigest, extractName } from './id.js'
 export { createZip, extractFiles, validateMagicBytes, validateZipBomb } from './zip-core.js'
+export { CONTENT_NAMESPACES, isInContentNamespace, classifyContentPath } from './namespace.js'
+export type { ContentNamespace } from './namespace.js'
 
 export type {
   AboutMe,

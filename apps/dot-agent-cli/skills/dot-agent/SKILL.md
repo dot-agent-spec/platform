@@ -40,7 +40,7 @@ When an agent is running with `--mcp`:
 
 1. Read `dot-agent://state` and `dot-agent://intents` to understand current state
 2. Call `send_intent` with one of the listed intents
-3. Read the `effects` array in the response: `goal`, `guide`, `teach` (fetch via `dot-agent://knowledge/{name}`), `request_interact`
+3. Read the `effects` array in the response: `goal`, `guide`, `teach` (its `text` is a path already prefixed with `guides/`/`knowledge/` — fetch via `dot-agent://<text>` verbatim), `request_interact`
 4. If `request_interact` is present, collect user input and call `send_intent` or `send_offtopic`
 5. Repeat from step 1
 

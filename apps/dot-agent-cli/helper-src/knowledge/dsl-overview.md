@@ -1,9 +1,10 @@
 # .behavior file format and package composition
 
 An agent project has: a `.description` file (metadata), a `.behavior` file (the FSM), an optional
-`SOUL.md` persona, and optional `guides/` and `knowledge/` directories. Only files that a `guide` or
-`teach` statement names are packed from those directories — an unreferenced one is reported (`W015`)
-and left out of the bundle.
+`SOUL.md` persona, and optional `guides/` and `knowledge/` directories. A `guide`/`teach` file
+reference is a path relative to the agent root (e.g. `teach "knowledge/x.md"`) and is bundled verbatim
+at that path. Only referenced files are packed — an unreferenced one is reported (`W015`) and left out
+of the bundle; a reference resolving outside `guides/`/`knowledge/` is reported (`W016`) as unreachable.
 
 Minimal valid `.behavior` (init state required):
 

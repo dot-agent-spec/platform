@@ -55,14 +55,18 @@ dot-agent run agent.agent                 # verify the archive loads correctly
 ## What gets packed: only what the behavior links
 
 Guides and knowledge files are not swept out of their directories. A file is bundled only when a
-`guide "x.md"` or `teach "x.md"` statement names it. Each reference resolves against its namespace
-directory first (`guides/x.md`, `knowledge/x.md`), then against a file sitting loose next to the
-`.behavior`; either way it lands under `guides/` or `knowledge/` in the archive.
+`guide "..."` or `teach "..."` statement names it. A file reference is a **path relative to the agent
+root**, resolved literally and bundled verbatim at that same path — the namespace comes from the path
+(`knowledge/x.md`, `guides/x.md`), not from the keyword. Put content under `knowledge/` or `guides/`
+and reference it there.
 
-- A reference that resolves to neither place fails with `E018`.
+- A reference that resolves to no file fails with `E018`; one whose path escapes the agent root fails
+  with `E014`.
 - A file in `guides/` or `knowledge/` that no statement names gets `W015` and is **left out** of the
-  archive. That is intentional: at runtime the host only ever learns a filename from a `teach` effect,
-  and there is no way to list the knowledge directory, so an unreferenced file is unreachable.
+  archive. That is intentional: at runtime the host only ever learns a path from a `teach`/`guide`
+  effect, and there is no way to list the knowledge directory, so an unreferenced file is unreachable.
+- A reference that resolves *outside* `guides/`/`knowledge/` is bundled but gets `W016` — those two
+  directories are the only ones the runtime serves content from, so move it under one of them.
 - Only `.md` and `.txt` count as file references. `teach "some prose"` stays inline literal text.
 
 ## Notes

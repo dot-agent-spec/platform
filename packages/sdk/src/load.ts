@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import JSZip from 'jszip'
-import { parseAboutme, extractFiles, validateMagicBytes, validateZipBomb } from '@dot-agent/compiler/core'
+import { parseAboutme, extractFiles, validateMagicBytes, validateZipBomb, classifyContentPath } from '@dot-agent/compiler/core'
 import type { AgentBundle } from './types.js'
 
 export async function loadAgent(input: Uint8Array | ArrayBuffer): Promise<AgentBundle> {
@@ -52,9 +52,10 @@ export async function loadAgent(input: Uint8Array | ArrayBuffer): Promise<AgentB
   const behaviors: Array<{ path: string; content: string }> = []
 
   for (const [path, content] of allFiles) {
-    if (path.startsWith('guides/') && path !== 'guides/.gitkeep') {
+    const ns = classifyContentPath(path)
+    if (ns === 'guides' && path !== 'guides/.gitkeep') {
       guides.push({ path, content })
-    } else if (path.startsWith('knowledge/') && path !== 'knowledge/.gitkeep') {
+    } else if (ns === 'knowledge' && path !== 'knowledge/.gitkeep') {
       knowledge.push({ path, content })
     } else if (path.startsWith('behaviors/') && path !== 'behaviors/.gitkeep') {
       behaviors.push({ path, content })

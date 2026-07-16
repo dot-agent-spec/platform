@@ -53,8 +53,8 @@ All resources use the `dot-agent://` scheme.
 | `dot-agent://graph` | Yes* | SCXML with `_active="true"` on the current state |
 | `dot-agent://memory` | Yes | Full memory store, all 4 domains |
 | `dot-agent://persona` | No | SOUL.md content |
-| `dot-agent://guides/{name}` | No | Individual guide file content |
-| `dot-agent://knowledge/{name}` | No | Individual knowledge file content |
+| `dot-agent://guides/{+name}` | No | Individual guide file content (`{+name}` may include `/`) |
+| `dot-agent://knowledge/{+name}` | No | Individual knowledge file content (`{+name}` may include `/`) |
 
 *graph changes on each state transition. `state`, `intents`, and `memory` change with every
 interaction — never cache them.
@@ -65,7 +65,7 @@ interaction — never cache them.
 |---|---|---|---|
 | `goal` | `text` | Set as LLM objective — incorporate into system context | `goal "text"` |
 | `guide` | `text` | Instruction or context — use it immediately | `guide "text"` |
-| `teach` | `text` | Filename of a knowledge file — fetch via `dot-agent://knowledge/{text}` | `teach "filename.md"` |
+| `teach` | `text` | Path relative to the agent root, already namespace-prefixed — fetch via `dot-agent://<text>` verbatim | `teach "knowledge/filename.md"` |
 | `request_interact` | (none) | Pause — ask the user before continuing | `interact` |
 | `transition` | `from`, `to` | FSM changed state — re-read `dot-agent://state` and `dot-agent://intents` | `transition to <state>` |
 | `set_memory` | `domain`, `key`, `value` | Kernel stored a value — visible in `dot-agent://memory` | `set <target> <op> <value>` |

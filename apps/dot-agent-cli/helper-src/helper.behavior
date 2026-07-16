@@ -2,7 +2,7 @@
 // section, then run `npm run repack-helper`.
 state init
   guide "dot-agent: a text DSL for FSM agents, not JSON. Topics: dsl, gen, cli, pack — or just read the teach below for everything at a glance."
-  teach "init-overview.md"
+  teach "knowledge/init-overview.md"
   on intent "dsl"
     transition to dsl_overview
   on intent "gen"
@@ -16,7 +16,7 @@ state init
 
 state dsl_overview
   guide "An agent project has: .description (metadata), .behavior (states), optional SOUL.md persona, guides/, knowledge/. Every behavior needs a state named init; split across files with merge."
-  teach "dsl-overview.md"
+  teach "knowledge/dsl-overview.md"
   on intent "dsl_description"
     transition to dsl_description
   on intent "dsl_states"
@@ -32,7 +32,7 @@ state dsl_overview
 
 state dsl_description
   guide "The .description file declares agent metadata. Required: agent name, behavior path. domain and description are warned, not yet enforced (W007; E001 planned). Optional: version, license, persona, capabilities."
-  teach "dsl-description.md"
+  teach "knowledge/dsl-description.md"
   on intent "dsl_states"
     transition to dsl_states
   on intent "dsl_overview"
@@ -44,7 +44,7 @@ state dsl_description
 
 state dsl_states
   guide "A state holds statements (goal, guide, teach, transition to, set, run script) plus on intent and on offtopic handlers. after N prompts gives count-gated transitions."
-  teach "dsl-states.md"
+  teach "knowledge/dsl-states.md"
   on intent "dsl_overview"
     transition to dsl_overview
   on intent "back"
@@ -54,7 +54,7 @@ state dsl_states
 
 state dsl_memory
   guide "4 memory domains with different lifetimes: context, session, worksession, user. Set from behavior via set. Inject from host via inject_memory. Read all via getMemory."
-  teach "dsl-memory.md"
+  teach "knowledge/dsl-memory.md"
   on intent "dsl_overview"
     transition to dsl_overview
   on intent "back"
@@ -88,7 +88,7 @@ state generate_overview
 
 state gen_description
   guide "Required .description fields: agent name, behavior path. domain and description are warned, not yet enforced. Optional: version, license, persona, capabilities."
-  teach "gen-description.md"
+  teach "knowledge/gen-description.md"
   on intent "gen_behavior"
     transition to gen_behavior
   on intent "generate_overview"
@@ -100,7 +100,7 @@ state gen_description
 
 state gen_behavior
   guide "Every .behavior must have a state named init. States contain intent handlers and statements. Use guide and goal for short inline text, teach with a filename for examples."
-  teach "gen-behavior.md"
+  teach "knowledge/gen-behavior.md"
   on intent "gen_description"
     transition to gen_description
   on intent "gen_patterns"
@@ -116,7 +116,7 @@ state gen_behavior
 
 state gen_patterns
   guide "Three patterns: (1) simple responder - handles everything in init, (2) multi-stage workflow - linear state progression, (3) memory-aware - uses set to store context."
-  teach "gen-patterns.md"
+  teach "knowledge/gen-patterns.md"
   on intent "gen_behavior"
     transition to gen_behavior
   on intent "gen_validate"
@@ -130,7 +130,7 @@ state gen_patterns
 
 state gen_validate
   guide "Validate with: dot-agent run /path/to/dir. Errors block, warnings go to stderr. Key codes: E003 no .description, E016 no init state, E014 path escapes root, E012 merge target missing."
-  teach "gen-validate.md"
+  teach "knowledge/gen-validate.md"
   on intent "pack"
     transition to pack
   on intent "generate_overview"
@@ -142,7 +142,7 @@ state gen_validate
 
 state cli_overview
   guide "dot-agent CLI: init, run, pack, unpack, install-skill. run --mcp serves an agent over MCP for an LLM to drive; run --helper starts this helper."
-  teach "cli-overview.md"
+  teach "knowledge/cli-overview.md"
   on intent "cli_mcp"
     transition to cli_mcp
   on intent "cli_walkthrough"
@@ -154,7 +154,7 @@ state cli_overview
 
 state cli_mcp
   guide "MCP server mode exposes 5 tools (send_intent, send_event, send_offtopic, tick_prompt, inject_memory) and 9 dot-agent:// resources. Effects come back as a JSON array in every tool result."
-  teach "cli-mcp.md"
+  teach "knowledge/cli-mcp.md"
   on intent "cli_walkthrough"
     transition to cli_walkthrough
   on intent "cli_overview"
@@ -166,7 +166,7 @@ state cli_mcp
 
 state cli_walkthrough
   guide "Worked example: driving a two-state greeter agent over MCP end to end - read state, read intents, send_intent, react to effects, repeat."
-  teach "cli-walkthrough.md"
+  teach "knowledge/cli-walkthrough.md"
   on intent "cli_mcp"
     transition to cli_mcp
   on intent "cli_overview"
@@ -178,7 +178,7 @@ state cli_walkthrough
 
 state pack
   guide "Pack to a .agent bundle: dot-agent pack --dir /path/to/dir --out <file>. There is no positional dir argument. Runs the same lint as run. Output is a single .agent zip file."
-  teach "pack.md"
+  teach "knowledge/pack.md"
   on intent "back"
     transition to init
   on offtopic

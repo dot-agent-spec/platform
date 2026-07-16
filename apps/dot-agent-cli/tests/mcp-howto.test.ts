@@ -70,6 +70,12 @@ describe('dot-agent://howto resource', () => {
     const howtoText: string = result.contents[0].text
 
     expect(howtoText).not.toContain('--helper')
-    expect(howtoText).toContain('dot-agent://knowledge/')
+    // Documents that a teach/guide effect's text is already a namespace-prefixed
+    // path (not a bare filename to be plugged into dot-agent://knowledge/{name}) —
+    // see mcp-run.ts's HOWTO comment for why: {name} can't hold a nested path, and
+    // re-prepending the namespace produces the doubled dot-agent://knowledge/knowledge/…
+    // ambiguity findContentFile has to defensively strip.
+    expect(howtoText).toContain('path relative to the agent root')
+    expect(howtoText).toContain('dot-agent://')
   })
 })

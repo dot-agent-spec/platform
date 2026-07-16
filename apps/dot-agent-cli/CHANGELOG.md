@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- `dot-agent pack` produced `.agent` bundles with doubled content paths (`knowledge/knowledge/x.md`) and misfiled guides (a `teach "guides/x.md"` landed under `knowledge/guides/…`) whenever a `teach`/`guide` reference carried its namespace prefix — which every real agent does. It also emitted a false-positive `W015` on those files. Root cause and full detail in `@dot-agent/compiler`'s changelog; **breaking** — see below.
+- The knowledge/guides MCP resources (`dot-agent://knowledge/{+name}`, `dot-agent://guides/{+name}`) matched with an `endsWith('/'+name)` heuristic that existed only to paper over the doubled paths and could resolve the wrong file when two subdirectories shared a basename. Now that the packer emits canonical paths, the lookup is an exact match against the bundle path (stripping a redundant namespace prefix from `name` first).
+- This package's own `helper-src/helper.behavior` still used the pre-explicit-path bare convention (`teach "init-overview.md"`) for all 13 `teach` statements — under the new resolution model that broke `repack-helper` (and therefore `prepublishOnly`/`npm publish`) with `E018`, since the real files live under `helper-src/knowledge/`. Updated to the prefixed convention (`teach "knowledge/init-overview.md"`).
+- The knowledge/guides `ResourceTemplate`s used a plain `{name}` variable, which the MCP SDK compiles to a regex that excludes `/` — structurally unable to serve a nested reference (`knowledge/sub/deep.md`), and it made `findContentFile`'s redundant-prefix handling unreachable dead code. Switched to `{+name}` (RFC 6570 reserved expansion, the one operator that permits `/` in the captured value).
+
+### Changed
+- **Breaking (via `@dot-agent/compiler`): `guide`/`teach` file references are now paths relative to the agent root**, bundled verbatim at that path — no keyword-derived foldering, no bare-filename auto-nesting under `knowledge/`. Reference content by its full path (`teach "knowledge/x.md"`). A reference resolving outside `guides/`/`knowledge/` is now reported as `W016`; one colliding with a reserved bundle path (the description file, `agent.behavior`, a merge source, or the persona) is `E020`.
+- Example agents (`Text Summary`, `Fridge Assistant`) migrated to the explicit-path convention — content moved under `knowledge/` and referenced by full path; all example `.agent` bundles and `- content/` directories repacked (the shipped `Master Gardener.agent` previously carried the doubled-path bug).
+- The `dot-agent://howto` resource, `SKILL.md`, and `cli-mcp.md` no longer describe a `teach`/`guide` effect's `text` as "a filename" — it's the already-prefixed bundle path, fetched via `dot-agent://<path>` directly rather than plugged into `dot-agent://knowledge/{name}`.
+
+---
+
 ## [0.11.0] - 2026-07-14
 
 ### Fixed

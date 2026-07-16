@@ -33,6 +33,11 @@ export { pack, collectFiles, consolidate } from './pack.js'
 // Bundle from directory (Node-only)
 export { bundleFromDir } from './bundle.js'
 
+// Content namespace classification (guides/ vs knowledge/), shared by the
+// packer, the bundle reader, and any host resolving a teach/guide reference
+export { CONTENT_NAMESPACES, isInContentNamespace, classifyContentPath } from './namespace.js'
+export type { ContentNamespace } from './namespace.js'
+
 // Types
 export type {
   LangId,

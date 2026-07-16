@@ -19,6 +19,7 @@ import { initBehaviorParser, parseDescriptionFile, parseBehaviorFile } from './p
 import { buildTypesJson } from './schema.js'
 import { writeZip } from './zip.js'
 import { COMPILER_VERSION } from './generated-version.js'
+import { isInContentNamespace, classifyContentPath } from './namespace.js'
 
 function gitRevParseShort(): string | null {
   try {
@@ -265,8 +266,14 @@ function collectFileRefs(stmts: Statement[], out: Map<string, FileRef>): void {
 
 // ── File collection ───────────────────────────────────────────────────────────
 
-function namespaceOf(kind: FileRef['kind']): 'guides' | 'knowledge' {
-  return kind === 'guide' ? 'guides' : 'knowledge'
+// A `guide`/`teach` reference is a path relative to the agent root, bundled
+// verbatim at that path — the namespace is whatever the path itself declares
+// (`knowledge/x.md`, `guides/x.md`), not something derived from the keyword.
+// This keeps the reference, the on-disk location, and the bundle key a single
+// value, so nothing can drift into a doubled `knowledge/knowledge/x.md`. Only
+// light normalization: forward slashes and a stripped leading `./`.
+function normalizeRefPath(text: string): string {
+  return text.replace(/\\/g, '/').replace(/^\.\//, '')
 }
 
 async function collectBehaviorFileRefs(mergedBehaviorText: string): Promise<Map<string, FileRef>> {
@@ -321,14 +328,45 @@ export async function findOrphanContentFiles(
 ): Promise<LintMessage[]> {
   const refs = await collectBehaviorFileRefs(mergedBehaviorText)
   const referenced = new Set<string>()
-  for (const { kind, text } of refs.values()) referenced.add(`${namespaceOf(kind)}/${text}`)
+  const messages: LintMessage[] = []
+
+  // Single pass: every ref's bundlePath is normalized once and reused for both
+  // checks below, instead of recomputing it in two separate loops.
+  for (const { kind, text } of refs.values()) {
+    const bundlePath = normalizeRefPath(text)
+    referenced.add(bundlePath)
+
+    // W016: a reference that resolves outside guides/ or knowledge/. It is
+    // bundled at its literal path, but bundle.ts/sdk-load.ts only expose files
+    // under those two prefixes, so the runtime can never hand its content to
+    // the host — the teach/guide effect would surface a path nothing serves.
+    // Flags the old "loose file next to agent.behavior" convention, now
+    // unreachable. Only fires when the file actually exists and will actually
+    // be bundled — a reference to a nonexistent file gets E018 from
+    // collectFiles() instead, and this warning would otherwise falsely claim
+    // it "will be bundled".
+    if (isExternalPath(dir, bundlePath) || isInContentNamespace(bundlePath)) continue
+    try {
+      await stat(join(dir, bundlePath))
+    } catch {
+      continue
+    }
+    messages.push({
+      file: bundlePath,
+      line: 1,
+      col: 1,
+      severity: 'warning',
+      code: 'W016',
+      message: `'${kind}' reference '${text}' resolves outside guides/ or knowledge/ — it will be bundled but is unreachable at runtime; move it under knowledge/ (or guides/) and reference it there`,
+    })
+  }
 
   const onDisk = [
     ...(await listContentFiles(dir, 'guides')),
     ...(await listContentFiles(dir, 'knowledge')),
   ]
 
-  return onDisk
+  const orphanMessages: LintMessage[] = onDisk
     .filter(path => !referenced.has(path))
     .map((path): LintMessage => ({
       file: path,
@@ -338,6 +376,8 @@ export async function findOrphanContentFiles(
       code: 'W015',
       message: `'${path}' is not referenced by any guide or teach statement — it will not be included in the bundle`,
     }))
+
+  return [...orphanMessages, ...messages]
 }
 
 export async function collectFiles(
@@ -379,37 +419,43 @@ export async function collectFiles(
     files.set(personaFile, personaText)
   }
 
-  // A `guide "intro.md"` / `teach "recipes.txt"` reference is the only thing that
-  // pulls a content file into the bundle — guides/ and knowledge/ are not swept
-  // wholesale, so the bundle is a function of the behavior graph rather than of
-  // whatever happens to sit in the directory. Resolve against the recommended
-  // layout (guides/<text>, knowledge/<text>) first, then fall back to a file
-  // sitting loose next to agent.behavior; either way it lands under <ns>/ in the
-  // bundle. findOrphanContentFiles() reports what this loop leaves behind.
+  // A `guide "guides/intro.md"` / `teach "knowledge/recipes.md"` reference is the
+  // only thing that pulls a content file into the bundle — guides/ and knowledge/
+  // are not swept wholesale, so the bundle is a function of the behavior graph
+  // rather than of whatever happens to sit in the directory. The reference is a
+  // path relative to the agent root, resolved literally and bundled verbatim at
+  // that same path — no namespace guessing, no doubled `knowledge/knowledge/…`.
+  // findOrphanContentFiles() reports what this loop leaves behind (W015) and any
+  // reference that lands outside guides/ or knowledge/ (W016).
   const refs = await collectBehaviorFileRefs(mergedBehaviorText)
   for (const { kind, text } of refs.values()) {
-    if (isExternalPath(dir, text)) {
+    const bundlePath = normalizeRefPath(text)
+    if (isExternalPath(dir, bundlePath)) {
       throw new Error(`E014: '${kind}' path '${text}' is absolute or escapes the agent root`)
     }
-    const ns = namespaceOf(kind)
-    const nsPath = `${ns}/${text}`
 
-    let content: string | undefined
-    for (const candidate of [join(dir, ns, text), join(dir, text)]) {
-      try {
-        content = await readFile(candidate, 'utf-8')
-        break
-      } catch {
-        // fall through to the next candidate
-      }
-    }
-    if (content === undefined) {
+    let content: string
+    try {
+      content = await readFile(join(dir, bundlePath), 'utf-8')
+    } catch {
       throw new Error(
-        `E018: '${kind}' file '${text}' referenced in agent.behavior not found in ${dir} — looked for '${nsPath}' and '${text}'`
+        `E018: '${kind}' file '${text}' referenced in agent.behavior not found in ${dir} — looked for '${bundlePath}' relative to the agent root`
       )
     }
 
-    files.set(nsPath, content)
+    // Nothing constrains bundlePath to guides/ or knowledge/ (see comment
+    // above), so it can collide with a reserved key already set above — the
+    // description file, the flattened agent.behavior, a merge source under
+    // behaviors/, or the persona. Silently overwriting one of those would
+    // corrupt content the kernel or SDK depends on (e.g. a behaviors/ entry
+    // resolved at runtime for `merge "..."`), so refuse instead.
+    if (files.has(bundlePath)) {
+      throw new Error(
+        `E020: '${kind}' reference '${text}' resolves to '${bundlePath}', which collides with a reserved bundle path (the description file, agent.behavior, a merged behaviors/ file, or the persona) — reference a different path`
+      )
+    }
+
+    files.set(bundlePath, content)
   }
 
   return files
@@ -522,8 +568,8 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
     behavior: 'agent.behavior',
     ...(df.persona ? { persona: df.persona } : {}),
     behaviors: Array.from(allFiles.keys()).filter(f => f.startsWith('behaviors/')),
-    guides: Array.from(allFiles.keys()).filter(f => f.startsWith('guides/')),
-    knowledge: Array.from(allFiles.keys()).filter(f => f.startsWith('knowledge/')),
+    guides: Array.from(allFiles.keys()).filter(f => classifyContentPath(f) === 'guides'),
+    knowledge: Array.from(allFiles.keys()).filter(f => classifyContentPath(f) === 'knowledge'),
   }
   agentFolder.file('files.json', JSON.stringify(filesJson, null, 2))
 

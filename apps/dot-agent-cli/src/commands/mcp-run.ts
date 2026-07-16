@@ -12,7 +12,7 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { z } from 'zod'
-import type { AgentBundle } from '@dot-agent/compiler'
+import type { AgentBundle, ContentNamespace } from '@dot-agent/compiler'
 import type { AgentSession } from '@dot-agent/sdk'
 
 export interface McpServerOptions {
@@ -24,12 +24,14 @@ export interface McpServerOptions {
 
 const HOWTO = `Navigate via dot-agent://intents + send_intent. Valid intents are state-dependent — re-read
 dot-agent://intents after every transition, don't assume a prior intent still applies.
-Effects come back from send_intent/send_event/send_offtopic as a JSON array. A "teach" effect
-gives a filename; fetch its content via dot-agent://knowledge/{name}. A "request_interact"
-effect means: pause and ask the human user for input, then match their reply against the
-current dot-agent://intents list and call send_intent with the matched intent name — never
-forward the raw reply text as the intent — or call send_offtopic if nothing matches. Then
-continue.`
+Effects come back from send_intent/send_event/send_offtopic as a JSON array. A "teach"/"guide"
+effect gives a path relative to the agent root, already prefixed with its namespace (e.g.
+"knowledge/local-models.md" or "guides/intro.md"); fetch its content via dot-agent://<that path
+exactly as given> — do not prepend "knowledge/" or "guides/" again, the effect text already has
+it. A "request_interact" effect means: pause and ask the human user for input, then match their
+reply against the current dot-agent://intents list and call send_intent with the matched intent
+name — never forward the raw reply text as the intent — or call send_offtopic if nothing
+matches. Then continue.`
 
 
 function capture<T>(session: AgentSession, fn: () => void): unknown[] {
@@ -72,6 +74,29 @@ function registerTools(server: McpServer, session: AgentSession) {
   )
 }
 
+// The `teach`/`guide` effect hands the host the reference verbatim — a path
+// relative to the agent root, already namespace-prefixed, e.g.
+// `knowledge/sub/deep.md`. The resource templates below use `{+name}` (RFC 6570
+// reserved expansion), not plain `{name}` — a bare `{name}` compiles to a regex
+// that excludes `/` (see @modelcontextprotocol/sdk's uriTemplate.js), so it could
+// never match anything but a flat, single-segment file; `{+name}` is what lets a
+// nested reference like `sub/deep.md` reach this handler at all. Once here, `name`
+// is normally the part after the literal `guides/`/`knowledge/` in the template
+// (e.g. `sub/deep.md`) — but a client that instead embeds the effect's full,
+// already-prefixed text into `name` (e.g. `knowledge/sub/deep.md`) is also
+// tolerated: strip a redundant leading `${ns}/` before matching, rather than an
+// `endsWith` heuristic that could resolve the wrong file when two subdirectories
+// share a basename. (The old fuzzy match existed only to paper over the packer's
+// doubled `knowledge/knowledge/…` paths, now fixed at the source.)
+function findContentFile(
+  files: Array<{ path: string; content: string }>,
+  ns: ContentNamespace,
+  name: string,
+): { path: string; content: string } | undefined {
+  const rel = name.startsWith(`${ns}/`) ? name : `${ns}/${name}`
+  return files.find(f => f.path === rel)
+}
+
 function registerResources(
   server: McpServer,
   session: AgentSession,
@@ -95,10 +120,10 @@ function registerResources(
   if (bundle.files.guides.length > 0) {
     server.resource(
       'guides',
-      new ResourceTemplate('dot-agent://guides/{name}', { list: undefined }),
+      new ResourceTemplate('dot-agent://guides/{+name}', { list: undefined }),
       { description: 'Guide file content' },
       async (uri, { name }) => {
-        const guide = bundle.files.guides.find(g => g.path === `guides/${name}` || g.path.endsWith(`/${name}`))
+        const guide = findContentFile(bundle.files.guides, 'guides', String(name))
         if (!guide) return { contents: [{ uri: uri.href, text: `Guide '${name}' not found`, mimeType: 'text/plain' }] }
         return { contents: [{ uri: uri.href, text: guide.content, mimeType: 'text/plain' }] }
       }
@@ -108,10 +133,10 @@ function registerResources(
   if (opts.exposeKnowledge && bundle.files.knowledge.length > 0) {
     server.resource(
       'knowledge',
-      new ResourceTemplate('dot-agent://knowledge/{name}', { list: undefined }),
+      new ResourceTemplate('dot-agent://knowledge/{+name}', { list: undefined }),
       { description: 'Knowledge file content' },
       async (uri, { name }) => {
-        const item = bundle.files.knowledge.find(k => k.path === `knowledge/${name}` || k.path.endsWith(`/${name}`))
+        const item = findContentFile(bundle.files.knowledge, 'knowledge', String(name))
         if (!item) return { contents: [{ uri: uri.href, text: `Knowledge '${name}' not found`, mimeType: 'text/plain' }] }
         return { contents: [{ uri: uri.href, text: item.content, mimeType: 'text/plain' }] }
       }

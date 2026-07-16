@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **`guide`/`teach` file references no longer double-nest or cross namespaces.** The packer derived a content file's bundle location from the statement *keyword* (`teach`→`knowledge/`, `guide`→`guides/`) and prepended it to the reference text. Every real agent — and the shipped Master Gardener example — writes the path already prefixed (`teach "knowledge/x.md"`), so the keyword-prefix produced `knowledge/knowledge/x.md`, and a `teach "guides/x.md"` landed at `knowledge/guides/x.md` (a guide misfiled into the knowledge namespace). It also caused a phantom `W015` on the recommended layout, since the referenced-set key never matched the on-disk path. The bug was invisible to the test suite, which only exercised bare filenames.
+
+### Changed
+- **Breaking (reference convention): a `guide`/`teach` file reference is now a path relative to the agent root**, resolved literally and bundled verbatim at that same path. The namespace comes from the path (`knowledge/x.md`, `guides/x.md`), not the keyword — the keyword is now purely semantic. The old "resolve against the namespace directory first, then a file loose next to `agent.behavior`" two-candidate lookup is gone. Agents that relied on a bare `teach "recipes.txt"` being auto-foldered into `knowledge/` must move the file under `knowledge/`/`guides/` and reference it by its full path.
+- `E018` now reports the single path it resolved (`looked for 'knowledge/x.md' relative to the agent root`) instead of two candidate paths.
+
+### Added
+- **`W016` — reference outside a content namespace.** A `guide`/`teach` reference that resolves to a real, existing file outside `guides/`/`knowledge/` is bundled verbatim but unreachable at runtime (only those two prefixes are served), so it is flagged. Catches the legacy loose-file convention. Only fires when the file actually exists and will be bundled — a reference to a nonexistent file gets `E018` instead. Emitted by `findOrphanContentFiles()`.
+- **`E020` — reference collides with a reserved bundle path.** A `guide`/`teach` reference is no longer namespace-guessed, so nothing else stops it from resolving to a path already occupied by the description file, `agent.behavior`, a merge source under `behaviors/`, or the persona. `collectFiles()` now refuses instead of silently overwriting that entry.
+- `CONTENT_NAMESPACES` / `isInContentNamespace` / `classifyContentPath`, exported from both the main entry and `@dot-agent/compiler/core` — the single source of truth for "is this bundle path under `guides/` or `knowledge/`", now shared by the packer, `bundleFromDir()`, and `@dot-agent/sdk`'s `loadAgent()` instead of each hand-rolling the same prefix check.
+
+---
+
 ## [0.10.1] - 2026-07-14
 
 ### Fixed
