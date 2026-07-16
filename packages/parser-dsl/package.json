@@ -61,7 +61,11 @@
   },
   "scripts": {
     "build": "cargo test -p dot-agent-parser-dsl && RELEASE=true bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsdown",
-    "build:debug": "cargo test -p dot-agent-parser-dsl && bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsdown"
+    "build:debug": "cargo test -p dot-agent-parser-dsl && bash ../../scripts/build-wasm.sh dot_agent_parser_dsl && tsdown",
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5"
   },
   "publishConfig": {
     "access": "public"

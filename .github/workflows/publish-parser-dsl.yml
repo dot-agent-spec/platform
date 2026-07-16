@@ -41,6 +41,13 @@ jobs:
           CXX_wasm32_wasip1: zig c++ -target wasm32-wasi
           AR_wasm32_wasip1: zig ar
 
+      # Bundles the built dist for a browser target (esbuild). Catches a `node:`
+      # scheme import leaking into the browser entry — the tsup→tsdown regression
+      # that broke Murici's webpack build in 0.10.2. A Node-only test can't see it.
+      - name: Run tests
+        working-directory: packages/parser-dsl
+        run: npm test
+
       - name: Determine npm dist-tag
         id: npm_tag
         run: |

@@ -18,7 +18,14 @@ export async function init(): Promise<void> {
   const wasmUrl = new URL('../pkg/dot_agent_kernel_dsl_bg.wasm', import.meta.url)
   let wasmBuffer: ArrayBuffer | Uint8Array
   if (isNodeRuntime()) {
-    const { readFile } = await import('node:fs/promises')
+    // The `node:` scheme must stay invisible to browser bundlers: webpack throws
+    // UnhandledSchemeError and rolldown/tsdown preserves the literal (this is how
+    // the 0.10.2 tsup→tsdown migration broke Murici's webpack build). Building the
+    // specifier at runtime degrades this to a runtime-only dynamic import — guarded
+    // by isNodeRuntime(), so browsers never execute it. `Array.join` is used
+    // because rolldown does not constant-fold it back to the static literal.
+    const fsSpecifier = ['node:', 'fs/promises'].join('')
+    const { readFile } = await import(/* webpackIgnore: true */ fsSpecifier)
     wasmBuffer = await readFile(wasmUrl)
   } else {
     wasmBuffer = await fetch(wasmUrl).then(r => r.arrayBuffer())

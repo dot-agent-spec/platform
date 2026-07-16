@@ -1,4 +1,4 @@
-import { init, AgentDSLKernel } from '../dist/index.js';
+import { init, AgentDSLKernel } from '../dist/index.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 

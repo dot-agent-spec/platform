@@ -62,12 +62,15 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/node.test.js"
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@dot-agent/compiler": "0.10.1",
     "@dot-agent/kernel-dsl": "0.10.2",
     "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5"
   },
   "publishConfig": {
     "access": "public"
