@@ -28,6 +28,7 @@ This directory follows the [Diátaxis](https://diataxis.fr/) framework:
 - [`.description` syntax](reference/description.md) — agent identity, capabilities, type declarations
 - [Type system](reference/types.md) — custom types, primitives, namespace resolution
 - [Memory domains](reference/memory.md) — `context`, `session`, `worksession`, `user`
+- [Comportment](reference/comportment.md) — consumer-side contract: how a driving LLM must behave with a running agent
 
 **Explanation:**
 - [Design principles](explanation/design-principles.md) — zero noise, determinism, small vocabulary
