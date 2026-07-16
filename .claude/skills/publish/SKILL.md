@@ -81,10 +81,17 @@ and applies **one version per run** — so the pin edits (and multi-version batc
    (kernel-dsl, parser-dsl, tree-sitter have crates; compiler/sdk/language-server/cli are TS-only). Keep
    `Cargo.toml` aligned with npm even though these tags publish **npm-only** (crates.io is a separate
    Trusted-Publishing path).
-4. `npm install` to regenerate `package-lock.json`.
+4. `npm install` to regenerate `package-lock.json`. (`Cargo.lock` is **gitignored** — CI regenerates it; no
+   need to commit it.)
 5. Add a dated **CHANGELOG.md** entry per bumped package (Keep-a-Changelog format already in each). Write a
    real fix description for changed packages; `Re-pin @dot-agent/* to patched versions` for pin-only bumps.
-   Collapse stale pre-release history into one line rather than reconstructing precise attribution.
+   Collapse stale pre-release history into one line rather than reconstructing precise attribution. Some
+   packages carry an `[Unreleased]` section holding already-merged-but-unpublished work (e.g. compiler/sdk/cli
+   from a prior round) — finalize it to the new version+date, don't drop it.
+6. **Rebuild the TS packages** (`tsdown`) after bumping so tracked, build-generated version constants refresh
+   — notably `packages/compiler/src/generated-version.ts` (`COMPILER_VERSION`), which is committed and goes
+   stale otherwise. (`apps/dot-agent-cli/src/version.ts` reads `package.json` at runtime, so it needs no
+   rebuild.) `dist/` is gitignored; the point is the tracked source constants, not the build output.
 
 ## Phase 2 — Pre-flight (must be green before tagging)
 
@@ -94,8 +101,14 @@ package's `npm test`, and `publish-ts.yml` runs `npm test --if-present` in the t
 publish**. Run locally first:
 
 - `npm run build` for the WASM chain (tree-sitter → parser-dsl → kernel-dsl) if dist/ is stale — the
-  browser-bundle guard tests bundle the built `dist/`.
+  browser-bundle guard tests bundle the built `dist/`. WASM (`pkg/`) is unchanged on a TS-only release, so
+  running `tsdown` directly per package is enough — no need for the full `cargo test` + wasm rebuild.
 - `npm test` for every package in the release set. All green.
+
+Pre-flight is not a formality: it has caught real, non-obvious bugs mid-release (e.g. a language-server
+`diagnose()` that crawled the filesystem from `/` for a file outside any bundle — slow enough to time out and
+trip a macOS TCC "access other apps' data" prompt). A failing/**hanging** test is a critical error → fix it
+and re-run, or escalate for human review per the gate above; never tag past red.
 
 Open the release branch as a **PR → merge to main** (keeps `main` the tagged base), matching how fixes land.
 
@@ -115,8 +128,15 @@ builds the whole chain from the workspace before publishing the target). dist-ta
 version containing `-` → `alpha`, else `latest`.
 
 ```
-git tag kernel-dsl@0.10.3 && git push origin kernel-dsl@0.10.3   # one tag; watch the run
+git tag kernel-dsl@0.10.3 && git push origin kernel-dsl@0.10.3       # push the wave's tag(s)
+gh run list --limit 5 --json databaseId,name,status,event               # find the run id
+gh run watch <run-id> --exit-status && echo GREEN                       # blocks until done; nonzero if it failed
+npm view @dot-agent/<pkg> version                                       # confirm live on npm before next wave
 ```
+
+`gh run watch --exit-status` is the wait-for-green gate between waves — its exit code is the go/no-go. Only
+advance when the run is green *and* `npm view` shows the version live (the next wave's pins resolve against
+npm). If any wave fails, **stop** — don't push later waves, since their pinned deps won't exist.
 
 **Footguns:**
 - Backticks inside **double quotes** execute for real in Bash — this has nearly caused an accidental root
