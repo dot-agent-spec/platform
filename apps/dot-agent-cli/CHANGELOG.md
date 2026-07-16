@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.11.1] - 2026-07-16
+
+### Dependencies
+- Re-pinned `@dot-agent/sdk` → `0.10.3` and `@dot-agent/compiler` → `0.10.2` to pick up the browser-bundle fix and packer changes from this release round.
 
 ### Fixed
 - `dot-agent pack` produced `.agent` bundles with doubled content paths (`knowledge/knowledge/x.md`) and misfiled guides (a `teach "guides/x.md"` landed under `knowledge/guides/…`) whenever a `teach`/`guide` reference carried its namespace prefix — which every real agent does. It also emitted a false-positive `W015` on those files. Root cause and full detail in `@dot-agent/compiler`'s changelog; **breaking** — see below.

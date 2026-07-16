@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.10.2] - 2026-07-16
+
+### Dependencies
+- Re-pinned `@dot-agent/parser-dsl` → `0.10.2` (browser-bundle fix). `@dot-agent/tree-sitter` stays `0.10.1`.
 
 ### Fixed
 - **`guide`/`teach` file references no longer double-nest or cross namespaces.** The packer derived a content file's bundle location from the statement *keyword* (`teach`→`knowledge/`, `guide`→`guides/`) and prepended it to the reference text. Every real agent — and the shipped Master Gardener example — writes the path already prefixed (`teach "knowledge/x.md"`), so the keyword-prefix produced `knowledge/knowledge/x.md`, and a `teach "guides/x.md"` landed at `knowledge/guides/x.md` (a guide misfiled into the knowledge namespace). It also caused a phantom `W015` on the recommended layout, since the referenced-set key never matched the on-disk path. The bug was invisible to the test suite, which only exercised bare filenames.
