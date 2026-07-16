@@ -63,7 +63,8 @@ export async function diagnose(uri, langId, text) {
     // uses to define an agent bundle. Falls back to the file's own directory
     // when no manifest is found, e.g. a lone .behavior file opened outside
     // an agent.
-    const agentRoot = (await findAgentRoot(dirname(filePath))) ?? dirname(filePath);
+    const foundRoot = await findAgentRoot(dirname(filePath));
+    const agentRoot = foundRoot ?? dirname(filePath);
     const entryFile = relative(agentRoot, filePath);
 
     // behavior: run consolidated lint when the file uses merge declarations
@@ -74,7 +75,15 @@ export async function diagnose(uri, langId, text) {
         // consolidated state set, so cross-file transitions don't show as
         // dangling (E005) and this fragment isn't wrongly held to whole-tree
         // rules like E016 (init required) that only make sense at the root.
-        const root = await findMergeRoot(agentRoot, entryFile);
+        //
+        // Only do this when we actually found an agent bundle (a *.description
+        // marker). Without one, `agentRoot` is just the file's own directory,
+        // and findMergeRoot's backward scan (collectBehaviorFiles) would crawl
+        // it recursively — for a lone file opened at `/` or under the home dir
+        // that means a huge filesystem walk that trips macOS TCC prompts and
+        // times out. A file outside any bundle has no merge graph anyway, so
+        // local-only lint below is the correct answer.
+        const root = foundRoot ? await findMergeRoot(agentRoot, entryFile) : null;
         if (root) {
             try {
                 const { mergedText } = await consolidate(agentRoot, root);
