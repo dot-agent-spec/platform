@@ -15,7 +15,7 @@
 | Status | Planned |
 | Created | 2026-07-16 |
 | Author | Danilo |
-| Sources | Design interview 2026-07-16; murici `lib/runtime/dot-agent-injector.ts`; existing CLI skill `apps/dot-agent-cli/.../skills/dot-agent/SKILL.md` |
+| Sources | Issue [#13](https://github.com/dot-agent-spec/platform/issues/13) (tracker); design interview 2026-07-16; murici `lib/runtime/dot-agent-injector.ts`; existing CLI skill `apps/dot-agent-cli/.../skills/dot-agent/SKILL.md` |
 
 ---
 
@@ -174,6 +174,14 @@ skill, the bundled binary, and the `.agent` bundling/loading flow.
 
 **Change:** New plugin layout; Mode A and Mode B share the comportment spec, differ only in the
 human-in-the-loop vs autonomous driving section.
+
+**Temporal transitions via a plugin hook.** `after N prompts` is runtime-driven — the prompt counter is
+the runtime's job, **not** the LLM's (making the driver call `tick_prompt` each turn would burn context
+and lean on its memory, defeating the deterministic FSM). Investigate wiring a Claude Code
+`UserPromptSubmit` hook that fires one `tick_prompt` per interaction, so count-gated transitions fire in
+the skill surface. If a hook can't carry the tick, temporal transitions are a **deliberate, accepted
+degradation** of the spec on this surface — not a bug. Comportment stays passive either way: the driver
+re-reads `dot-agent://state` and observes any runtime-driven move (already specified).
 
 ### 5. Rust runtime — P3 (roadmap)
 
