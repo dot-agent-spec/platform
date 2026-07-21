@@ -31,7 +31,7 @@ between layers, so runtime and transport decisions do not block each other:
 ```
 Layer 1 — FORMAT   (.agent bundle)       ← stable contract, already exists
 Layer 2 — RUNTIME  (executes the .agent) ← Node+WASM today; Bun-compile OR Rust
-Layer 3 — DRIVING  (Claude ↔ runtime)    ← MCP (exists) + plain-JSON HTTP endpoint (new)
+Layer 3 — DRIVING  (Claude ↔ runtime)    ← MCP, bundled + auto-registered by the plugin manifest
 ```
 
 **The core problem this task solves — role framing.** When the current CLI skill was run under
@@ -43,8 +43,32 @@ and FSM state (`goal`/`guide`/`teach`/`allowed_intents`) is injected as a *simul
 (`get_current_state`) — never as the user speaking; the model's only lever on the FSM is a
 `trigger_intent` tool whose `intent_name` is enum-constrained to valid intents. The organizing
 metaphor: **an FSM is a dynamically state-selected SKILL.md** — each state is the active section of
-the instructions. Comportment is **independent of transport and of surface**, so the same `<RULES>`
-serves murici (host), the CLI skill (MCP), and the marketplace skill (HTTP).
+the instructions. Comportment is **independent of transport and of surface**, so the same
+`comportment.md` serves murici (host), the CLI skill (MCP), and the marketplace plugin (MCP, bundled).
+
+**Not just a CLI wrapper.** The first pass at this plugin was "SKILL.md that shells out to the CLI" —
+functional, but it leaves Claude Code capabilities unused that solve real problems we already hit
+during the Fridge E2E test. See the platform's [plugin
+reference](https://code.claude.com/docs/en/plugins#develop-more-complex-plugins):
+
+- **`mcpServers` in `plugin.json`** auto-starts and auto-registers the MCP server the moment the
+  plugin is enabled — no `claude mcp add` (which doesn't take effect mid-session, see the tick_prompt
+  item below) and no manual `dot-agent-cli configure` step.
+- **A `UserPromptSubmit` hook** fires once per turn, before Claude sees the message, and can shell out
+  deterministically — this is the mechanism for `tick_prompt` (see item 2), turning a "the LLM must
+  remember" liability into a guarantee.
+- **`lspServers`** gives Claude live diagnostics/go-to-def while editing `.description`/`.behavior`
+  files, if pointed at our own language-server — an authoring-side capability, orthogonal to running
+  an agent (see the roadmap item).
+- **Background monitors** (`monitors/monitors.json`: `name` + a persistent `command` + `description`)
+  run a shell command (e.g. `tail -F`) and deliver each stdout line to Claude as a notification during
+  the session — no special flag or org allowlist, unlike Channels. Auto-starts with the plugin. Same
+  delivery mechanism as the built-in Monitor tool. The gap: the runtime doesn't currently emit anything
+  a monitor could tail when the engine drives its own transition (`on event`, `after N prompts`) — see
+  the roadmap item.
+- **Channels** (`claude/channel` MCP capability) push a message into Claude's context without polling,
+  but are research preview (`--dangerously-load-development-channels` or org allowlisting) — a fallback
+  if monitors turn out not to fit, not the first choice.
 
 ### Settled decisions (with rationale)
 
@@ -55,22 +79,28 @@ serves murici (host), the CLI skill (MCP), and the marketplace skill (HTTP).
 2. **Runtime (Layer 2):** **Bun-compile now, Rust on the roadmap.** The `.agent` format decouples
    them, so Bun today is reversible for free; a later Rust rewrite gives independence + performance
    without touching any skill or agent (drop-in swap behind the same wire contract).
-3. **Driving surface (Layer 3):** a **plain-JSON HTTP endpoint** (`POST /intent → {state, effects}`,
-   `GET /state`) **alongside** the existing MCP server, reusing `AgentSession` and
-   `buildBehaviorStatePayload`. This avoids making a SKILL.md drive MCP streamable-http (initialize
-   handshake + `Mcp-Session-Id` + SSE framing) via curl, which is fragile in bash. The 127.0.0.1
-   port is the rendezvous that carries FSM state across turns (each turn is a fresh subshell). The
-   `(state, intent) → (state, effects)` contract maps directly to the future Rust reimplementation.
-4. **`guide` vs `teach`:** `guide` = **short** behavior directive (rides in the per-turn payload);
+3. **Driving surface (Layer 3): MCP only, bundled and auto-registered by the plugin manifest.** An
+   earlier draft of this decision added a plain-JSON HTTP endpoint (`POST /intent`, `GET /state`) to
+   dodge driving MCP streamable-http via curl from a SKILL.md. That workaround is unnecessary once the
+   plugin declares `mcpServers` in `plugin.json`: the server starts and registers itself the moment the
+   plugin is enabled, so Claude talks to it as a normal MCP tool — no curl, no handshake-by-hand, no
+   manual `claude mcp add` (which doesn't take effect mid-session — confirmed during the Fridge E2E
+   test, the reason the HTTP workaround was drafted in the first place). Dropped from the plan.
+4. **`tick_prompt` is hook-driven, not LLM-driven.** `after N prompts` needs the prompt counter ticked
+   once per turn; asking the driving LLM to remember a `tick_prompt` call every turn burns context and
+   depends on memory, defeating the point of a deterministic FSM. A plugin-bundled `UserPromptSubmit`
+   hook (fires before Claude sees each message, can shell out) ticks it instead — settled, not merely
+   investigated (see item 2).
+5. **`guide` vs `teach`:** `guide` = **short** behavior directive (rides in the per-turn payload);
    `teach` = **bulky** knowledge (command lists, detailed steps) in `knowledge/*.md`, fetched on
    demand. Bonus: dynamic, state-gated slicing (only the current state's teach loads).
-5. **Default comportment = Mode A (embody + interact with the human).** Collapses the current
+6. **Default comportment = Mode A (embody + interact with the human).** Collapses the current
    "Emulation Mode" and removes the "autonomous executor" stance that caused the agy bug. Rules:
    embody the `.description` persona; at a state awaiting human input (has intents / `request_interact`)
    converse toward the `goal` using guide+teach, map the reply to an intent (or offtopic), then pause
    and wait; at a pure transition, advance silently; **never** execute guide/teach as commands
    (command-text is presented to the human); **never** reveal the intent signal.
-6. **Publish-agent (converting the real `/publish` skill):** a **deterministic guide**, **zero
+7. **Publish-agent (converting the real `/publish` skill):** a **deterministic guide**, **zero
    execution**, commands as **text** (v0.1: the FSM only controls states). Mandatory `interact` gates
    before irreversible steps (tag push → npm publish). The FSM's value here is topological ordering +
    confirmation gates, not automating the irreversible trigger.
@@ -97,62 +127,70 @@ Standalone MCP/CLI (external client).
 
 ### Package
 
-A Claude Code **plugin** `dot-agent` bundling **{Mode A skill (default), Mode B skill (autonomous
-test)} + the MCP/runtime registration** — the "one download" container (as context-mode itself is a
-plugin). Out of v1 / roadmap: D (SDK/host docs); **multi-management** (skills embedding their own
-`.agent` for micro-orchestration) = v2; Rust runtime = later drop-in.
+A Claude Code **plugin** `dot-agent` — `plugin.json` declaring:
+- `skills`: Mode A (default) + Mode B (autonomous test)
+- `mcpServers`: the runtime, auto-started and auto-registered on enable — no separate `configure` step
+- `hooks`: `UserPromptSubmit` → ticks `tick_prompt` once per turn, deterministically
+
+the "one download" container (as context-mode itself is a plugin). Out of v1 / roadmap: an
+`lspServers` entry for `.description`/`.behavior` authoring diagnostics (a different lane —
+authoring, not running an agent); a background monitor (or, failing that, Channels) for push-driven
+engine transitions; D (SDK/host docs); **multi-management** (skills embedding their own `.agent` for
+micro-orchestration) = v2; Rust runtime = later drop-in.
 
 ### Open decision — RESOLVED in practice (2026-07-16)
 
 The comportment spec (`<RULES>`) must be a single source of truth so murici + CLI skill + marketplace
-skill do not drift (drift = the agy bug returns). Resolution: the **canonical text now lives in the CLI
-skill's "Running an agent — how to behave" section** (`apps/dot-agent-cli/skills/dot-agent/SKILL.md`) —
-it is what actually ships and what actually failed under agy, so it is the natural authority. Follow-up
-(Sonnet): reconcile murici's `<RULES>` in `dot-agent-injector.ts` to match this text, and optionally
-extract a shared `dsl/reference/comportment.md` that both reference. The marketplace skill (P2) copies
-this section verbatim.
+skill do not drift (drift = the agy bug returns). Resolution: the canonical text now lives in
+`dsl/reference/comportment.md`; the CLI skill (`apps/dot-agent-cli/skills/dot-agent/SKILL.md`) mirrors
+it, and the marketplace plugin's skills (P2) copy this section verbatim.
 
 ## Priority overview
 
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
-| 1 | P0 | Evolve the CLI skill: single Mode A comportment + "how to behave with what you receive" *(skill rewritten 2026-07-16; Fridge E2E test pending)* | apps/dot-agent-cli (skill) | M |
-| 2 | P1 | Add plain-JSON HTTP endpoint (`POST /intent`, `GET /state`) alongside MCP | apps/dot-agent-cli | M |
+| 1 | P0 | Evolve the CLI skill: single Mode A comportment + "how to behave with what you receive" — **done**, Fridge E2E tested (commit `fdca20b`) | apps/dot-agent-cli (skill) | M |
+| 2 | P1 | Plugin manifest: `mcpServers` auto-registration + `UserPromptSubmit` hook for `tick_prompt` | new plugin | M |
 | 3 | P1 | Bun-compile the CLI into a standalone per-platform binary | apps/dot-agent-cli | M |
-| 4 | P2 | Assemble the marketplace plugin (Mode A skill + Mode B skill + bundled binary + agent bundling) | new plugin | L |
+| 4 | P2 | Assemble the marketplace plugin (Mode A skill + Mode B skill + manifest + bundled binary + agent bundling) | new plugin | L |
 | 5 | P3 | Rust runtime (drop-in behind the same wire contract) | packages/kernel-dsl (+ host) | L |
+| 6 | Roadmap | `lspServers` for `.description`/`.behavior` authoring diagnostics | new plugin or separate authoring plugin | M |
+| 7 | Roadmap | Background monitor for engine-driven transitions (Channels as fallback) | new plugin + apps/dot-agent-cli | M |
 
 ---
 
 ## Work items
 
-### 1. Evolve the CLI skill — P0
+### 1. Evolve the CLI skill — P0 — done
 
-**What:** Reconcile the CLI skill's two contradictory stances — the "MCP interaction loop"
+**What:** Reconciled the CLI skill's two contradictory stances — the "MCP interaction loop"
 (autonomous driver) and "Agent Simulation / Emulation Mode" (proxy/echo) — into a single **Mode A**
-comportment, and add the missing **"how to behave with what you receive"** section that ports
-murici's `<RULES>` semantics (embody the persona; treat FSM output as your system-level director for
-this state, never as user input or a command list; converse with the human; signal intents silently).
+comportment, plus a **"how to behave with what you receive"** section (embody the persona; treat FSM
+output as your system-level director for this state, never as user input or a command list; converse
+with the human; signal intents silently).
 
-**Why:** The current skill teaches the *mechanics* of talking to the FSM but not the *comportment* —
-which is exactly what let the LLM collapse roles under agy. This section ports directly to the
-marketplace skill (comportment is transport-independent).
+**Result:** `dsl/reference/comportment.md` is the canonical, transport-neutral spec;
+`skills/dot-agent/SKILL.md` mirrors it. Tested end-to-end against Fridge Assistant, live and
+human-in-the-loop — found and fixed 7 comportment gaps (state-bleed across dwells, silent no-op on
+unhandled `send_offtopic`, offtopic-vs-unmatched-intent conflation, grounding elasticity, trust
+boundary for third-party `.agent` authors, end-of-flow handling, multi-hop routing). Commit `fdca20b`.
 
-**Change:** Rewrite `skills/dot-agent/SKILL.md`: drop the standalone "Emulation Mode" framing, make
-embodiment the default, add the `<RULES>`/comportment section, and clarify that command-text in
-guide/teach is presented to the human, never executed (v0.1). **Test end-to-end with Fridge.** Decide
-the single-source-of-truth location for the comportment spec here.
+### 2. Plugin manifest: MCP auto-registration + prompt-tick hook — P1
 
-### 2. Plain-JSON HTTP endpoint — P1
+**What:** Write the plugin's `plugin.json` declaring `mcpServers` (the runtime, so it auto-starts and
+auto-registers on enable — replacing the manual `dot-agent-cli configure` step and the `claude mcp add`
+workaround that doesn't take effect mid-session) and a `hooks.json` with a `UserPromptSubmit` hook that
+shells out to tick `tick_prompt` once per turn.
 
-**What:** Add `POST /intent → {state, effects}` and `GET /state` to the CLI's HTTP server, beside the
-existing MCP streamable-http transport, emitting the same `buildBehaviorStatePayload` vocabulary.
+**Why:** Two problems the Fridge E2E test hit directly. `claude mcp add` requiring a session
+restart is exactly what forced the HTTP-transport workaround during that test — bundling the server in
+the plugin manifest removes the problem instead of working around it. And `tick_prompt` today has no
+caller: asking the driving LLM to remember it every turn burns context and depends on memory, defeating
+the deterministic FSM — a hook fires deterministically, no LLM involvement, so `after N prompts`
+transitions actually work on this surface instead of being a documented degradation.
 
-**Why:** Lets a SKILL.md drive the FSM with a clean `curl` instead of an MCP handshake + SSE parse —
-the "download and run" UX for the marketplace skill without MCP registration or a session restart.
-
-**Change:** Extend `apps/dot-agent-cli/src/commands/mcp-run.ts` (reuse `AgentSession`); no kernel
-changes. Keep the single shared FSM instance already bound to 127.0.0.1.
+**Change:** New plugin scaffolding (`plugin.json`, `hooks/hooks.json`); no kernel or CLI changes needed
+— `mcp-run.ts` and `tick_prompt` already exist, this only wires them into the plugin's auto-start path.
 
 ### 3. Bun-compile standalone binary — P1
 
@@ -160,28 +198,22 @@ changes. Keep the single shared FSM instance already bound to 127.0.0.1.
 OS/arch (Bun `--compile`), embedding the runtime so no Node is required on the user's machine.
 
 **Why:** Claude Code injects no Node runtime; skills run against the real PATH. A vendored binary
-makes the marketplace plugin work regardless of what the user has installed.
+makes the marketplace plugin work regardless of what the user has installed — the `mcpServers` entry
+in item 2 points `command` at this binary.
 
 **Change:** Add a Bun build step over the current CLI; vendor artifacts under
-`scripts/bin/<os>-<arch>/`; SKILL.md detects `uname -sm` and calls the binary directly.
+`scripts/bin/<os>-<arch>/`; the plugin manifest's `mcpServers.command` resolves per-platform via
+`${CLAUDE_PLUGIN_ROOT}`.
 
 ### 4. Assemble the marketplace plugin — P2
 
 **What:** Package a Claude Code plugin bundling the Mode A skill (default), the Mode B autonomous-test
-skill, the bundled binary, and the `.agent` bundling/loading flow.
+skill, the manifest from item 2, the bundled binary, and the `.agent` bundling/loading flow.
 
 **Why:** The distributable "one download" unit for the marketplace.
 
 **Change:** New plugin layout; Mode A and Mode B share the comportment spec, differ only in the
 human-in-the-loop vs autonomous driving section.
-
-**Temporal transitions via a plugin hook.** `after N prompts` is runtime-driven — the prompt counter is
-the runtime's job, **not** the LLM's (making the driver call `tick_prompt` each turn would burn context
-and lean on its memory, defeating the deterministic FSM). Investigate wiring a Claude Code
-`UserPromptSubmit` hook that fires one `tick_prompt` per interaction, so count-gated transitions fire in
-the skill surface. If a hook can't carry the tick, temporal transitions are a **deliberate, accepted
-degradation** of the spec on this surface — not a bug. Comportment stays passive either way: the driver
-re-reads `dot-agent://state` and observes any runtime-driven move (already specified).
 
 ### 5. Rust runtime — P3 (roadmap)
 
@@ -190,17 +222,49 @@ wire contract.
 
 **Why:** Independence from Node and better performance, without touching any `.agent` or skill.
 
-**Change:** Drop-in swap of the Layer 2 binary; the format and the HTTP contract are unchanged.
+**Change:** Drop-in swap of the Layer 2 binary; the plugin manifest's `mcpServers.command` just points
+at a different vendored binary — no other change.
+
+### 6. `lspServers` for `.description`/`.behavior` authoring — roadmap
+
+**What:** Declare `lspServers` pointing at our own `.behavior`/`.description` language-server (already
+exists in the monorepo for the VS Code extension), so Claude gets live diagnostics and go-to-def while
+authoring an `.agent`.
+
+**Why:** Distinct from every other item here — this is the *authoring* lane (writing a new `.agent`),
+not the *running* lane (driving an existing one). May end up in this same plugin or a separate
+authoring-focused one; not decided yet.
+
+### 7. Push notification for engine-driven transitions — roadmap
+
+**What:** When the FSM moves on its own (a global `on event` or an `after N prompts` timer, without
+the driving LLM signalling anything), surface that immediately instead of only on the next
+`dot-agent://state` re-read. Two candidate mechanisms, in preference order:
+
+- **Background monitor** (preferred): have the runtime append a line to a log file whenever it applies
+  an engine-driven transition, and ship a `monitors/monitors.json` entry that `tail -F`s it. No special
+  flag or org allowlist needed, unlike Channels — but requires a small runtime change (emit the log
+  line) and the delivery-timing semantics (does it interrupt the current turn, or surface on the next
+  one?) aren't fully documented; verify empirically before committing to this as the mechanism.
+- **Channels** (fallback): MCP server declares `claude/channel` and pushes
+  `notifications/claude/channel` directly. No runtime log-file plumbing needed, but research preview —
+  requires `--dangerously-load-development-channels` or org allowlisting, a dependency outside our
+  control.
+
+**Why not v1 either way:** the current re-read-on-every-turn approach already works (documented in
+`comportment.md`) — this is a polish, not a fix, and the preferred mechanism needs a spike to confirm
+its delivery semantics before it's worth building on.
 
 ---
 
 ## Implementation order
 
 ```
-P0: Evolve CLI skill (single Mode A comportment + RULES section) + test with Fridge
-P1: Plain-JSON HTTP endpoint  ‖  Bun-compile standalone binary   (parallel)
-P2: Assemble marketplace plugin (Mode A + Mode B + binary + agent bundling)
+P0: Evolve CLI skill (single Mode A comportment + comportment.md) + test with Fridge      — done
+P1: Plugin manifest (mcpServers + UserPromptSubmit hook)  ‖  Bun-compile standalone binary   (parallel)
+P2: Assemble marketplace plugin (Mode A + Mode B + manifest + binary + agent bundling)
 P3: Rust runtime (drop-in, later)
 
+Roadmap (unscheduled): lspServers for .agent authoring; background monitor (or Channels) for engine-driven transitions
 Deferred: Mode D SDK/host docs; v2 multi-management (skills embedding their own .agent)
 ```
