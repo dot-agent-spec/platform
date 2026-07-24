@@ -143,6 +143,28 @@ same routing. Rationale and the obsolescence/reversal plan: [DA00-03](project/ad
 
 ---
 
+## Agent config layout — `.agents/` is canonical, `.claude/` mirrors it
+
+Agent configuration has **one canonical home: `.agents/`** (`rules/`, `skills/`, `workflows/`). The
+`.claude/` folder holds **thin relative symlinks back into `.agents/`**, so Claude Code and the
+Antigravity/gemini side read the *same* file — no second copy to drift.
+
+| Kind | Canonical file | Claude adapter |
+|---|---|---|
+| **Rule** (always-on fact/guardrail) | `.agents/rules/<name>.md` (give it a `description:`; no `paths:` = always-on) | `.claude/rules/<name>.md` → `../../.agents/rules/<name>.md` |
+| **Skill** (on-demand capability, e.g. `/new-rfc`) | `.agents/skills/<name>/SKILL.md` | `.claude/skills/<name>` → `../../.agents/skills/<name>` |
+| **Workflow** | `.agents/workflows/<name>.md` | via the rule/skill that references it |
+
+**Never put the real file under `.claude/`** — the gemini side reads `.agents/` and would never see it,
+and the two copies drift silently. When adding a rule or skill, create it under `.agents/` and symlink it:
+
+```bash
+ln -s ../../.agents/rules/<name>.md .claude/rules/<name>.md      # rule
+ln -s ../../.agents/skills/<name>   .claude/skills/<name>        # skill
+```
+
+---
+
 ## Submodule table
 
 | Directory | Purpose | Status |

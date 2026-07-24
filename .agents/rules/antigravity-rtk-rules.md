@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: Prefix shell commands with `rtk` to compress command output and save tokens (Google Antigravity runtime).
+---
+
 # RTK - Rust Token Killer (Google Antigravity)
 
 **Usage**: Token-optimized CLI proxy for shell commands.
