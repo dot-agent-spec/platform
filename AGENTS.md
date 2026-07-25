@@ -11,11 +11,13 @@ AI collaboration guide for maintaining and evolving this repository.
 - Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
 - Implementation packages (`packages/`) — compiler, parser, kernel, SDK, language server
 - Developer-facing apps (`apps/`) — CLI, VS Code extension
+- Editor/agent-host plugins (`plugins/`) — e.g. the native Claude Code plugin
 - Design proposals (`rfcs/`) — RFCs for proposed language and protocol changes
 - Implementation tasks (`tasks/`) — technical debt and planned work items
 - Annotated examples (`examples/`) — canonical `.description` + `.behavior` pairs
 
-There is **no executable code** at the root level. Every package under `packages/` and every app under `apps/` is a **git submodule** — each is its own repository with its own `AGENTS.md`. `org-spec/` (the org-wide `.github` repo) is a submodule too. Run `git submodule update --init` before working on a package, and commit a submodule's changes in that submodule before bumping its pointer in the superproject.
+This is a **real monorepo** — `packages/*` and `apps/*` are plain workspace folders, not git submodules.
+There is no separate `git submodule update --init` step; clone and work directly.
 
 ---
 
@@ -52,7 +54,7 @@ dot-agent-spec/
 │   ├── explanation/               ← architecture map, ecosystem overview, design decisions
 │   └── how-to/                    ← packaging, SDK usage
 ├── packages/
-│   ├── tree-sitter/               ← WASM grammar (submodule) — canonical grammar source
+│   ├── tree-sitter/               ← WASM grammar — canonical grammar source
 │   ├── parser-dsl/                ← Rust/WASM — parses .behavior + .description
 │   ├── kernel-dsl/                ← Rust/WASM — FSM execution engine
 │   ├── compiler/                  ← TypeScript — linter, AST analysis, ZIP packaging
@@ -62,9 +64,11 @@ dot-agent-spec/
 │   ├── transpiler-langgraph/      ← ⚠️ aspirational — codegen target (RFC-0018)
 │   └── transpiler-appintent/      ← ⚠️ aspirational — codegen target (RFC-0018)
 ├── apps/
-│   ├── dot-agent-cli/             ← submodule — developer CLI (pending v2 update)
-│   ├── vscode-extension/          ← submodule — VS Code LSP client (pending v2 update)
-│   └── agy/                       ← submodule — Antigravity CLI runtime plugin
+│   ├── dot-agent-cli/             ← developer CLI (pending v2 update)
+│   ├── vscode-extension/          ← VS Code LSP client (pending v2 update)
+│   └── agy/                       ← Antigravity CLI runtime plugin
+├── plugins/                       ← editor/agent-host plugins (central home for plugin tooling)
+│   └── claude/                    ← native Claude Code plugin (skills + mcpServers, no CLI-wrapper step)
 └── examples/                      ← canonical .description + .behavior pairs (CI-tested)
 ```
 
@@ -78,6 +82,7 @@ dot-agent-spec/
 | Language design decisions | `dsl/explanation/` |
 | Package implementation | `packages/*/` (code is canonical) |
 | Package internals docs | `packages/*/docs/` |
+| Plugin implementation | `plugins/*/` (code is canonical) |
 | Architecture overview | `docs/explanation/architecture/map.md` |
 | Proposed changes | `project/rfcs/` (Draft status — not canonical) |
 | Pending implementation work | `project/tasks/` |
@@ -165,7 +170,7 @@ ln -s ../../.agents/skills/<name>   .claude/skills/<name>        # skill
 
 ---
 
-## Submodule table
+## Package, app & plugin table
 
 | Directory | Purpose | Status |
 |-----------|---------|--------|
@@ -178,11 +183,12 @@ ln -s ../../.agents/skills/<name>   .claude/skills/<name>        # skill
 | `apps/dot-agent-cli/` | Developer CLI | ⚠️ Pending v2 update |
 | `apps/vscode-extension/` | VS Code LSP client | ⚠️ Pending v2 update |
 | `apps/agy/` | Antigravity CLI runtime plugin | 🚧 In Progress |
+| `plugins/claude/` | Native Claude Code plugin (skills + mcpServers) | 🚧 In Progress |
 | `org-spec/` | Org-wide `.github` (community-health defaults) | ✅ Active |
 
-`apps/zed-agent/` has been removed. Historical reference only in git history. The `transpiler-*` packages in the layout are aspirational (RFC-0018) and are not yet submodules.
+`apps/zed-agent/` has been removed. Historical reference only in git history. The `transpiler-*` packages in the layout are aspirational (RFC-0018).
 
-Each active submodule has its own `AGENTS.md`. Read it before making changes to that package.
+Each package/app/plugin has its own `AGENTS.md`. Read it before making changes there.
 
 ---
 
