@@ -30,7 +30,7 @@ between layers, so runtime and transport decisions do not block each other:
 
 ```
 Layer 1 — FORMAT   (.agent bundle)       ← stable contract, already exists
-Layer 2 — RUNTIME  (executes the .agent) ← Node+WASM today; Bun-compile OR Rust
+Layer 2 — RUNTIME  (executes the .agent) ← Node+WASM, bundled straight into the plugin; Rust later
 Layer 3 — DRIVING  (Claude ↔ runtime)    ← MCP, bundled + auto-registered by the plugin manifest
 ```
 
@@ -76,9 +76,20 @@ reference](https://code.claude.com/docs/en/plugins#develop-more-complex-plugins)
    Guardrails (e.g. "only suggest recipes in the catalog", offtopic detection) depend on the FSM
    actually applying transitions; loose markdown would let the model drift exactly where the guide
    is trying to prevent it.
-2. **Runtime (Layer 2):** **Bun-compile now, Rust on the roadmap.** The `.agent` format decouples
-   them, so Bun today is reversible for free; a later Rust rewrite gives independence + performance
-   without touching any skill or agent (drop-in swap behind the same wire contract).
+2. **Runtime (Layer 2): one installed CLI, never a second copy. Rust on the roadmap.** Two
+   alternatives were considered and dropped. (a) *Compiling a standalone per-platform binary* (Bun
+   `--compile`): neither reference plugin in daily use here needs it — context-mode ships a plain
+   esbuild JS bundle invoked via `command: "node"`, and graphify shells out to a system Python install
+   rather than vendoring a binary. Node is the baseline runtime Claude Code plugins already assume, and
+   embedding the five `.wasm` artifacts (`kernel-dsl`, `parser-dsl`, two tree-sitter grammars, the
+   `web-tree-sitter` runtime) would have forced an additive-API cascade across four published packages.
+   (b) *Vendoring the CLI's built `dist/cli.mjs` into the plugin*: solves the runtime question but
+   creates a second copy of the same code that drifts from the published package.
+   **Settled: the plugin depends on the one globally-installed `dot-agent` CLI** (`command: "dot-agent"`,
+   resolved on PATH), and the skill installs it on first use (`npm i -g @dot-agent/cli`) the way
+   graphify's SKILL.md bootstraps its own binary. Single source of truth, no build step, no drift. The
+   `.agent` format still decouples Layer 2 from Layer 3, so a later Rust rewrite remains a free,
+   reversible drop-in behind the same wire contract.
 3. **Driving surface (Layer 3): MCP only, bundled and auto-registered by the plugin manifest.** An
    earlier draft of this decision added a plain-JSON HTTP endpoint (`POST /intent`, `GET /state`) to
    dodge driving MCP streamable-http via curl from a SKILL.md. That workaround is unnecessary once the
@@ -130,7 +141,8 @@ Standalone MCP/CLI (external client).
 A Claude Code **plugin** `dot-agent` — `plugin.json` declaring:
 - `skills`: Mode A (default) + Mode B (autonomous test)
 - `mcpServers`: the runtime, auto-started and auto-registered on enable — no separate `configure` step
-- `hooks`: `UserPromptSubmit` → ticks `tick_prompt` once per turn, deterministically
+- `hooks`: `UserPromptSubmit` → ticks `tick_prompt` once per turn, deterministically — deferred out of
+  v1 (see decision 4 above and item 2's Result)
 
 the "one download" container (as context-mode itself is a plugin). Out of v1 / roadmap: an
 `lspServers` entry for `.description`/`.behavior` authoring diagnostics (a different lane —
@@ -150,12 +162,11 @@ it, and the marketplace plugin's skills (P2) copy this section verbatim.
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
 | 1 | P0 | Evolve the CLI skill: single Mode A comportment + "how to behave with what you receive" — **done**, Fridge E2E tested (commit `fdca20b`) | apps/dot-agent-cli (skill) | M |
-| 2 | P1 | Plugin manifest: `mcpServers` auto-registration + `UserPromptSubmit` hook for `tick_prompt` | new plugin | M |
-| 3 | P1 | Bun-compile the CLI into a standalone per-platform binary | apps/dot-agent-cli | M |
-| 4 | P2 | Assemble the marketplace plugin (Mode A skill + Mode B skill + manifest + bundled binary + agent bundling) | new plugin | L |
-| 5 | P3 | Rust runtime (drop-in behind the same wire contract) | packages/kernel-dsl (+ host) | L |
-| 6 | Roadmap | `lspServers` for `.description`/`.behavior` authoring diagnostics | new plugin or separate authoring plugin | M |
-| 7 | Roadmap | Background monitor for engine-driven transitions (Channels as fallback) | new plugin + apps/dot-agent-cli | M |
+| 2 | P1 | Plugin manifest: `mcpServers` auto-registration — **done** (`plugins/claude/`); `UserPromptSubmit` hook for `tick_prompt` deferred, see decision 4 | new plugin | M |
+| 3 | P2 | Assemble the marketplace plugin (Mode A skill + Mode B skill + bundle the CLI's `dist/cli.mjs` directly, `command: "node"` + agent bundling) | new plugin | L |
+| 4 | P3 | Rust runtime (drop-in behind the same wire contract) | packages/kernel-dsl (+ host) | L |
+| 5 | Roadmap | `lspServers` for `.description`/`.behavior` authoring diagnostics | new plugin or separate authoring plugin | M |
+| 6 | Roadmap | Background monitor for engine-driven transitions (Channels as fallback) | new plugin + apps/dot-agent-cli | M |
 
 ---
 
@@ -175,57 +186,50 @@ human-in-the-loop — found and fixed 7 comportment gaps (state-bleed across dwe
 unhandled `send_offtopic`, offtopic-vs-unmatched-intent conflation, grounding elasticity, trust
 boundary for third-party `.agent` authors, end-of-flow handling, multi-hop routing). Commit `fdca20b`.
 
-### 2. Plugin manifest: MCP auto-registration + prompt-tick hook — P1
+### 2. Plugin manifest: MCP auto-registration — P1 — done
 
-**What:** Write the plugin's `plugin.json` declaring `mcpServers` (the runtime, so it auto-starts and
-auto-registers on enable — replacing the manual `dot-agent-cli configure` step and the `claude mcp add`
-workaround that doesn't take effect mid-session) and a `hooks.json` with a `UserPromptSubmit` hook that
-shells out to tick `tick_prompt` once per turn.
+**What:** Wrote the plugin's `plugin.json` (`plugins/claude/`) declaring `mcpServers` for the two
+agent-agnostic servers (`dot-agent-dev`, `dot-agent-helper`), so they auto-start and auto-register on
+enable — replacing the manual `dot-agent-cli configure` step and the `claude mcp add` workaround that
+doesn't take effect mid-session.
 
-**Why:** Two problems the Fridge E2E test hit directly. `claude mcp add` requiring a session
-restart is exactly what forced the HTTP-transport workaround during that test — bundling the server in
-the plugin manifest removes the problem instead of working around it. And `tick_prompt` today has no
-caller: asking the driving LLM to remember it every turn burns context and depends on memory, defeating
-the deterministic FSM — a hook fires deterministically, no LLM involvement, so `after N prompts`
-transitions actually work on this surface instead of being a documented degradation.
+**Why:** `claude mcp add` requiring a session restart is exactly what forced the HTTP-transport
+workaround during the Fridge E2E test — bundling the servers in the plugin manifest removes the problem
+instead of working around it.
 
-**Change:** New plugin scaffolding (`plugin.json`, `hooks/hooks.json`); no kernel or CLI changes needed
-— `mcp-run.ts` and `tick_prompt` already exist, this only wires them into the plugin's auto-start path.
+**Result:** `plugins/claude/.claude-plugin/plugin.json` + `skills/dot-agent/SKILL.md` (mirrors the CLI
+skill). `mcpServers.command` is the PATH-resolved `dot-agent`; the skill's Step 0 installs it on first
+use if missing (see decision 2 above). No `hooks` yet: a `UserPromptSubmit` hook to
+drive `tick_prompt` (see decision 4 above) was scoped for v1 and then deferred — `tick_prompt` lives on
+the per-agent runtime MCP server (stdio, no fixed command, only exists once an agent is loaded), which a
+shell hook has no handle to call. `after N prompts` stays a documented degradation on this surface until
+a proper tick channel is designed (candidate: a `dot-agent tick` subcommand + a local channel the
+running runtime honors).
 
-### 3. Bun-compile standalone binary — P1
+### 3. Assemble the marketplace plugin — P2
 
-**What:** Compile the existing Node+wasm-bindgen CLI into a single self-contained executable per
-OS/arch (Bun `--compile`), embedding the runtime so no Node is required on the user's machine.
-
-**Why:** Claude Code injects no Node runtime; skills run against the real PATH. A vendored binary
-makes the marketplace plugin work regardless of what the user has installed — the `mcpServers` entry
-in item 2 points `command` at this binary.
-
-**Change:** Add a Bun build step over the current CLI; vendor artifacts under
-`scripts/bin/<os>-<arch>/`; the plugin manifest's `mcpServers.command` resolves per-platform via
-`${CLAUDE_PLUGIN_ROOT}`.
-
-### 4. Assemble the marketplace plugin — P2
-
-**What:** Package a Claude Code plugin bundling the Mode A skill (default), the Mode B autonomous-test
-skill, the manifest from item 2, the bundled binary, and the `.agent` bundling/loading flow.
+**What:** Package the full Claude Code plugin: add the Mode B autonomous-test skill alongside the
+existing Mode A one, plus the `.agent` bundling/loading flow, and publish it through a
+`.claude-plugin/marketplace.json` entry.
 
 **Why:** The distributable "one download" unit for the marketplace.
 
-**Change:** New plugin layout; Mode A and Mode B share the comportment spec, differ only in the
-human-in-the-loop vs autonomous driving section.
+**Change:** Mode A and Mode B share the comportment spec, differ only in the human-in-the-loop vs
+autonomous driving section. **No runtime is bundled** — per decision 2 the plugin keeps depending on the
+single globally-installed `dot-agent` CLI, which the skill's Step 0 installs on first use. Nothing to
+vendor, nothing to keep in sync with the published package.
 
-### 5. Rust runtime — P3 (roadmap)
+### 4. Rust runtime — P3 (roadmap)
 
 **What:** Reimplement the runtime host in Rust behind the same `(state, intent) → (state, effects)`
 wire contract.
 
 **Why:** Independence from Node and better performance, without touching any `.agent` or skill.
 
-**Change:** Drop-in swap of the Layer 2 binary; the plugin manifest's `mcpServers.command` just points
-at a different vendored binary — no other change.
+**Change:** Drop-in swap of the Layer 2 entrypoint; the plugin manifest's `mcpServers.command` just
+points at a different bundled executable — no other change.
 
-### 6. `lspServers` for `.description`/`.behavior` authoring — roadmap
+### 5. `lspServers` for `.description`/`.behavior` authoring — roadmap
 
 **What:** Declare `lspServers` pointing at our own `.behavior`/`.description` language-server (already
 exists in the monorepo for the VS Code extension), so Claude gets live diagnostics and go-to-def while
@@ -235,7 +239,7 @@ authoring an `.agent`.
 not the *running* lane (driving an existing one). May end up in this same plugin or a separate
 authoring-focused one; not decided yet.
 
-### 7. Push notification for engine-driven transitions — roadmap
+### 6. Push notification for engine-driven transitions — roadmap
 
 **What:** When the FSM moves on its own (a global `on event` or an `after N prompts` timer, without
 the driving LLM signalling anything), surface that immediately instead of only on the next
@@ -261,8 +265,8 @@ its delivery semantics before it's worth building on.
 
 ```
 P0: Evolve CLI skill (single Mode A comportment + comportment.md) + test with Fridge      — done
-P1: Plugin manifest (mcpServers + UserPromptSubmit hook)  ‖  Bun-compile standalone binary   (parallel)
-P2: Assemble marketplace plugin (Mode A + Mode B + manifest + binary + agent bundling)
+P1: Plugin manifest (mcpServers auto-registration)                                        — done
+P2: Assemble marketplace plugin (Mode A + Mode B + agent bundling + marketplace.json)
 P3: Rust runtime (drop-in, later)
 
 Roadmap (unscheduled): lspServers for .agent authoring; background monitor (or Channels) for engine-driven transitions

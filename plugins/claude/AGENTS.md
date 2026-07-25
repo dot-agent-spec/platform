@@ -11,6 +11,20 @@ transport-neutral spec — and the CLI's own copy at
 All three drift-prone copies must move together. When `comportment.md` changes, update this file's
 `SKILL.md` and the CLI's in the same change — do not let this copy fall behind.
 
+The two `SKILL.md` copies are kept **byte-identical** (`comportment.md` is the subset they share; the
+`SKILL.md`s add Step 0, the CLI command list, and the authoring sections on top). Verify with:
+
+```bash
+diff plugins/claude/skills/dot-agent/SKILL.md apps/dot-agent-cli/skills/dot-agent/SKILL.md
+```
+
+## No bundled runtime
+
+This plugin deliberately ships **no copy of the runtime** — not a Bun-compiled binary, not a vendored
+`dist/cli.mjs`. It shells out to the globally-installed `dot-agent` CLI, which the skill's Step 0
+installs on first use. A second copy of the runtime inside the plugin would drift from the published
+package. See the plan doc's settled decision 2 before reversing this.
+
 ## `plugin.json`
 
 Only `mcpServers` (dev + helper) and `skills` (auto-discovered from `skills/`) are declared. No

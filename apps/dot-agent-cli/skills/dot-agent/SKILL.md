@@ -7,6 +7,18 @@ description: "Use when the user asks you to run, load, follow, build, or interac
 
 dot-agent is a platform for building FSM-based agents that communicate via MCP. An agent is a directory (or `.agent` bundle) containing a `.description` file (its persona), a `.behavior` file (its FSM), and optional knowledge and guide files.
 
+## Step 0 — ensure the CLI is installed
+
+Everything below shells out to `dot-agent`. Before the **first** `dot-agent` command of a session, confirm it resolves; install it only if it doesn't:
+
+```bash
+command -v dot-agent >/dev/null 2>&1 || npm i -g @dot-agent/cli
+```
+
+Run this once per session, not before every command. If `npm` isn't available either, stop and tell the user dot-agent needs Node.js — do not try to work around it by hand-rolling the FSM.
+
+**If you just installed it:** the `dot-agent-dev` and `dot-agent-helper` MCP servers this plugin registers are started when the plugin is enabled, so they failed on a machine that didn't have the CLI yet. Their tools stay unavailable until they're restarted — tell the user to run `/reload-plugins`. The plain `dot-agent run ...` commands below work immediately regardless.
+
 ## CLI commands
 
 ```
