@@ -163,13 +163,16 @@ Antigravity/gemini side read the *same* file — no second copy to drift.
 | **Rule** (always-on fact/guardrail) | `.agents/rules/<name>.md` (give it a `description:`; no `paths:` = always-on) | `.claude/rules/<name>.md` → `../../.agents/rules/<name>.md` |
 | **Skill** (on-demand capability, e.g. `/new-rfc`) | `.agents/skills/<name>/SKILL.md` | `.claude/skills/<name>` → `../../.agents/skills/<name>` |
 | **Workflow** | `.agents/workflows/<name>.md` | via the rule/skill that references it |
+| **Agent** (autonomous subagent) | `.agents/agents/<name>.md` | `.claude/agents/<name>.md` → `../../.agents/agents/<name>.md` |
 
 **Never put the real file under `.claude/`** — the gemini side reads `.agents/` and would never see it,
-and the two copies drift silently. When adding a rule or skill, create it under `.agents/` and symlink it:
+and the two copies drift silently. When adding a rule, skill, or agent, create it under `.agents/` and
+symlink it:
 
 ```bash
 ln -s ../../.agents/rules/<name>.md .claude/rules/<name>.md      # rule
 ln -s ../../.agents/skills/<name>   .claude/skills/<name>        # skill
+ln -s ../../.agents/agents/<name>.md .claude/agents/<name>.md    # agent
 ```
 
 ---
