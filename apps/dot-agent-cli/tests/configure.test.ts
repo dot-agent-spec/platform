@@ -58,7 +58,7 @@ describe('configure command', () => {
       command: 'dot-agent',
       args: ['run', '--helper'],
     })
-    expect(config.mcpServers['dot-agent-dev']).toEqual({
+    expect(config.mcpServers['dot-agent']).toEqual({
       command: 'dot-agent',
       args: ['server-mcp', '--mcp-transport', 'stdio'],
     })
@@ -107,7 +107,7 @@ describe('configure command', () => {
       command: 'dot-agent',
       args: ['run', '--helper'],
     })
-    expect(config.mcpServers['dot-agent-dev']).toBeUndefined()
+    expect(config.mcpServers['dot-agent']).toBeUndefined()
   })
 
   it('warns instead of writing anything when skill-only is requested for murici', async () => {
@@ -117,6 +117,18 @@ describe('configure command', () => {
     expect(results[0].mcpConfigured).toBeUndefined()
     expect(results[0].skillSkippedReason).toMatch(/murici has no skill file/)
     expect(mockFiles['/mock/home/.config/murici/mcp.json']).toBeUndefined()
+  })
+
+  it('drops a stale dot-agent-dev entry left by a config written before the server was renamed', async () => {
+    mockFiles['/mock/home/.claude.json'] = JSON.stringify({
+      mcpServers: { 'dot-agent-dev': { command: 'dot-agent', args: ['server-mcp', '--mcp-transport', 'stdio'] } },
+    })
+
+    await configure({ claude: true, skill: false, mcp: true })
+
+    const config = JSON.parse(mockFiles['/mock/home/.claude.json'])
+    expect(config.mcpServers['dot-agent-dev']).toBeUndefined()
+    expect(config.mcpServers['dot-agent']).toBeDefined()
   })
 
   it('configures claude and murici together with distinct config paths', async () => {

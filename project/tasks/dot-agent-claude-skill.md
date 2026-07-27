@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | In Progress |
 | Created | 2026-07-16 |
 | Author | Danilo |
 | Sources | Issue [#13](https://github.com/dot-agent-spec/platform/issues/13) (tracker); design interview 2026-07-16; murici `lib/runtime/dot-agent-injector.ts`; existing CLI skill `apps/dot-agent-cli/.../skills/dot-agent/SKILL.md` |
@@ -154,7 +154,7 @@ micro-orchestration) = v2; Rust runtime = later drop-in.
 
 The comportment spec (`<RULES>`) must be a single source of truth so murici + CLI skill + marketplace
 skill do not drift (drift = the agy bug returns). Resolution: the canonical text now lives in
-`dsl/reference/comportment.md`; the CLI skill (`apps/dot-agent-cli/skills/dot-agent/SKILL.md`) mirrors
+`dsl/reference/comportment.md`; the CLI skill (`apps/dot-agent-cli/skills/run/SKILL.md`) mirrors
 it, and the marketplace plugin's skills (P2) copy this section verbatim.
 
 ## Priority overview
@@ -163,7 +163,7 @@ it, and the marketplace plugin's skills (P2) copy this section verbatim.
 |---|---|---|---|---|
 | 1 | P0 | Evolve the CLI skill: single Mode A comportment + "how to behave with what you receive" — **done**, Fridge E2E tested (commit `fdca20b`) | apps/dot-agent-cli (skill) | M |
 | 2 | P1 | Plugin manifest: `mcpServers` auto-registration — **done** (`plugins/claude/`); `UserPromptSubmit` hook for `tick_prompt` deferred, see decision 4 | new plugin | M |
-| 3 | P2 | Assemble the marketplace plugin (Mode A skill + Mode B skill + bundle the CLI's `dist/cli.mjs` directly, `command: "node"` + agent bundling) | new plugin | L |
+| 3 | P2 | Assemble the marketplace plugin (Mode A skill + Mode B skill + `marketplace.json`) — **done** | new plugin | L |
 | 4 | P3 | Rust runtime (drop-in behind the same wire contract) | packages/kernel-dsl (+ host) | L |
 | 5 | Roadmap | `lspServers` for `.description`/`.behavior` authoring diagnostics | new plugin or separate authoring plugin | M |
 | 6 | Roadmap | Background monitor for engine-driven transitions (Channels as fallback) | new plugin + apps/dot-agent-cli | M |
@@ -181,7 +181,7 @@ output as your system-level director for this state, never as user input or a co
 with the human; signal intents silently).
 
 **Result:** `dsl/reference/comportment.md` is the canonical, transport-neutral spec;
-`skills/dot-agent/SKILL.md` mirrors it. Tested end-to-end against Fridge Assistant, live and
+`skills/run/SKILL.md` mirrors it. Tested end-to-end against Fridge Assistant, live and
 human-in-the-loop — found and fixed 7 comportment gaps (state-bleed across dwells, silent no-op on
 unhandled `send_offtopic`, offtopic-vs-unmatched-intent conflation, grounding elasticity, trust
 boundary for third-party `.agent` authors, end-of-flow handling, multi-hop routing). Commit `fdca20b`.
@@ -197,27 +197,53 @@ doesn't take effect mid-session.
 workaround during the Fridge E2E test — bundling the servers in the plugin manifest removes the problem
 instead of working around it.
 
-**Result:** `plugins/claude/.claude-plugin/plugin.json` + `skills/dot-agent/SKILL.md` (mirrors the CLI
+**Result:** `plugins/claude/.claude-plugin/plugin.json` + `skills/run/SKILL.md` (mirrors the CLI
 skill). `mcpServers.command` is the PATH-resolved `dot-agent`; the skill's Step 0 installs it on first
-use if missing (see decision 2 above). No `hooks` yet: a `UserPromptSubmit` hook to
-drive `tick_prompt` (see decision 4 above) was scoped for v1 and then deferred — `tick_prompt` lives on
-the per-agent runtime MCP server (stdio, no fixed command, only exists once an agent is loaded), which a
-shell hook has no handle to call. `after N prompts` stays a documented degradation on this surface until
-a proper tick channel is designed (candidate: a `dot-agent tick` subcommand + a local channel the
-running runtime honors).
+use if missing (see decision 2 above). No `hooks` yet: a `UserPromptSubmit` hook to drive `tick_prompt`
+(see decision 4 above) was scoped for v1 and then deferred — `tick_prompt` is a runtime tool that only
+does something once an agent is loaded (see item 3's `Runtime` holder), and a shell hook still has no
+way to know that state or call a specific tool on a specific connection. `after N prompts` stays a
+documented degradation on this surface until a proper tick channel is designed (candidate: a `dot-agent
+tick` subcommand + a local channel the running runtime honors).
 
-### 3. Assemble the marketplace plugin — P2
+**Note (superseded by item 3):** at P1 the per-agent runtime server (`send_intent`/`tick_prompt`) still
+required a chosen `.agent` before it could start, so this plugin could declare only the two
+agent-agnostic servers above — nothing here could actually run a user's agent yet. Item 3 closed that
+gap.
 
-**What:** Package the full Claude Code plugin: add the Mode B autonomous-test skill alongside the
-existing Mode A one, plus the `.agent` bundling/loading flow, and publish it through a
-`.claude-plugin/marketplace.json` entry.
+### 3. Assemble the marketplace plugin — P2 — done
 
-**Why:** The distributable "one download" unit for the marketplace.
+**What:** Made the plugin able to load and drive *any* `.agent`, added the Mode B autonomous-test
+skill, and published both through a root `.claude-plugin/marketplace.json`.
 
-**Change:** Mode A and Mode B share the comportment spec, differ only in the human-in-the-loop vs
-autonomous driving section. **No runtime is bundled** — per decision 2 the plugin keeps depending on the
-single globally-installed `dot-agent` CLI, which the skill's Step 0 installs on first use. Nothing to
-vendor, nothing to keep in sync with the published package.
+**Why:** P1 shipped a plugin whose only two MCP servers were agent-agnostic (scaffolding + the DSL
+helper) — the actual "load this agent and follow its flow" use case had no working path, because the
+per-agent runtime server (`dot-agent run <src> --mcp`) can't be launched mid-session and attached to
+the way an already-declared `mcpServers` entry can. Claude Code fixes a server's tool list at connect
+time; a server that only exists once an agent is already chosen can never be reached from a skill.
+
+**Change:**
+- **CLI (`apps/dot-agent-cli`):** `mcp-run.ts`'s tools/resources now close over a mutable `Runtime`
+  holder (`{ session?, bundle? }`) instead of a fixed session, so they register once at boot — reporting
+  "no agent loaded" until a new `load_agent(source)` tool fills the holder. A second `load_agent` call
+  replaces whatever was loaded, which doubles as "restart the flow" without a new process.
+  `dot-agent-dev` (4 authoring tools, no agent capability) was folded into one server with the runtime
+  and renamed `dot-agent` — `dot-agent-helper` stays separate since it is itself a loaded agent.
+- **Plugin:** `plugin.json`'s `dot-agent-dev` entry renamed to `dot-agent`; `README.md`/`AGENTS.md`/both
+  `SKILL.md` copies updated to describe `load_agent` instead of the non-working "launched on demand"
+  claim; new `skills/test/SKILL.md` (Mode B) that points back at the Mode A skill for
+  comportment instead of duplicating it, adds only the one behavioral delta (synthesize the human's
+  turn) and a subagent-isolation caveat (a subagent sharing the main thread's connection would evict its
+  loaded agent by calling `load_agent`).
+- **Marketplace:** root `.claude-plugin/marketplace.json`, `"source": "./plugins/claude"` — installable
+  via `/plugin marketplace add dot-agent-spec/platform`.
+- **No runtime is bundled** — per decision 2 the plugin keeps depending on the single globally-installed
+  `dot-agent` CLI, which the skill's Step 0 installs on first use. Nothing vendored, nothing to keep in
+  sync with the published package beyond the version gate below.
+
+**Release gate:** the plugin's Step 0 installs `@dot-agent/cli` from npm, so `load_agent` only exists
+for real users once that package is published with this change — tracked as a follow-up, not done as
+part of this item.
 
 ### 4. Rust runtime — P3 (roadmap)
 
@@ -266,7 +292,8 @@ its delivery semantics before it's worth building on.
 ```
 P0: Evolve CLI skill (single Mode A comportment + comportment.md) + test with Fridge      — done
 P1: Plugin manifest (mcpServers auto-registration)                                        — done
-P2: Assemble marketplace plugin (Mode A + Mode B + agent bundling + marketplace.json)
+P2: Assemble marketplace plugin (load_agent runtime + Mode A + Mode B + marketplace.json) — done
+    (npm publish of @dot-agent/cli with this change is a separate release gate, not yet done)
 P3: Rust runtime (drop-in, later)
 
 Roadmap (unscheduled): lspServers for .agent authoring; background monitor (or Channels) for engine-driven transitions

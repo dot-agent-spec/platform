@@ -60,7 +60,7 @@ describe('dot-agent://howto resource', () => {
     } as unknown as AgentBundle
 
     // startMcpServer blocks forever on stdio (by design); don't await it.
-    void startMcpServer(session, bundle, { transport: 'stdio', port: 0, exposePersona: false, exposeKnowledge: false })
+    void startMcpServer({ session, bundle }, { transport: 'stdio', port: 0, exposePersona: false, exposeKnowledge: false })
 
     // Let the mocked connect() promise resolve and registerResources() run.
     await new Promise(resolve => setImmediate(resolve))

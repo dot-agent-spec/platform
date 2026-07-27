@@ -22,6 +22,8 @@ dot-agent/ (Monorepo Root)
 ├── AGENTS.md                  # Repo guide for AI collaborators
 ├── ROADMAP.md                 # Language roadmap, version policy, freeze/editions
 ├── GOVERNANCE.md              # Decision process (RFC / ADR / task)
+├── .claude-plugin/
+│   └── marketplace.json       # Claude Code marketplace entry — /plugin marketplace add this repo
 ├── project/                   # PM: decisions, proposals, tasks
 │   ├── templates/             # rfc / adr / task templates
 │   ├── adr/                   # architecture decision records
@@ -49,11 +51,13 @@ dot-agent/ (Monorepo Root)
 │   ├── transpiler-core/       # ⚠️ Types/interface — TranspileInput, Transpiler<TGraph>, CodeEmitter<TGraph>
 │   ├── transpiler-langgraph/  # ⚠️ Codegen: .agent → LangGraph Python StateGraph
 │   └── transpiler-appintent/  # ⚠️ Codegen: .agent → Swift AppIntent
-└── apps/
-    ├── dot-agent-cli/         # Developer CLI (submodule) — outdated, pending update
-    ├── vscode-extension/      # VS Code LSP client (submodule) — outdated, pending update
-    ├── agy/                   # Antigravity CLI runtime plugin (submodule)
-    └── zed-agent/             # FROZEN — kept for historical reference only
+├── apps/
+│   ├── dot-agent-cli/         # Developer CLI (submodule) — outdated, pending update
+│   ├── vscode-extension/      # VS Code LSP client (submodule) — outdated, pending update
+│   └── agy/                   # Antigravity CLI runtime plugin (submodule)
+└── plugins/                   # Editor/agent-host plugins (central home for plugin tooling)
+    └── claude/                # Native Claude Code plugin — skills/run (Mode A, /dot-agent:run) +
+                                # skills/test (Mode B, /dot-agent:test) + mcpServers (dot-agent, dot-agent-helper)
 ```
 
 ---
@@ -255,5 +259,5 @@ Effects are the kernel's only output channel. The SDK dispatches each one to the
 | `dot-agent-cli` | ⚠️ Outdated | `apps/dot-agent-cli/` (submodule) — pending update to v2 architecture |
 | `vscode-extension` | ⚠️ Outdated | `apps/vscode-extension/` (submodule) — pending update to v2 architecture |
 | `agy` | 🚧 In Progress | `apps/agy/` (submodule) — Antigravity CLI plugin |
-| `zed-agent` | 🧊 Frozen | `apps/zed-agent/` — historical reference only |
+| `plugins/claude` | 🚧 In Progress | Native Claude Code plugin — `dot-agent` server (dev tools + agent runtime via `load_agent`, folded from the former `dot-agent-dev`) + `dot-agent-helper`; skills `/dot-agent:run` (Mode A) and `/dot-agent:test` (Mode B); published via root `.claude-plugin/marketplace.json` |
 | RFCs 0001–0004 | 📝 Draft | `rfcs/` — specs in progress, not reflected in this map |

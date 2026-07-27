@@ -6,27 +6,16 @@
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 
-import { readFile, stat } from 'fs/promises'
-import { loadAgent, AgentSession } from '@dot-agent/sdk'
-import { bundleFromDir } from '@dot-agent/compiler'
 import { loadMcpConfig } from '../config.js'
-import { startMcpServer } from './mcp-run.js'
+import { loadBundleAndSession, startMcpServer } from './mcp-run.js'
 import type { RunOptions, RunResult } from '../types.js'
 
 export async function run(options: RunOptions): Promise<RunResult> {
-  const { source } = options
-
-  const srcStat = await stat(source)
-  const bundle = srcStat.isFile()
-    ? await loadAgent(await readFile(source))
-    : await bundleFromDir(source)
-
-  const session = await AgentSession.create(bundle)
-  session.start()
+  const { bundle, session } = await loadBundleAndSession(options.source)
 
   if (options.mcp) {
     const fileConfig = await loadMcpConfig()
-    await startMcpServer(session, bundle, {
+    await startMcpServer({ bundle, session }, {
       transport: options.mcpTransport ?? fileConfig.transport ?? 'stdio',
       port: options.mcpPort ?? fileConfig.port ?? 3000,
       exposePersona: fileConfig.expose_persona ?? true,

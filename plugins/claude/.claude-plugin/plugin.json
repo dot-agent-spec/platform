@@ -11,7 +11,7 @@
   "license": "Apache-2.0",
   "keywords": ["agent", "agents", "fsm", "deterministic"],
   "mcpServers": {
-    "dot-agent-dev": {
+    "dot-agent": {
       "command": "dot-agent",
       "args": ["server-mcp", "--mcp-transport", "stdio"]
     },

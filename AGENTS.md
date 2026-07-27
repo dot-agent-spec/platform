@@ -30,6 +30,8 @@ dot-agent-spec/
 ├── AGENTS.md                      ← this file
 ├── ROADMAP.md                     ← language roadmap, version policy, freeze/editions model
 ├── GOVERNANCE.md                  ← decision process (RFC / ADR / task lifecycles)
+├── .claude-plugin/
+│   └── marketplace.json           ← Claude Code marketplace entry, points at plugins/claude
 ├── project/                       ← product management, decisions, and tasks
 │   ├── templates/                 ← copy-ready templates: rfc, adr, task
 │   ├── adr/                       ← architecture decision records
@@ -68,7 +70,9 @@ dot-agent-spec/
 │   ├── vscode-extension/          ← VS Code LSP client (pending v2 update)
 │   └── agy/                       ← Antigravity CLI runtime plugin
 ├── plugins/                       ← editor/agent-host plugins (central home for plugin tooling)
-│   └── claude/                    ← native Claude Code plugin (skills + mcpServers, no CLI-wrapper step)
+│   └── claude/                    ← native Claude Code plugin: skills/run "/dot-agent:run" (Mode A) +
+│                                     skills/test "/dot-agent:test" (Mode B), mcpServers dot-agent (dev
+│                                     tools + load_agent-driven runtime) + dot-agent-helper
 └── examples/                      ← canonical .description + .behavior pairs (CI-tested)
 ```
 

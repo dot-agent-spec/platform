@@ -15,7 +15,7 @@ This is the **consumer-side contract**, the semantic complement to [`behavior.md
 *driving a running agent* must **behave with what the FSM hands back**.
 
 > **Single source of truth.** This document is canonical. Every surface that drives a `.agent` must
-> carry this same comportment: the CLI skill (`apps/dot-agent-cli/skills/dot-agent/SKILL.md`), an
+> carry this same comportment: the CLI skill (`apps/dot-agent-cli/skills/run/SKILL.md`), an
 > embedding host (e.g. murici's `lib/runtime/dot-agent-injector.ts`), and the marketplace plugin.
 > If they drift, role confusion returns. Keep them in sync with this file.
 

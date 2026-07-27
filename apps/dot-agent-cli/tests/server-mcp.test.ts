@@ -29,20 +29,30 @@ vi.mock('../src/commands/unpack.js', () => ({
 vi.mock('../src/commands/configure.js', () => ({
   configure: vi.fn().mockResolvedValue([{ dest: '/mock/skill/path', mcpConfigured: true }]),
 }))
+vi.mock('../src/config.js', () => ({
+  loadMcpConfig: vi.fn().mockResolvedValue({}),
+}))
 
-// Mock SDK classes
+// dot_agent_init/pack/unpack are the only tools whose handlers this file exercises; load_agent and
+// the FSM-driving tools (send_intent, ...) get their own coverage in mcp-load-agent.test.ts against
+// the real registration logic in mcp-run.ts, since they need a real AgentSession/bundle to be useful.
 const registeredTools: Record<string, Function> = {}
+const registeredResources: Record<string, Function> = {}
 
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
   return {
     McpServer: vi.fn().mockImplementation(function () {
       return {
-        tool: vi.fn().mockImplementation((name: string, desc: string, schema: any, handler: Function) => {
+        tool: vi.fn().mockImplementation((name: string, _desc: string, _schema: any, handler: Function) => {
           registeredTools[name] = handler
+        }),
+        resource: vi.fn().mockImplementation((name: string, _uri: unknown, _meta: unknown, handler: Function) => {
+          registeredResources[name] = handler
         }),
         connect: vi.fn().mockResolvedValue(undefined),
       }
-    })
+    }),
+    ResourceTemplate: vi.fn(),
   }
 })
 
@@ -53,22 +63,39 @@ vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
 describe('server-mcp command', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    for (const key in registeredTools) {
-      delete registeredTools[key]
-    }
+    for (const key in registeredTools) delete registeredTools[key]
+    for (const key in registeredResources) delete registeredResources[key]
   })
 
-  it('starts the server and registers dev tools', async () => {
+  it('starts a single server named dot-agent, registering both dev and runtime tools', async () => {
     await startDevMcpServer({ transport: 'stdio', port: 3000 })
 
-    expect(McpServer).toHaveBeenCalled()
+    expect(McpServer).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'dot-agent' }),
+      expect.anything(),
+    )
+
+    // dev (authoring) tools
     expect(registeredTools['dot_agent_init']).toBeDefined()
     expect(registeredTools['dot_agent_pack']).toBeDefined()
     expect(registeredTools['dot_agent_unpack']).toBeDefined()
     expect(registeredTools['dot_agent_configure']).toBeDefined()
+
+    // runtime tools — present at boot, before any agent is loaded
+    expect(registeredTools['load_agent']).toBeDefined()
+    expect(registeredTools['send_intent']).toBeDefined()
+    expect(registeredTools['send_event']).toBeDefined()
+    expect(registeredTools['send_offtopic']).toBeDefined()
+    expect(registeredTools['tick_prompt']).toBeDefined()
+    expect(registeredTools['inject_memory']).toBeDefined()
+
+    // runtime resources — also present at boot
+    expect(registeredResources['howto']).toBeDefined()
+    expect(registeredResources['state']).toBeDefined()
+    expect(registeredResources['intents']).toBeDefined()
   })
 
-  it('tool handlers invoke correct commands', async () => {
+  it('dev tool handlers invoke correct commands', async () => {
     await startDevMcpServer({ transport: 'stdio', port: 3000 })
 
     // Test dot_agent_init
@@ -86,5 +113,20 @@ describe('server-mcp command', () => {
     // Test dot_agent_configure
     const configureRes = await registeredTools['dot_agent_configure']({ claude: true })
     expect(JSON.parse(configureRes.content[0].text)).toEqual({ ok: true, results: [{ dest: '/mock/skill/path', mcpConfigured: true }] })
+  })
+
+  it('runtime tools report no agent loaded before load_agent is called', async () => {
+    await startDevMcpServer({ transport: 'stdio', port: 3000 })
+
+    const result = await registeredTools['send_intent']({ intent: 'anything' })
+    expect(result.isError).toBe(true)
+    expect(result.content[0].text).toMatch(/No agent loaded/)
+  })
+
+  it('runtime resources report no agent loaded before load_agent is called', async () => {
+    await startDevMcpServer({ transport: 'stdio', port: 3000 })
+
+    const result = await registeredResources['state']()
+    expect(result.contents[0].text).toMatch(/No agent loaded/)
   })
 })

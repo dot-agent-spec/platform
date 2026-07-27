@@ -33,6 +33,7 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | `@dot-agent/sdk` | [`packages/sdk`](packages/sdk) | Browser-compatible SDK for loading and running agent bundles |
 | `@dot-agent/cli` | [`apps/dot-agent-cli`](apps/dot-agent-cli) | CLI for building, packaging, and running agents |
 | `vscode-dot-agent` | [`apps/vscode-extension`](apps/vscode-extension) | VS Code extension: syntax highlighting, hover docs, LSP |
+| `dot-agent` (Claude Code plugin) | [`plugins/claude`](plugins/claude) | Native Claude Code plugin — MCP-driven runtime + dev tooling + interactive DSL helper, auto-registered on enable |
 
 ---
 
@@ -48,6 +49,19 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | [`examples/`](examples/) | Canonical annotated agent examples |
 
 **Architecture overview:** [`docs/explanation/architecture/map.md`](docs/explanation/architecture/map.md)
+
+---
+
+## Claude Code plugin
+
+```
+/plugin marketplace add dot-agent-spec/platform
+/plugin install dot-agent
+```
+
+Auto-registers the `/dot-agent:run` and `/dot-agent:test` skills plus the `dot-agent` and
+`dot-agent-helper` MCP servers — no separate `configure` step. See
+[`plugins/claude/README.md`](plugins/claude/README.md).
 
 ---
 

@@ -50,8 +50,13 @@ const SERVERS: Record<ServerKey, McpServerSpec> = {
 
 const SERVER_NAMES: Record<ServerKey, string> = {
   helper: 'dot-agent-helper',
-  dev: 'dot-agent-dev',
+  dev: 'dot-agent',
 }
+
+// The `dev` server was renamed from `dot-agent-dev` to `dot-agent` when the runtime tools
+// (load_agent, send_intent, ...) were folded in — see plugins/claude/AGENTS.md. Drop the old key
+// from any config this CLI wrote before that rename, so it doesn't linger as a dead server entry.
+const STALE_SERVER_NAMES = ['dot-agent-dev']
 
 interface ConfigureTarget {
   mcpConfigPath: string
@@ -100,6 +105,10 @@ async function configureMcpServer(target: ConfigureTarget): Promise<{ path: stri
     config.mcpServers = {}
   }
 
+  for (const staleName of STALE_SERVER_NAMES) {
+    delete config.mcpServers[staleName]
+  }
+
   const registeredServers: string[] = []
   for (const key of target.mcpServerKeys) {
     const serverName = SERVER_NAMES[key]
@@ -135,7 +144,7 @@ export async function configure(options?: ConfigureOptions): Promise<ConfigureRe
 
     if (doSkill) {
       if (target.skillDest) {
-        const skillSrc = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'dot-agent', 'SKILL.md')
+        const skillSrc = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills', 'run', 'SKILL.md')
         const skillContent = await readFile(skillSrc, 'utf-8')
 
         await mkdir(dirname(target.skillDest), { recursive: true })
