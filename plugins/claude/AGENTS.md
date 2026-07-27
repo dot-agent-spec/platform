@@ -23,7 +23,8 @@ diff plugins/claude/skills/run/SKILL.md apps/dot-agent-cli/skills/run/SKILL.md
 This plugin deliberately ships **no copy of the runtime** — not a Bun-compiled binary, not a vendored
 `dist/cli.mjs`. It shells out to the globally-installed `dot-agent` CLI, which the skill's Step 0
 installs on first use. A second copy of the runtime inside the plugin would drift from the published
-package. See the plan doc's settled decision 2 before reversing this.
+package. See [DA00-07](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) decision 2
+before reversing this — the rule generalizes to every future host plugin, not just this one.
 
 ## `skills/test` (Mode B) — plugin-only, no CLI mirror
 
@@ -36,10 +37,12 @@ into it, stop and link to the Mode A skill instead.
 ## `plugin.json`
 
 Only `mcpServers` (`dot-agent` + `dot-agent-helper`) and `skills` (auto-discovered from `skills/`) are
-declared. No `hooks` yet — see the plan doc's "Prompt-tick hook — deferred out of v1" section before
-adding one.
+declared. No `hooks` yet — see the [DA00-07 log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md)'s
+decision 4 before adding one.
 
-## Full plan
+## Full design and status
 
-[`project/tasks/dot-agent-claude-skill.md`](../../project/tasks/dot-agent-claude-skill.md) —
-tracker: `dot-agent-spec/platform#13`.
+Decision: [`DA00-07`](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) + its
+[log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (design
+rationale). Work items and current status: [`project/tasks/DA00-07-dot-agent-claude-skill.md`](../../project/tasks/DA00-07-dot-agent-claude-skill.md)
+— tracker: `dot-agent-spec/platform#13`.
