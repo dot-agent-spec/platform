@@ -213,10 +213,10 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
         0.5.0 made the skill invocable. It carried five false claims, including an install command for a
         package that 404s and a library example built on an API `run()` never had. Not instruction-file
         debt, but the same folder and the same failure mode, so it belongs to this track.
-  - [ ] **Left for you:** `apps/dot-agent-cli/file structure.md` — 483 lines, Portuguese, an `aboutme.json`
-        working document built on `schemaVersion`, renamed to `dslVersion` by DA00-02. Wrong folder, wrong
-        language, and the space in its filename breaks the link checker's `awk`. Delete, or move to
-        `project/pre-release/v0.1/` as a log — not a call to make while clearing instruction-file debt.
+  - [x] `apps/dot-agent-cli/file structure.md` — 483 lines of `aboutme.json` design analysis that had
+        nothing to do with the CLI. Moved out of this repository entirely, to the workspace's own
+        `project/research/`, renamed to describe its contents and given a provenance header noting that
+        `schemaVersion` was superseded by `dslVersion` (DA00-02). Body preserved unedited.
 
 ## Surprises & Discoveries
 

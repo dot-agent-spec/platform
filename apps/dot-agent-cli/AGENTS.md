@@ -56,11 +56,6 @@ exact-pin cascade — use the `/publish` skill, which owns it.
 | Comportment for driving an agent | [`dsl/reference/comportment.md`](../../dsl/reference/comportment.md) |
 | Release procedure | [`publish-ts.yml`](../../.github/workflows/publish-ts.yml) + the `/publish` skill |
 
-## Out of scope
-
-`file structure.md` is a superseded working document — it is built on `schemaVersion`, renamed to
-`dslVersion` by DA00-02. Do not treat it as current; it is pending deletion or relocation.
-
 ## Keeping this file current
 
 Fold the update into whatever task exposed the drift — do not leave it for a sweep.
@@ -72,4 +67,5 @@ Fold the update into whatever task exposed the drift — do not leave it for a s
   now exists mechanically must not also live here as prose.
 - The MCP registration split changes, or a server gains tools → correct the composition line.
 - The release trigger or tag pattern changes → correct it here and in `/publish`.
-- `file structure.md` is deleted or moved → drop the Out of scope section with it.
+- A document lands here that this package does not own → move it out rather than describing it; a folder
+  is not a filing cabinet for whatever shares its parent.
