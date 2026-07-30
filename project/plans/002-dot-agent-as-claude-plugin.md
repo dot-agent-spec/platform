@@ -209,6 +209,10 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
         is the scaffold `init` copies, so the empty file was landing in every new user project.
   - [x] `plugins/claude/` — reviewed, accurate and current, all six links resolve; left unchanged.
         `CLAUDE.md` added.
+  - [x] `apps/dot-agent-cli/README.md` — rewritten through `/vibe-ops:authoring-readme` once vibe-ops
+        0.5.0 made the skill invocable. It carried five false claims, including an install command for a
+        package that 404s and a library example built on an API `run()` never had. Not instruction-file
+        debt, but the same folder and the same failure mode, so it belongs to this track.
   - [ ] **Left for you:** `apps/dot-agent-cli/file structure.md` — 483 lines, Portuguese, an `aboutme.json`
         working document built on `schemaVersion`, renamed to `dslVersion` by DA00-02. Wrong folder, wrong
         language, and the space in its filename breaks the link checker's `awk`. Delete, or move to
