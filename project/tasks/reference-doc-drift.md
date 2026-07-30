@@ -5,6 +5,7 @@
 | Status | Planned |
 | Created | 2026-07-30 |
 | Author | Danilo Borges |
+| Issue | [#20](https://github.com/dot-agent-spec/platform/issues/20) — owns status and the item checklist; this dossier owns the evidence and the proposed edits |
 | Sources | Surfaced by the `cli-helper-agent-sync` review of `apps/dot-agent-cli/helper-src/`; [`packages/kernel-dsl/src/effect.rs`](../../packages/kernel-dsl/src/effect.rs), [`packages/tree-sitter/tree-sitter-description/grammar.js`](../../packages/tree-sitter/tree-sitter-description/grammar.js). Independent of [Plan-002](../plans/002-dot-agent-as-claude-plugin.md), which owns the folder the review started from. |
 
 ---
