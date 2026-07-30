@@ -3,13 +3,14 @@
 ## Command
 
 ```
-dot-agent pack --dir <dir> --out <file.agent>
+dot-agent pack --dir <dir> --out <file.agent> [--version <tag>] [--commit <hash>]
 ```
 
 There is no positional directory argument — `--dir` is required (it silently falls back to the
 current working directory otherwise). Produces a `.agent` zip archive containing the compiled
 bundle: the description, merged behavior, soul, guides, knowledge files, and a manifest with a
-content hash.
+content hash. `--version` and `--commit` are optional — see Version resolution below for what
+happens when `--version` is omitted.
 
 ## Example
 
@@ -74,5 +75,9 @@ and reference it there.
 - Lint errors block pack (same as run)
 - Warnings are printed but do not block
 - `.agent` files are plain zip archives; `unzip -l agent.agent` to inspect
-- Version resolution: explicit `--version`, else `git describe --tags --abbrev=0` in the target
-  repo, else the literal `v1.0.0`. It is never set to `dev`.
+- Version resolution: explicit `--version` (validated against `vX.Y[.Z][-prerelease]`, else E019) is
+  used as-is. Without it, in a TTY, `pack` prompts interactively — pick from recent `git tag
+  --sort=-creatordate` candidates (this repo's monorepo tag convention is `<pkg>@<version>`), type a
+  custom version, or choose "None" for no version at all. Without it in a non-TTY context, `pack`
+  proceeds with **no version** (a bare, versionless id) — it never falls back to a literal default
+  like `v1.0.0`.

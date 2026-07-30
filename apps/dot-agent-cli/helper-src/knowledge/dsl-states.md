@@ -9,8 +9,6 @@ state <name>
     transition to <state>
   on offtopic
     transition to <state>
-  after <n> prompts
-    transition to <state>
 ```
 
 ## Statements
@@ -25,8 +23,6 @@ on match. Order in a state body does not matter.
 | `teach` | `teach "filename.md"` | `teach` | References a knowledge file by name |
 | `interact` | `interact` | `request_interact` | Pauses — agent is waiting for user input |
 | `transition to` | `transition to <state>` | `transition` | Moves the FSM to the named state |
-| `set` | `set <target> <op> <value>` | `set_memory` | Writes memory; target is `domain.var` or a bare local var; op is `=`, `+=`, `-=` |
-| `run script` | `run script "target"` or `run script "target" "parameters"` | `run_script` | Triggers an external script; the optional second string is a raw parameter string, format is caller-defined |
 
 ## Handlers
 
@@ -34,16 +30,8 @@ on match. Order in a state body does not matter.
 |---|---|
 | `on intent "name"` | Fires when the kernel receives this intent in the current state |
 | `on offtopic` | Fires when no intent matches |
-| `after <n> prompts` | Fires after n calls to `tick_prompt` |
 
-## Global triggers
-
-Declared outside any state, fire in all states:
-
-```
-on event "emergency"
-  transition to error
-```
+Build agents from the statements and handlers above — that is the full set.
 
 ## Notes
 

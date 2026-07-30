@@ -74,9 +74,7 @@ state capture_name
   guide "What is your name?"
   interact
   on intent "done"
-    set context.name = ""
     transition to init
-  end
   on offtopic
     transition to capture_name
 
@@ -88,11 +86,53 @@ state greeting
     transition to greeting
 ```
 
-The `set` in `capture_name` writes an empty placeholder so `context.name` shows up in
-`dot-agent://memory` right away; the host is expected to overwrite it via `inject_memory` once it
-has interpreted the user's free-form answer. Inject name from host before greeting:
+The `.behavior` never writes memory itself — it steers the conversation, and the host writes what
+it learned into the store, where it shows up in `dot-agent://memory`:
 ```ts
 session.injectMemory('context', 'name', 'Alice')
 // or via MCP:
 // { tool: "inject_memory", domain: "context", key: "name", value: "Alice" }
 ```
+
+## 4. Hub and spoke
+
+An `init` menu that fans out to topic states, each of which routes back. This is how this helper
+agent itself is built — see `cli` → `cli_walkthrough` for it being driven end to end.
+
+```
+state init
+  guide "Topics: billing, shipping. Send one, or 'bye' to finish."
+  on intent "billing"
+    transition to billing
+  on intent "shipping"
+    transition to shipping
+  on offtopic
+    transition to init
+
+state billing
+  goal "Answer the user's billing question."
+  guide "Billing questions: invoices, refunds, payment methods."
+  teach "knowledge/billing.md"
+  interact
+  on intent "shipping"
+    transition to shipping
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to billing
+
+state shipping
+  goal "Answer the user's shipping question."
+  guide "Shipping questions: delivery times, tracking, returns."
+  interact
+  on intent "billing"
+    transition to billing
+  on intent "back"
+    transition to init
+  on offtopic
+    transition to shipping
+```
+
+Each spoke carries a `back` intent so the user is never trapped, and cross-links to its siblings so
+navigation does not have to go through `init` every time. `on offtopic` self-transitions keep the
+current topic loaded when input does not match.

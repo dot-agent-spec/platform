@@ -198,4 +198,4 @@ format), `gen` (authoring a new agent), `cli` (CLI/MCP usage), `pack` (packaging
 4. `dot-agent run ./my-agent` — validate (lint errors block, warnings to stderr)
 5. `dot-agent pack --dir ./my-agent --out my-agent.agent` — bundle
 
-For syntax templates and patterns, consult `dot-agent run --helper` and navigate to `generate`.
+For syntax templates and patterns, consult `dot-agent run --helper` and navigate to `gen`.

@@ -51,3 +51,10 @@ state init
 
 Merge paths must stay within the agent root (E014 if they escape).
 Circular merges are detected at compile time (E013).
+Merge is resolved by the compiler at pack time, not by the kernel at runtime — always validate the
+consolidated result with `dot-agent run`.
+
+## Where the language is going
+
+This file describes the language as it stands. For the direction of travel, see the roadmap:
+https://github.com/dot-agent-spec/platform/blob/main/ROADMAP.md

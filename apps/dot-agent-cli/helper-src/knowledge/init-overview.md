@@ -5,9 +5,9 @@ when an agent is driven over MCP; the source you author is `.description` + `.be
 
 ## Anatomy of an agent
 
-- `agent.description` — metadata: name, domain, capabilities, which `.behavior` file to load
+- `agent.description` — metadata: name, domain, description, which `.behavior` file to load
 - `agent.behavior` — the FSM: `state <name>`, `on intent "..."`, `transition to <state>`, plus
-  statements like `goal`, `guide`, `teach`, `set`, `run script`
+  orientation statements `goal`, `guide`, `teach`, `interact`
 - `SOUL.md` (optional) — persona: voice, values, behavioral rules
 - `guides/`, `knowledge/` (optional) — reference files pulled in via `teach`
 
@@ -48,7 +48,7 @@ Run it: `dot-agent run ./greeter/` — loads, lints, prints the initial state. S
 
 | Intent from `init` | Covers |
 |---|---|
-| `dsl` | `.behavior`/`.description` syntax: states, statements, memory, persona |
+| `dsl` | `.behavior`/`.description` syntax: states, statements, persona |
 | `gen` | Authoring workflow: description → behavior → patterns → validate |
 | `cli` | The CLI itself, MCP server mode, a worked MCP interaction transcript |
 | `pack` | Packaging a project into a `.agent` bundle |

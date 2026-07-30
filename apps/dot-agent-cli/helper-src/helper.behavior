@@ -1,5 +1,6 @@
-// Changed intents/topics here? Also update skills/dot-agent/SKILL.md's "Interactive helper"
-// section, then run `npm run repack-helper`.
+// Changed intents/topics here? Also update plugins/claude/skills/run/SKILL.md's "Interactive
+// helper" section (kept in sync with apps/dot-agent-cli/skills/run/SKILL.md), then run
+// `npm run repack-helper`.
 state init
   guide "dot-agent: a text DSL for FSM agents, not JSON. Topics: dsl, gen, cli, pack — or just read the teach below for everything at a glance."
   teach "knowledge/init-overview.md"
@@ -21,8 +22,6 @@ state dsl_overview
     transition to dsl_description
   on intent "dsl_states"
     transition to dsl_states
-  on intent "dsl_memory"
-    transition to dsl_memory
   on intent "dsl_persona"
     transition to dsl_persona
   on intent "back"
@@ -31,7 +30,7 @@ state dsl_overview
     transition to dsl_overview
 
 state dsl_description
-  guide "The .description file declares agent metadata. Required: agent name, behavior path. domain and description are warned, not yet enforced (W007; E001 planned). Optional: version, license, persona, capabilities."
+  guide "The .description file declares agent metadata. Required: agent name, behavior path. A missing domain is warned (W007), not an error. Optional identity meta: license, terms, privacy — plus a persona block."
   teach "knowledge/dsl-description.md"
   on intent "dsl_states"
     transition to dsl_states
@@ -43,7 +42,7 @@ state dsl_description
     transition to dsl_description
 
 state dsl_states
-  guide "A state holds statements (goal, guide, teach, transition to, set, run script) plus on intent and on offtopic handlers. after N prompts gives count-gated transitions."
+  guide "A state holds orientation statements (goal, guide, teach, interact) plus transition to, on intent and on offtopic handlers. That is the full statement set."
   teach "knowledge/dsl-states.md"
   on intent "dsl_overview"
     transition to dsl_overview
@@ -51,16 +50,6 @@ state dsl_states
     transition to init
   on offtopic
     transition to dsl_states
-
-state dsl_memory
-  guide "4 memory domains with different lifetimes: context, session, worksession, user. Set from behavior via set. Inject from host via inject_memory. Read all via getMemory."
-  teach "knowledge/dsl-memory.md"
-  on intent "dsl_overview"
-    transition to dsl_overview
-  on intent "back"
-    transition to init
-  on offtopic
-    transition to dsl_memory
 
 state dsl_persona
   guide "SOUL.md defines the agent voice, values, and behavioral rules. Referenced via persona in the .description file. Exposed as dot-agent://persona in MCP server mode."
@@ -87,7 +76,7 @@ state generate_overview
     transition to generate_overview
 
 state gen_description
-  guide "Required .description fields: agent name, behavior path. domain and description are warned, not yet enforced. Optional: version, license, persona, capabilities."
+  guide "Required .description fields: agent name, behavior path. A missing domain is warned (W007). Optional: license, terms, privacy, persona. No version field — the version is set by pack --version."
   teach "knowledge/gen-description.md"
   on intent "gen_behavior"
     transition to gen_behavior
@@ -115,7 +104,7 @@ state gen_behavior
     transition to gen_behavior
 
 state gen_patterns
-  guide "Three patterns: (1) simple responder - handles everything in init, (2) multi-stage workflow - linear state progression, (3) memory-aware - uses set to store context."
+  guide "Three patterns: (1) simple responder - handles everything in init, (2) multi-stage workflow - linear state progression, (3) hub and spoke - an init menu that fans out to topic states and back."
   teach "knowledge/gen-patterns.md"
   on intent "gen_behavior"
     transition to gen_behavior
@@ -141,7 +130,7 @@ state gen_validate
     transition to gen_validate
 
 state cli_overview
-  guide "dot-agent CLI: init, run, pack, unpack, install-skill. run --mcp serves an agent over MCP for an LLM to drive; run --helper starts this helper."
+  guide "dot-agent CLI: init, run, pack, unpack, configure, server-mcp, agents. run --mcp serves an agent over MCP for an LLM to drive; run --helper starts this helper."
   teach "knowledge/cli-overview.md"
   on intent "cli_mcp"
     transition to cli_mcp
@@ -153,7 +142,7 @@ state cli_overview
     transition to cli_overview
 
 state cli_mcp
-  guide "MCP server mode exposes 5 tools (send_intent, send_event, send_offtopic, tick_prompt, inject_memory) and 9 dot-agent:// resources. Effects come back as a JSON array in every tool result."
+  guide "MCP server mode exposes 6 tools (load_agent, send_intent, send_event, send_offtopic, tick_prompt, inject_memory) and 9 dot-agent:// resources. Effects come back as a JSON array in every tool result."
   teach "knowledge/cli-mcp.md"
   on intent "cli_walkthrough"
     transition to cli_walkthrough

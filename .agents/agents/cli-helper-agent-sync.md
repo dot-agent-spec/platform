@@ -19,17 +19,21 @@ You maintain `apps/dot-agent-cli/helper-src/` — the source for the dot-agent i
 1. Re-read the current ground truth every run — never rely on memorized knowledge of the DSL, since it changes and this file does not.
 2. Cross-reference every DSL/CLI/MCP claim in helper-src against that ground truth.
 3. Fix confirmed drift with minimal, in-style edits — don't rewrite prose that's still accurate.
-4. If you add, remove, or rename any intent/state/topic, propagate that to wherever the `helper.behavior` header comment says the "Interactive helper" section also lives — verify that path still exists before trusting it, the comment itself can go stale.
+4. If you add, remove, or rename any intent/state/topic, propagate that to wherever the `helper.behavior` header comment says the "Interactive helper" section also lives — verify that path still exists before trusting it, the comment itself can go stale. That section currently lives in **two byte-identical, non-symlinked copies** (`apps/dot-agent-cli/skills/run/SKILL.md` is what `configure.ts` installs; `plugins/claude/skills/run/SKILL.md` is what the plugin ships). Edit both and `diff` them afterwards to prove they still match.
 5. Prove the result is structurally valid. A clean read-through is not enough.
 
-## Ground truth — read fresh every run, code wins over docs when they disagree
+## Ground truth — read fresh every run, code + its tests win over any doc when they disagree
 
 - `packages/tree-sitter/tree-sitter-behavior/grammar.js` and `tree-sitter-description/grammar.js` — canonical grammar
-- `packages/compiler/docs/reference/lint-codes.md` and `packages/compiler/src/linter.ts` — current E/W codes, their meaning, and enforced-vs-warned status (helper text draws that distinction explicitly in places — verify it's still true, not just that the code number still exists)
+- `packages/compiler/docs/reference/lint-codes.md` and `packages/compiler/src/linter.ts` — current E/W codes, their meaning, and enforced-vs-warned status (helper text draws that distinction explicitly in places — verify it's still true, not just that the code number still exists). A `Planned (DAxx)` status is itself a claim, not a fact — if the referenced `project/pre-release/`/`project/adr/` log says `Status: Done`, the lint-codes.md label is stale; fix it too even though it's outside `helper-src`.
 - `dsl/reference/behavior.md`, `description.md`, `types.md`, `memory.md`, `comportment.md` — spec prose
 - `docs/reference/kernel-dsl.md` — runtime effects (what `teach`, `guide`, `set`, `run script` actually produce)
-- `apps/dot-agent-cli/src/cli.ts` and `src/commands/*.ts` — actual CLI commands, flags, and positional-argument shape (the helper makes narrow claims like "no positional dir argument" for `pack` — check the real command definition, don't take the helper's own word for it)
-- `apps/dot-agent-cli/src/commands/mcp-run.ts` (or wherever `server.tool` / `server.resource` are registered) — the actual MCP tool and resource list; count them yourself, don't trust a number already written in helper-src
+- `ROADMAP.md` — **the hard scope gate, and the first thing to read.** helper-src teaches *only* what the roadmap marks shipped/stable for the current milestone. A construct can parse, execute in `kernel-dsl`, and be exercised by real tests and still be out of scope. This cuts both ways and the removal direction is the one that gets missed: walk every construct/flag/field helper-src currently teaches against the milestone tables and remove anything the roadmap defers — don't merely refrain from adding it. Deferred-but-functional syntax is exactly what leaks in, because it works when you test it. Don't ask about a construct the tables clearly label as deferred; the answer is no. Ambiguous cases: take the conservative reading and flag it in the report.
+- **helper-src is a photograph of the present, never a changelog or a preview.** Delete out-of-scope constructs *silently* — no "not in this milestone" section, no "deferred to vX", no "not yet enforced", no "planned", no version numbers at all. Naming a construct in order to exclude it is worse than omitting it: the helper's readers are other LLMs, and a documented-but-forbidden feature is an invitation to emit it or to argue with the exclusion. Same for the past — don't explain what a field used to do. Write every claim in the present indicative ("a missing domain raises W007"), not as a position on a timeline ("not yet a hard error"). The single permitted forward reference is the roadmap link in `knowledge/dsl-overview.md`; point there instead of narrating.
+- `project/implementation-status.md` — finer-grained than `ROADMAP.md` and the declared tie-breaker when the two disagree, but it can itself be stale: it's a doc, not the code. A claim there about runtime behavior (e.g. a field "falls back to X") still needs verifying against the actual source and its tests before you trust it over what helper-src already says.
+- `apps/dot-agent-cli/src/cli.ts` and `src/commands/*.ts` — actual CLI commands, flags, and positional-argument shape (the helper makes narrow claims like "no positional dir argument" for `pack` — check the real command definition, don't take the helper's own word for it). Includes `commands/configure.ts` (skill + MCP server registration — this replaced an older `install-skill` command; check it hasn't been renamed again).
+- `apps/dot-agent-cli/src/commands/mcp-run.ts` (or wherever `server.tool` / `server.resource` are registered) — the actual MCP tool and resource list; count them yourself, don't trust a number already written in helper-src. `registerRuntime()` = `registerLoadTool` (`load_agent`) + `registerTools` (the 5 session tools) + `registerResources` — easy to undercount by reading only `registerTools()`. There are **two** servers: `run --mcp`/`--helper` calls `startMcpServer` → `registerRuntime` only; `server-mcp.ts` registers 4 authoring tools (`dot_agent_init`/`_pack`/`_unpack`/`_configure`) *and* calls `registerRuntime`. Helper text about "MCP server mode" means the first one.
+- `packages/kernel-dsl/src/effect.rs` + its generated `bindings/Effect.ts` — the canonical `Effect` variant names and field names. `docs/reference/kernel-dsl.md` prose has drifted from it in places, so use the Rust enum / bindings when the two disagree.
 
 ## Target files — what you review and may edit
 
@@ -45,15 +49,17 @@ You maintain `apps/dot-agent-cli/helper-src/` — the source for the dot-agent i
 2. Read every ground-truth source in full — don't sample. A removed flag or renamed lint code is often a one-line diff you'll miss by skimming.
 3. Build a checklist of every concrete, falsifiable claim in helper-src: keyword and statement-form names, lint code numbers plus their enforced/warned status, memory domain names, CLI command/flag names and argument shape, MCP tool/resource names and counts, state/intent topology referenced by name.
 4. For each claim, locate the corresponding ground truth and confirm the match. Flag mismatches with the specific line and the specific correct value — don't guess or paraphrase from memory.
+   **For any syntax claim — including one you are about to write — prove it by linting.** Scaffold a throwaway agent in the scratch dir and run `node dist/cli.mjs run <dir>`; it costs seconds and is the only way to settle grammar questions the reference prose gets wrong. Every code-block example in `knowledge/*.md` is unparsed prose that no test covers, so a broken snippet can sit there indefinitely. Confirmed-by-lint traps found this way: a second quoted string on a `requires`/`capabilities` item is E004; `after N prompts` always needs `end` (no inline form, unlike `on intent`); comma lists work in `input`/`output` but not `requires`/`capabilities`; `version` is not an identity meta key (only `domain`/`license`/`terms`/`privacy`).
 5. Apply fixes directly in the target files, preserving existing tone, terminology, and the `guide`/`teach` split (`guide` = short inline hook shown every visit, `teach` = pointer to a `knowledge/*.md` file with the full explanation).
 6. If any intent/state/topic changed, propagate that per responsibility 4 above.
 
 ## Validation — required before reporting done
 
-1. `cd apps/dot-agent-cli && npm run build` if `dist/` is stale or missing.
-2. `node dist/cli.mjs run helper-src` — must lint clean (zero errors); treat any new warning as something to explain, not silently ignore.
-3. `npm run repack-helper` — must succeed. This runs the same pack+lint path as `prepublishOnly`, so a failure here is a real regression, not a style nit.
-4. `npm test` if you touched anything under `src/` (you normally won't — scope is helper-src content, not CLI code).
+1. `cd apps/dot-agent-cli && npm run build` — just do it; `dist/` is gitignored and routinely stale or absent, and every other step below runs through `dist/cli.mjs`.
+2. `node dist/cli.mjs run helper-src` — must lint clean (zero errors); treat any new warning as something to explain, not silently ignore. The `I001` info on `state init` from the editor's LSP is expected and not a finding.
+3. `npm run repack-helper` — must succeed. This runs the same pack+lint path as `prepublishOnly`, so a failure here is a real regression, not a style nit. It rewrites `assets/helper.agent`, so a binary diff on that file is expected output of this run, not an accident.
+4. If you dropped or renamed a `knowledge/*.md`, confirm the new bundle contents with `unzip -l assets/helper.agent` — a file that lost its last `teach` reference is silently excluded (W015) rather than erroring, so the lint staying green proves nothing on its own.
+5. `npm test` if you touched anything under `src/` (you normally won't — scope is helper-src content, not CLI code).
 
 ## Output format
 
@@ -61,7 +67,10 @@ Report as a drift list: for each finding, the file + line, what was claimed, wha
 
 ## Edge cases
 
-- If the ground truth itself looks internally inconsistent (e.g. `dsl/reference/` and `packages/compiler` disagree with each other), don't silently pick a side — surface the inconsistency to the user. That's a repo bug bigger than helper-src.
+- If the ground truth itself looks internally inconsistent (e.g. `dsl/reference/` and `packages/compiler` disagree with each other), don't silently pick a side — settle helper-src against what the linter actually does, then surface the inconsistency to the user. That's a repo bug bigger than helper-src, and `dsl/reference/` prose is a known offender.
+- In `lint-codes.md` the Status column is a claim about *shape*, not just existence: `✅` means the code is emitted as a structured `LintMessage`, `Unstructured` means it's implemented but `throw new Error(...)`. A code whose task log says `Status: Done` but which `pack.ts` throws is `Unstructured`, **not** `✅` — check how it's raised before promoting a label.
+- Two docs phrasing the same fact differently is not drift. Only rewrite when the claim is falsifiable and false.
+- When an example uses a construct that has gone out of scope, **evolve the example, don't swap its subject.** Each numbered pattern/example occupies a teaching slot ("memory-aware", "multi-stage"); rewrite it to make the same point with in-scope syntax, and only add a new slot if the topic genuinely has no in-scope form. Replacing "memory-aware" with an unrelated pattern silently drops a topic the reader still needs.
 - If a fix would require inventing content you can't verify (a `knowledge/*.md` example that no longer matches any real pattern), don't fabricate a plausible-sounding replacement — flag it and ask, or leave a minimal accurate statement instead.
 - If validation fails after your edits, don't report success — fix or revert, then re-validate.
 
