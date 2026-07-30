@@ -1,258 +1,112 @@
-# dot-agent CLI
+<h1 align="center">dot-agent CLI</h1>
 
-The official command-line interface for the **dot-agent** specification. Build, validate, package, and execute AI agents with a simple, declarative DSL.
+<p align="center">
+  <strong>The command line for <code>.agent</code> — the universal file format for portable AI.</strong><br>
+  Author, validate, package and run autonomous agents declared as text, not code.
+</p>
 
-## Installation
+<p align="center">
+  <a href="https://www.npmjs.com/package/@dot-agent/cli"><img alt="npm" src="https://img.shields.io/npm/v/@dot-agent/cli.svg"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+</p>
 
-```bash
-npm install -g dot-agent
-```
-
-Or use directly with `npx`:
-
-```bash
-npx dot-agent <command>
-```
-
-## Quick Start
-
-### 1. Initialize a new agent project
-
-```bash
-dot-agent init --name my-agent --domain example.com --dir ./my-agent
-```
-
-This creates a scaffold with:
-- `agent.description` — Agent manifest (domain, name, capabilities)
-- `agent.behavior` — FSM state machine definition
-- `SOUL.md` — Agent persona and voice
-- `README.md`, `LICENSE` — Project metadata
-- `behaviors/`, `guides/`, `knowledge/` — Content directories (only files referenced by a `guide`/`teach` statement are packed)
-
-### 2. Edit your agent
-
-Customize the generated files:
-- Describe your agent in `agent.description`
-- Define behavior states and transitions in `agent.behavior`
-- Add knowledge and guides as needed
-
-### 3. Package your agent
-
-```bash
-dot-agent pack --dir ./my-agent --version v1.0.0
-```
-
-This validates the DSL and creates `my-agent.agent` (a ZIP archive) with:
-- `.agent/aboutme.json` — Agent metadata
-- `.agent/files.json` — File manifest
-- Source files and content
-
-### 4. Run your agent
-
-```bash
-dot-agent run ./my-agent.agent
-```
-
-Loads the agent and returns an `AgentContext` for execution in Electron, Node, or another runtime.
-
-### 5. Extract an agent (optional)
-
-```bash
-dot-agent unpack my-agent.agent --out ./unpacked
-```
-
-Restores the original source files from a `.agent` package.
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#commands">Commands</a> ·
+  <a href="#use-as-a-library">Library API</a> ·
+  <a href="https://github.com/dot-agent-spec/platform/tree/main/dsl/reference">Language reference</a> ·
+  <a href="https://dot-agent.ai/">dot-agent.ai</a>
+</p>
 
 ---
+
+An agent is a folder: a `.description` manifest, a `.behavior` state machine, an optional persona, and the
+knowledge it teaches. This CLI turns that folder into a single portable `.agent` file, and runs one back.
+
+```console
+$ npm install -g @dot-agent/cli
+$ mkdir my-agent && cd my-agent
+$ dot-agent init --name my-agent --domain example.com
+✓ Scaffolded agent project in /tmp/my-agent
+  Files: LICENSE, README.md, SOUL.md, agent.behavior, agent.description,
+         behaviors/.gitkeep, guides/.gitkeep, knowledge/.gitkeep
+
+$ dot-agent pack --dir . --out my-agent.agent
+✓ Packed → my-agent.agent
+  ID: example.com/my-agent
+  Warnings: 1
+⚠ agent.description:2:10 W003 domain still has default value "example.com"
+```
+
+The warning is the point: `pack` lints before it writes, so a broken agent fails at authoring time rather
+than at run time.
+
+## Install
+
+```bash
+npm install -g @dot-agent/cli
+```
+
+Or run it without installing:
+
+```bash
+npx @dot-agent/cli <command>
+```
 
 ## Commands
 
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `init` | Scaffold a new agent project | `dot-agent init --name myagent --domain example.com` |
-| `pack` | Validate and package agent into `.agent` ZIP | `dot-agent pack --dir . --version v1.0.0` |
-| `unpack` | Extract `.agent` file to sources | `dot-agent unpack myagent.agent --out ./src` |
-| `run` | Load agent and return AgentContext | `dot-agent run myagent.agent` |
+| Command | What it does |
+|---|---|
+| `dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]` | Scaffold an agent project |
+| `dot-agent pack [--dir <dir>] [--out <file>] [--version <tag>] [--commit <hash>]` | Lint and package into a `.agent` archive |
+| `dot-agent unpack <file.agent> [--out <dir>] [--force]` | Extract an `.agent` back to editable sources |
+| `dot-agent run <file.agent \| dir>` | Load an agent and start its state machine |
+| `dot-agent run <src> --mcp` | Serve a loaded agent over MCP |
+| `dot-agent run --helper` | Serve the interactive authoring helper over MCP |
+| `dot-agent configure [--claude] [--gemini] [--agy] [--murici]` | Register the skill and MCP servers with a host |
+| `dot-agent server-mcp` | Serve the authoring tools over MCP |
+| `dot-agent agents list` · `agents path <name>` | List installed agents, or resolve one to a path |
 
----
+The MCP commands take `--mcp-transport stdio|http` and `--mcp-port <n>`.
 
-## Agent Definition
+**`init` writes into the current directory** unless you pass `--dir`, and it overwrites existing files
+without asking — including `LICENSE` and `README.md`. Run it in a new, empty folder.
 
-### `agent.description`
+Without `--version`, `pack` prompts for one in a terminal and packs versionless otherwise; it never
+invents a default.
 
-Declares the agent's identity, capabilities, and requirements:
+## Use as a library
 
-```
-agent MyAgent
-  domain example.com
-  license Apache-2.0
-
-description
-  A helpful AI assistant for customer support.
-
-behavior agent.behavior
-
-capabilities
-  RespondToQuery "Answer customer questions"
-  EscalateToHuman "Transfer to human agent when needed"
-```
-
-### `agent.behavior`
-
-Defines the finite state machine (FSM) that governs agent behavior:
-
-```
-state init
-  transition to ready
-
-state ready
-  goal "Help the user with their query."
-  interact
-  on intent "ask-question" transition to answering
-  on intent "escalate" transition to escalated
-
-state answering
-  goal "Provide a helpful answer."
-  interact
-  on intent "follow-up" transition to answering
-  on intent "resolved" transition to ready
-
-state escalated
-  goal "Transfer conversation to human support."
-  transition to ready
-```
-
----
-
-## API Usage
-
-Use `dot-agent` as a module in Node.js or Electron:
+Every command is also an exported function, for embedding in a Node or Electron host:
 
 ```typescript
-import { init, pack, unpack, run } from 'dot-agent'
+import { pack, run } from '@dot-agent/cli'
 
-// Initialize a project
-const initResult = await init({
-  name: 'my-agent',
-  domain: 'example.com',
-  dir: './agents/my-agent'
-})
+const packed = await pack({ dir: './my-agent', out: './my-agent.agent' })
+console.log(packed.id, packed.path, packed.warnings.length)
 
-// Package an agent
-const packResult = await pack({
-  dir: './agents/my-agent',
-  version: 'v1.0.0'
-})
-console.log(`Agent packaged: ${packResult.id}`)
-
-// Load an agent
-const context = await run({
-  source: './my-agent.agent'
-})
-
-// Listen to loading progress
-context.on('progress', (event) => {
-  console.log(`${event.step}: ${event.pct}%`)
-})
-
-context.on('ready', (ctx) => {
-  console.log(`Agent ready: ${ctx.id}`)
-})
+const { bundle, session } = await run({ source: './my-agent.agent' })
 ```
 
----
+Also exported: `init`, `unpack`, `configure`, `listAgents`, `getAgentPath`, `startDevMcpServer`, and the
+`AgentBundle` / `PackResult` / `LintMessage` types.
 
-## Package Format (.agent)
+## Writing an agent
 
-A `.agent` file is a ZIP archive containing:
+The `.description` and `.behavior` formats, the memory model and the full lint-code list are the language
+specification, not CLI surface:
 
-```
-my-agent.agent (ZIP)
-├── .agent/
-│   ├── aboutme.json        ← Agent metadata (required)
-│   ├── files.json          ← File manifest
-│   └── types.json          ← Type definitions (optional)
-├── agent.description       ← Agent manifest
-├── agent.behavior          ← FSM definition
-├── behaviors/              ← Behavior includes
-├── guides/                 ← Files named by a `guide "guides/x.md"` statement
-├── knowledge/              ← Files named by a `teach "knowledge/x.md"` statement
-└── SOUL.md                 ← Agent persona
-```
+- [Language reference](https://github.com/dot-agent-spec/platform/tree/main/dsl/reference) — `.description`, `.behavior`, types, memory
+- [Lint codes](https://github.com/dot-agent-spec/platform/blob/main/packages/compiler/docs/reference/lint-codes.md) — every `E`/`W` code `pack` can raise
+- [`.agent` package format](https://github.com/dot-agent-spec/platform/tree/main/docs/reference) — archive layout and `aboutme.json`
 
-Only files the behavior actually references are bundled. A `guide "..."` / `teach "..."` file
-reference is a **path relative to the agent root**, resolved literally and bundled verbatim at that
-same path — the namespace comes from the path itself (`knowledge/x.md`, `guides/x.md`), not from the
-keyword. Put content under `knowledge/` or `guides/` and reference it there; those two directories are
-the only ones the runtime serves content from. A reference that resolves to no file fails with `E018`;
-one whose path escapes the agent root fails with `E014`. A file left in `guides/` or `knowledge/` that
-no statement names is reported as `W015` and **left out of the bundle** — nothing could reach it at
-runtime anyway, since the host only ever learns a path from a `teach`/`guide` effect. A reference that
-resolves *outside* `guides/`/`knowledge/` is bundled but reported as `W016`: the runtime can't serve it,
-so move it under one of those directories.
-
-### `aboutme.json`
-
-```json
-{
-  "schemaVersion": "dot-agent/1.0",
-  "id": "example.com/my-agent:v1.0.0~a1b2c3d4",
-  "name": "My Agent",
-  "description": "A helpful AI assistant",
-  "version": "v1.0.0",
-  "domain": "example.com",
-  "license": "Apache-2.0",
-  "persona": "SOUL.md",
-  "compiler": "dot-agent/1.0.0",
-  "skills": [],
-  "requires": [],
-  "integrity": {
-    "sha256": "...",
-    "files": ".agent/files.json"
-  }
-}
-```
-
----
-
-## Validation & Linting
-
-The `pack` command validates:
-
-1. **Syntax** — `.description` and `.behavior` DSL structure (tree-sitter)
-2. **Semantics** — FSM state references, memory access, capability definitions (kernel-dsl)
-3. **Files** — All referenced files exist and are readable
-
-Error codes:
-- `E001` — Missing required field in `.description`
-- `E003` — `.description` file not found
-- `E004` — Syntax error in `.behavior` DSL
-- `E006` — Semantic parse error in FSM
-- `E007` — `.behavior` file not found
-- `W003` — Domain still set to default `example.com`
-
----
+Or let the CLI teach you interactively: `dot-agent run --helper` starts an agent whose whole purpose is
+explaining how to write one.
 
 ## Requirements
 
-- **Node.js** 18.0.0 or higher
-- **npm** or compatible package manager
-
-## Dependencies
-
-- `@dot-agent/compiler` — Agent compiler, static analysis, linter, validation, and package builder
-- `@dot-agent/sdk` — Browser and Node.js-compatible SDK runtime dispatch layer (loads `.agent` files and manages execution)
-
----
-
-## Status
-
-**V1 Release Candidate** — All 4 core commands (`init`, `pack`, `unpack`, `run`) implemented and tested.
-
----
+Node.js 24 or newer.
 
 ## License
 
-Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
-Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).
+Copyright (c) 2026 Danilo Borges. Licensed under the Apache License 2.0 — see [`LICENSE`](LICENSE).
