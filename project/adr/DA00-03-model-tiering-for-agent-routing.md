@@ -82,6 +82,6 @@ the current state where per-task model selection is manual.
 
 ## Related
 
-- Root [`AGENTS.md`](../AGENTS.md) — the operational heuristic this ADR justifies
-- [`GOVERNANCE.md`](../GOVERNANCE.md) — process
+- Root [`AGENTS.md`](../../AGENTS.md) — the operational heuristic this ADR justifies
+- [`GOVERNANCE.md`](../../GOVERNANCE.md) — process
 - [DA00-02](DA00-02-two-axis-versioning.md) — sibling decision record

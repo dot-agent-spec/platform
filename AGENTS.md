@@ -29,21 +29,20 @@ dot-agent-spec/
 ├── README.md
 ├── AGENTS.md                      ← this file
 ├── ROADMAP.md                     ← language roadmap, version policy, freeze/editions model
-├── GOVERNANCE.md                  ← decision process (RFC / ADR / task lifecycles)
+├── GOVERNANCE.md                  ← decision process (RFC / ADR / plan / task lifecycles)
 ├── .claude-plugin/
 │   └── marketplace.json           ← Claude Code marketplace entry, points at plugins/claude
-├── project/                       ← product management, decisions, and tasks
-│   ├── templates/                 ← copy-ready templates: rfc, adr, task
-│   ├── adr/                       ← architecture decision records
-│   │   └── AGENTS.md              ← ADR lifecycle rules
+├── project/                       ← product management, decisions, plans, and tasks
+│   ├── templates/                 ← copy-ready templates: rfc, adr, plan, task
+│   ├── adr/                       ← architecture decision records (DA scheme)
 │   ├── pre-release/               ← pre-v1.0 incubation logs
 │   │   └── v0.1/                  ← DA01 lifecycle logs
+│   ├── plans/                     ← permanent design records for multi-phase work
 │   ├── rfcs/                      ← public design proposals
-│   │   ├── AGENTS.md              ← RFC lifecycle rules
+│   │   ├── AGENTS.md              ← the package-impact table (authoring detail only)
 │   │   ├── implemented/           ← RFCs that reached Implemented (frozen)
 │   │   └── rejected/              ← RFCs that were Rejected (frozen)
 │   └── tasks/                     ← implementation tasks and technical debt
-│       └── AGENTS.md              ← task lifecycle rules
 ├── dsl/                           ← language spec (Diátaxis structure)
 │   ├── README.md
 │   ├── reference/                 ← syntax: .behavior, .description, types, memory
@@ -89,8 +88,8 @@ dot-agent-spec/
 | Plugin implementation | `plugins/*/` (code is canonical) |
 | Architecture overview | `docs/explanation/architecture/map.md` |
 | Proposed changes | `project/rfcs/` (Draft status — not canonical) |
-| Pending implementation work | `project/tasks/` |
-| Decision process | `GOVERNANCE.md` |
+| Pending implementation work | `project/tasks/` (ephemeral) and `project/plans/` (permanent) |
+| Decision process | `GOVERNANCE.md` (what/why) · `.agents/rules/governance.md` (operational detail) |
 | Roadmap & version policy | `ROADMAP.md` |
 | Architecture decisions (settled) | `project/adr/` |
 | Document templates | `project/templates/` |
@@ -160,8 +159,8 @@ Antigravity/gemini side read the *same* file — no second copy to drift.
 
 | Kind | Canonical file | Claude adapter |
 |---|---|---|
-| **Rule** (always-on fact/guardrail) | `.agents/rules/<name>.md` (give it a `description:`; no `paths:` = always-on) | `.claude/rules/<name>.md` → `../../.agents/rules/<name>.md` |
-| **Skill** (on-demand capability, e.g. `/new-rfc`) | `.agents/skills/<name>/SKILL.md` | `.claude/skills/<name>` → `../../.agents/skills/<name>` |
+| **Rule** (always-on fact/guardrail) | `.agents/rules/<name>.md` (give it a `description:`; no `paths:` = always-on, or `paths: ["glob"]` to scope it) | `.claude/rules/<name>.md` → `../../.agents/rules/<name>.md` |
+| **Skill** (on-demand capability, e.g. `/publish`) | `.agents/skills/<name>/SKILL.md` | `.claude/skills/<name>` → `../../.agents/skills/<name>` |
 | **Workflow** | `.agents/workflows/<name>.md` | via the rule/skill that references it |
 | **Agent** (autonomous subagent) | `.agents/agents/<name>.md` | `.claude/agents/<name>.md` → `../../.agents/agents/<name>.md` |
 
@@ -174,6 +173,20 @@ ln -s ../../.agents/rules/<name>.md .claude/rules/<name>.md      # rule
 ln -s ../../.agents/skills/<name>   .claude/skills/<name>        # skill
 ln -s ../../.agents/agents/<name>.md .claude/agents/<name>.md    # agent
 ```
+
+**A nested `AGENTS.md` is not a delivery mechanism.** Claude Code loads `CLAUDE.md`, not an `AGENTS.md`
+buried in a subfolder — a guardrail written there is read only by someone who already opened the folder,
+which is exactly too late. Anything that must fire *when work touches a folder* is a **path-scoped rule**
+(`paths: ["project/**"]`, `paths: ["dogfood/**"]`); a nested `AGENTS.md` survives only for authoring
+detail a reader looks up on purpose, like `project/rfcs/AGENTS.md`.
+
+**Governance tooling is the [`vibe-ops`](https://github.com/entelekheia-ai/vibe-ops) plugin, not a local
+copy.** Records are opened with `/vibe-ops:new-{adr,rfc,plan,task}` and closed with
+`/vibe-ops:close-{plan,task}`; they read *this* repo's `project/templates/` and the DA numbering in
+`.agents/rules/governance.md`, so the convention stays owned here. **Do not fork those skills into
+`.agents/skills/`** — a local copy is what rotted the previous `/new-adr`, which still searched a
+pre-`project/` path for a numbering scheme this repo abandoned. `.agents/skills/` is for what only exists
+here: `/publish`, `/sync-implementation-status`.
 
 ---
 

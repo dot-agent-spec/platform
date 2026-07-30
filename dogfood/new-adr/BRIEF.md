@@ -5,7 +5,7 @@
 > output is an ADR under `adr/`; any dogfood/analysis output for this brief goes in **`dogfood/new-adr/`**
 > (this folder).
 
-## Dogfood folder convention (read `dogfood/AGENTS.md` first)
+## Dogfood folder convention (read `.agents/rules/dogfood.md` first)
 
 Each dogfood lives in `dogfood/<skill-name>/` with this `BRIEF.md`, the `.behavior`/`.description`
 artifacts, and an `EXPRESSIVENESS.md`. Two rules govern your work here:
@@ -62,7 +62,7 @@ sections → confirm supersession → emit). Lint with `@dot-agent/compiler` (`f
 `lintDescription`); iterate until clean. Do **not** depend on the kernel; do **not** pack.
 
 Then write `dogfood/new-adr/EXPRESSIVENESS.md` (start with the dated snapshot banner — see
-`dogfood/AGENTS.md`):
+`.agents/rules/dogfood.md`):
 
 - **What expressed cleanly** and **Gaps & limitations** — each gap labeled a `task` or `RFC` candidate.
 - The standard **"Parser & linter error-message quality"** section — only DSL errors you hit firsthand
