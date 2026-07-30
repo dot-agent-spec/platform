@@ -1,115 +1,64 @@
-# Agent Dependencies
+# apps/dot-agent-cli — agent guidelines
 
-This document tracks dependencies between agents built with the `dot-agent` CLI and external agent services.
+The `dot-agent` developer CLI: scaffolds, lints, packs and runs `.agent` projects, and hosts the two
+MCP servers the Claude Code plugin declares. See [README.md](README.md) for the user-facing command
+reference.
 
-## Structure
+## Layout
 
-Each agent that requires services from other agents or external APIs should be documented below with:
-- **Agent ID** — Qualified name (domain/name:version)
-- **Requires** — List of agent services or APIs needed
-- **Status** — Deployment or development status
-- **Notes** — Additional context or constraints
+| Path | What it is |
+|---|---|
+| `src/cli.ts` + `src/commands/*.ts` | The commands: `init`, `run`, `pack`, `unpack`, `configure`, `agents`, `mcp-run`, `server-mcp` |
+| `helper-src/` | Source of the interactive helper agent — itself a `.agent` project |
+| `assets/helper.agent` | **Generated.** Built from `helper-src/` by `npm run repack-helper`; never edit by hand |
+| `skills/run/SKILL.md` | The Mode A skill `configure --claude` installs |
+| `templates/` | The scaffold `init` copies — every file here lands in a user's new project |
+| `tests/` | Vitest suites |
 
-## Template
+## Two MCP servers, not one
 
-When adding a new agent, use this format:
+`run --mcp` / `run --helper` starts `startMcpServer` → `registerRuntime()` only. `server-mcp.ts`
+registers four authoring tools (`dot_agent_init`/`_pack`/`_unpack`/`_configure`) **and** calls
+`registerRuntime()`. `registerRuntime()` is `registerLoadTool` (`load_agent`) + the five session tools
+(`send_intent`, `send_event`, `send_offtopic`, `tick_prompt`, `inject_memory`) + `registerResources`.
+Reading only `registerTools()` undercounts. Prose saying "MCP server mode" means the first one.
 
-```markdown
-### agent-name (domain/agent-name:v1.0)
+## Invariants worth guarding
 
-**Requires:**
-- `ServiceAgent` — Provides X functionality
-- External API: `https://api.example.com` — Rate limited to 100 req/min
+**`skills/run/SKILL.md` is byte-identical to
+[`plugins/claude/skills/run/SKILL.md`](../../plugins/claude/skills/run/SKILL.md)**, and both mirror
+[`dsl/reference/comportment.md`](../../dsl/reference/comportment.md), the canonical transport-neutral
+spec. They are real files in two trees, not symlinks — the plugin folder has to stand alone to be
+installable from the marketplace. Edit both, then prove it:
 
-**Status:** Development
-
-**Notes:** Add any important integration notes, authentication requirements, or deployment constraints.
+```bash
+diff apps/dot-agent-cli/skills/run/SKILL.md plugins/claude/skills/run/SKILL.md
 ```
 
----
+**`helper-src/` is free-form prose that nothing validates.** Its `.md` files teach a driving LLM how to
+write `.description`/`.behavior`, and no parser checks those claims against the real grammar, lint codes
+or CLI surface — a renamed flag or lint code leaves the helper teaching the old shape indefinitely. The
+`cli-helper-agent-sync` subagent (`.agents/agents/`) exists to close that gap; it carries the verified
+ground-truth list and the traps found so far. Run it after any grammar, lint-code or command-surface
+change. Two rules it enforces that are easy to get wrong: prove every syntax claim by linting a
+throwaway agent rather than by reading the reference, and keep the helper a photograph of the present —
+no version narrative, no naming a construct in order to exclude it.
 
-## Example Agents
+## Templates ship to users
 
-### doctor (entelekheia.ai/doctor:v1.0)
+Everything under `templates/` is copied verbatim into a scaffolded project by `init`, which walks the
+tree with `readdir` rather than an explicit file list. An empty or placeholder file here becomes an
+empty file in every new user project, so add one only when it carries real content.
 
-**Requires:**
-- `UserProfile` — Patient data and medical history
-- EMR API — Electronic medical records system
+## Releasing
 
-**Status:** Production
+Publishing is triggered by **pushing a tag** matching `cli@*`, which runs
+[`publish-ts.yml`](../../.github/workflows/publish-ts.yml) with npm OIDC trusted publishing. Creating a
+GitHub Release does not publish anything, and `npm publish` is never run by hand. The version bump order
+across `@dot-agent/*` matters — use the `/publish` skill, which owns the exact-pin cascade.
 
-**Notes:** 
-- Requires HIPAA compliance verification
-- Patient consent tokens must be present in context
-- Knowledge base includes latest clinical guidelines
+## License headers
 
----
-
-### assistant (example.com/assistant:v1.0)
-
-**Requires:**
-- `FileSystem` — Read/write operations
-- `SearchAPI` — Query external knowledge bases
-
-**Status:** Development
-
-**Notes:** Early prototype, not for production use yet
-
----
-
-## Common Dependencies
-
-### System Capabilities
-
-- **UserProfile** — User identity, preferences, history
-- **FileSystem** — Disk I/O, document storage
-- **Memory** — Session/context memory (internal)
-- **Clock** — Time-aware features
-
-### External Integrations
-
-- **SearchAPI** — Web search or knowledge base queries
-- **EmailService** — Send/receive emails
-- **SlackBot** — Slack workspace integration
-- **PaymentGateway** — Transaction processing
-
----
-
-## Publishing
-
-Publishing to npm happens automatically via GitHub Actions (`.github/workflows/`) when a GitHub Release is published.
-**Do not run `npm publish` manually.**
-
-Steps to release a new version:
-1. Bump `version` in `package.json`
-2. Commit and push
-3. Create a GitHub Release — the workflow runs `npm ci`, `npm run build`, `npm test`, and publishes to npm
-
----
-
-## Absolute Rules
-
-**License headers are mandatory on every source file.** Before committing any `.ts`, `.tsx`, `.js`, or `.jsx` file you must ensure the correct header is present at the very top of the file:
-- **New file** (all files in this project): full Apache 2.0 header, sole copyright Danilo Borges 2026.
-
-The pre-commit hook (`scripts/ensure-license-headers.sh`, registered in `.githooks/pre-commit` via `git config core.hooksPath`) applies the headers automatically and re-stages patched files. After cloning the repository, run `npm install` to activate the hook. If you add a file programmatically and bypass the hook, inject the header manually before staging. Never remove or alter existing copyright notices.
-
----
-
-## Orchestration Rules
-
-When composing agents that have dependencies:
-
-1. **Initialization Order** — Load agents bottom-up (services before clients)
-2. **Error Handling** — Graceful degradation if optional dependencies unavailable
-3. **Timeout Policy** — Set reasonable timeouts for inter-agent calls
-4. **Logging** — Log all external service calls for debugging
-
----
-
-## Notes for Developers
-
-- Update this file when adding new agents or changing dependencies
-- Document breaking changes when upgrading agent versions
-- Use semantic versioning (v1.0, v2.1, etc.) for reproducibility
-- Keep a `requires[]` field in your agent's `.description` file in sync with this document
+Every `.ts` file carries the full Apache 2.0 header, sole copyright Danilo Borges 2026.
+`scripts/ensure-license-headers.sh` applies them — run it before committing rather than assuming a hook
+has. Never remove or alter an existing copyright notice.
