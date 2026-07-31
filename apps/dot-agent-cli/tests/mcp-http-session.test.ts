@@ -57,6 +57,7 @@ const bundle = {
   files: { persona: undefined, guides: [], knowledge: [] },
 } as unknown as AgentBundle
 
+const rt = { session, bundle }
 const opts: McpServerOptions = { transport: 'http', port: 0, exposePersona: false, exposeKnowledge: false }
 
 describe('getOrCreateTransport (HTTP session routing)', () => {
@@ -68,7 +69,7 @@ describe('getOrCreateTransport (HTTP session routing)', () => {
   it('reuses the transport for a known Mcp-Session-Id instead of creating a new one', async () => {
     const sessions = new Map<string, any>()
 
-    const first = await getOrCreateTransport(sessions, undefined, session, bundle, opts)
+    const first = await getOrCreateTransport(sessions, undefined, rt, opts)
     expect(transportInstances).toHaveLength(1)
 
     // The real SDK only stores the session once it confirms initialization; simulate that here.
@@ -76,7 +77,7 @@ describe('getOrCreateTransport (HTTP session routing)', () => {
     onsessioninitialized('session-123')
     expect(sessions.get('session-123')).toBe(first)
 
-    const second = await getOrCreateTransport(sessions, 'session-123', session, bundle, opts)
+    const second = await getOrCreateTransport(sessions, 'session-123', rt, opts)
 
     expect(second).toBe(first)
     expect(transportInstances).toHaveLength(1)
@@ -85,7 +86,7 @@ describe('getOrCreateTransport (HTTP session routing)', () => {
   it('returns a non-transport sentinel for an unknown Mcp-Session-Id, without creating one', async () => {
     const sessions = new Map<string, any>()
 
-    const result = await getOrCreateTransport(sessions, 'does-not-exist', session, bundle, opts)
+    const result = await getOrCreateTransport(sessions, 'does-not-exist', rt, opts)
 
     expect(typeof result).toBe('symbol')
     expect(transportInstances).toHaveLength(0)
@@ -94,7 +95,7 @@ describe('getOrCreateTransport (HTTP session routing)', () => {
   it('removes the session from the map when the transport closes', async () => {
     const sessions = new Map<string, any>()
 
-    const transport = await getOrCreateTransport(sessions, undefined, session, bundle, opts)
+    const transport = await getOrCreateTransport(sessions, undefined, rt, opts)
     const onsessioninitialized = vi.mocked(StreamableHTTPServerTransport).mock.calls[0][0]!.onsessioninitialized!
     onsessioninitialized('session-456')
     expect(sessions.has('session-456')).toBe(true)

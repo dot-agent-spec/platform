@@ -1,0 +1,23 @@
+{
+  "name": "dot-agent",
+  "description": "Build and run FSM-based .agent projects — MCP-driven runtime, dev tooling (init/pack/lint), and an interactive DSL helper, auto-registered on enable.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Danilo Borges",
+    "url": "https://daniloborg.es"
+  },
+  "homepage": "https://dot-agent.ai",
+  "repository": "https://github.com/dot-agent-spec/platform",
+  "license": "Apache-2.0",
+  "keywords": ["agent", "agents", "fsm", "deterministic"],
+  "mcpServers": {
+    "dot-agent": {
+      "command": "dot-agent",
+      "args": ["server-mcp", "--mcp-transport", "stdio"]
+    },
+    "dot-agent-helper": {
+      "command": "dot-agent",
+      "args": ["run", "--helper"]
+    }
+  }
+}

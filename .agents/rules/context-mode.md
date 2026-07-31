@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: Route data analysis/search/transform through context-mode MCP tools to protect the context window; never dump raw command output.
+---
+
 # context-mode — MANDATORY routing rules
 
 context-mode MCP tools available. Rules protect context window from flooding. One unrouted command dumps 56 KB into context.

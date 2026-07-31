@@ -33,6 +33,7 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | `@dot-agent/sdk` | [`packages/sdk`](packages/sdk) | Browser-compatible SDK for loading and running agent bundles |
 | `@dot-agent/cli` | [`apps/dot-agent-cli`](apps/dot-agent-cli) | CLI for building, packaging, and running agents |
 | `vscode-dot-agent` | [`apps/vscode-extension`](apps/vscode-extension) | VS Code extension: syntax highlighting, hover docs, LSP |
+| `dot-agent` (Claude Code plugin) | [`plugins/claude`](plugins/claude) | Native Claude Code plugin — MCP-driven runtime + dev tooling + interactive DSL helper, auto-registered on enable |
 
 ---
 
@@ -48,6 +49,21 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 | [`examples/`](examples/) | Canonical annotated agent examples |
 
 **Architecture overview:** [`docs/explanation/architecture/map.md`](docs/explanation/architecture/map.md)
+
+---
+
+## Claude Code plugin
+
+```bash
+claude plugin marketplace add dot-agent-spec/platform
+claude plugin install dot-agent@dot-agent-spec
+```
+
+Or let `dot-agent configure --claude` run those same two commands for you and clean up any MCP
+entries an older version of the CLI wrote directly into `~/.claude.json` (see
+[ADR-DA00-08](project/adr/DA00-08-cli-installs-native-host-plugins.md)). Either way, this
+auto-registers the `/dot-agent:run` and `/dot-agent:test` skills plus the `dot-agent` and
+`dot-agent-helper` MCP servers. See [`plugins/claude/README.md`](plugins/claude/README.md).
 
 ---
 

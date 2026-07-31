@@ -6,20 +6,32 @@
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 
+import { readFile, stat } from 'fs/promises'
 import { createServer } from 'http'
 import { randomUUID } from 'node:crypto'
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { z } from 'zod'
+import { loadAgent, AgentSession } from '@dot-agent/sdk'
+import { bundleFromDir } from '@dot-agent/compiler'
 import type { AgentBundle, ContentNamespace } from '@dot-agent/compiler'
-import type { AgentSession } from '@dot-agent/sdk'
 
 export interface McpServerOptions {
   transport: 'stdio' | 'http'
   port: number
   exposePersona: boolean
   exposeKnowledge: boolean
+}
+
+// A mutable box, not a fixed reference: registerTools/registerResources close over this object
+// once, at server-boot time, and read `.session`/`.bundle` fresh on every call — so `load_agent`
+// can fill (or replace) the loaded agent after the tools are already registered and visible to the
+// client. Without this indirection the tool list would only exist once an agent was already chosen,
+// which is exactly the chicken-and-egg the always-on runtime server exists to avoid.
+export interface Runtime {
+  session?: AgentSession
+  bundle?: AgentBundle
 }
 
 const HOWTO = `Navigate via dot-agent://intents + send_intent. Valid intents are state-dependent — re-read
@@ -31,8 +43,21 @@ exactly as given> — do not prepend "knowledge/" or "guides/" again, the effect
 it. A "request_interact" effect means: pause and ask the human user for input, then match their
 reply against the current dot-agent://intents list and call send_intent with the matched intent
 name — never forward the raw reply text as the intent — or call send_offtopic if nothing
-matches. Then continue.`
+matches. Then continue. No agent is loaded until \`load_agent\` is called — a fresh session or a
+second \`load_agent\` call both start (or restart) a flow from its initial state.`
 
+const NO_AGENT_LOADED = 'No agent loaded — call load_agent(source) first.'
+
+export async function loadBundleAndSession(source: string): Promise<{ bundle: AgentBundle; session: AgentSession }> {
+  const srcStat = await stat(source)
+  const bundle = srcStat.isFile()
+    ? await loadAgent(await readFile(source))
+    : await bundleFromDir(source)
+
+  const session = await AgentSession.create(bundle)
+  session.start()
+  return { bundle, session }
+}
 
 function capture<T>(session: AgentSession, fn: () => void): unknown[] {
   const effects: unknown[] = []
@@ -42,24 +67,49 @@ function capture<T>(session: AgentSession, fn: () => void): unknown[] {
   return effects
 }
 
-function registerTools(server: McpServer, session: AgentSession) {
+// Every tool handler in this file returns an explicit result rather than throwing — including on
+// the "no agent loaded" path — so the response shape is identical whether the tool runs through the
+// SDK's full dispatch or is invoked directly (as the test suite does against the raw callback).
+function errorResult(message: string) {
+  return { content: [{ type: 'text' as const, text: message }], isError: true as const }
+}
+
+function registerLoadTool(server: McpServer, rt: Runtime) {
+  server.tool(
+    'load_agent',
+    'Load (or reload) a .agent file or agent project directory, starting its FSM from the initial state. Replaces whatever agent was previously loaded on this connection.',
+    { source: z.string() },
+    async ({ source }) => {
+      const { bundle, session } = await loadBundleAndSession(source)
+      rt.bundle = bundle
+      rt.session = session
+      return { content: [{ type: 'text', text: JSON.stringify({ ok: true, id: bundle.id, state: session.getState() }) }] }
+    }
+  )
+}
+
+function registerTools(server: McpServer, rt: Runtime) {
   server.tool('send_intent', 'Send an intent to the agent FSM', { intent: z.string() }, async ({ intent }) => {
-    const effects = capture(session, () => session.sendIntent(intent))
+    if (!rt.session) return errorResult(NO_AGENT_LOADED)
+    const effects = capture(rt.session, () => rt.session!.sendIntent(intent))
     return { content: [{ type: 'text', text: JSON.stringify({ ok: true, effects }) }] }
   })
 
   server.tool('send_event', 'Send an event to the agent FSM', { event: z.string() }, async ({ event }) => {
-    const effects = capture(session, () => session.sendEvent(event))
+    if (!rt.session) return errorResult(NO_AGENT_LOADED)
+    const effects = capture(rt.session, () => rt.session!.sendEvent(event))
     return { content: [{ type: 'text', text: JSON.stringify({ ok: true, effects }) }] }
   })
 
   server.tool('send_offtopic', 'Signal that user input does not match any intent', {}, async () => {
-    const effects = capture(session, () => session.sendOfftopic())
+    if (!rt.session) return errorResult(NO_AGENT_LOADED)
+    const effects = capture(rt.session, () => rt.session!.sendOfftopic())
     return { content: [{ type: 'text', text: JSON.stringify({ ok: true, effects }) }] }
   })
 
   server.tool('tick_prompt', 'Advance the prompt counter (for count-gated transitions)', {}, async () => {
-    const effects = capture(session, () => session.tickPrompt())
+    if (!rt.session) return errorResult(NO_AGENT_LOADED)
+    const effects = capture(rt.session, () => rt.session!.tickPrompt())
     return { content: [{ type: 'text', text: JSON.stringify({ ok: true, effects }) }] }
   })
 
@@ -68,7 +118,8 @@ function registerTools(server: McpServer, session: AgentSession) {
     'Inject a value into the agent memory store',
     { domain: z.enum(['context', 'session', 'worksession', 'user']), key: z.string(), value: z.string() },
     async ({ domain, key, value }) => {
-      session.injectMemory(domain, key, value)
+      if (!rt.session) return errorResult(NO_AGENT_LOADED)
+      rt.session.injectMemory(domain, key, value)
       return { content: [{ type: 'text', text: JSON.stringify({ ok: true }) }] }
     }
   )
@@ -99,49 +150,62 @@ function findContentFile(
 
 function registerResources(
   server: McpServer,
-  session: AgentSession,
-  bundle: AgentBundle,
+  rt: Runtime,
   opts: McpServerOptions,
 ) {
   const text = (body: string) => ({ contents: [{ uri: '', text: body, mimeType: 'text/plain' }] })
   const json = (body: unknown) => ({ contents: [{ uri: '', text: JSON.stringify(body, null, 2), mimeType: 'application/json' }] })
+  const noAgent = () => text(NO_AGENT_LOADED)
 
   server.resource('howto', 'dot-agent://howto', { description: 'Minimal interaction primer' }, async () => text(HOWTO))
-  server.resource('manifest', 'dot-agent://manifest', { description: 'Agent aboutme.json' }, async () => json(bundle.aboutme))
-  server.resource('state', 'dot-agent://state', { description: 'Current FSM state name' }, async () => text(session.getState()))
-  server.resource('intents', 'dot-agent://intents', { description: 'Valid intents in current state' }, async () => json(session.getValidIntents()))
-  server.resource('graph', 'dot-agent://graph', { description: 'SCXML with active state annotated' }, async () => text(session.getGraph()))
-  server.resource('memory', 'dot-agent://memory', { description: 'Full memory store (4 domains)' }, async () => json(session.getMemory()))
+  server.resource('manifest', 'dot-agent://manifest', { description: 'Loaded agent aboutme.json' }, async () => (rt.bundle ? json(rt.bundle.aboutme) : noAgent()))
+  server.resource('state', 'dot-agent://state', { description: 'Current FSM state name' }, async () => (rt.session ? text(rt.session.getState()) : noAgent()))
+  server.resource('intents', 'dot-agent://intents', { description: 'Valid intents in current state' }, async () => (rt.session ? json(rt.session.getValidIntents()) : noAgent()))
+  server.resource('graph', 'dot-agent://graph', { description: 'SCXML with active state annotated' }, async () => (rt.session ? text(rt.session.getGraph()) : noAgent()))
+  server.resource('memory', 'dot-agent://memory', { description: 'Full memory store (4 domains)' }, async () => (rt.session ? json(rt.session.getMemory()) : noAgent()))
 
-  if (opts.exposePersona && bundle.files.persona) {
-    server.resource('persona', 'dot-agent://persona', { description: 'Agent persona' }, async () => text(bundle.files.persona!))
+  if (opts.exposePersona) {
+    server.resource('persona', 'dot-agent://persona', { description: 'Loaded agent persona' }, async () => {
+      if (!rt.bundle) return noAgent()
+      return rt.bundle.files.persona ? text(rt.bundle.files.persona) : text('This agent has no persona file.')
+    })
   }
 
-  if (bundle.files.guides.length > 0) {
-    server.resource(
-      'guides',
-      new ResourceTemplate('dot-agent://guides/{+name}', { list: undefined }),
-      { description: 'Guide file content' },
-      async (uri, { name }) => {
-        const guide = findContentFile(bundle.files.guides, 'guides', String(name))
-        if (!guide) return { contents: [{ uri: uri.href, text: `Guide '${name}' not found`, mimeType: 'text/plain' }] }
-        return { contents: [{ uri: uri.href, text: guide.content, mimeType: 'text/plain' }] }
-      }
-    )
-  }
+  server.resource(
+    'guides',
+    new ResourceTemplate('dot-agent://guides/{+name}', { list: undefined }),
+    { description: 'Guide file content' },
+    async (uri, { name }) => {
+      if (!rt.bundle) return { contents: [{ ...noAgent().contents[0], uri: uri.href }] }
+      const guide = findContentFile(rt.bundle.files.guides, 'guides', String(name))
+      if (!guide) return { contents: [{ uri: uri.href, text: `Guide '${name}' not found`, mimeType: 'text/plain' }] }
+      return { contents: [{ uri: uri.href, text: guide.content, mimeType: 'text/plain' }] }
+    }
+  )
 
-  if (opts.exposeKnowledge && bundle.files.knowledge.length > 0) {
+  if (opts.exposeKnowledge) {
     server.resource(
       'knowledge',
       new ResourceTemplate('dot-agent://knowledge/{+name}', { list: undefined }),
       { description: 'Knowledge file content' },
       async (uri, { name }) => {
-        const item = findContentFile(bundle.files.knowledge, 'knowledge', String(name))
+        if (!rt.bundle) return { contents: [{ ...noAgent().contents[0], uri: uri.href }] }
+        const item = findContentFile(rt.bundle.files.knowledge, 'knowledge', String(name))
         if (!item) return { contents: [{ uri: uri.href, text: `Knowledge '${name}' not found`, mimeType: 'text/plain' }] }
         return { contents: [{ uri: uri.href, text: item.content, mimeType: 'text/plain' }] }
       }
     )
   }
+}
+
+// Registers the full runtime surface (load_agent + send_intent/... + dot-agent:// resources) on an
+// already-created McpServer. Exported so a host that wants runtime tools alongside its own (e.g.
+// server-mcp.ts's dev tools, on the same connection) can compose them rather than needing a second
+// McpServer/process.
+export function registerRuntime(server: McpServer, rt: Runtime, opts: McpServerOptions) {
+  registerLoadTool(server, rt)
+  registerTools(server, rt)
+  registerResources(server, rt, opts)
 }
 
 const UNKNOWN_SESSION = Symbol('unknown-session')
@@ -152,8 +216,7 @@ const UNKNOWN_SESSION = Symbol('unknown-session')
 export async function getOrCreateTransport(
   sessions: Map<string, StreamableHTTPServerTransport>,
   sessionId: string | undefined,
-  session: AgentSession,
-  bundle: AgentBundle,
+  rt: Runtime,
   opts: McpServerOptions,
 ): Promise<StreamableHTTPServerTransport | typeof UNKNOWN_SESSION> {
   if (sessionId) {
@@ -164,23 +227,21 @@ export async function getOrCreateTransport(
     sessionIdGenerator: () => randomUUID(),
     // Store only once the SDK confirms initialization, avoiding a race where a second request
     // could arrive before the session id is known.
-    onsessioninitialized: sid => sessions.set(sid, transport),
+    onsessioninitialized: sid => { sessions.set(sid, transport) },
   })
   transport.onclose = () => {
     if (transport.sessionId) sessions.delete(transport.sessionId)
   }
 
   const perConn = new McpServer({ name: 'dot-agent', version: '1.0.0' }, { instructions: HOWTO })
-  registerTools(perConn, session)
-  registerResources(perConn, session, bundle, opts)
+  registerRuntime(perConn, rt, opts)
   await perConn.connect(transport)
 
   return transport
 }
 
 export async function startMcpServer(
-  session: AgentSession,
-  bundle: AgentBundle,
+  rt: Runtime,
   opts: McpServerOptions,
 ): Promise<void> {
   const mcp = new McpServer(
@@ -188,8 +249,7 @@ export async function startMcpServer(
     { instructions: HOWTO },
   )
 
-  registerTools(mcp, session)
-  registerResources(mcp, session, bundle, opts)
+  registerRuntime(mcp, rt, opts)
 
   if (opts.transport === 'stdio') {
     const transport = new StdioServerTransport()
@@ -201,7 +261,7 @@ export async function startMcpServer(
 
     const httpServer = createServer(async (req, res) => {
       const sessionId = req.headers['mcp-session-id'] as string | undefined
-      const transport = await getOrCreateTransport(sessions, sessionId, session, bundle, opts)
+      const transport = await getOrCreateTransport(sessions, sessionId, rt, opts)
 
       if (transport === UNKNOWN_SESSION) {
         res.writeHead(400, { 'Content-Type': 'application/json' })
