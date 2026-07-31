@@ -60,8 +60,9 @@ skills), `dsl/reference/comportment.md` as the canonical comportment spec, and t
   chosen at runtime; a skill that *ships* one is a different distribution shape and is not designed yet.
 - **An HTTP endpoint for the runtime.** Explicitly dropped, not deferred — see the Decision Log.
 - **Reference-doc drift in `docs/reference/kernel-dsl.md` and `dsl/reference/description.md`.** Tracked
-  separately in `project/tasks/reference-doc-drift.md`; those are documentation corrections against the
-  grammar and the kernel, independent of this plan's delivery.
+  separately, independent of this plan's delivery — closed via
+  [platform#20](https://github.com/dot-agent-spec/platform/issues/20) (the task dossier that tracked it,
+  `project/tasks/reference-doc-drift.md`, is deleted per the task lifecycle; breadcrumb on the issue).
 
 ## Design
 
@@ -535,9 +536,11 @@ the reason the connect-time constraint above is worth remembering.
   [platform#27](https://github.com/dot-agent-spec/platform/issues/27) tracks it upstream.
 - [Plan-001](001-adopt-vibe-ops-baseline.md) — Track 8 here closes that plan's Track 3 items for
   `apps/dot-agent-cli/` and `plugins/claude/`.
-- `project/tasks/reference-doc-drift.md` — documentation corrections in `docs/reference/kernel-dsl.md` and
-  `dsl/reference/description.md`, surfaced by a sync review of `apps/dot-agent-cli/helper-src/`. It touches
-  a folder this plan owns but is independent work with its own acceptance, so it stays a task.
+- [platform#20](https://github.com/dot-agent-spec/platform/issues/20) — documentation corrections in
+  `docs/reference/kernel-dsl.md` and `dsl/reference/description.md`, surfaced by a sync review of
+  `apps/dot-agent-cli/helper-src/`. Touched a folder this plan owns but was independent work with its own
+  acceptance; closed as its own task (`project/tasks/reference-doc-drift.md`, now deleted — breadcrumb on
+  the issue), not folded into this plan.
 - Tracking issue [#13](https://github.com/dot-agent-spec/platform/issues/13).
 - `murici` `lib/runtime/dot-agent-injector.ts` — prior art for injecting agent directives into a host,
   cited by the source task.
