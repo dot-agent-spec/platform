@@ -1,14 +1,4 @@
 <!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
-<!--
  PLAN TEMPLATE — copy to plans/<NNN>-<slug>.md. Numbering is plain NNN, NOT the DA scheme
  (that is for ADRs and pre-release logs only) — see .agents/rules/governance.md.
  A plan answers "how do we build X?". An RFC asks "should we, and how?"; a task is ephemeral.
@@ -85,6 +75,9 @@
 
 - [ ] Example step.
 - [ ] Example partially completed step (done: X; remaining: Y).
+- [ ] Run `/vibe-ops:close-plan` — retrospective, route every Surprises & Discoveries entry, demotion
+      check, close the tracking issue. The plan file itself is kept. Stays unchecked until the plan is
+      actually closed; a Progress list that is otherwise complete but has this box open is not finished.
 
 ## Surprises & Discoveries
 

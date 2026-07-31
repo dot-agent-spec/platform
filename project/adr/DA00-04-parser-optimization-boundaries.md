@@ -1,13 +1,3 @@
-<!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
 # DA00-04: Parser optimization boundaries
 
 > Migrated from legacy ADR-0003 under [DA00-01](DA00-01-traceability-scheme.md).
