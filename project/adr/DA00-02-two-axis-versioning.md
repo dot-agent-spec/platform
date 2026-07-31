@@ -1,13 +1,3 @@
-<!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
 # DA00-02: Two-axis versioning — DSL version vs package versions
 
 > Migrated from legacy ADR-0001 under [DA00-01](DA00-01-traceability-scheme.md).

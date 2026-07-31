@@ -1,13 +1,3 @@
-<!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
 # Investigation Brief: Package Architecture
 
 > **Purpose of this document.** This is a *research brief* meant to be read with **zero prior context**. It records the **current, verified runtime/dependency structure** of the `dot-agent` packages — what depends on what, what each exposes, and what the artifacts cost. It contains **no recommendations and no decisions**: the goal is to hand a fresh investigation an accurate, unbiased map so it can reason about possible optimizations on its own terms.

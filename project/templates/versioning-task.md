@@ -1,14 +1,4 @@
 <!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
-<!--
  VERSIONING TASK TEMPLATE — copy to tasks/<ID>-<slug>.md and fill in.
  Use this for work that bumps or restructures a version number under DA00-02's two-axis
  policy (project/adr/DA00-02-two-axis-versioning.md) — whether that's the DSL/spec axis

@@ -1,13 +1,3 @@
-<!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
 # Plan-003: Pre-Monorepo Fossil Cleanup and Dependency Security Baseline
 
 | Field | Value |
@@ -172,12 +162,21 @@ Each track is one or more **task dossiers** under [`../tasks/`](../tasks/), whic
 items, the change procedure and the acceptance. This plan keeps the design rationale and the working
 record; the tasks are deleted at closure while this file stays.
 
+A dossier named below **without a link** has been closed and deleted — that is the normal end of a task,
+not a missing file. The three closed so far are readable at the commit that still carried them:
+
+```
+git show 2c885e6:project/tasks/fossil-lockfiles-and-runtime-deps.md
+git show 2c885e6:project/tasks/npm-publish-allowlists.md
+git show 2c885e6:project/tasks/license-header-ci-enforcement.md
+```
+
 | Track | Task | What it delivers |
 |---|---|---|
-| A — Fossils and runtime security | [`fossil-lockfiles-and-runtime-deps.md`](../tasks/fossil-lockfiles-and-runtime-deps.md) | Deletes the five nested lockfiles and the dead `dsl/*` glob; patches `fast-uri` and raises `@modelcontextprotocol/sdk` to unblock `@hono/node-server`. Takes the alert count from 18 to 4. |
-| B — Packaging | [`npm-publish-allowlists.md`](../tasks/npm-publish-allowlists.md) | Converts `apps/dot-agent-cli` and `packages/language-server` from denylist/no-list to a `files` allowlist. |
+| A — Fossils and runtime security | `fossil-lockfiles-and-runtime-deps.md` | Deletes the five nested lockfiles and the dead `dsl/*` glob; patches `fast-uri` and raises `@modelcontextprotocol/sdk` to unblock `@hono/node-server`. Takes the alert count from 18 to 4. |
+| B — Packaging | `npm-publish-allowlists.md` | Converts `apps/dot-agent-cli` and `packages/language-server` from denylist/no-list to a `files` allowlist. |
 | C — esbuild and Dependabot config | [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md) | Raises `esbuild` to `^0.28.1` across four manifests; adds `.github/dependabot.yml` with grouped security updates. |
-| D — License enforcement in CI | [`license-header-ci-enforcement.md`](../tasks/license-header-ci-enforcement.md) | Adds a check mode to the script, moves it to the repo root, adds the repository's first `pull_request` workflow, deletes the fossil hook. **Closes #19.** |
+| D — License enforcement in CI | `license-header-ci-enforcement.md` | Adds a check mode to the script, moves it to the repo root, adds the repository's first `pull_request` workflow, deletes the fossil hook. **Closes #19.** |
 | E — Per-folder `AGENTS.md` | [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md) · [`agents-md-language-server.md`](../tasks/agents-md-language-server.md) · [`agents-md-vscode-extension.md`](../tasks/agents-md-vscode-extension.md) · [`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) | The full Plan-001 Track 3 sequence per folder: review → repoint dead links → deliver via `CLAUDE.md`. |
 
 ### Why Track E is four tasks rather than one sweep
@@ -223,18 +222,18 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
 - [x] 2026-07-31 — Broke the five tracks into eight task dossiers under [`../tasks/`](../tasks/), folding
   the Plan-001 Track 3 content review into Track E as real work rather than deferring it.
 - [x] 2026-07-31 — Track A complete
-  ([`fossil-lockfiles-and-runtime-deps.md`](../tasks/fossil-lockfiles-and-runtime-deps.md)), four commits
+  (`fossil-lockfiles-and-runtime-deps.md`), four commits
   on `chore/plan-003-fossil-cleanup`: five nested lockfiles deleted; `fast-uri` 3.1.3 → 3.1.5;
   `@modelcontextprotocol/sdk` 1.29.0 → 1.30.0 with `@hono/node-server` 1.19.14 → 2.0.12; dead `dsl/*`
   glob dropped. Full build green, 287 tests passing across the three suites. The Dependabot count is
   still 18 and stays there until this merges — Dependabot scans the **default branch**, not a PR branch.
-- [x] 2026-07-31 — Track B complete ([`npm-publish-allowlists.md`](../tasks/npm-publish-allowlists.md)):
+- [x] 2026-07-31 — Track B complete (`npm-publish-allowlists.md`):
   `apps/dot-agent-cli` 48 → 47 files (one removal), `packages/language-server` 24 → 17 files (110KB →
   81KB). Both diffed file-by-file against a recorded `npm pack --dry-run` baseline; nothing added, no
   runtime file lost. Bundled language server verified by LSP `initialize` over stdio.
 - [ ] Track C — [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md)
 - [x] 2026-07-31 — Track D complete
-  ([`license-header-ci-enforcement.md`](../tasks/license-header-ci-enforcement.md), closes #19): script
+  (`license-header-ci-enforcement.md`, closes #19): script
   gained `--check`, moved to `scripts/`, discovery switched to `git ls-files`; first `pull_request`
   workflow added; fossil hook, `prepare` and the package-local script deleted. 18 files of accumulated
   backlog fixed. `core.hooksPath` untouched, graphify `post-commit` still resolves.

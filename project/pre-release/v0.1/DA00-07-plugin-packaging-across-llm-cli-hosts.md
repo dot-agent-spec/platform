@@ -1,13 +1,3 @@
-<!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
 # LOG-DA00-07: dot-agent as a Claude Code Plugin (reference implementation for the host-plugin pattern)
 
 | Field | Value |

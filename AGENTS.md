@@ -16,9 +16,9 @@ AI collaboration guide for maintaining and evolving this repository.
 - Annotated examples (`examples/`) — canonical `.description` + `.behavior` pairs
 
 This is a **real monorepo** — `packages/*` and `apps/*` are plain workspace folders, not git submodules.
-There is no separate `git submodule update --init` step; clone and work directly. **`npm run build` needs
-Docker running** (`packages/tree-sitter` runs `emcc` in a container); without it `dist/` is missing and
-unrelated CLI tests fail to *load*, which reads as a test regression and is not one.
+There is no separate `git submodule update --init` step; clone and work directly. `npm run build` needs
+Docker running, and its absence surfaces as *test* failures rather than a build error — see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -167,9 +167,8 @@ All documentation in this repository must be written in English.
 ## License rules
 
 - `.md`, `.description` and `.behavior` files need **no header** — the root `LICENSE` covers them
-- Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`, anywhere) carry the Apache 2.0 header. Fix with
-  `./scripts/ensure-license-headers.sh` (`--check` only reports); CI runs it on every PR. **Never go back
-  to a git hook** — `core.hooksPath` is repo-scoped, so one package installing it reconfigures the whole
-  monorepo ([#19](https://github.com/dot-agent-spec/platform/issues/19))
-- **`tools/wasi-stub/` is third-party and must never carry our copyright**; `pkg/`, `bindings/` and
-  `generated-*` are tool output. The script excludes all four
+- Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`) carry `// SPDX-License-Identifier: Apache-2.0` and
+  nothing else — attribution is collective in [`AUTHORS`](AUTHORS), and CI rejects any other header form.
+  Rationale, exclusions and the fix command: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Never reinstate a git hook for this.** `core.hooksPath` is repo-scoped, so one package installing it
+  reconfigures the whole monorepo ([#19](https://github.com/dot-agent-spec/platform/issues/19))

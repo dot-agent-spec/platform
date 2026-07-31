@@ -1,16 +1,6 @@
 <!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
-<!--
  TASK TEMPLATE — copy to tasks/<topic>.md and fill in.
- A task describes WHAT to build, for work already decided (see tasks/AGENTS.md).
+ A task describes WHAT to build, for work already decided (lifecycle: .agents/rules/governance.md).
  If the design is still open, write an RFC first. Tasks are removed/archived once done.
  Delete these comments before committing.
 -->
@@ -67,3 +57,13 @@ P0:  …
 P1:  …
 P2:  …
 ```
+
+## Closing
+
+- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+      runs; a dossier that looks otherwise finished but has this box open is not done.
+
+<!-- close-task writes back to the doc that started this work, propagates to living docs, spawns an ADR
+     if a decision emerged, routes each Surprises & Discoveries entry through the promotion test (and
+     checks whether a new guard makes an existing instruction line redundant), then distills the summary
+     + breadcrumb (git show <sha>:project/tasks/<topic>.md) into the issue before removing this dossier. -->
