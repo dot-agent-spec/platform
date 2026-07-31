@@ -117,6 +117,25 @@ work, mid for structured execution, cheap for mechanical; `inherit` when unsure,
 `model` of an *existing* subagent. Rationale and reversal plan:
 [DA00-03](project/adr/DA00-03-model-tiering-for-agent-routing.md).
 
+**Every skill and subagent carries a self-improvement loop.** A `## Self-improvement loop — keep this
+file alive` section at the end, and running it is part of the task, not an optional epilogue. Copy the
+shape from [`.agents/agents/cli-helper-agent-sync.md`](.agents/agents/cli-helper-agent-sync.md) or
+[`.agents/skills/sync-implementation-status/SKILL.md`](.agents/skills/sync-implementation-status/SKILL.md).
+The rules that matter:
+
+- **A fact hardcoded in an instruction file rots silently, and a rotted file is worse than a missing one
+  — it reads as authority.** `sync-implementation-status` carried a node-name discrepancy map whose five
+  entries were *all* stale; it would have mis-mapped grammar nodes on every run. Deleting a stale local
+  copy and pointing at the live source is the highest-value edit in a self-improvement pass. Same failure
+  as the forked `/new-adr` above.
+- Prefer correcting a stale assumption over appending a paragraph — these files should stay the same
+  length after ten runs and just get more accurate.
+- Keep session-specific detail (line numbers, versions, today's diff) out; it belongs in the report and
+  the commit message.
+- Never touch frontmatter in a self-improvement pass — same principle as not changing an existing
+  subagent's model.
+- Say in the report whether the file changed, so it shows up in `git diff`. Never a silent self-rewrite.
+
 ---
 
 ## Package, app & plugin table

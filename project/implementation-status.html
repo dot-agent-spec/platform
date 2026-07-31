@@ -601,11 +601,11 @@
 </tr>
 <tr>
 <td><strong>Version</strong></td>
-<td><code>0.10.0</code></td>
-<td><code>0.10.0</code></td>
-<td><code>0.10.0</code></td>
-<td><code>0.10.0</code></td>
-<td><code>0.10.0</code></td>
+<td><code>0.10.1</code></td>
+<td><code>0.10.2</code></td>
+<td><code>0.10.2</code></td>
+<td><code>0.10.3</code></td>
+<td><code>0.10.3</code></td>
 </tr>
 <tr>
 <td><strong>Build</strong></td>
@@ -943,10 +943,10 @@
 <td>factory; used by language-server</td>
 </tr>
 <tr>
-<td>✅1️⃣ <code>full.buildTypesJson(df)</code> → <code>string</code></td>
+<td>⚠️1️⃣ <code>buildTypesJson(df)</code> → <code>string</code></td>
 <td></td>
 <td></td>
-<td>JSON Schema 2020-12 from <code>types[]</code> + <code>input[]</code> + <code>output[]</code></td>
+<td>JSON Schema 2020-12 from <code>types[]</code> + <code>input[]</code> + <code>output[]</code>; <code>schema.ts</code> module export, <strong>not re-exported from <code>index.ts</code></strong> — <code>package.json</code> exposes only <code>.</code> and <code>./core</code>, so it is unreachable from either public entry point</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>full.readZip(filePath)</code> · <code>full.writeZip(zip, outPath)</code></td>
@@ -961,10 +961,10 @@
 <td>Node.js; sdk imports <code>Core</code> variants from <code>compiler/core</code> and wraps for async file I/O</td>
 </tr>
 <tr>
-<td>✅1️⃣ <code>full.discoverDescriptionFile(dir, explicit?)</code> → <code>Promise&lt;string&gt;</code></td>
+<td>⚠️1️⃣ <code>discoverDescriptionFile(dir, explicit?)</code> → <code>Promise&lt;string&gt;</code></td>
 <td></td>
 <td></td>
-<td>Node.js; globs <code>*.description</code> (0 or 2+ → E003); <code>PackOptions.description</code> for override</td>
+<td>Node.js; globs <code>*.description</code> (0 or 2+ → E003); <code>PackOptions.description</code> for override; <code>pack.ts</code> module export, <strong>not re-exported from <code>index.ts</code></strong></td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>full.consolidate(agentRoot, entryFile)</code> → <code>Promise&lt;{mergedText, mergeSources}&gt;</code></td>
@@ -983,6 +983,24 @@
 <td></td>
 <td></td>
 <td>full pipeline; consumed by CLI <code>pack.ts</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.bundleFromDir(dir)</code></td>
+<td></td>
+<td></td>
+<td>Node.js; <code>bundle.ts</code> — reads an agent directory into an <code>AgentBundle</code> without going through a <code>.agent</code> ZIP</td>
+</tr>
+<tr>
+<td>✅ <code>full.initBehaviorParser()</code></td>
+<td></td>
+<td></td>
+<td>behavior-only parser init; lighter than <code>initParsers()</code></td>
+</tr>
+<tr>
+<td>✅ <code>full.CONTENT_NAMESPACES</code> · <code>isInContentNamespace(p)</code> · <code>classifyContentPath(p)</code></td>
+<td></td>
+<td>🔄 <code>sdk</code></td>
+<td><code>namespace.ts</code> — <code>guides/</code> vs <code>knowledge/</code> classification; exported from <strong>both</strong> <code>index</code> and <code>core</code>; backs the linked-only bundling rule (E018/E020/W015/W016)</td>
 </tr>
 </tbody></table>
 <hr>
@@ -1099,9 +1117,14 @@
 <td></td>
 </tr>
 <tr>
+<td>✅ <code>Effect::ParseError { message }</code></td>
+<td>⚠️ no dedicated wrapper</td>
+<td><code>effect.rs</code>; emitted by <code>load_behavior</code> / <code>load_behavior_with_bundle</code> when the parse fails (<code>lib.rs</code>); reaches sdk only via the generic <code>registerHandler(&quot;parse_error&quot;, fn)</code></td>
+</tr>
+<tr>
 <td>✅1️⃣ <code>observe(callback: Function)</code></td>
-<td>⚠️ replaced by <code>registerHandler</code></td>
-<td>push model; sdk uses pull-style per-effect handlers instead</td>
+<td>⚠️ replaced by <code>registerHandler</code> + <code>setEffectListener</code></td>
+<td>push model; sdk uses pull-style per-effect handlers plus one global listener instead</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>free()</code> (wasm-bindgen auto)</td>
@@ -1162,7 +1185,12 @@
 <tr>
 <td>✅1️⃣ <code>AgentSession.registerHandler(type, handler)</code></td>
 <td></td>
-<td>pull-style replacement for kernel <code>observe</code></td>
+<td>pull-style replacement for kernel <code>observe</code>; one handler per effect type</td>
+</tr>
+<tr>
+<td>✅ <code>AgentSession.setEffectListener(listener?)</code></td>
+<td><code>session.ts</code></td>
+<td>global observer — called for <strong>every</strong> effect before the typed handler runs; pass <code>undefined</code> to clear</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>sendIntent</code> · <code>sendEvent</code> · <code>sendOfftopic</code> · <code>tickPrompt</code></td>
@@ -1321,7 +1349,7 @@
 <td>✅1️⃣ <code>persona</code></td>
 <td>✅ <code>persona_block</code></td>
 <td>✅ <code>DescriptionFile.persona</code></td>
-<td>✅ <code>aboutme.persona</code> — 📌 falls back to <code>&#39;SOUL.md&#39;</code> when block absent</td>
+<td>✅ <code>aboutme.persona</code> — ✅ no fallback: <code>df.persona ?? undefined</code>; when present the file is read into the bundle, path-checked (E014) and existence-checked (E_DESC)</td>
 <td></td>
 <td></td>
 </tr>
@@ -1329,7 +1357,7 @@
 <td>✅1️⃣ <code>behavior</code></td>
 <td>✅ <code>behavior_block</code></td>
 <td>✅ <code>DescriptionFile.behavior</code></td>
-<td>✅ required — entry file for <code>consolidate()</code>; validated (E_DESC if absent); E014 check on path</td>
+<td>✅ required — entry file for <code>consolidate()</code>; validated (E_DESC if absent); E014 check on path; <strong>E017</strong> if declared more than once</td>
 <td></td>
 <td></td>
 </tr>
@@ -1400,9 +1428,9 @@
 <td>a real DSL field — none exists yet (no <code>purpose</code> in grammar)</td>
 </tr>
 <tr>
-<td><code>aboutme.persona</code></td>
-<td>falls back to <code>&#39;SOUL.md&#39;</code></td>
-<td>required from the <code>persona</code> block, no silent default</td>
+<td><del><code>aboutme.persona</code></del></td>
+<td><del>falls back to <code>&#39;SOUL.md&#39;</code></del></td>
+<td>✅ fixed: the fallback is gone — <code>persona: df.persona ?? undefined</code>, and a declared persona file is bundled, path-checked (E014) and existence-checked (E_DESC)</td>
 </tr>
 <tr>
 <td><del><code>aboutme.schemaVersion</code></del></td>
@@ -1556,7 +1584,7 @@
 <td>✅1️⃣ <code>guide</code></td>
 <td>✅ <code>guide_stmt</code></td>
 <td>✅ <code>Statement::Guide</code></td>
-<td>✅ lint W010 (&gt;280 chars)</td>
+<td>✅ lint W010 (&gt;280 chars) · content-namespace checks E018 (file not found) · E020 (reserved bundle path) · W015 (orphan) · W016 (outside <code>guides/</code>/<code>knowledge/</code>)</td>
 <td>✅ → <code>Effect::Guide {text}</code></td>
 <td>✅ <code>registerHandler(&quot;guide&quot;, fn)</code></td>
 </tr>
@@ -1564,7 +1592,7 @@
 <td>✅1️⃣ <code>teach</code></td>
 <td>✅ <code>teach_stmt</code></td>
 <td>✅ <code>Statement::Teach</code></td>
-<td></td>
+<td>✅ content-namespace checks E018 · E020 · W015 · W016 (same linked-only rule as <code>guide</code>)</td>
 <td>✅ → <code>Effect::Teach {text}</code></td>
 <td>✅ <code>registerHandler(&quot;teach&quot;, fn)</code></td>
 </tr>
@@ -1753,9 +1781,19 @@
 <td>Discrepancy — grammar uses <code>type</code> for run kind, but AST uses <code>kind</code></td>
 </tr>
 <tr>
-<td><code>oriented_state_body</code></td>
+<td><code>run_type</code></td>
+<td><code>RunStmt.kind</code> (string)</td>
+<td>Named grammar node (<code>script</code> | <code>subagent</code> | <code>tool</code>); the parser flattens it to its raw source text rather than emitting a node</td>
+</tr>
+<tr>
+<td><code>interact_stmt</code></td>
+<td><code>Interact { handlers }</code></td>
+<td>Discrepancy — the grammar node is a <strong>pure keyword with zero children</strong>; the parser synthesizes <code>handlers[]</code> by absorbing sibling <code>intent_handler</code>/<code>offtopic_handler</code> nodes. No grammar field backs it</td>
+</tr>
+<tr>
+<td>🗑️ <code>oriented_state_body</code></td>
 <td>—</td>
-<td>Internal grammar grouping, not represented in AST</td>
+<td>🗑️ Not a grammar node at all — <code>state_body</code> is a flat <code>repeat1(statement)</code> and the oriented-state shape (goal&lt;guide&lt;teach&lt;interact) is enforced by lint, not by the grammar. Absent from <code>node-types.json</code></td>
 </tr>
 <tr>
 <td><code>intent_handler</code></td>
