@@ -121,7 +121,7 @@ export async function startDevMcpServer(opts: DevMcpServerOptions): Promise<void
           sessionIdGenerator: () => randomUUID(),
           // Store only once the SDK confirms initialization, avoiding a race where a second
           // request could arrive before the session id is known.
-          onsessioninitialized: sid => sessions.set(sid, transport!),
+          onsessioninitialized: sid => { sessions.set(sid, transport!) },
         })
         transport.onclose = () => {
           if (transport!.sessionId) sessions.delete(transport!.sessionId)

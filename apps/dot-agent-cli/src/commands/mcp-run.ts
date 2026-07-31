@@ -176,7 +176,7 @@ function registerResources(
     new ResourceTemplate('dot-agent://guides/{+name}', { list: undefined }),
     { description: 'Guide file content' },
     async (uri, { name }) => {
-      if (!rt.bundle) return { contents: [{ uri: uri.href, ...noAgent().contents[0] }] }
+      if (!rt.bundle) return { contents: [{ ...noAgent().contents[0], uri: uri.href }] }
       const guide = findContentFile(rt.bundle.files.guides, 'guides', String(name))
       if (!guide) return { contents: [{ uri: uri.href, text: `Guide '${name}' not found`, mimeType: 'text/plain' }] }
       return { contents: [{ uri: uri.href, text: guide.content, mimeType: 'text/plain' }] }
@@ -189,7 +189,7 @@ function registerResources(
       new ResourceTemplate('dot-agent://knowledge/{+name}', { list: undefined }),
       { description: 'Knowledge file content' },
       async (uri, { name }) => {
-        if (!rt.bundle) return { contents: [{ uri: uri.href, ...noAgent().contents[0] }] }
+        if (!rt.bundle) return { contents: [{ ...noAgent().contents[0], uri: uri.href }] }
         const item = findContentFile(rt.bundle.files.knowledge, 'knowledge', String(name))
         if (!item) return { contents: [{ uri: uri.href, text: `Knowledge '${name}' not found`, mimeType: 'text/plain' }] }
         return { contents: [{ uri: uri.href, text: item.content, mimeType: 'text/plain' }] }
@@ -227,7 +227,7 @@ export async function getOrCreateTransport(
     sessionIdGenerator: () => randomUUID(),
     // Store only once the SDK confirms initialization, avoiding a race where a second request
     // could arrive before the session id is known.
-    onsessioninitialized: sid => sessions.set(sid, transport),
+    onsessioninitialized: sid => { sessions.set(sid, transport) },
   })
   transport.onclose = () => {
     if (transport.sessionId) sessions.delete(transport.sessionId)
