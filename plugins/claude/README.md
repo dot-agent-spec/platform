@@ -57,6 +57,6 @@ installs it.
 ## More
 
 Design rationale: [`DA00-07`](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
-Work items and status: [`project/tasks/DA00-07-dot-agent-claude-skill.md`](../../project/tasks/DA00-07-dot-agent-claude-skill.md)
+Work items and status: [`project/plans/002-dot-agent-as-claude-plugin.md`](../../project/plans/002-dot-agent-as-claude-plugin.md)
 (tracker: platform#13). Sync invariants between this plugin's skills and the CLI's own copy:
 [`AGENTS.md`](AGENTS.md).

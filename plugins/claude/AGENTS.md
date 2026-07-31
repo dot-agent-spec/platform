@@ -44,5 +44,5 @@ decision 4 before adding one.
 
 Decision: [`DA00-07`](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) + its
 [log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (design
-rationale). Work items and current status: [`project/tasks/DA00-07-dot-agent-claude-skill.md`](../../project/tasks/DA00-07-dot-agent-claude-skill.md)
+rationale). Work items and current status: [`project/plans/002-dot-agent-as-claude-plugin.md`](../../project/plans/002-dot-agent-as-claude-plugin.md)
 — tracker: `dot-agent-spec/platform#13`.
