@@ -27,7 +27,7 @@ is the first host; Codex and Antigravity (`agy`) are already anticipated next �
 in this repo's layout as the Antigravity integration point. Each host has its own extension mechanism
 (Claude Code: a plugin manifest with `mcpServers` + `skills`; Codex and Antigravity: their own,
 independently evolving), so "add a new host" recurs, and the first implementation (`plugins/claude/`,
-`project/tasks/DA00-07-dot-agent-claude-skill.md`) sets the pattern every later one either follows or has to
+`project/plans/002-dot-agent-as-claude-plugin.md`) sets the pattern every later one either follows or has to
 diverge from on purpose.
 
 ## Decision
@@ -46,7 +46,7 @@ is expected to reuse this shape rather than invent its own.
 - **Option A — One-off integration per host, whatever's fastest each time.** Pro: no upfront design
   cost. Con: without a shared contract, each host's comportment text drifts independently — this is
   exactly the failure mode `comportment.md` was extracted to prevent (see the agy role-confusion bug
-  documented in `project/tasks/DA00-07-dot-agent-claude-skill.md`). (rejected)
+  documented in `project/plans/002-dot-agent-as-claude-plugin.md`). (rejected)
 - **Option B — Wait for / adopt a single cross-host plugin standard.** Pro: write the integration once.
   Con: no such standard exists across Claude Code, Codex, and Antigravity today; blocking on one would
   stall shipping against the host that already works. (rejected)
@@ -72,6 +72,6 @@ decision, not a new default.
 
 - [`dsl/reference/comportment.md`](../../dsl/reference/comportment.md) — the shared contract this ADR
   keeps host-neutral.
-- [`project/tasks/DA00-07-dot-agent-claude-skill.md`](../../project/tasks/DA00-07-dot-agent-claude-skill.md) — the
+- [`project/plans/002-dot-agent-as-claude-plugin.md`](../plans/002-dot-agent-as-claude-plugin.md) — the
   Claude Code reference implementation this ADR generalizes from.
 - Paired long-form log: [`project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md`](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).

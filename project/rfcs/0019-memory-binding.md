@@ -176,8 +176,8 @@ state draft_sections
 
 ## Related
 
-- [`dogfood/EXPRESSIVENESS.md`](../dogfood/EXPRESSIVENESS.md) — gaps G1 and G4 that motivated this RFC
+- [`dogfood/rfc-author/EXPRESSIVENESS.md`](../../dogfood/rfc-author/EXPRESSIVENESS.md) — gaps G1 and G4 that motivated this RFC
 - [RFC-0004: Kernel Protocol](0004-kernel-protocol.md) — `inject_memory` / `SetMemory` flow that `extract` builds on
 - [RFC-0014: Data Contract](0014-data-contract.md) — `on intent ... with TypeName` structured validation; complement to `extract`
-- [`dsl/reference/behavior.md`](../dsl/reference/behavior.md) — current `set` and `run` semantics
-- [`dsl/reference/memory.md`](../dsl/reference/memory.md) — memory domain semantics and ownership model
+- [`dsl/reference/behavior.md`](../../dsl/reference/behavior.md) — current `set` and `run` semantics
+- [`dsl/reference/memory.md`](../../dsl/reference/memory.md) — memory domain semantics and ownership model

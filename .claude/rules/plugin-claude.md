@@ -1,0 +1,1 @@
+../../.agents/rules/plugin-claude.md

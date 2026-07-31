@@ -110,9 +110,40 @@ describe('server-mcp command', () => {
     const unpackRes = await registeredTools['dot_agent_unpack']({ file: '/test.agent' })
     expect(JSON.parse(unpackRes.content[0].text)).toEqual({ ok: true, dir: '/mock/unpack-dir', id: 'agent-id', files: [] })
 
-    // Test dot_agent_configure
-    const configureRes = await registeredTools['dot_agent_configure']({ claude: true })
-    expect(JSON.parse(configureRes.content[0].text)).toEqual({ ok: true, results: [{ dest: '/mock/skill/path', mcpConfigured: true }] })
+    // Test dot_agent_configure. Outside a live Claude Code session (CLAUDECODE unset) it passes
+    // straight through to configure() — see the dedicated CLAUDECODE-guard test below for the refusal
+    // path this handler takes when it *is* set.
+    const previousClaudeCode = process.env.CLAUDECODE
+    delete process.env.CLAUDECODE
+    try {
+      const configureRes = await registeredTools['dot_agent_configure']({ claude: true })
+      expect(JSON.parse(configureRes.content[0].text)).toEqual({ ok: true, results: [{ dest: '/mock/skill/path', mcpConfigured: true }] })
+    } finally {
+      if (previousClaudeCode !== undefined) process.env.CLAUDECODE = previousClaudeCode
+    }
+  })
+
+  it('dot_agent_configure refuses the claude target from inside a live Claude Code session', async () => {
+    await startDevMcpServer({ transport: 'stdio', port: 3000 })
+
+    const previousClaudeCode = process.env.CLAUDECODE
+    process.env.CLAUDECODE = '1'
+    try {
+      const configureRes = await registeredTools['dot_agent_configure']({ claude: true })
+      const parsed = JSON.parse(configureRes.content[0].text)
+      expect(parsed.ok).toBe(false)
+      expect(parsed.reason).toMatch(/terminal/)
+
+      // gemini/murici are unrestricted even inside a live session — only claude is guarded.
+      const muriciRes = await registeredTools['dot_agent_configure']({ murici: true })
+      expect(JSON.parse(muriciRes.content[0].text)).toEqual({ ok: true, results: [{ dest: '/mock/skill/path', mcpConfigured: true }] })
+    } finally {
+      if (previousClaudeCode !== undefined) {
+        process.env.CLAUDECODE = previousClaudeCode
+      } else {
+        delete process.env.CLAUDECODE
+      }
+    }
   })
 
   it('runtime tools report no agent loaded before load_agent is called', async () => {

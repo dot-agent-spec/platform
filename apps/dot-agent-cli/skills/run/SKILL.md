@@ -37,7 +37,7 @@ own MCP server) — not for you. From this skill, the `dot-agent` MCP server thi
 
 ## Running an agent — how to behave (read this first)
 
-When the user asks you to **load / run / follow** an agent, call `mcp__dot-agent__load_agent` with its
+When the user asks you to **load / run / follow** an agent, call `mcp__plugin_dot-agent_dot-agent__load_agent` with its
 path (a directory or a `.agent` file) and drive it via the MCP tools below. But *driving the FSM is only
 the mechanics* — the part that matters is **how you treat what the FSM hands back**. Getting this wrong
 (treating the FSM's output as instructions for *you* to carry out) is the single most common failure.

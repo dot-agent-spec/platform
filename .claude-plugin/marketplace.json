@@ -2,8 +2,8 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "dot-agent-spec",
   "owner": {
-    "name": "Danilo Borges",
-    "url": "https://daniloborg.es"
+    "name": "dot-agent",
+    "url": "https://dot-agent.ai"
   },
   "metadata": {
     "description": "dot-agent — Claude Code plugin for building and running FSM-based .agent projects"

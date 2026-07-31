@@ -54,14 +54,16 @@ The **Runtime** reads the manifest for sandboxing and discovery; it executes the
 
 ## Claude Code plugin
 
-```
-/plugin marketplace add dot-agent-spec/platform
-/plugin install dot-agent
+```bash
+claude plugin marketplace add dot-agent-spec/platform
+claude plugin install dot-agent@dot-agent-spec
 ```
 
-Auto-registers the `/dot-agent:run` and `/dot-agent:test` skills plus the `dot-agent` and
-`dot-agent-helper` MCP servers — no separate `configure` step. See
-[`plugins/claude/README.md`](plugins/claude/README.md).
+Or let `dot-agent configure --claude` run those same two commands for you and clean up any MCP
+entries an older version of the CLI wrote directly into `~/.claude.json` (see
+[ADR-DA00-08](project/adr/DA00-08-cli-installs-native-host-plugins.md)). Either way, this
+auto-registers the `/dot-agent:run` and `/dot-agent:test` skills plus the `dot-agent` and
+`dot-agent-helper` MCP servers. See [`plugins/claude/README.md`](plugins/claude/README.md).
 
 ---
 
