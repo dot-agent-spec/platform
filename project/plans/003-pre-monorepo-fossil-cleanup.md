@@ -222,7 +222,12 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   Design section.
 - [x] 2026-07-31 — Broke the five tracks into eight task dossiers under [`../tasks/`](../tasks/), folding
   the Plan-001 Track 3 content review into Track E as real work rather than deferring it.
-- [ ] Track A — [`fossil-lockfiles-and-runtime-deps.md`](../tasks/fossil-lockfiles-and-runtime-deps.md)
+- [x] 2026-07-31 — Track A complete
+  ([`fossil-lockfiles-and-runtime-deps.md`](../tasks/fossil-lockfiles-and-runtime-deps.md)), four commits
+  on `chore/plan-003-fossil-cleanup`: five nested lockfiles deleted; `fast-uri` 3.1.3 → 3.1.5;
+  `@modelcontextprotocol/sdk` 1.29.0 → 1.30.0 with `@hono/node-server` 1.19.14 → 2.0.12; dead `dsl/*`
+  glob dropped. Full build green, 287 tests passing across the three suites. The Dependabot count is
+  still 18 and stays there until this merges — Dependabot scans the **default branch**, not a PR branch.
 - [ ] Track B — [`npm-publish-allowlists.md`](../tasks/npm-publish-allowlists.md)
 - [ ] Track C — [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md)
 - [ ] Track D — [`license-header-ci-enforcement.md`](../tasks/license-header-ci-enforcement.md) (closes #19)
@@ -293,6 +298,35 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   `core.hooksPath` mechanism and tell the reader to run the script manually; line 77 lists "the hook gets
   wired correctly" as a condition for updating the file. All four statements become false when Track D
   lands. This is why `agents-md-dot-agent-cli.md` is sequenced last.
+
+- Observation: Raising the MCP SDK was necessary but **not sufficient** to move `@hono/node-server` off
+  the vulnerable line. npm leaves a dependency alone when the installed version still satisfies the range,
+  and `1.19.14` satisfies the first branch of `^1.19.9 || ^2.0.5`.
+  Evidence: after `npm install @modelcontextprotocol/sdk@1.30.0`, `npm ls @hono/node-server` still
+  reported `1.19.14` even though the SDK now permitted `2.x`. An explicit `npm update @hono/node-server`
+  then resolved it to `2.0.12`. No `overrides` entry was needed — the plan had flagged that as the
+  fallback, and it turned out to be unnecessary.
+
+- Observation: `apps/dot-agent-cli`'s green test suite proves nothing about the HTTP transport it appears
+  to cover, because the test mocks the transport outright — so a major-version bump of the library that
+  transport actually loads passes CI untouched.
+  Evidence: `tests/mcp-http-session.test.ts:25` calls
+  `vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', …)`, so the test exercises this repo's
+  own session-routing logic and never loads `@hono/node-server`. The real dependency is at
+  `node_modules/@modelcontextprotocol/sdk/dist/esm/server/streamableHttp.js:9` —
+  `import { getRequestListener } from '@hono/node-server'`. Verified separately with a probe driving the
+  real path: `getRequestListener` is still exported by 2.x, still bridges Node to Web Standard, and an
+  MCP `initialize` over a real socket returned 200 with a valid session id.
+
+- Observation: `npm run build` cannot complete on a machine without a running Docker daemon, and the
+  failure surfaces as a broken *test* suite in unrelated packages rather than as an obvious build error.
+  Evidence: `packages/tree-sitter`'s `build:wasm` runs `tree-sitter build --wasm`, which invokes `emcc`
+  inside Docker; with the daemon down it fails with "failed to connect to the docker API". Because
+  `build:wasm` precedes `tsdown`, `packages/tree-sitter/dist/` is never produced — and since `dist/` is
+  gitignored build output, four `apps/dot-agent-cli` test files then fail to *load* with
+  `Cannot find module @dot-agent/tree-sitter/dist/index.cjs`, showing as `4 failed | 6 passed` with zero
+  failing assertions. Starting Docker and rebuilding restored all 287 tests. Worth knowing before
+  diagnosing a "test regression" that is really a missing build artifact.
 
 ## Decision Log
 
