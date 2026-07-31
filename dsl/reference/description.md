@@ -146,13 +146,11 @@ output
 
 ## 3. Compact vs. Documented Syntax
 
-`requires`, `input`, `capabilities`, and `output` support two forms:
+`input` and `output` support two forms:
 
-**Compact** (inline, no descriptions):
+**Compact** (inline, comma-separated, no descriptions):
 ```
 input Patient, MedicalCondition
-capabilities DiagnoseAction, CreateAction
-requires Prontuario, UserProfile
 ```
 
 **Documented** (indented block, optional descriptions):
@@ -160,10 +158,18 @@ requires Prontuario, UserProfile
 input
   Patient "The patient to attend"
   MedicalCondition
+```
 
-capabilities
-  DiagnoseAction         "Emits clinical diagnoses"
-  custom.SpeechSynthesis "Voice synthesis"
+`requires` and `capabilities` take **one item per line** — the comma form above is `input`/`output`
+only; `requires Prontuario, UserProfile` is a syntax error (`E004`). A single item may still stay on
+the keyword's own line, with an optional description:
+
+```
+capabilities DiagnoseAction "Emits clinical diagnoses"
+
+requires
+  Prontuario
+  UserProfile "The user's profile record"
 ```
 
 ---

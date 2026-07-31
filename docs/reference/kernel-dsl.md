@@ -97,7 +97,8 @@ state welcome
   goal "Help the user get started"
   guide "You are an onboarding assistant."
   interact
-  on intent "continue" next setup
+  on intent "continue"
+    transition to setup
 `);
 // observer fires: goal → guide → request_interact
 // effects === [{ type: "goal", text: "…" }, { type: "guide", text: "…" }, { type: "request_interact" }]
@@ -266,9 +267,9 @@ case "request_interact":
 
 ---
 
-### `{ type: "run_script", target: string, label: string | null, silent: boolean }`
+### `{ type: "run_script", target: string, parameters: string | null, silent: boolean }`
 
-**What it is:** Execute a script module. `target` is a file path or module identifier. `label` is an optional human-readable name for logging.
+**What it is:** Execute a script module. `target` is a file path or module identifier. `parameters` is an optional raw parameter string passed through verbatim — its format is defined by the script being called, not by the kernel.
 
 **What JS must do:** Dynamically import or execute the script. When complete (or on failure), notify the FSM:
 
@@ -276,10 +277,10 @@ case "request_interact":
 case "run_script":
   try {
     const mod = await import(effect.target);
-    await mod.default({ engine, memory: engine.get_memory() });
+    await mod.default({ engine, memory: engine.get_memory(), parameters: effect.parameters });
     engine.send_event("script.done");
   } catch {
-    engine.send_failed();
+    engine.send_event("script.failed");
   }
   break;
 ```
@@ -288,7 +289,7 @@ If `silent` is `true`, suppress any UI output the script might produce.
 
 ---
 
-### `{ type: "run_subagent", target: string, label: string | null, background: boolean }`
+### `{ type: "run_subagent", target: string, parameters: string | null, background: boolean }`
 
 **What it is:** Spawn a sub-agent defined by the `.behavior` or `.description` file at `target`.
 
@@ -307,7 +308,7 @@ case "run_subagent":
 
 ---
 
-### `{ type: "run_tool", target: string, label: string | null }`
+### `{ type: "run_tool", target: string, parameters: string | null }`
 
 **What it is:** Invoke a tool (MCP tool, function call, API endpoint). `target` is the tool name or identifier.
 
@@ -367,9 +368,9 @@ type Effect =
   | { type: "teach";            text: string }
   | { type: "request_interact" }
   | { type: "transition";       from: string; to: string }
-  | { type: "run_script";       target: string; label: string | null; silent: boolean }
-  | { type: "run_subagent";     target: string; label: string | null; background: boolean }
-  | { type: "run_tool";         target: string; label: string | null }
+  | { type: "run_script";       target: string; parameters: string | null; silent: boolean }
+  | { type: "run_subagent";     target: string; parameters: string | null; background: boolean }
+  | { type: "run_tool";         target: string; parameters: string | null }
   | { type: "set_memory";       domain: string; key: string; value: string | number | boolean | null }
   | { type: "apply_css";        value: string }
   | { type: "remove_css";       value: string }
@@ -388,9 +389,9 @@ interface AgentDSLKernelHandlers {
   guide(text: string): void;
   teach(text: string): Promise<void> | void;
   requestInteract(): void;
-  runScript(target: string, label: string | null, silent: boolean): Promise<void>;
-  runSubagent(target: string, label: string | null, background: boolean): Promise<void>;
-  runTool(target: string, label: string | null): Promise<void>;
+  runScript(target: string, parameters: string | null, silent: boolean): Promise<void>;
+  runSubagent(target: string, parameters: string | null, background: boolean): Promise<void>;
+  runTool(target: string, parameters: string | null): Promise<void>;
   applyCss(value: string): void;
   removeCss(value: string): void;
 }
@@ -419,9 +420,9 @@ export function useAgentDSLKernel(handlers: AgentDSLKernelHandlers) {
           case "guide":            handlers.guide(effect.text); break;
           case "teach":            handlers.teach(effect.text); break;
           case "request_interact": handlers.requestInteract(); break;
-          case "run_script":       handlers.runScript(effect.target, effect.label, effect.silent); break;
-          case "run_subagent":     handlers.runSubagent(effect.target, effect.label, effect.background); break;
-          case "run_tool":         handlers.runTool(effect.target, effect.label); break;
+          case "run_script":       handlers.runScript(effect.target, effect.parameters, effect.silent); break;
+          case "run_subagent":     handlers.runSubagent(effect.target, effect.parameters, effect.background); break;
+          case "run_tool":         handlers.runTool(effect.target, effect.parameters); break;
           case "apply_css":        handlers.applyCss(effect.value); break;
           case "remove_css":       handlers.removeCss(effect.value); break;
         }

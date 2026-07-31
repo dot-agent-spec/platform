@@ -2,8 +2,9 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | **Done** ✅ |
 | Created | 2026-07-30 |
+| Closed | 2026-07-31 |
 | Author | Danilo Borges |
 | Issue | [#20](https://github.com/dot-agent-spec/platform/issues/20) — owns status and the item checklist; this dossier owns the evidence and the proposed edits |
 | Sources | Surfaced by the `cli-helper-agent-sync` review of `apps/dot-agent-cli/helper-src/`; [`packages/kernel-dsl/src/effect.rs`](../../packages/kernel-dsl/src/effect.rs), [`packages/tree-sitter/tree-sitter-description/grammar.js`](../../packages/tree-sitter/tree-sitter-description/grammar.js). Independent of [Plan-002](../plans/002-dot-agent-as-claude-plugin.md), which owns the folder the review started from. |
@@ -28,17 +29,17 @@ are both fallout from renames that already shipped.
 
 ## Priority overview
 
-| # | Priority | Item | Package(s) | Effort |
-|---|---|---|---|---|
-| 1 | P0 | `run_*` effect payloads document a `label` field the kernel never emits | `docs/` | XS |
-| 2 | P1 | `kernel-dsl.md` still shows syntax removed in DA01-01 | `docs/` | XS |
-| 3 | P1 | `description.md` §3 promises a comma form the grammar rejects | `dsl/` | XS |
+| # | Priority | Item | Package(s) | Effort | Status |
+|---|---|---|---|---|---|
+| 1 | P0 | `run_*` effect payloads document a `label` field the kernel never emits | `docs/` | XS | ✅ |
+| 2 | P1 | `kernel-dsl.md` still shows syntax removed in DA01-01 | `docs/` | XS | ✅ |
+| 3 | P1 | `description.md` §3 promises a comma form the grammar rejects | `dsl/` | XS | ✅ |
 
 ---
 
 ## Work items
 
-### 1. `run_*` effect payloads document a `label` field the kernel never emits — P0
+### 1. `run_*` effect payloads document a `label` field the kernel never emits — P0 — ✅ Done
 
 **What:** [`docs/reference/kernel-dsl.md`](../../docs/reference/kernel-dsl.md) types the three
 `run_*` effects with a `label: string | null` field. The canonical enum in
@@ -60,7 +61,7 @@ dropped. It is the most expensive kind of doc bug: wrong, plausible, and quiet.
 union near line 370, and the `switch` dispatch example near line 422. Re-check `silent` /
 `background` while there. Generate from `bindings/Effect.ts` rather than retyping if practical.
 
-### 2. `kernel-dsl.md` still shows syntax removed in DA01-01 — P1
+### 2. `kernel-dsl.md` still shows syntax removed in DA01-01 — P1 — ✅ Done
 
 **What:** The same file teaches two constructs that no longer exist:
 
@@ -76,7 +77,7 @@ carrying the old shape.
 `send_failed()` line from the host-loop example. Grep the whole file for `next `, `send_failed`,
 `send_complete`, and `on_failed` — the two found are unlikely to be the only ones.
 
-### 3. `description.md` §3 promises a comma form the grammar rejects — P1
+### 3. `description.md` §3 promises a comma form the grammar rejects — P1 — ✅ Done
 
 **What:** [`dsl/reference/description.md`](../../dsl/reference/description.md) line ~149 states that
 "`requires`, `input`, `capabilities`, and `output` support two forms", showing a compact
@@ -91,9 +92,15 @@ capabilities DiagnoseAction, CreateAction
 **Why:** The spec advertises syntax that fails to parse, and E004 points at the comma rather than
 at the concept, so the author has no path from the error back to this page.
 
-**Change:** Restrict the two-form claim to `input`/`output`, and show `requires`/`capabilities` in
-the block form only. If the comma form is *wanted* for all four, that is a grammar change and needs
-an RFC — do not widen the grammar to match the prose as part of this task.
+**Change (landed):** Restricted the two-form claim to `input`/`output`. `requires`/`capabilities`
+turned out not to be block-form-only, though — the grammar's `req_item`/`cap_item` rule
+(`_annotated_reference`) accepts **one item per line**, and that one item can sit inline on the
+keyword's own line with an optional description:
+`capabilities DiagnoseAction "Emits clinical diagnoses"` lints clean, only the comma-separated
+*list* (`capabilities A, B`) is `E004`. Confirmed both directions by lint before writing the prose,
+not by re-reading the grammar. §3 now documents that shape instead of "block form only." If the
+comma-list form is *wanted* for `requires`/`capabilities`, that is a grammar change and needs an
+RFC — the grammar was not widened to match the original prose.
 
 ---
 
