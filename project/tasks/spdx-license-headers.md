@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress |
+| Status | Done |
 | Created | 2026-07-31 |
 | Author | Danilo Borges |
 | Sources | Standalone — not part of [Plan-003](../plans/003-pre-monorepo-fossil-cleanup.md), which covers pre-monorepo fossils and the dependency security baseline. Follows the `license-rules-simple` convention shipped by [`vibe-ops`](https://github.com/entelekheia-ai/vibe-ops) `/license-setup` ≥ 0.5.2 |
@@ -76,9 +76,11 @@ converged on the same two key decisions the template already makes — `git ls-f
 `--check` mode — so keeping a local fork of it only invites drift. Converging on the shared source is the
 point of the plugin.
 
-**Note:** the template's check accepts `SPDX-License-Identifier|Copyright`, deliberately grandfathering
-old blocks. After item 1 nothing in this repo relies on that, but it does mean a *new* file carrying only
-a copyright line would pass. Accepted as the cost of using the shared template rather than a local fork.
+**Outcome:** the template was adopted, but with `HEADER_MARKER` tightened to `SPDX-License-Identifier`
+alone. The shipped value also accepts a bare `Copyright` line to grandfather legacy blocks; nothing here
+needs that after item 1, and accepting it would let through exactly what item 6 forbids — a personal name
+in a file header. A deliberate one-line divergence from the shared template, with the reason written above
+it.
 
 ### 3. Correct the exclusion list against what is actually tracked — P0
 

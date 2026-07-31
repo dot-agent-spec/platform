@@ -106,3 +106,8 @@ CI publishes automatically via the corresponding workflow in [`.github/workflows
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
+
+Copyright is held collectively by **The dot-agent Authors**, listed in [AUTHORS](AUTHORS). Contributors
+keep copyright over their own work; there is no copyright assignment. Source files carry only
+`// SPDX-License-Identifier: Apache-2.0` — see [CONTRIBUTING.md](CONTRIBUTING.md#licensing-and-attribution)
+before your first pull request.

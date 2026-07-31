@@ -168,8 +168,7 @@ All documentation in this repository must be written in English.
 
 - `.md`, `.description` and `.behavior` files need **no header** — the root `LICENSE` covers them
 - Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`) carry `// SPDX-License-Identifier: Apache-2.0` and
-  **no per-file copyright** — attribution is collective in [`AUTHORS`](AUTHORS). **Never put a person's
-  name in a header**, including your own commits. Rationale, exclusions and the fix command:
-  [CONTRIBUTING.md](CONTRIBUTING.md)
+  nothing else — attribution is collective in [`AUTHORS`](AUTHORS), and CI rejects any other header form.
+  Rationale, exclusions and the fix command: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Never reinstate a git hook for this.** `core.hooksPath` is repo-scoped, so one package installing it
   reconfigures the whole monorepo ([#19](https://github.com/dot-agent-spec/platform/issues/19))

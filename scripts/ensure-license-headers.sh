@@ -14,7 +14,11 @@ set -euo pipefail
 
 SOURCE_GLOBS=("*.ts" "*.tsx" "*.js" "*.jsx" "*.mjs" "*.cjs" "*.rs")
 LICENSE_HEADER='// SPDX-License-Identifier: Apache-2.0'
-HEADER_MARKER='SPDX-License-Identifier|Copyright'
+# Deliberately stricter than the vibe-ops template, which also accepts a bare
+# Copyright line to grandfather legacy blocks. Nothing here needs that after the
+# SPDX migration, and accepting it would let through exactly what this repo now
+# forbids: a personal name in a file header. Attribution is collective (AUTHORS).
+HEADER_MARKER='SPDX-License-Identifier'
 
 # Paths that are never stamped. Every entry MUST carry the reason it is here:
 # an exclusion with no reason reads as dead config and gets deleted by a later
