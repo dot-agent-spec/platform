@@ -109,17 +109,12 @@ state ready
   goal "Help the user with their query."
   interact
   on intent "ask-question" transition to answering
-  on intent "escalate" transition to escalated
 
 state answering
   goal "Provide a helpful answer."
   interact
   on intent "follow-up" transition to answering
   on intent "resolved" transition to ready
-
-state escalated
-  goal "Transfer conversation to human support."
-  transition to ready
 ```
 
 ---
