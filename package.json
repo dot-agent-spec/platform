@@ -6,8 +6,7 @@
   "workspaces": [
     "packages/*",
     "apps/dot-agent-cli",
-    "apps/vscode-extension",
-    "dsl/*"
+    "apps/vscode-extension"
   ],
   "scripts": {
     "build": "npm run build -w packages/tree-sitter && npm run build -w packages/parser-dsl && npm run build -w packages/kernel-dsl && npm run build -w packages/compiler && npm run build -w packages/sdk && npm run build -w packages/language-server && npm run build -w apps/dot-agent-cli",
