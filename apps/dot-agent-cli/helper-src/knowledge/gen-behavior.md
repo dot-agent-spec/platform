@@ -2,7 +2,9 @@
 
 ```
 state init
+  goal "Welcome the user and find out what they need."
   guide "I am ready. Send an intent to begin."
+  interact
   on intent "start"
     transition to working
   on intent "help"
@@ -20,7 +22,9 @@ state working
     transition to working
 
 state help
+  goal "Tell the user which intents are available."
   guide "Available intents: start, help."
+  interact
   on intent "back"
     transition to init
   on offtopic

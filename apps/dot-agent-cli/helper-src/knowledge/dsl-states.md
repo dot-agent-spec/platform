@@ -2,27 +2,38 @@
 
 ```
 state <name>
-  <statements>
+  <orientation statements>
   on intent "<intent-name>"
-    <statements>
+    transition to <state>
   on intent "<other-intent>"
     transition to <state>
   on offtopic
     transition to <state>
 ```
 
-## Statements
+## Two kinds of state
 
-Statements at the top of a state fire on entry; the same statements inside a handler body fire
-on match. Order in a state body does not matter.
+A state is either **oriented** or a **router** — pick one, don't mix:
+
+- **Oriented** — declares `interact` (exactly once) and may carry `goal`, `guide`, `teach`.
+  Orientation statements are state-level only: they fire once, on entry, and are what the LLM
+  reads before pausing for input.
+- **Router** — no `interact`, no orientation. Its `on intent`/`on offtopic` handlers do nothing
+  but `transition to`, moving straight to whichever state handles the topic.
+
+`goal`/`guide`/`teach` outside an oriented state, or two `interact` in the same state, are not
+valid shapes — every pattern in `gen_patterns` is one or the other, never a mix.
+
+## Orientation statements
+
+State-level only — never inside a handler body.
 
 | Statement | Syntax | Effect emitted | Description |
 |---|---|---|---|
-| `goal` | `goal "text"` | `goal` | Sets the LLM's current objective — only valid paired with `interact` (W012 otherwise) |
+| `goal` | `goal "text"` | `goal` | Sets the LLM's current objective — pairs with `interact` (W012 if `goal` has no `interact`; W013 the other way round) |
 | `guide` | `guide "text"` | `guide` | Instruction or context — use it immediately |
 | `teach` | `teach "filename.md"` | `teach` | References a knowledge file by name |
-| `interact` | `interact` | `request_interact` | Pauses — agent is waiting for user input |
-| `transition to` | `transition to <state>` | `transition` | Moves the FSM to the named state |
+| `interact` | `interact` | `request_interact` | Pauses — agent is waiting for user input; marks the state oriented |
 
 ## Handlers
 
@@ -31,16 +42,15 @@ on match. Order in a state body does not matter.
 | `on intent "name"` | Fires when the kernel receives this intent in the current state |
 | `on offtopic` | Fires when no intent matches |
 
-Build agents from the statements and handlers above — that is the full set.
+A handler body holds actions, not orientation — `transition to <state>` is the one this helper
+teaches. Moving to an oriented state re-enters it, firing its `goal`/`guide`/`teach` immediately.
 
 ## Notes
 
 - State names must be unique across merged files (E015 if duplicate)
 - `init` is the required entry state (E016 if missing)
-- A state with no handlers is valid — it's a terminal state
-- A handler body with 2+ statements needs a closing `end`. Omitting it does not always raise a
-  parse error — the parser may accept just the first statement as the whole (inline) handler and
-  silently attach the rest to the enclosing state instead of scoping them inside the handler.
+- A router with no handlers is valid — it's a terminal state
+- An oriented state needs at least one `on intent` handler (E009 otherwise)
 
 ## Example
 
@@ -52,6 +62,6 @@ state example
   interact
   on intent "next"
     transition to next_state
-    guide "Transitioning now."
-  end
+  on offtopic
+    transition to example
 ```

@@ -27,14 +27,18 @@ behavior greeter.behavior
 `greeter.behavior`:
 ```
 state init
+  goal "Welcome the user and prompt them to say hello."
   guide "Send the intent 'hello' to begin."
+  interact
   on intent "hello"
     transition to greeting
   on offtopic
     transition to init
 
 state greeting
+  goal "Greet the user and prompt them to finish."
   guide "Hello! Send 'done' to finish."
+  interact
   on intent "done"
     transition to init
   on offtopic
