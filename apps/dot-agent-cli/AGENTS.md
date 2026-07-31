@@ -12,7 +12,6 @@ read it rather than restating it here, and `src/commands/` is the definitive lis
 | `helper-src/` | A real `.agent` project whose prose nothing validates — see below |
 | `templates/` | The scaffold `init` copies. `init.ts` walks it with `readdir`, no file list, so **anything added here lands in every user's new project** |
 | `skills/run/SKILL.md` | Byte-identical twin of the plugin's copy — see below |
-| `.githooks/` | Present but never invoked — see below |
 
 ## How this works
 
@@ -48,11 +47,11 @@ neither has a dot-agent plugin format yet. `SERVERS`/`SERVER_NAMES` (exported fr
 keep matching `plugins/claude/.claude-plugin/plugin.json`'s own `mcpServers` —
 `tests/plugin-manifest-parity.test.ts` is the only thing that checks that.
 
-**The license-header hook does not run, despite appearances.** `package.json`'s `prepare` runs
-`git config core.hooksPath .githooks`, which writes repository-level config resolving from the **repo
-root** — so `npm install` here silently repoints the whole monorepo's hooks, and `apps/dot-agent-cli/.githooks/pre-commit`
-is never invoked. Apply headers by running `scripts/ensure-license-headers.sh` yourself; every `.ts` file
-carries the full Apache 2.0 header, and an existing copyright notice is never altered.
+**License headers are enforced in CI, from the repository root.** The `.githooks/` folder, the `prepare`
+that installed it and this package's copy of the script are gone — see the root
+[`AGENTS.md`](../../AGENTS.md) for the policy and
+[`license-headers.yml`](../../.github/workflows/license-headers.yml) for the gate. Nothing about headers
+is package-local anymore.
 
 **Publishing is triggered by pushing a `cli@*` tag**, which runs
 [`publish-ts.yml`](../../.github/workflows/publish-ts.yml) with npm OIDC. Creating a GitHub Release
@@ -74,9 +73,9 @@ Fold the update into whatever task exposed the drift — do not leave it for a s
 
 - A folder appears whose contents are not what its name suggests → add a Layout row; a folder stops being
   surprising → drop its row. Ordinary folders do not earn one.
-- An invariant above stops being true — the hook gets wired correctly, the two `SKILL.md` copies become a
-  symlink or a checked guard, `init` gains an explicit file list — **delete that section**. A guard that
-  now exists mechanically must not also live here as prose.
+- An invariant above stops being true — the two `SKILL.md` copies become a symlink or a checked guard,
+  `init` gains an explicit file list — **delete that section**. A guard that now exists mechanically must
+  not also live here as prose. The license-header entry was removed this way once CI took the job over.
 - The MCP registration split changes, or a server gains tools → correct the composition line.
 - The release trigger or tag pattern changes → correct it here and in `/publish`.
 - A document lands here that this package does not own → move it out rather than describing it; a folder

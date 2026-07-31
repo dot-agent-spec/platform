@@ -166,4 +166,15 @@ All documentation in this repository must be written in English.
 
 - New `.md` documents need **no license header** — the root `LICENSE` covers the repository
 - `.description` and `.behavior` files need **no license header**, in `examples/` or anywhere else
-- Rust and TypeScript source files in `packages/` use Apache 2.0 headers — follow the existing pattern
+- **First-party source files carry the Apache 2.0 header** — `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`
+  and `.rs`, anywhere in the repository, not only under `packages/`
+- **Enforced in CI**, not by a git hook, via
+  [`license-headers.yml`](.github/workflows/license-headers.yml) on every pull request. Fix a failure by
+  running `./scripts/ensure-license-headers.sh` from the repository root; `--check` reports without
+  writing. Do **not** reinstate a hook: `core.hooksPath` is repository-scoped, so a package installing one
+  reconfigures the whole monorepo — the defect [#19](https://github.com/dot-agent-spec/platform/issues/19)
+  describes
+- Three exclusions, and the first is a licensing matter rather than a style one: **`tools/wasi-stub/` is
+  third-party** (Arnaud Golfouse, `typst-community/wasm-minimal-protocol`, vendored and patched) and must
+  never be stamped with our copyright; `pkg/` and `bindings/` are wasm-bindgen and ts-rs output; and
+  `generated-*` files are rewritten by their generator, which would discard a hand-added header
