@@ -35,6 +35,14 @@
     "dot-agent"
   ],
   "type": "module",
+  "files": [
+    "features/",
+    "server.js",
+    "parser.js",
+    "merge-graph.js",
+    "AGENTS.md",
+    "CHANGELOG.md"
+  ],
   "main": "server.js",
   "engines": {
     "node": ">=24.0.0"

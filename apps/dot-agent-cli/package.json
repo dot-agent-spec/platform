@@ -41,6 +41,16 @@
     "dot-agent"
   ],
   "type": "module",
+  "files": [
+    "dist/",
+    "helper-src/",
+    "templates/",
+    "assets/",
+    "skills/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CHANGELOG.md"
+  ],
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.mts",
