@@ -163,19 +163,20 @@ items, the change procedure and the acceptance. This plan keeps the design ratio
 record; the tasks are deleted at closure while this file stays.
 
 A dossier named below **without a link** has been closed and deleted — that is the normal end of a task,
-not a missing file. The three closed so far are readable at the commit that still carried them:
+not a missing file. Each is readable at the commit that still carried it:
 
 ```
 git show 2c885e6:project/tasks/fossil-lockfiles-and-runtime-deps.md
 git show 2c885e6:project/tasks/npm-publish-allowlists.md
 git show 2c885e6:project/tasks/license-header-ci-enforcement.md
+git show 30a7ffb:project/tasks/esbuild-and-dependabot-config.md
 ```
 
 | Track | Task | What it delivers |
 |---|---|---|
 | A — Fossils and runtime security | `fossil-lockfiles-and-runtime-deps.md` | Deletes the five nested lockfiles and the dead `dsl/*` glob; patches `fast-uri` and raises `@modelcontextprotocol/sdk` to unblock `@hono/node-server`. Takes the alert count from 18 to 4. |
 | B — Packaging | `npm-publish-allowlists.md` | Converts `apps/dot-agent-cli` and `packages/language-server` from denylist/no-list to a `files` allowlist. |
-| C — esbuild and Dependabot config | [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md) | Raises `esbuild` to `^0.28.1` across four manifests; adds `.github/dependabot.yml` with grouped security updates. |
+| C — esbuild and Dependabot config | `esbuild-and-dependabot-config.md` | Raises `esbuild` to `^0.28.1` across the four manifests that declare it and re-approves the root's `allowScripts` pin; patches `brace-expansion` and `postcss`; adds `.github/dependabot.yml`, which the repository had never had. |
 | D — License enforcement in CI | `license-header-ci-enforcement.md` | Adds a check mode to the script, moves it to the repo root, adds the repository's first `pull_request` workflow, deletes the fossil hook. **Closes #19.** |
 | E — Per-folder `AGENTS.md` | [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md) · [`agents-md-language-server.md`](../tasks/agents-md-language-server.md) · [`agents-md-vscode-extension.md`](../tasks/agents-md-vscode-extension.md) · [`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) | The full Plan-001 Track 3 sequence per folder: review → repoint dead links → deliver via `CLAUDE.md`. |
 
