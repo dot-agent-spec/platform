@@ -1,8 +1,11 @@
-// Changed intents/topics here? Also update skills/dot-agent/SKILL.md's "Interactive helper"
-// section, then run `npm run repack-helper`.
+// Changed intents/topics here? Also update plugins/claude/skills/run/SKILL.md's "Interactive
+// helper" section (kept in sync with apps/dot-agent-cli/skills/run/SKILL.md), then run
+// `npm run repack-helper`.
 state init
+  goal "Find out which topic the user needs — dsl, gen, cli, or pack."
   guide "dot-agent: a text DSL for FSM agents, not JSON. Topics: dsl, gen, cli, pack — or just read the teach below for everything at a glance."
   teach "knowledge/init-overview.md"
+  interact
   on intent "dsl"
     transition to dsl_overview
   on intent "gen"
@@ -15,14 +18,14 @@ state init
     transition to init
 
 state dsl_overview
+  goal "Explain agent project anatomy and point to the right DSL sub-topic."
   guide "An agent project has: .description (metadata), .behavior (states), optional SOUL.md persona, guides/, knowledge/. Every behavior needs a state named init; split across files with merge."
   teach "knowledge/dsl-overview.md"
+  interact
   on intent "dsl_description"
     transition to dsl_description
   on intent "dsl_states"
     transition to dsl_states
-  on intent "dsl_memory"
-    transition to dsl_memory
   on intent "dsl_persona"
     transition to dsl_persona
   on intent "back"
@@ -31,8 +34,10 @@ state dsl_overview
     transition to dsl_overview
 
 state dsl_description
-  guide "The .description file declares agent metadata. Required: agent name, behavior path. domain and description are warned, not yet enforced (W007; E001 planned). Optional: version, license, persona, capabilities."
+  goal "Explain .description file requirements and optional fields."
+  guide "The .description file declares agent metadata. Required: agent name, behavior path. A missing domain is warned (W007), not an error. Optional identity meta: license, terms, privacy — plus a persona block."
   teach "knowledge/dsl-description.md"
+  interact
   on intent "dsl_states"
     transition to dsl_states
   on intent "dsl_overview"
@@ -43,8 +48,10 @@ state dsl_description
     transition to dsl_description
 
 state dsl_states
-  guide "A state holds statements (goal, guide, teach, transition to, set, run script) plus on intent and on offtopic handlers. after N prompts gives count-gated transitions."
+  goal "Explain state anatomy — orientation statements, handlers, and the Oriented State/Setup State split."
+  guide "A state is an Oriented State (goal, guide, teach, interact) or a Setup State (on intent/on offtopic that only transition to). That is the full statement set."
   teach "knowledge/dsl-states.md"
+  interact
   on intent "dsl_overview"
     transition to dsl_overview
   on intent "back"
@@ -52,18 +59,10 @@ state dsl_states
   on offtopic
     transition to dsl_states
 
-state dsl_memory
-  guide "4 memory domains with different lifetimes: context, session, worksession, user. Set from behavior via set. Inject from host via inject_memory. Read all via getMemory."
-  teach "knowledge/dsl-memory.md"
-  on intent "dsl_overview"
-    transition to dsl_overview
-  on intent "back"
-    transition to init
-  on offtopic
-    transition to dsl_memory
-
 state dsl_persona
+  goal "Explain SOUL.md and how persona is wired into a .description file."
   guide "SOUL.md defines the agent voice, values, and behavioral rules. Referenced via persona in the .description file. Exposed as dot-agent://persona in MCP server mode."
+  interact
   on intent "dsl_overview"
     transition to dsl_overview
   on intent "back"
@@ -72,7 +71,9 @@ state dsl_persona
     transition to dsl_persona
 
 state generate_overview
+  goal "Walk the user through the authoring steps, from .description to pack."
   guide "Authoring steps: (1) create .description, (2) create .behavior with init state, (3) optionally add SOUL.md and guides/knowledge, (4) validate with dot-agent run, (5) send 'pack' (from init) to package it."
+  interact
   on intent "gen_description"
     transition to gen_description
   on intent "gen_behavior"
@@ -87,8 +88,10 @@ state generate_overview
     transition to generate_overview
 
 state gen_description
-  guide "Required .description fields: agent name, behavior path. domain and description are warned, not yet enforced. Optional: version, license, persona, capabilities."
+  goal "Explain the required and optional .description fields for authoring."
+  guide "Required .description fields: agent name, behavior path. A missing domain is warned (W007). Optional: license, terms, privacy, persona. No version field — the version is set by pack --version."
   teach "knowledge/gen-description.md"
+  interact
   on intent "gen_behavior"
     transition to gen_behavior
   on intent "generate_overview"
@@ -99,8 +102,10 @@ state gen_description
     transition to gen_description
 
 state gen_behavior
+  goal "Explain .behavior anatomy for authoring: init state, orientation statements, handlers."
   guide "Every .behavior must have a state named init. States contain intent handlers and statements. Use guide and goal for short inline text, teach with a filename for examples."
   teach "knowledge/gen-behavior.md"
+  interact
   on intent "gen_description"
     transition to gen_description
   on intent "gen_patterns"
@@ -115,8 +120,10 @@ state gen_behavior
     transition to gen_behavior
 
 state gen_patterns
-  guide "Three patterns: (1) simple responder - handles everything in init, (2) multi-stage workflow - linear state progression, (3) memory-aware - uses set to store context."
+  goal "Show the common .behavior patterns and help the user pick one."
+  guide "Three patterns: (1) multi-stage workflow - linear state progression, (2) memory-aware - the host writes what it learned via inject_memory, (3) hub and spoke - an init menu that fans out to topic states and back."
   teach "knowledge/gen-patterns.md"
+  interact
   on intent "gen_behavior"
     transition to gen_behavior
   on intent "gen_validate"
@@ -129,8 +136,10 @@ state gen_patterns
     transition to gen_patterns
 
 state gen_validate
+  goal "Explain how to validate a project with dot-agent run and the key lint codes."
   guide "Validate with: dot-agent run /path/to/dir. Errors block, warnings go to stderr. Key codes: E003 no .description, E016 no init state, E014 path escapes root, E012 merge target missing."
   teach "knowledge/gen-validate.md"
+  interact
   on intent "pack"
     transition to pack
   on intent "generate_overview"
@@ -141,8 +150,10 @@ state gen_validate
     transition to gen_validate
 
 state cli_overview
-  guide "dot-agent CLI: init, run, pack, unpack, install-skill. run --mcp serves an agent over MCP for an LLM to drive; run --helper starts this helper."
+  goal "Explain the CLI's commands and when to use run --mcp vs run --helper."
+  guide "dot-agent CLI: init, run, pack, unpack, configure, server-mcp, agents. run --mcp serves an agent over MCP for an LLM to drive; run --helper starts this helper."
   teach "knowledge/cli-overview.md"
+  interact
   on intent "cli_mcp"
     transition to cli_mcp
   on intent "cli_walkthrough"
@@ -153,8 +164,10 @@ state cli_overview
     transition to cli_overview
 
 state cli_mcp
-  guide "MCP server mode exposes 5 tools (send_intent, send_event, send_offtopic, tick_prompt, inject_memory) and 9 dot-agent:// resources. Effects come back as a JSON array in every tool result."
+  goal "Explain what MCP server mode exposes: tools, resources, and the effects array."
+  guide "MCP server mode exposes 6 tools (load_agent, send_intent, send_event, send_offtopic, tick_prompt, inject_memory) and 9 dot-agent:// resources. Effects come back as a JSON array in every tool result."
   teach "knowledge/cli-mcp.md"
+  interact
   on intent "cli_walkthrough"
     transition to cli_walkthrough
   on intent "cli_overview"
@@ -165,8 +178,10 @@ state cli_mcp
     transition to cli_mcp
 
 state cli_walkthrough
+  goal "Walk through a worked MCP session end to end."
   guide "Worked example: driving a two-state greeter agent over MCP end to end - read state, read intents, send_intent, react to effects, repeat."
   teach "knowledge/cli-walkthrough.md"
+  interact
   on intent "cli_mcp"
     transition to cli_mcp
   on intent "cli_overview"
@@ -177,8 +192,10 @@ state cli_walkthrough
     transition to cli_walkthrough
 
 state pack
+  goal "Explain how to package a project into a .agent bundle."
   guide "Pack to a .agent bundle: dot-agent pack --dir /path/to/dir --out <file>. There is no positional dir argument. Runs the same lint as run. Output is a single .agent zip file."
   teach "knowledge/pack.md"
+  interact
   on intent "back"
     transition to init
   on offtopic

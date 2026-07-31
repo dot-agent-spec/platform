@@ -11,23 +11,22 @@ description
   One-line description of what this agent does.
 
 behavior agent.behavior
-
-capabilities
-  chat "Engages in conversation"
 ```
 
 ## Fields
 
 | Field | Required | Notes |
 |---|---|---|
-| `agent <name>` | Yes | Identifier, no spaces |
-| `domain <domain>` | No (warned, not enforced) | Missing domain packages as `unknown/name` and raises W007 — not yet a hard error |
-| `description` block | No (not yet validated) | Not currently linted at all; E001 for a missing required field is still "Planned" |
-| `behavior <file>` | Yes | Path to .behavior file relative to agent root — the only field that actually throws today (`E_DESC`, pending promotion to a structured `E001`) |
+| `agent <name>` | Yes | One or more space-separated words, each `[a-zA-Z_][a-zA-Z0-9_-]*` (e.g. `agent Doctor`, `agent Mickey Mouse`, `agent my-agent`) |
+| `domain <domain>` | No (warned) | Missing domain packages as `unknown/name` and raises W007 |
+| `description` block | No | Not linted |
+| `behavior <file>` | Yes | Path to .behavior file relative to agent root — the only field that throws (`E_DESC`) |
 | `license` | No | Apache-2.0 recommended |
+| `terms <url>` / `privacy <url>` | No | Identity meta, parsed but not written to `aboutme.json` |
 | `persona <file>` | No | Path to SOUL.md |
-| `capabilities` block | No | List of named capabilities with descriptions |
-| `requires` block | No | Dependencies on other agents or tools |
+
+The only identity meta keys are `domain`, `license`, `terms`, `privacy`. There is **no `version`
+field** — a bundle's version is set at pack time by `dot-agent pack --version`.
 
 ## Notes
 

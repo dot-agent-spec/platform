@@ -10,7 +10,9 @@ Minimal valid `.behavior` (init state required):
 
 ```
 state init
+  goal "Welcome the user and find out what they want."
   guide "Ready. Send an intent to begin."
+  interact
   on intent "hello"
     transition to greeting
   on offtopic
@@ -35,8 +37,9 @@ state greeting
 - `interact` emits a `request_interact` effect (signals the agent is waiting for user input); it
   pairs with `goal` — a state with `goal` but no `interact` gets a W012 lint warning, and
   `interact` without `goal` gets W013
-- Statements at the top of a state fire on entry; the same statements inside a handler body fire
-  on match — see `dsl_states` for the full statement/handler reference
+- `goal`/`guide`/`teach` are state-level only, valid in an **Oriented State** (one that also
+  declares `interact`); a state with none of those is a **Setup State** — see `dsl_states` for the
+  full statement/handler reference
 
 ## Merge
 
@@ -51,3 +54,10 @@ state init
 
 Merge paths must stay within the agent root (E014 if they escape).
 Circular merges are detected at compile time (E013).
+Merge is resolved by the compiler at pack time, not by the kernel at runtime — always validate the
+consolidated result with `dot-agent run`.
+
+## Where the language is going
+
+This file describes the language as it stands. For the direction of travel, see the roadmap:
+https://github.com/dot-agent-spec/platform/blob/main/ROADMAP.md

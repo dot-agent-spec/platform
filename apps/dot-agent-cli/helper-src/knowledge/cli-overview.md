@@ -8,7 +8,9 @@
 | `dot-agent run --helper --mcp` | Serve this helper agent itself over MCP |
 | `dot-agent pack --dir <dir> --out <file>` | Package a project into a `.agent` bundle — see the `pack` topic |
 | `dot-agent unpack <file.agent>` | Extract a packed bundle back to source files |
-| `dot-agent install-skill` | Install the Claude Code skill that bootstraps this helper |
+| `dot-agent configure --claude` (or `--gemini`/`--agy`, `--murici`) | Install the Claude Code (or Gemini/AGY, Murici) skill and register the `dot-agent`/`dot-agent-helper` MCP servers. `--skill`/`--mcp` narrow it to one half; with no target it prompts (TTY) or errors |
+| `dot-agent server-mcp --mcp-transport stdio` | Serve the authoring tools (`dot_agent_init`/`_pack`/`_unpack`/`_configure`) *plus* the same runtime surface as `run --mcp` — this is the `dot-agent` server `configure` registers |
+| `dot-agent agents list` / `dot-agent agents path <name>` | List locally known agents, or print one's path |
 
 ## MCP server mode
 

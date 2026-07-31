@@ -1,12 +1,24 @@
 # MCP tools, resources, and effects
 
-dot-agent agents are authored as a text DSL (`.behavior` files: `state`, `on intent`, `set`, `run
-script`, ...) — JSON only shows up at the MCP wire boundary. Each effect object below is the
-serialized runtime output of one DSL statement; JSON is not the source format.
+dot-agent agents are authored as a text DSL (`.behavior` files: `state`, `goal`, `guide`, `teach`,
+`interact`, `on intent`, `transition to`) — JSON only shows up at the MCP wire boundary. Each
+effect object below is the serialized runtime output of one DSL statement; JSON is not the source
+format.
+
+MCP server mode exposes 6 tools (`load_agent`, `send_intent`, `send_event`, `send_offtopic`,
+`tick_prompt`, `inject_memory`) and 9 `dot-agent://` resources.
 
 ## Tools
 
 All tools return effects synchronously in the call result.
+
+### load_agent
+```json
+{ "tool": "load_agent", "source": "/path/to/agent-dir-or-file.agent" }
+```
+Returns: `{ "ok": true, "id": "<bundle id>", "state": "<initial state>" }`. Loads (or reloads) a
+`.agent` file or agent project directory, starting its FSM from the initial state. Replaces
+whatever agent was previously loaded on this connection. No agent is loaded until this is called.
 
 ### send_intent
 ```json
@@ -19,7 +31,7 @@ Returns: `{ "ok": true, "effects": [...] }`. Advances the FSM via the named inte
 ```json
 { "tool": "send_event", "event": "user_returned" }
 ```
-Sends a named event (for global triggers, `on event "..."` in the DSL).
+Sends a named event to the FSM.
 
 ### send_offtopic
 ```json
@@ -31,14 +43,14 @@ Signals that user input did not match any intent. Triggers `on offtopic`.
 ```json
 { "tool": "tick_prompt" }
 ```
-Advances the prompt counter. Triggers `after N prompts` transitions when the threshold is reached.
+Advances the prompt counter the runtime keeps for the session.
 
 ### inject_memory
 ```json
-{ "tool": "inject_memory", "domain": "context", "key": "user_name", "value": "Alice" }
+{ "tool": "inject_memory", "domain": "user", "key": "name", "value": "Alice" }
 ```
-Returns: `{ "ok": true }`. Writes a value to memory. Domain: `context`, `session`, `worksession`,
-or `user`.
+Returns: `{ "ok": true }`. Writes a value into the memory store the host owns, visible in
+`dot-agent://memory`. The four domains are `context`, `session`, `worksession` and `user`.
 
 ## Resources
 
@@ -68,8 +80,9 @@ interaction — never cache them.
 | `teach` | `text` | Path relative to the agent root, already namespace-prefixed — fetch via `dot-agent://<text>` verbatim | `teach "knowledge/filename.md"` |
 | `request_interact` | (none) | Pause — ask the user before continuing | `interact` |
 | `transition` | `from`, `to` | FSM changed state — re-read `dot-agent://state` and `dot-agent://intents` | `transition to <state>` |
-| `set_memory` | `domain`, `key`, `value` | Kernel stored a value — visible in `dot-agent://memory` | `set <target> <op> <value>` |
-| `run_script` | `target`, `parameters`, `silent` | Kernel ran an external script | `run script "target" ["parameters"]` |
+
+Treat any other effect type as unknown and ignore it — the five above are what the statements in
+this guide produce.
 
 ## Processing order
 
