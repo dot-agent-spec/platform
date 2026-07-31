@@ -47,6 +47,23 @@ cargo test --workspace
 npm test --workspaces --if-present
 ```
 
+## Changing a dependency
+
+The root `package.json` carries an `allowScripts` block — npm's install-script allowlist, written by
+`npm approve-scripts`. It **pins by exact version**, so bumping any dependency that has an install script
+leaves its own approval behind and the new version unreviewed:
+
+```bash
+npm approve-scripts <pkg>    # rewrites the stale pin to the installed version
+```
+
+Today npm only prints a warning during `npm install` and runs the script anyway. A future npm release
+blocks unreviewed install scripts, and for a package like `esbuild` the install script is what puts its
+native binary in place — so a stale allowlist is a build break waiting for that release.
+
+Do not try to enforce this in CI with `npm approve-scripts --allow-scripts-pending`. It reports pending
+packages on stdout but **exits 0 either way**, so the obvious check passes forever and tells you nothing.
+
 ## Licensing and attribution
 
 The project is Apache-2.0. Contributions are licensed under it, and **each contributor keeps copyright

@@ -55,6 +55,14 @@ instruction file reads as authority.
   from npm. The root `AGENTS.md` and this repository's release history both stress that the extension
   bundles build output; an agent will assume the npm path by default.
 - Build, package and debug commands, from the monorepo root and from the package directory.
+- **How a change to the bundle gets verified**, which the file should say and probably does not. Track C
+  established that an LSP `initialize` handshake returns all nine providers before anything has parsed, so
+  it proves `dist/server.mjs` *loads* and nothing more. The externalized `@dot-agent/parser-dsl` /
+  `web-tree-sitter` packages and the `createRequire` banner — the parts `scripts/build.mjs` goes out of its
+  way to arrange, and the parts a bundler change actually breaks — only run once a document is opened.
+  Driving `textDocument/didOpen` with `languageId: "behavior"` (the short id the server filters on, not the
+  extension's selector) and asserting real diagnostics come back is the check that means something. See
+  Plan-003's `Surprises & Discoveries`.
 - Redundancy against the root `AGENTS.md` — delete rather than reformat.
 
 ### 2. Repoint four dead links in the reference table — P0
