@@ -121,11 +121,28 @@ section reachable from where it now lives.
 
 ### Track 3 — Per-package `AGENTS.md`, opportunistically
 
-`packages/tree-sitter/`, `packages/language-server/` and `apps/vscode-extension/` carry `AGENTS.md` files
-whose links point at standalone GitHub repositories that were archived when this monorepo was flattened;
-the canonical code is in `packages/` now. Rather than one sweep, each is fixed the next time work touches
-that package, because a package's own maintainer-in-the-moment is the only reader who can tell a stale
-line from a still-true one. This track has no completion date and is expected to close incrementally.
+Eight packages, apps and plugins carry an `AGENTS.md`, together about 980 lines, and **not one of them has
+a sibling `CLAUDE.md`** — so none of that guidance ever enters context. That is the same defect Track 1
+fixed inside `project/`, at four times the volume. Several also link to standalone GitHub repositories
+that were archived when this monorepo was flattened ([DA00-05](../adr/DA00-05-monorepo-flatten.md)); the
+canonical code is under `packages/` now, so those links send a reader to a dead tree.
+
+The fix per folder is three steps, in this order:
+
+1. **Review the content** against what the package actually does today — the stale parts are invisible
+   until someone who is already in that code reads them.
+2. **Repoint or delete the dead links**, in both `AGENTS.md` and the package `README.md`.
+3. **Add a one-line `CLAUDE.md` containing `@AGENTS.md`** so the file finally loads when work happens in
+   that directory.
+
+The order is load-bearing and the reason this track is not a single mechanical sweep: step 3 alone is a
+one-line change per folder, but doing it first would start *delivering* stale guidance into context that
+is currently only sitting inert on disk. A wrong instruction nothing reads is a smaller problem than a
+wrong instruction that loads. So each folder is completed the next time work touches it, by whoever is
+already in that code. This track has no completion date and closes incrementally.
+
+**A plan that touches one of these folders should pull its checklist item in and close it there** rather
+than leaving it for a later sweep that never comes.
 
 ## Success criteria
 
@@ -193,7 +210,27 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   - [x] Duplicate license-header line removed from the old `## Example files` section — it already existed
         under `## License rules`, which now covers `.description`/`.behavior` anywhere, not just in
         `examples/`.
-- [ ] **Track 3 — per-package `AGENTS.md`.** Not started; opportunistic by design.
+- [ ] **Track 3 — per-package `AGENTS.md`.** Opportunistic by design: tick a folder when work next
+      touches it, after doing the three steps in the track description (review content → fix dead links →
+      add the sibling `CLAUDE.md`). Surveyed 2026-07-30; line counts are from that date.
+
+  - [ ] `packages/tree-sitter/` (178 lines) — links to the archived `dot-agent-spec/dot-agent-kernel`,
+        `dot-agent-spec/language-server` and `dot-agent-spec/vscode-dot-agent` repos.
+  - [ ] `packages/language-server/` (175 lines) — links to the archived `dot-agent-spec/kernel-dsl`; its
+        `README.md` links to the archived `dot-agent-spec/tree-sitter`, and lines 99/103 hold the
+        `memory-slugs` false positive that must **not** be edited (see vibe-ops#6).
+  - [ ] `packages/parser-dsl/` (157 lines) — `README.md` link to `LICENSE` does not resolve.
+  - [ ] `packages/kernel-dsl/` (124 lines) — `AGENTS.md` link to `API.md` does not resolve.
+  - [ ] `packages/compiler/` (86 lines) — `README.md` link to `../../architecture_map.md` does not
+        resolve; the architecture map is at `docs/explanation/architecture/map.md`.
+  - [ ] `apps/dot-agent-cli/` (115 lines) — also owns the empty `templates/AGENTS.md` below.
+  - [ ] `apps/vscode-extension/` (97 lines) — the worst link rot: four archived-repo links across
+        `AGENTS.md` and `README.md`, including one to `dot-agent-spec/dot-agent/blob/main/dsl/language.md`,
+        a path that does not exist in this repository under any name.
+  - [ ] `plugins/claude/` (48 lines) — no known link rot; needs only the review and the `CLAUDE.md`.
+  - [ ] Two zero-byte `AGENTS.md` files to delete or fill: `apps/dot-agent-cli/templates/AGENTS.md` and
+        `dogfood/mentor-agent/AGENTS.md`. An empty instruction file is a promise of guidance that is not
+        there; deleting is the default unless the folder genuinely needs one.
 
 ## Surprises & Discoveries
 
@@ -258,6 +295,15 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   **Evidence:** the `## Package, app & plugin table` lists `org-spec/` as `✅ Active`, but no `org-spec`
   directory exists in the working tree. The `## What this repo is` list still refers to `rfcs/` and
   `tasks/` at the repository root rather than under `project/`, and does not mention `plans/`.
+
+- **Observation:** The undeliverable-instruction problem is four times larger outside `project/` than
+  inside it, and it is invisible because the files look fine — they are well-written, current-looking, and
+  nothing reads them.
+  **Evidence:** surveyed 2026-07-30, eight `AGENTS.md` files under `packages/`, `apps/` and `plugins/`
+  total roughly 980 lines, and **none of the eight has a sibling `CLAUDE.md`**. Claude Code loads
+  `CLAUDE.md`; a subdirectory `AGENTS.md` with no sibling and no `@`-import never enters context on its
+  own. The root `AGENTS.md` has said "each package has its own `AGENTS.md` — read it before making changes
+  there" the whole time, which is an instruction to a reader who was never given the file.
 
 - **Observation:** There is no continuous integration in this repository other than package publishing, so
   every documentation invariant currently stated as prose is unenforced.
