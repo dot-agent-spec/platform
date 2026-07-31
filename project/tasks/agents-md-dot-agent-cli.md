@@ -16,7 +16,7 @@
 | Created | 2026-07-31 |
 | Author | Danilo Borges |
 | Sources | [plans/003-pre-monorepo-fossil-cleanup.md](../plans/003-pre-monorepo-fossil-cleanup.md) — Track E · closes the `apps/dot-agent-cli/` item of [Plan-001](../plans/001-adopt-vibe-ops-baseline.md) Track 3 |
-| Depends on | [license-header-ci-enforcement.md](license-header-ci-enforcement.md) · [fossil-lockfiles-and-runtime-deps.md](fossil-lockfiles-and-runtime-deps.md) · [npm-publish-allowlists.md](npm-publish-allowlists.md) |
+| Depends on | All three shipped and closed. Read them with `git show 2c885e6:project/tasks/fossil-lockfiles-and-runtime-deps.md`, `…/npm-publish-allowlists.md`, `…/license-header-ci-enforcement.md` |
 
 ---
 
@@ -39,7 +39,7 @@ line 54 | Apply headers by running `scripts/ensure-license-headers.sh` yourself�
 ```
 
 Every one of those statements becomes false when
-[license-header-ci-enforcement.md](license-header-ci-enforcement.md) lands: the `.githooks/` directory is
+`license-header-ci-enforcement.md` lands: the `.githooks/` directory is
 deleted, the `prepare` line goes, the script moves to the repository root, and enforcement becomes a CI
 job. The file even anticipates this — line 77 lists *"the hook gets wired correctly"* as a trigger for
 updating itself.
@@ -66,7 +66,7 @@ broken thing for an inaccurate description of a fixed one.
 **What:** Replace the paragraph at lines 51–54 describing the non-functioning hook with a description of
 the CI check that replaces it.
 
-**Why:** After [license-header-ci-enforcement.md](license-header-ci-enforcement.md), the paragraph
+**Why:** After `license-header-ci-enforcement.md`, the paragraph
 describes a mechanism that no longer exists, and instructs the reader to run a script at a path it no
 longer occupies (`scripts/ensure-license-headers.sh` moves from `apps/dot-agent-cli/scripts/` to the
 repository root).
@@ -101,14 +101,14 @@ fix the parts this plan is knowingly breaking; this item catches what rotted on 
 - The two `SKILL.md` copies mentioned in line 77's trigger list — are they still two, and still divergent?
 - Build, test and run commands, from the monorepo root and from the package directory.
 - Anything describing the MCP server surface, which
-  [fossil-lockfiles-and-runtime-deps.md](fossil-lockfiles-and-runtime-deps.md) touches by raising
+  `fossil-lockfiles-and-runtime-deps.md` touches by raising
   `@modelcontextprotocol/sdk` to 1.30.0.
 - Redundancy against the root `AGENTS.md` — delete rather than reformat.
 
 ### 4. Check whether packaging changes need documenting — P1
 
 **What:** Determine whether `AGENTS.md` describes how this package is published, and update it if
-[npm-publish-allowlists.md](npm-publish-allowlists.md) changed that.
+`npm-publish-allowlists.md` changed that.
 
 **Why:** That task deletes `apps/dot-agent-cli/.npmignore` and replaces it with a `files` allowlist. A
 grep of the current file finds no mention of either, so this may be a no-op — but confirm rather than
