@@ -156,9 +156,11 @@ A user with no prior setup can install the plugin from the marketplace, invoke `
 arbitrary `.agent` path, and reach the agent's first state without editing a config file or restarting the
 session. A second `load_agent` call in the same session restarts the flow without a new process.
 
-For Track 8, from the repository root, each of the two folders has a `CLAUDE.md` whose only content is
-`@AGENTS.md`, and `<vibe-ops-plugin-dir>/scripts/check-agents-md.sh` reports no `links` failure under
-`apps/dot-agent-cli/` or `plugins/claude/`.
+For Track 8, `<vibe-ops-plugin-dir>/scripts/check-agents-md.sh` reports no `links` failure under
+`apps/dot-agent-cli/` or `plugins/claude/`, and each folder's guidance reaches context by the mechanism
+that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-agent-cli/`, and a
+`paths`-scoped rule under `.agents/rules/` for `plugins/claude/`, whose contents ship to users verbatim.
+`claude plugin validate plugins/claude` passes with no warnings.
 
 ---
 
@@ -193,6 +195,10 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
         Install or Quickstart section at all (the install command lived only in the root README, so the
         plugin's own README did not stand alone) and had drifted into architecture narrative. Commit
         `9ac88b4`.
+- [x] **`configure --claude` narrowed to MCP only** (2026-07-30). The Claude skill-copy branch is gone;
+      the command now names the plugin install commands instead. `configure.ts`, `cli.ts` help text and
+      `configure.test.ts` updated together. Fixed alongside it: a `uri`-overwrite bug and two callback
+      return-type errors that `tsc --noEmit` had been reporting and the `tsdown` build never checked.
 - [ ] **Track 4 — publish `@dot-agent/cli`.** Not done. This is what stands between the plugin working in
       the repository and working for anyone else. Gated first on the maintainer's own manual test of the
       installed plugin — as of 2026-07-30 the plugin has only ever run on this machine against an
@@ -207,8 +213,11 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
         rewritten rather than corrected (see Surprises). `CLAUDE.md` added.
   - [x] `apps/dot-agent-cli/templates/AGENTS.md` — deleted. It was not an instruction file: `templates/`
         is the scaffold `init` copies, so the empty file was landing in every new user project.
-  - [x] `plugins/claude/` — reviewed, accurate and current, all six links resolve; left unchanged.
-        `CLAUDE.md` added.
+  - [x] `plugins/claude/` — reviewed, accurate and current, all six links resolve; left unchanged. The
+        `CLAUDE.md` first added here was **removed**: a plugin root ships verbatim to users and is not
+        loaded as project context (see Surprises). Replaced by `.agents/rules/plugin-claude.md`, scoped to
+        `plugins/claude/**` and `apps/dot-agent-cli/skills/**` so it also fires on the mirrored `SKILL.md`.
+        `claude plugin validate` now passes with no warnings.
   - [x] `apps/dot-agent-cli/README.md` — rewritten through `/vibe-ops:authoring-readme` once vibe-ops
         0.5.0 made the skill invocable. It carried five false claims, including an install command for a
         package that 404s and a library example built on an API `run()` never had. Not instruction-file
@@ -298,6 +307,26 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
   `CLAUDE.md` been added first, the repository would have started delivering that fiction into every
   session touching the CLI.
 
+- **Observation:** The `CLAUDE.md` Track 8 added to `plugins/claude/` was the one place it could not go.
+  **Evidence:** `claude plugin validate plugins/claude` warns "CLAUDE.md at the plugin root is not loaded
+  as project context." A plugin folder has no build step and no manifest allowlist — `plugin.json` carries
+  no packaging field at all — so the folder is copied byte for byte into every user's
+  `~/.claude/plugins/cache/`. Verified against two installed plugins that ship one anyway: `context-mode`
+  puts both a `CLAUDE.md` and an `.npmignore` in the cache, and our own `vibe-ops` ships a `CLAUDE.md` too.
+  Track 8's fix was therefore right for `apps/dot-agent-cli/` and wrong here, for a reason that only exists
+  in the plugin folder: the file would ship to users *and* still not load. Replaced with
+  `.agents/rules/plugin-claude.md`, `paths`-scoped to `plugins/claude/**` and
+  `apps/dot-agent-cli/skills/**` — outside the shipped folder, and it loads when the work touches either
+  copy, which is what the previous entry said the guard needed.
+
+- **Observation:** The "no agent loaded" reply on the templated resources returns an empty `uri`.
+  **Evidence:** `mcp-run.ts` built it as `{ uri: uri.href, ...noAgent().contents[0] }`, and the `text()`
+  helper it spreads sets `uri: ''` — the spread comes second, so it overwrites the real URI. `tsc --noEmit`
+  had been flagging it as TS2783 the whole time; the build runs `tsdown`, which does not typecheck, so
+  nothing surfaced it. That is the exact path a session hits before `load_agent` — the plugin's first
+  interaction. Fixed by reversing the spread order, together with two TS2322s in the session-init callbacks.
+  **Worth generalizing:** `npm test` passing says nothing about types here.
+
 - **Observation:** A zero-byte file counted as instruction-file debt was actually a shipped artifact.
   **Evidence:** `apps/dot-agent-cli/templates/AGENTS.md` looked like one more nested `AGENTS.md` to clear.
   `templates/` is the scaffold `init` copies, and `init.ts` walks it with `readdir` rather than an explicit
@@ -306,6 +335,24 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
   *is* before acting on what its filenames suggest.
 
 ## Decision Log
+
+- **Decision:** `dot-agent configure --claude` no longer installs a skill file. Claude Code gets the skills
+  from the plugin; the command keeps only its MCP-registration half and reports the plugin install commands
+  when a skill is asked for. Other hosts are untouched — gemini/AGY still get the copied file, murici still
+  has no skill concept.
+  **Rationale:** Resolves the third open question by removing the Claude branch rather than renaming its
+  destination. A copied `~/.claude/skills/dot-agent/SKILL.md` is a second, unversioned copy of a file the
+  plugin already delivers — a third drift surface next to the two the plan already tracks — and it is
+  invoked as a bare `/dot-agent`, colliding conceptually with `/dot-agent:run` while carrying the same
+  content. Renaming the destination would have kept every one of those problems and only fixed the path.
+  **Date / Author:** 2026-07-30 / Danilo
+
+- **Decision:** Guidance for `plugins/claude/` lives in a `paths`-scoped rule under `.agents/rules/`, never
+  in a `CLAUDE.md` inside the plugin folder.
+  **Rationale:** The folder is the distribution — see the corresponding *Surprises* entry. A rule outside it
+  ships nothing to users and actually loads when work touches the folder, which a nested `CLAUDE.md` at a
+  plugin root does neither of. This constrains every future host plugin under `plugins/`, not just this one.
+  **Date / Author:** 2026-07-30 / Danilo
 
 - **Decision:** Migrate `project/tasks/DA00-07-dot-agent-claude-skill.md` into this plan and delete the
   task file.
@@ -359,14 +406,13 @@ the reason the connect-time constraint above is worth remembering.
   cannot choose its mechanism until this is answered empirically.
 - Should the `lspServers` authoring lane (Track 6) live in this plugin or a separate authoring-focused
   one? Running an agent and authoring one are different audiences with different context budgets.
-- Should `dot-agent configure --claude` still install a global skill at all, now that the plugin
-  supersedes that flow? `apps/dot-agent-cli/src/commands/configure.ts:75,81` still writes to
-  `~/.claude/skills/dot-agent/SKILL.md` (and the gemini equivalent) — the *old* folder name, deliberately
-  left unrenamed when the plugin's folders moved, because renaming a destination path and removing a
-  feature are different decisions. A global skill installed that way is invoked as a bare `/dot-agent`,
-  with no plugin namespace, so it now collides conceptually with `/dot-agent:run` while carrying the same
-  content. Three options: keep and rename the destination, keep but deprecate for Claude while retaining
-  it for hosts with no plugin mechanism, or remove the Claude branch entirely.
+- Gemini/AGY still receive a copied `SKILL.md` at `~/.gemini/config/skills/dot-agent/SKILL.md`, which is
+  now the only host where the CLI installs a skill file. Whether that host grows a plugin mechanism worth
+  adapting to — the generalization [DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md)
+  anticipates — is open; until then it stays a copy, and it is a fourth surface the comportment text can
+  drift on.
+
+*(Resolved: whether `configure --claude` should keep installing a skill — see the Decision Log.)*
 
 ## Related
 
