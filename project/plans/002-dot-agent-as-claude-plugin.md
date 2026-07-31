@@ -210,10 +210,31 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
       ones. `--skill`/`--mcp` no longer apply to `--claude`. Decision, evidence and rejected alternatives:
       [ADR-DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) +
       [its log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+- [x] **`configure --claude` verified end-to-end against a live `~/.claude.json`** (2026-07-31). Backed
+      up first, then ran the built branch (via `npm link`): the three legacy `dot-agent`/`dot-agent-helper`/
+      `dot-agent-dev` entries disappeared from `mcpServers`, nothing else in the file changed, the plugin
+      installed and reconnected cleanly, and a second run was a no-op. This also settled the question
+      [ADR-DA00-08's log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md) left open —
+      see *Surprises & Discoveries* for the tool-namespace finding and the `SKILL.md` bug it caught.
+      Covers the **warm** path only: this machine already had the marketplace, so `addMarketplace()` never
+      ran. See the next entry.
+- [x] **Cold-start path exercised separately, and it fails** (2026-07-31). Re-ran the same command with
+      `CLAUDE_CONFIG_DIR` pointed at an empty directory, so the host saw no `dot-agent-spec` marketplace
+      and took the `!existing → addMarketplace()` branch against the real GitHub remote. It exits 1:
+      `origin/main` carries neither `.claude-plugin/` nor `plugins/`. Two findings in *Surprises &
+      Discoveries* — the broken cold start, and that its failure aborts before the legacy cleanup runs.
+      The real `~/.claude.json` was byte-identical either side of the run.
 - [ ] **Track 4 — publish `@dot-agent/cli`.** Not done. This is what stands between the plugin working in
       the repository and working for anyone else. Gated first on the maintainer's own manual test of the
       installed plugin — as of 2026-07-30 the plugin has only ever run on this machine against an
-      `npm link`ed CLI, never against a registry install.
+      `npm link`ed CLI, never against a registry install. **Second gate, found 2026-07-31:** merging this
+      branch to `main`, because `marketplace add` clones the default branch and `main` carries no
+      `.claude-plugin/marketplace.json`. Publishing the npm package alone would not make the cold start
+      work — and neither would the merge alone. The publish **requires a version bump**: `0.11.1` is
+      already on npm (2026-07-16) and its published `dist/` contains no `load_agent` (verified by
+      unpacking the tarball), while `apps/dot-agent-cli/package.json` still reads `0.11.1`. Until a bumped
+      build ships, a merged `main` gets a user a plugin whose servers start and whose skill names a tool
+      that does not exist.
 - [ ] **Track 5 — Rust runtime.** Roadmap, unscheduled.
 - [ ] **Track 6 — `lspServers` for authoring.** Roadmap, unscheduled.
 - [ ] **Track 7 — engine-driven transitions.** Roadmap, unscheduled; needs the delivery-semantics spike
@@ -344,6 +365,71 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   file list — so the empty file was being written into every project created with `dot-agent init`.
   Deleting it was right for a reason unrelated to the one it was listed under. Worth checking what a folder
   *is* before acting on what its filenames suggest.
+
+- **Observation:** A plugin-provided MCP server's tools are namespaced under a `plugin_<plugin-name>_`
+  prefix — `mcp__plugin_dot-agent_dot-agent__load_agent`, not the bare `mcp__dot-agent__load_agent` a
+  directly-configured (non-plugin) server of the same name would get. This resolves the question
+  [ADR-DA00-08's log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md) left open —
+  a plugin server and a same-named user-config server don't collide at the tool-name level at all; they
+  are simply two distinct, differently-prefixed tool families. Matches the `chrome-devtools` /
+  `plugin_chrome-devtools-mcp_chrome-devtools` pair observed independently on the same machine.
+  **Evidence:** Live end-to-end test of `configure --claude` (2026-07-31): after cleanup, only
+  `plugin:dot-agent:dot-agent` and `plugin:dot-agent:dot-agent-helper` were connected, both fully
+  functional (7 resources each, the former also carrying the four authoring tools — `dot-agent-dev`'s
+  tools didn't disappear, they live at `mcp__plugin_dot-agent_dot-agent__*` now, same server as before,
+  different qualified name).
+  **This caught a real bug:** both `SKILL.md` copies (`plugins/claude/skills/run/`,
+  `apps/dot-agent-cli/skills/run/`) hardcoded the bare form, `mcp__dot-agent__load_agent` — correct only
+  for a machine that still had a legacy, directly-written `~/.claude.json` entry masking the mismatch.
+  Once `configure --claude` starts *removing* that entry (this same PR), every user is left with only the
+  plugin-qualified name, and the skill's own instruction to itself would have named a tool that doesn't
+  exist. Fixed by hardcoding the correct qualified name in both copies instead — pinning it is fine here
+  precisely because the plugin's `name` field (and therefore the prefix) is fixed for the sanctioned
+  install path, and a skill can't be invoked at all without the plugin that ships it being enabled.
+
+- **Observation:** The cold-start path — the one every user who is not the maintainer takes — fails today,
+  and Track 4's gate is therefore wider than "publish `@dot-agent/cli`": the marketplace manifest has to
+  reach `main` too.
+  **Evidence:** `configure --claude` on a machine with no `dot-agent-spec` marketplace runs `claude plugin
+  marketplace add dot-agent-spec/platform --sparse .claude-plugin plugins`, which clones the repository's
+  **default branch**. `origin/main` carries neither `.claude-plugin/` nor `plugins/` — both live only on
+  the unmerged branch this work is on — so the host exits 1 with *"Marketplace file not found at
+  …/marketplaces/dot-agent-spec-platform/.claude-plugin/marketplace.json"*. Reproduced 2026-07-31 against
+  the real GitHub remote with `CLAUDE_CONFIG_DIR` pointed at an empty directory. Nothing about this is
+  visible from the maintainer's machine: `installHostPlugin` skips `addMarketplace()` whenever a
+  marketplace of that name already exists, and a contributor's local `directory`-source entry satisfies
+  that check forever. Neither can the unit tests see it — they stub the `claude` binary, so it is a
+  repository-state problem their mocks define away.
+
+- **Observation:** A failed marketplace/plugin install leaves the legacy `~/.claude.json` entries in
+  place. The install and the cleanup are not independent halves.
+  **Evidence:** `configurePluginTarget` awaits `installHostPlugin(target)` before
+  `removeLegacyMcpEntries(...)`, so a throw from the first skips the second entirely — observed in the
+  cold-start reproduction above, which exited 1 having removed nothing. This ordering is the *safe* one
+  and should stay: stripping a user's only working dot-agent MCP config when its replacement failed to
+  install would leave them with neither. But it is currently a property of statement order that nothing
+  states and no test pins, and the migration story in
+  [ADR-DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) reads as though the cleanup is
+  unconditional.
+
+- **Observation:** `CLAUDE_CONFIG_DIR` isolates the host's plugin state, which makes the cold-start branch
+  testable on a machine that already has the marketplace — but it does **not** isolate what this CLI
+  writes.
+  **Evidence:** Pointed at an empty directory, `claude plugin marketplace list` returns `[]` and the host
+  creates its own `.claude.json`/`plugins/` tree there, so the `!existing → addMarketplace()` branch runs
+  for real. `legacyConfigPath` is `join(homedir(), '.claude.json')` and ignores the variable, so the
+  legacy cleanup still targets the real file. Harmless in that run — the entries were already gone, and
+  `removeLegacyMcpEntries` writes nothing when it finds nothing (verified: identical `shasum` either
+  side) — but anyone reusing this isolation trick on a machine that still has legacy entries would have
+  them deleted for real while believing the whole run was sandboxed.
+
+- **Observation:** "Nothing outside `mcpServers` changed" cannot be verified by diffing the rest of
+  `~/.claude.json` on a machine with a live session.
+  **Evidence:** Claude Code mutates `pluginUsage.<plugin>.usageCount` and `.lastUsedAt` on its own while a
+  session runs — the counter moved 39370 → 39385 between two consecutive reads with no `configure` and no
+  `claude` invocation in between. The obvious check, `diff <(jq 'del(.mcpServers)' backup) <(jq
+  'del(.mcpServers)' live)`, therefore never comes back empty and reads as though the command touched
+  unrelated state. Exclude `pluginUsage` as well when re-running this verification.
 
 ## Decision Log
 
