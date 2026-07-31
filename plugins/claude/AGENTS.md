@@ -2,6 +2,12 @@
 
 Claude Code plugin for dot-agent. See [README.md](README.md) for what it bundles and why.
 
+**There is deliberately no `CLAUDE.md` here — do not add one.** This folder is copied verbatim into every
+user's plugin cache (no build, no allowlist), and a `CLAUDE.md` at a plugin root ships to them while never
+loading as project context; `claude plugin validate` warns about it. The guardrails below are mirrored into
+[`.agents/rules/plugin-claude.md`](../../.agents/rules/plugin-claude.md), which is `paths`-scoped to this
+folder, lives outside the shipped tree, and is what actually reaches context.
+
 ## Source of truth for `skills/run/SKILL.md`
 
 This skill's comportment rules (Mode A: embody + drive an agent) must match
