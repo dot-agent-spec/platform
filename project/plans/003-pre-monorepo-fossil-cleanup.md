@@ -15,6 +15,7 @@
 | Status | In Progress |
 | Created | 2026-07-31 |
 | Author | Danilo Borges |
+| Tracking issue | [#29](https://github.com/dot-agent-spec/platform/issues/29) — owns status and the executive summary; this file owns the design and the working record. |
 | Related | [#19](https://github.com/dot-agent-spec/platform/issues/19) (closed by Track D) · [#22](https://github.com/dot-agent-spec/platform/issues/22) / [Plan-001](001-adopt-vibe-ops-baseline.md) Track 3 (advanced by Track E) |
 
 ---
