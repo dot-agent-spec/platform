@@ -1,0 +1,1 @@
+../../.agents/rules/doc-sync.md

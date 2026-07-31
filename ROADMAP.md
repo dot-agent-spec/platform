@@ -4,7 +4,7 @@ This roadmap is organized by **language capability**, not by release date. It st
 
 The single stability commitment is **v1.0** — the point at which the grammar is frozen as a public contract. Until then the DSL is `0.x`: usable, but the syntax may still change. We would rather ship a small honest surface than a large one that silently drops features.
 
-> **Source of truth.** Feature status here is reconciled against [`project/implementation-status.md`](project/implementation-status.md) (what the packages actually do) and the design proposals in [`rfcs/`](rfcs/) (what is still being designed). When the two disagree, the implementation status wins.
+> **Source of truth.** Feature status here is reconciled against [`project/implementation-status.md`](project/implementation-status.md) (what the packages actually do) and the design proposals in [`rfcs/`](project/rfcs/) (what is still being designed). When the two disagree, the implementation status wins.
 
 ---
 
@@ -67,7 +67,7 @@ A pure conversational finite-state machine. No side effects, no typed I/O, no ac
 
 ### Work to close v0.1
 
-Tracked in [`tasks/pre-public-consolidation.md`](tasks/pre-public-consolidation.md):
+Tracked in [`tasks/pre-public-consolidation.md`](project/tasks/pre-public-consolidation.md):
 
 - Resolve `merge` at runtime (kernel load path).
 - `.description` honesty: write `terms`/`privacy`, wire the `behavior` block, **drop** the placeholder `purpose` field (returns later as a real feature — see *Distribution & identity*).
@@ -86,12 +86,12 @@ Agents that do real work: typed data contracts, side-effecting execution, and th
 | Activate typed I/O — `capabilities`, `input`, `output`, `require` wired end-to-end | already in grammar | 🟢 no |
 | Execution — `run script`/`subagent`/`tool`, `set`, `if`, `after N prompts`, `on event` | already in grammar | 🟢 no |
 | `on failure` / `on success` across `run`/`parallel` (incl. fixing the dropped `on failure` on `apply`/`remove`) | already in grammar | 🟢 parser only |
-| Access granularity on `require` (`read`/`write`/`create`) | [requires typing](rfcs/0008-requires-typing.md) | 🔬 depends on syntax decision |
-| Rich types — multimodal (`image`/`audio`/`video`/`file`), collections (`array<T>`/`object`) | [Type System](rfcs/0005-type-system.md) | 🔴 yes |
-| String constraints + semantic primitives — `string(format:…)`, `Email`, `Currency`, `Timestamp` | [String Constraints](rfcs/0016-string-constraints.md) | 🔴 yes |
-| Standard library — `std.*` compound types | [Standard Library](rfcs/0017-standard-library.md) | 🟢 no |
-| Data contract — `on intent … with Type`, `goal Capability`, `complete … with Type` | [Data Contract](rfcs/0014-data-contract.md) | 🔴 yes |
-| Kernel protocol v2 — runtime owns memory, `serialize`/`restore` (checkpointing), SCXML graph | [Kernel Protocol](rfcs/0004-kernel-protocol.md) | 🟢 kernel only |
+| Access granularity on `require` (`read`/`write`/`create`) | [requires typing](project/rfcs/0008-requires-typing.md) | 🔬 depends on syntax decision |
+| Rich types — multimodal (`image`/`audio`/`video`/`file`), collections (`array<T>`/`object`) | [Type System](project/rfcs/0005-type-system.md) | 🔴 yes |
+| String constraints + semantic primitives — `string(format:…)`, `Email`, `Currency`, `Timestamp` | [String Constraints](project/rfcs/0016-string-constraints.md) | 🔴 yes |
+| Standard library — `std.*` compound types | [Standard Library](project/rfcs/0017-standard-library.md) | 🟢 no |
+| Data contract — `on intent … with Type`, `goal Capability`, `complete … with Type` | [Data Contract](project/rfcs/0014-data-contract.md) | 🔴 yes |
+| Kernel protocol v2 — runtime owns memory, `serialize`/`restore` (checkpointing), SCXML graph | [Kernel Protocol](project/rfcs/0004-kernel-protocol.md) | 🟢 kernel only |
 
 > The grammar-opening items here (🔴) are the reason to batch: open the **description/type** grammar once (rich types) and the **behavior** grammar once (data contract), then refreeze.
 
@@ -125,12 +125,12 @@ Beyond v0.2 the order is by priority, not by a promised version number. Each lan
 
 | Theme | What it adds | Status | Grammar? |
 |---|---|---|---|
-| **Cross-agent orchestration** | `start Capability [in "…"]`, `into context.var`, capability-based resolution | 📋 Planned (depends on Data Contract) — [RFC](rfcs/0015-cross-agent.md) | 🔴 yes |
-| **In-process execution (Lib Format)** | `run lib "…" "method"` — WASM addons called from a flow | 📋 Planned (depends on Addon Protocol) — [RFC](rfcs/0002-lib-format.md) | 🔴 yes |
-| **Addon protocol** | ID format, resolution (`builtin`/`bundle`/`online`), capability gating | 📋 Planned — [RFC](rfcs/0001-addon-protocol.md) | 🟢 no |
-| **Knowledge / RAG** | `.knowledge` bundles, `QueryKnowledge` effect, tiered retrieval | 🔬 Exploring — [RFC](rfcs/0003-knowledge-format.md) | 🟢 no |
-| **GenUI & Templates** | `apply`/`remove` beyond CSS — HTML fragments, templates, video layers | 🔬 Exploring — [RFC](rfcs/0007-genui-and-templates.md) | 🔴 yes |
-| **Distribution & identity** | `purpose` (Wikidata QID), `endpoints`/`securitySchemes`, `.well-known`, `dot-agent://` scheme, `did` + `proof` signing | 📋 Planned / 🔬 Exploring — RFCs [0013](rfcs/0013-purpose-index.md) · [0009](rfcs/0009-endpoints.md) · [0010](rfcs/0010-well-known.md) · [0011](rfcs/0011-agent-pack.md) · [0012](rfcs/0012-identity-proof.md) | 🟢 mostly no |
-| **Transpiler infrastructure** | `.agent` → LangGraph / Swift AppIntent codegen | 🔬 Exploring — [RFC](rfcs/0018-transpiler-infrastructure.md) | 🟢 no (separate packages) |
+| **Cross-agent orchestration** | `start Capability [in "…"]`, `into context.var`, capability-based resolution | 📋 Planned (depends on Data Contract) — [RFC](project/rfcs/0015-cross-agent.md) | 🔴 yes |
+| **In-process execution (Lib Format)** | `run lib "…" "method"` — WASM addons called from a flow | 📋 Planned (depends on Addon Protocol) — [RFC](project/rfcs/0002-lib-format.md) | 🔴 yes |
+| **Addon protocol** | ID format, resolution (`builtin`/`bundle`/`online`), capability gating | 📋 Planned — [RFC](project/rfcs/0001-addon-protocol.md) | 🟢 no |
+| **Knowledge / RAG** | `.knowledge` bundles, `QueryKnowledge` effect, tiered retrieval | 🔬 Exploring — [RFC](project/rfcs/0003-knowledge-format.md) | 🟢 no |
+| **GenUI & Templates** | `apply`/`remove` beyond CSS — HTML fragments, templates, video layers | 🔬 Exploring — [RFC](project/rfcs/0007-genui-and-templates.md) | 🔴 yes |
+| **Distribution & identity** | `purpose` (Wikidata QID), `endpoints`/`securitySchemes`, `.well-known`, `dot-agent://` scheme, `did` + `proof` signing | 📋 Planned / 🔬 Exploring — RFCs [0013](project/rfcs/0013-purpose-index.md) · [0009](project/rfcs/0009-endpoints.md) · [0010](project/rfcs/0010-well-known.md) · [0011](project/rfcs/0011-agent-pack.md) · [0012](project/rfcs/0012-identity-proof.md) | 🟢 mostly no |
+| **Transpiler infrastructure** | `.agent` → LangGraph / Swift AppIntent codegen | 🔬 Exploring — [RFC](project/rfcs/0018-transpiler-infrastructure.md) | 🟢 no (separate packages) |
 
-Unresolved architectural questions (dynamic `each` parallelism, authorization gates, timeouts, subagent contracts) are parked in the [Experimental Roadmap RFC](rfcs/0006-experimental-roadmap.md) until they become concrete proposals.
+Unresolved architectural questions (dynamic `each` parallelism, authorization gates, timeouts, subagent contracts) are parked in the [Experimental Roadmap RFC](project/rfcs/0006-experimental-roadmap.md) until they become concrete proposals.
