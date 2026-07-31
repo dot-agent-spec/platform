@@ -228,7 +228,10 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   `@modelcontextprotocol/sdk` 1.29.0 → 1.30.0 with `@hono/node-server` 1.19.14 → 2.0.12; dead `dsl/*`
   glob dropped. Full build green, 287 tests passing across the three suites. The Dependabot count is
   still 18 and stays there until this merges — Dependabot scans the **default branch**, not a PR branch.
-- [ ] Track B — [`npm-publish-allowlists.md`](../tasks/npm-publish-allowlists.md)
+- [x] 2026-07-31 — Track B complete ([`npm-publish-allowlists.md`](../tasks/npm-publish-allowlists.md)):
+  `apps/dot-agent-cli` 48 → 47 files (one removal), `packages/language-server` 24 → 17 files (110KB →
+  81KB). Both diffed file-by-file against a recorded `npm pack --dry-run` baseline; nothing added, no
+  runtime file lost. Bundled language server verified by LSP `initialize` over stdio.
 - [ ] Track C — [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md)
 - [ ] Track D — [`license-header-ci-enforcement.md`](../tasks/license-header-ci-enforcement.md) (closes #19)
 - [ ] Track E — [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md)
@@ -327,6 +330,28 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   `Cannot find module @dot-agent/tree-sitter/dist/index.cjs`, showing as `4 failed | 6 passed` with zero
   failing assertions. Starting Docker and rebuilding restored all 287 tests. Worth knowing before
   diagnosing a "test regression" that is really a missing build artifact.
+
+- Observation: `packages/language-server` has no `src/` and no `tsconfig.json` — it ships **JS source as
+  its published artifact**, so the Design section above was wrong about what its missing `files` array was
+  leaking.
+  Evidence: its `build` script is literally `echo 'language-server ships JS source directly, no build step
+  needed'`, `main` is `server.js`, and the tarball's runtime is `server.js`, `parser.js`, `merge-graph.js`
+  and `features/*.js` at the package root. The only surplus content was `tests/` (7 files). The corrected
+  allowlist therefore names the root `.js` files explicitly rather than a `dist/`.
+
+- Observation: `apps/dot-agent-cli` was publishing `scripts/ensure-license-headers.sh` to npm — the same
+  script Track D relocates to the repository root.
+  Evidence: it appears in the recorded `npm pack --dry-run` baseline. Had the allowlist simply mirrored
+  the old denylist's output, Track D would later have left a dangling entry. Dropped deliberately; it is
+  the single content change in that package's tarball (48 → 47 files).
+
+- Observation: `git add` aborts the **entire** add when any one pathspec fails to match, so a
+  `git rm`-then-`git add` sequence can produce a commit containing only the deletion, silently.
+  Evidence: `git add apps/dot-agent-cli/{package.json,.npmignore} packages/language-server/package.json`
+  failed with `pathspec '.npmignore' did not match any files` — because `git rm` had already staged it —
+  and the commit that followed contained *only* the `.npmignore` deletion; both `files` allowlists were
+  left unstaged. Caught by reading `git show --stat` afterwards, fixed with `--amend`. Always verify what
+  landed rather than trusting that a commit followed a successful-looking sequence.
 
 ## Decision Log
 
