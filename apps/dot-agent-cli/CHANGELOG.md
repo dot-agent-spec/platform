@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+- **Breaking: `dot-agent configure --claude` now installs the native Claude Code plugin instead of writing MCP entries into `~/.claude.json`.** It shells out to `claude plugin marketplace add dot-agent-spec/platform` and `claude plugin install dot-agent@dot-agent-spec` (idempotent — safe to re-run), then removes any `dot-agent`/`dot-agent-helper`/`dot-agent-dev` entries an older version of this command left behind. `--skill`/`--mcp` no longer apply to `--claude` — a plugin install always delivers both; they still narrow `--gemini`/`--murici`, which have no plugin format yet and are unaffected otherwise. See [ADR-DA00-08](../../project/adr/DA00-08-cli-installs-native-host-plugins.md) for why: the plugin manifest already declared the same two servers, config this CLI wrote only grew stale as the server names changed, and nothing but the CLI itself could ever remove what it had written.
+- `ConfigureResult` gained `target`, `pluginId`, `pluginVersion`, `pluginEnabled`, `marketplaceName`, `marketplaceSource`, `marketplaceAdded`, `legacyConfigPath`, and `legacyEntriesRemoved`; `dest`/`mcpConfigPath`/`mcpConfigured`/`skillInstalled`/`registeredServers`/`skillSkippedReason` are now only populated for `gemini`/`murici`. The MCP tool `dot_agent_configure` gained a `murici` parameter (previously only in the CLI) and refuses the `claude` target when called from inside a live Claude Code session (`CLAUDECODE` env var set), to avoid a child process racing the parent session over the plugin registry and `~/.claude.json`.
+
+### Added
+- `src/host-command.ts` — a small `execFile` wrapper for shelling out to a host's own CLI, with distinct error reporting for "binary not found" vs "command failed" vs "timed out".
+
+---
+
 ## [0.11.1] - 2026-07-16
 
 ### Dependencies

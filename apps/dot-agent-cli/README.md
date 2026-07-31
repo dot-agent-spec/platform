@@ -63,7 +63,8 @@ npx @dot-agent/cli <command>
 | `dot-agent run <file.agent \| dir>` | Load an agent and start its state machine |
 | `dot-agent run <src> --mcp` | Serve a loaded agent over MCP |
 | `dot-agent run --helper` | Serve the interactive authoring helper over MCP |
-| `dot-agent configure [--claude] [--gemini] [--agy] [--murici]` | Register the skill and MCP servers with a host |
+| `dot-agent configure --claude` | Install the native Claude Code plugin and remove any legacy MCP entries this CLI wrote before |
+| `dot-agent configure [--gemini] [--agy] [--murici] [--skill] [--mcp]` | Write the skill file and/or MCP config directly, for hosts with no dot-agent plugin (yet) |
 | `dot-agent server-mcp` | Serve the authoring tools over MCP |
 | `dot-agent agents list` · `agents path <name>` | List installed agents, or resolve one to a path |
 

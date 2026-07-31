@@ -199,6 +199,17 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
       the command now names the plugin install commands instead. `configure.ts`, `cli.ts` help text and
       `configure.test.ts` updated together. Fixed alongside it: a `uri`-overwrite bug and two callback
       return-type errors that `tsc --noEmit` had been reporting and the `tsdown` build never checked.
+- [x] **`configure --claude` now installs the plugin instead of writing MCP config for it** (2026-07-30,
+      same day, superseding the bullet above). A code-review comment on the "MCP only" state above led to
+      inspecting a real `~/.claude.json`: the CLI's own past writes had drifted two renames behind (a
+      `dot-agent` entry carrying the helper's args), and Claude Code's own docs confirm plugin and
+      user-config MCP servers don't de-duplicate — so the "MCP only" write was not a harmless fallback, it
+      was the sole source of the drift it existed to clean up. `configure.ts`'s `claude` target now shells
+      out via the new `src/host-command.ts` to `claude plugin marketplace add`/`install` (idempotent) and
+      deletes any legacy `dot-agent`/`dot-agent-helper`/`dot-agent-dev` entries it finds — never writes new
+      ones. `--skill`/`--mcp` no longer apply to `--claude`. Decision, evidence and rejected alternatives:
+      [ADR-DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) +
+      [its log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
 - [ ] **Track 4 — publish `@dot-agent/cli`.** Not done. This is what stands between the plugin working in
       the repository and working for anyone else. Gated first on the maintainer's own manual test of the
       installed plugin — as of 2026-07-30 the plugin has only ever run on this machine against an
@@ -336,6 +347,20 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
 
 ## Decision Log
 
+- **Decision:** `dot-agent configure --claude` installs the native Claude Code plugin (shells out to
+  `claude plugin marketplace add`/`install`) and deletes any dot-agent MCP entries a previous CLI run left
+  in `~/.claude.json`, instead of writing those entries itself. `--skill`/`--mcp` no longer apply to
+  `--claude`. `gemini`/`murici` are unaffected — they still write files directly, having no plugin format.
+  **Rationale:** A plugin manifest is declarative and strictly additive — it can never remove a config
+  entry a different tool wrote. Config `configure` wrote therefore only ever aged (verified: a real
+  `~/.claude.json` on this machine sat two CLI-layout renames behind), and Claude Code doesn't de-duplicate
+  a plugin server against a same-named user-config one, so the write was never a harmless fallback. Full
+  reasoning, live evidence and the framings rejected first (CLI-as-migration-mechanism,
+  detect-via-undocumented-internal-file, guidance-only):
+  [ADR-DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) +
+  [its log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+  **Date / Author:** 2026-07-30 / Danilo
+
 - **Decision:** `dot-agent configure --claude` no longer installs a skill file. Claude Code gets the skills
   from the plugin; the command keeps only its MCP-registration half and reports the plugin install commands
   when a skill is asked for. Other hosts are untouched — gemini/AGY still get the copied file, murici still
@@ -418,6 +443,10 @@ the reason the connect-time constraint above is worth remembering.
 
 - [DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) — the decision, and its
   [long-form log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
+- [DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) — `configure --claude` installs the plugin
+  instead of writing its config, and its
+  [long-form log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+  [platform#27](https://github.com/dot-agent-spec/platform/issues/27) tracks it upstream.
 - [Plan-001](001-adopt-vibe-ops-baseline.md) — Track 8 here closes that plan's Track 3 items for
   `apps/dot-agent-cli/` and `plugins/claude/`.
 - `project/tasks/reference-doc-drift.md` — documentation corrections in `docs/reference/kernel-dsl.md` and

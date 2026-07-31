@@ -36,6 +36,18 @@ only. `server-mcp.ts` registers four authoring tools **and** calls `registerRunt
 is `registerLoadTool` (`load_agent`) + the five session tools + `registerResources` — reading only
 `registerTools()` undercounts. Prose saying "MCP server mode" means the first one.
 
+**`configure --claude` installs the host's plugin; it doesn't write config for it anymore.** Per
+[ADR-DA00-08](../../project/adr/DA00-08-cli-installs-native-host-plugins.md), `configure.ts`'s `claude`
+target shells out via `src/host-command.ts` (`runHostCommand`, wrapping `node:child_process.execFile`) to
+`claude plugin marketplace add`/`install`, then calls `removeLegacyMcpEntries` to delete any
+`dot-agent`/`dot-agent-helper`/`dot-agent-dev` entries an older CLI wrote into `~/.claude.json` — that file
+is delete-only from this code now, never created or blind-overwritten (a JSON parse failure throws instead
+of silently replacing the file, since it holds the host's entire user state, not just `mcpServers`). Only
+`gemini`/`murici` still take the direct-file-write path (`ConfigureTarget`'s `FileTarget` arm), because
+neither has a dot-agent plugin format yet. `SERVERS`/`SERVER_NAMES` (exported from `configure.ts`) must
+keep matching `plugins/claude/.claude-plugin/plugin.json`'s own `mcpServers` —
+`tests/plugin-manifest-parity.test.ts` is the only thing that checks that.
+
 **The license-header hook does not run, despite appearances.** `package.json`'s `prepare` runs
 `git config core.hooksPath .githooks`, which writes repository-level config resolving from the **repo
 root** — so `npm install` here silently repoints the whole monorepo's hooks, and `apps/dot-agent-cli/.githooks/pre-commit`

@@ -128,25 +128,34 @@ async function main() {
           process.exit(0)
         }
 
-        const configTypeOption = await p.select({
-          message: 'Select what to configure:',
-          options: [
-            { value: 'both', label: 'Both Skill and MCP (Recommended)' },
-            { value: 'skill', label: 'Skill only' },
-            { value: 'mcp', label: 'MCP configuration only' },
-          ],
-        })
-
-        if (p.isCancel(configTypeOption)) {
-          p.cancel('Configuration cancelled.')
-          process.exit(0)
-        }
-
         targetClaude = targetOption === 'claude' || targetOption === 'all'
         targetGemini = targetOption === 'gemini' || targetOption === 'all'
         targetMurici = targetOption === 'murici' || targetOption === 'all'
-        configSkill = configTypeOption === 'skill' || configTypeOption === 'both'
-        configMcp = configTypeOption === 'mcp' || configTypeOption === 'both'
+
+        // Skill/MCP-only is a distinction that only exists for gemini/murici, which still write files
+        // directly. Claude Code installs the plugin as one unit (ADR-DA00-08), so skip the question
+        // when claude is the only target picked — there is nothing it would change.
+        if (targetOption === 'claude') {
+          configSkill = true
+          configMcp = true
+        } else {
+          const configTypeOption = await p.select({
+            message: 'Select what to configure:',
+            options: [
+              { value: 'both', label: 'Both Skill and MCP (Recommended)' },
+              { value: 'skill', label: 'Skill only' },
+              { value: 'mcp', label: 'MCP configuration only' },
+            ],
+          })
+
+          if (p.isCancel(configTypeOption)) {
+            p.cancel('Configuration cancelled.')
+            process.exit(0)
+          }
+
+          configSkill = configTypeOption === 'skill' || configTypeOption === 'both'
+          configMcp = configTypeOption === 'mcp' || configTypeOption === 'both'
+        }
       } else {
         if (!skill && !mcp) {
           configSkill = true
@@ -163,9 +172,28 @@ async function main() {
       })
 
       for (const result of results) {
+        if (result.pluginId) {
+          if (result.marketplaceAdded) {
+            formatSuccess(`Marketplace "${result.marketplaceName}" added → ${result.marketplaceSource}`)
+          } else if (result.marketplaceName) {
+            console.log(`  Using existing marketplace "${result.marketplaceName}" → ${result.marketplaceSource} (not re-pointed)`)
+          }
+          const versionLabel = result.pluginVersion ? ` v${result.pluginVersion}` : ''
+          formatSuccess(`Plugin ${result.pluginId}${versionLabel} installed (user scope) — it carries the skills and both MCP servers`)
+          if (result.pluginEnabled === false) {
+            formatWarning(`${result.pluginId} is installed but disabled — run \`claude plugin enable ${result.pluginId}\`.`)
+          }
+        }
+
+        if (result.legacyEntriesRemoved && result.legacyEntriesRemoved.length > 0) {
+          formatSuccess(`Removed stale CLI-written MCP entries (${result.legacyEntriesRemoved.join(', ')}) from ${result.legacyConfigPath}`)
+        }
+
         if (result.skillInstalled && result.dest) {
           formatSuccess(`Skill installed → ${result.dest}`)
-          console.log(`  Skill is now globally active in the Gemini/AGY config directory.`)
+          if (result.target === 'gemini') {
+            console.log(`  Skill is now globally active in the Gemini/AGY config directory.`)
+          }
         }
         if (result.skillSkippedReason) {
           formatWarning(result.skillSkippedReason)
@@ -173,8 +201,11 @@ async function main() {
         if (result.mcpConfigured && result.mcpConfigPath) {
           const serverLabels = (result.registeredServers ?? []).join(' and ')
           formatSuccess(`MCP servers (${serverLabels}) registered → ${result.mcpConfigPath}`)
-          formatWarning('Restart/reconnect your MCP client for the new servers to become available.')
         }
+      }
+
+      if (results.some(r => r.pluginId || r.mcpConfigured || (r.legacyEntriesRemoved && r.legacyEntriesRemoved.length > 0))) {
+        formatWarning('Restart Claude Code / reconnect your MCP client for the change to take effect.')
       }
     } else if (command === 'server-mcp') {
       const mcpTransportIdx = args.indexOf('--mcp-transport')
@@ -279,10 +310,15 @@ async function main() {
 Requires Node.js >=24.0.0.
 
 Getting started (for an AI assistant setting this up):
-  1. On Claude Code, install the plugin instead — /plugin marketplace add dot-agent-spec/platform
-     then /plugin install dot-agent — it carries the skills and both MCP servers.
+  1. dot-agent configure --claude installs the dot-agent plugin for Claude Code (adds the
+     dot-agent-spec marketplace, installs the plugin, and removes any MCP entries an older
+     version of this command left in ~/.claude.json) — it carries the skills and both MCP
+     servers. Run the equivalent commands yourself if you'd rather not shell out:
+       claude plugin marketplace add dot-agent-spec/platform
+       claude plugin install dot-agent@dot-agent-spec
      Elsewhere: dot-agent configure --gemini (or --murici) installs the skill and registers the
-     dot-agent-helper and dot-agent MCP servers in one step.
+     dot-agent-helper and dot-agent MCP servers in one step. --skill/--mcp only narrow those two
+     targets — a plugin install always does both.
   2. Restart/reconnect this session so the new MCP servers become available.
   3. Once connected, read dot-agent://howto and dot-agent://intents on the dot-agent-helper
      server to learn how to navigate from there. To run your own agent, call load_agent on the
@@ -295,6 +331,7 @@ Usage:
   dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent configure [--claude] [--gemini] [--agy] [--murici] [--skill] [--mcp]
+    --claude installs the native plugin; --skill/--mcp apply only to --gemini/--murici
   dot-agent server-mcp [--mcp-transport stdio|http] [--mcp-port <n>]
   dot-agent agents list
   dot-agent agents path <name>
