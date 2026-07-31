@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | In Progress |
 | Created | 2026-07-31 |
 | Author | Danilo Borges |
 | Sources | [plans/003-pre-monorepo-fossil-cleanup.md](../plans/003-pre-monorepo-fossil-cleanup.md) — Track E · closes the `apps/dot-agent-cli/` item of [Plan-001](../plans/001-adopt-vibe-ops-baseline.md) Track 3 |

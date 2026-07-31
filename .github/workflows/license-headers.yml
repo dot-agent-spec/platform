@@ -1,0 +1,30 @@
+name: License headers
+
+# The repository's first pull-request-triggered workflow. Every other workflow
+# here is publish-tag triggered, so until now nothing ran on a PR at all.
+#
+# This replaces a git hook that had not worked since the monorepo flatten: it
+# was installed by a `prepare` script in one workspace package, which wrote the
+# repository-scoped core.hooksPath setting on behalf of the whole monorepo and
+# pointed it away from the hook it shipped. See issue #19.
+#
+# Deliberately minimal — no Node.js setup, no npm ci. The script is POSIX shell
+# and needs neither, which keeps the first PR gate fast and hard to break.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Apache 2.0 headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check first-party source files
+        run: ./scripts/ensure-license-headers.sh --check

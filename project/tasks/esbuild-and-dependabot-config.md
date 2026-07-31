@@ -48,8 +48,14 @@ as one grouped pull request instead of one per advisory.
 
 | # | Priority | Item | Package(s) | Effort |
 |---|---|---|---|---|
-| 1 | P1 | Raise `esbuild` to `^0.28.1` in four manifests | root, sdk, parser-dsl, vscode-extension | M |
-| 2 | P2 | Add `.github/dependabot.yml` with grouped security updates | repo root | S |
+| 1 | P1 | Raise `esbuild` to `^0.28.1` in **five** manifests | root, sdk, parser-dsl, kernel-dsl, vscode-extension | M |
+| 2 | P1 | Patch `brace-expansion` and `postcss` | root lockfile (transitive) | XS |
+| 3 | P2 | Add `.github/dependabot.yml` with grouped security updates | repo root | S |
+
+> **Updated after Tracks A and B merged.** Two corrections from the post-merge Dependabot rescan:
+> `packages/kernel-dsl/package.json` also declares `esbuild ^0.21.5` — it was masked by that package's
+> own nested lockfile until Track A deleted it — so item 1 covers five manifests rather than four. And
+> two advisories published 2026-07-24 surfaced that the original enumeration never had; they are item 2.
 
 ---
 
@@ -84,7 +90,28 @@ Then, because this is a pre-1.0 bump across seven minors:
 If the build breaks, read esbuild's changelog for the specific minor that broke it and record the finding
 in the plan's `Surprises & Discoveries` before working around it.
 
-### 2. Add `.github/dependabot.yml` — P2
+### 2. Patch `brace-expansion` and `postcss` — P1
+
+**What:** `npm update brace-expansion postcss` at the repository root — `brace-expansion` 5.0.7 → 5.0.8,
+`postcss` 8.5.16 → 8.5.18. Both are patch bumps of transitive dependencies; neither is declared directly
+by any manifest here.
+
+**Why:** Both advisories were published 2026-07-24 and surfaced on the rescan triggered by merging
+Tracks A and B. Both are labelled **high**, and neither reaches a consumer — which is the point worth
+recording rather than the fix, which is trivial:
+
+- `postcss` is honestly labelled `development`: `vitest → vite → postcss`.
+- `brace-expansion` is labelled **`scope: runtime`, and that label is wrong in practice.** It arrives via
+  `vscode-dot-agent → @vscode/vsce → minimatch → brace-expansion`, and `@vscode/vsce` is a
+  *devDependency* — the VS Code packaging tool. `apps/vscode-extension` additionally packages with
+  `vsce package --no-dependencies`, so nothing from `node_modules` reaches the `.vsix`. Dependabot reads
+  the root lockfile, where a workspace's dev/prod split is flattened away, so it cannot tell.
+
+Fix them because they are free, not because they are urgent. If either bump turns out not to be free —
+if npm wants to move a major to satisfy it — stop and report rather than forcing it; the reach does not
+justify the risk.
+
+### 3. Add `.github/dependabot.yml` — P2
 
 **What:** Create `.github/dependabot.yml` enabling grouped security updates for the npm ecosystem at the
 repository root.
@@ -111,8 +138,9 @@ Two notes for whoever writes it:
 ## Implementation order
 
 ```
-P1:  1 (esbuild) — clean install, build, test, extension smoke test
-P2:  2 (dependabot.yml) — independent, may land first
+P1:  1 (esbuild, five manifests) - clean install, build, test, extension smoke test
+P1:  2 (brace-expansion, postcss) - trivial, independent
+P2:  3 (dependabot.yml) - independent, may land first
 ```
 
 Item 2 touches no build input and can land at any point. Item 1 must be its own commit so it can be

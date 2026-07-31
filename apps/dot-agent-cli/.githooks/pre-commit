@@ -1,2 +1,0 @@
-#!/usr/bin/env sh
-bash scripts/ensure-license-headers.sh
