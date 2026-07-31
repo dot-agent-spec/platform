@@ -165,11 +165,7 @@ async function main() {
       for (const result of results) {
         if (result.skillInstalled && result.dest) {
           formatSuccess(`Skill installed → ${result.dest}`)
-          if (result.dest.includes('.claude')) {
-            console.log(`  Add to CLAUDE.md: @~/.claude/skills/dot-agent/SKILL.md`)
-          } else {
-            console.log(`  Skill is now globally active in Gemini/AGY config directory.`)
-          }
+          console.log(`  Skill is now globally active in the Gemini/AGY config directory.`)
         }
         if (result.skillSkippedReason) {
           formatWarning(result.skillSkippedReason)
@@ -283,7 +279,9 @@ async function main() {
 Requires Node.js >=24.0.0.
 
 Getting started (for an AI assistant setting this up):
-  1. dot-agent configure --claude   (or --gemini)  — installs the skill and registers the
+  1. On Claude Code, install the plugin instead — /plugin marketplace add dot-agent-spec/platform
+     then /plugin install dot-agent — it carries the skills and both MCP servers.
+     Elsewhere: dot-agent configure --gemini (or --murici) installs the skill and registers the
      dot-agent-helper and dot-agent MCP servers in one step.
   2. Restart/reconnect this session so the new MCP servers become available.
   3. Once connected, read dot-agent://howto and dot-agent://intents on the dot-agent-helper

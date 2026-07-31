@@ -46,10 +46,12 @@ describe('configure command', () => {
     }
   })
 
-  it('configures both skill and mcp for claude by default', async () => {
+  it('configures mcp for claude by default and points at the plugin for the skill', async () => {
     const results = await configure()
     expect(results).toHaveLength(1)
-    expect(results[0].dest).toBe('/mock/home/.claude/skills/dot-agent/SKILL.md')
+    expect(results[0].dest).toBeUndefined()
+    expect(results[0].skillInstalled).toBeUndefined()
+    expect(results[0].skillSkippedReason).toMatch(/plugin/)
     expect(results[0].mcpConfigured).toBe(true)
     expect(results[0].mcpConfigPath).toBe('/mock/home/.claude.json')
 
@@ -64,13 +66,22 @@ describe('configure command', () => {
     })
   })
 
-  it('configures only skill when skill option is true and mcp is false', async () => {
+  it('writes nothing for a claude skill-only run, naming the plugin instead', async () => {
     const results = await configure({ claude: true, skill: true, mcp: false })
     expect(results).toHaveLength(1)
-    expect(results[0].dest).toBe('/mock/home/.claude/skills/dot-agent/SKILL.md')
-    expect(results[0].skillInstalled).toBe(true)
+    expect(results[0].dest).toBeUndefined()
+    expect(results[0].skillInstalled).toBeUndefined()
+    expect(results[0].skillSkippedReason).toMatch(/\/plugin install dot-agent/)
     expect(results[0].mcpConfigured).toBeUndefined()
     expect(mockFiles['/mock/home/.claude.json']).toBeUndefined()
+  })
+
+  it('installs the skill for gemini, which has no plugin equivalent', async () => {
+    const results = await configure({ gemini: true, skill: true, mcp: false })
+    expect(results).toHaveLength(1)
+    expect(results[0].dest).toBe('/mock/home/.gemini/config/skills/dot-agent/SKILL.md')
+    expect(results[0].skillInstalled).toBe(true)
+    expect(results[0].skillSkippedReason).toBeUndefined()
   })
 
   it('configures only mcp when mcp option is true and skill is false', async () => {
@@ -86,7 +97,6 @@ describe('configure command', () => {
     const results = await configure({ claude: true, gemini: true })
     expect(results).toHaveLength(2)
 
-    expect(results.map(r => r.dest)).toContain('/mock/home/.claude/skills/dot-agent/SKILL.md')
     expect(results.map(r => r.dest)).toContain('/mock/home/.gemini/config/skills/dot-agent/SKILL.md')
     expect(results.map(r => r.mcpConfigPath)).toContain('/mock/home/.claude.json')
     expect(results.map(r => r.mcpConfigPath)).toContain('/mock/home/.gemini/config/mcp_config.json')

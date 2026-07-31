@@ -62,17 +62,27 @@ interface ConfigureTarget {
   mcpConfigPath: string
   mcpServerKeys: ServerKey[]
   formatServerEntry: (spec: McpServerSpec) => Record<string, unknown>
-  // undefined = this target has no skill-file concept (e.g. murici)
+  // undefined = this target has no skill file to install, either because the host has no
+  // skill-file concept (murici) or because something else delivers it (claude — see below)
   skillDest?: string
+  // Set when the host has skills but gets them from a package this CLI does not write. Always
+  // reported, unlike a plain missing skillDest, because the user did ask for a skill.
+  skillSupersededBy?: string
 }
 
 function getTargets(): Record<TargetName, ConfigureTarget> {
   return {
     claude: {
+      // Claude Code gets both skills and both MCP servers from the plugin, which declares them in
+      // its own manifest. A skill copied into ~/.claude/skills/ would be a second, unversioned copy
+      // of the same file, drifting from the plugin the moment either side changes.
       mcpConfigPath: join(homedir(), '.claude.json'),
       mcpServerKeys: ['helper', 'dev'],
       formatServerEntry: spec => ({ ...spec }),
-      skillDest: join(homedir(), '.claude', 'skills', 'dot-agent', 'SKILL.md'),
+      skillSupersededBy:
+        'Claude Code gets the skills from the dot-agent plugin, not from a copied file. Install it with ' +
+        '`/plugin marketplace add dot-agent-spec/platform` then `/plugin install dot-agent` — that also ' +
+        'registers both MCP servers, making this command unnecessary for Claude Code.',
     },
     gemini: {
       mcpConfigPath: join(homedir(), '.gemini', 'config', 'mcp_config.json'),
@@ -152,6 +162,8 @@ export async function configure(options?: ConfigureOptions): Promise<ConfigureRe
 
         result.dest = target.skillDest
         result.skillInstalled = true
+      } else if (target.skillSupersededBy) {
+        result.skillSkippedReason = target.skillSupersededBy
       } else if (!doMcp) {
         result.skillSkippedReason = `${targetName} has no skill file — nothing to install.`
       }
