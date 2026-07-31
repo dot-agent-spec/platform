@@ -353,6 +353,26 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   left unstaged. Caught by reading `git show --stat` afterwards, fixed with `--amend`. Always verify what
   landed rather than trusting that a commit followed a successful-looking sequence.
 
+- Observation: Merging Tracks A and B took the alert count 18 → **7**, not the predicted 4. The twelve
+  phantom alerts closed as expected, but the fresh scan the merge triggered surfaced three the original
+  enumeration never contained — and one of them shows the `scope` field can mislead just as the severity
+  label does.
+  Evidence: three alerts carry `created_at` of `2026-07-31T18:17`, the merge timestamp of PR #30.
+  `brace-expansion` (high) and `postcss` (high) are advisories **published 2026-07-24**, a week before
+  this work — genuinely new, not caused by it. The third is a fifth `esbuild` alert, against
+  `packages/kernel-dsl/package.json`, previously masked by that package's own nested lockfile: deleting
+  the fossil revealed a real declaration underneath it. Track C therefore covers **five** manifests, not
+  the four the plan first named.
+
+- Observation: Dependabot labelled `brace-expansion` **`scope: runtime`**, but it reaches nobody. The
+  plan already argued severity is a poor triage signal; the dependency *scope* is no better here, because
+  a single root lockfile flattens away each workspace's dev/prod distinction.
+  Evidence: `npm ls brace-expansion` traces it to `vscode-dot-agent → @vscode/vsce → minimatch →
+  brace-expansion`, and `@vscode/vsce` is a **devDependency** — it is the VS Code packaging tool.
+  `apps/vscode-extension` also packages with `vsce package --no-dependencies`, so nothing from
+  `node_modules` reaches the `.vsix` either. `postcss` is comparable but honestly labelled:
+  `vitest → vite → postcss`, development.
+
 ## Decision Log
 
 - Decision: Triage the Dependabot alerts by *reach* — does the dependency ship to a consumer of a
