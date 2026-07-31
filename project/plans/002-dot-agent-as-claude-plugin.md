@@ -228,6 +228,16 @@ For Track 8, from the repository root, each of the two folders has a `CLAUDE.md`
   specific connection. `after N prompts` therefore remains a documented degradation on this surface until a
   proper tick channel exists.
 
+- **Observation:** The two `SKILL.md` copies this plan created are byte-identical but not symlinked, and
+  nothing in the repository checks that they still match.
+  **Evidence:** an unrelated sync of `apps/dot-agent-cli/helper-src/` found both copies telling the driving
+  LLM to navigate to a `generate` intent that the helper actually names `gen`. The duplication did not
+  cause that drift, but it does mean every fix must land twice with no failure if it lands once — the
+  reviewer only noticed because the subagent prompt had been updated to say "edit both, then `diff` them".
+  The `.agents/` ↔ `.claude/` symlink convention used everywhere else in this repo is not available here:
+  the plugin folder has to be self-contained to be installable from the marketplace. So the copy stays,
+  and the guard has to be a check rather than a link.
+
 ## Decision Log
 
 - **Decision:** Migrate `project/tasks/DA00-07-dot-agent-claude-skill.md` into this plan and delete the
