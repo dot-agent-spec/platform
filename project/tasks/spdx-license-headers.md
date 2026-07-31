@@ -1,13 +1,3 @@
-<!--
- Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- https://www.apache.org/licenses/LICENSE-2.0
--->
-
 # Task: Migrate License Headers to the One-Line SPDX Form
 
 | Field | Value |
@@ -49,6 +39,7 @@ which had just stamped 18 files with the long form. Folding a 109-file rewrite i
 | 3 | P0 | Correct the exclusion list against what is actually tracked | scripts/ | S |
 | 4 | P1 | Update the `## License rules` section | AGENTS.md | XS |
 | 5 | P1 | Add the missing `license` field to the root manifest | package.json | XS |
+| 6 | P0 | Adopt collective attribution: `LICENSE` + `AUTHORS` + CONTRIBUTING | repo root | S |
 
 ---
 
@@ -121,13 +112,31 @@ is over its 150-line budget, so this replaces rather than grows.
 
 ---
 
-## Do not do
+### 6. Adopt collective attribution — P0
 
-**Do not overwrite `LICENSE` from the template.** Its 160 lines of licence text are already byte-identical;
-only the appendix differs. The template attributes collectively to *"The `<project>` Authors"*, while this
-repo names the actual holder — and since item 1 removes the per-file copyright line, `LICENSE` becomes the
-**only** place a copyright holder is named. Replacing it would erase attribution from a solo-authored
-repository. This is an `adopt`, not a `migrate`.
+**What:** `LICENSE`'s appendix becomes *"Copyright (c) 2026 The dot-agent Authors"*, a root
+[`AUTHORS`](../../AUTHORS) file records who that means, and `CONTRIBUTING.md` gains a *Licensing and
+attribution* section telling contributors to add themselves in the same commit as their first
+contribution.
+
+**Why:** This reverses an earlier decision in this same task. The first pass kept `LICENSE` naming a single
+person, reasoning that removing the per-file copyright line would otherwise leave no attribution anywhere.
+That reasoning was sound but the conclusion was backwards: the fix is a **contributor list**, not a
+personal notice. A repository whose every copyright statement names one individual reads as closed to
+contribution, which is the opposite of the intent here.
+
+The model matches what `vibe-ops` ships (`templates/AUTHORS.template`), with one deliberate deviation:
+that skill offers `AUTHORS` only in the **fork** case, where it exists to separate origin copyright from
+project copyright. Collective attribution is worth having in a non-fork repo too, for a reason the fork
+case does not cover — it is what makes the project legible as open to contributors.
+
+**Do not** add a `NOTICE` file with it. Apache-2.0 §4(d) obliges every redistributor to carry a `NOTICE`
+that exists, and the eight published `@dot-agent/*` tarballs would each have to ship it — npm
+auto-includes `LICENSE` but not `NOTICE`. Nothing third-party is redistributed here (`tools/wasi-stub/` is
+a build tool, never published), so it would be an obligation bought for nothing.
+
+**Note on scope:** `murici` and the other workspace repositories still carry the personal notice. Making
+this the shared standard is separate work, not part of this task.
 
 ---
 
@@ -135,6 +144,7 @@ repository. This is an `adopt`, not a `migrate`.
 
 ```
 P0:  1 (migrate) → 3 (exclusions, which changes what 1 covers) → 2 (install template)
+P0:  6 (collective attribution) — reverses the LICENSE decision item 6 explains
 P1:  4 (AGENTS.md) → 5 (root license field)
 ```
 
@@ -150,7 +160,9 @@ behind, which is how the `bindings/` false positive surfaced.
 - Touching a file under `tools/wasi-stub/` does not make the check fail.
 - `grep -n '{{' scripts/ensure-license-headers.sh` is empty and no `FORK_ONLY` marker survives.
 - `npm run build` green and the full suite passes.
-- `LICENSE` is unchanged.
+- `LICENSE` names *The dot-agent Authors*; `AUTHORS` exists and lists at least one contributor; no
+  `NOTICE` file was created; `CONTRIBUTING.md` tells contributors to add themselves.
+- No source file contains a personal name in its header.
 
 ## Closing
 

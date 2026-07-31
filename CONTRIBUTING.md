@@ -20,6 +20,8 @@ cargo install --path tools/wasi-stub --force
 
 `packages/tree-sitter` builds the grammar WASM via `emcc` inside Docker. OrbStack or Docker Desktop must be running when you execute `npm run build` in that package.
 
+The failure is worth recognising, because it does not look like a build problem: `dist/` is never produced, and the next thing you run reports *test* failures — several `apps/dot-agent-cli` files failing to **load** with `Cannot find module …/@dot-agent/tree-sitter/dist/index.cjs`, shown as failed files with zero failing assertions. Start Docker, rebuild, and they pass.
+
 ## Build
 
 Each package has a `build` script. To build everything in dependency order, run the release script in check mode (no commits, no publish):
@@ -44,3 +46,26 @@ cargo test --workspace
 # TypeScript / Node.js tests
 npm test --workspaces --if-present
 ```
+
+## Licensing and attribution
+
+The project is Apache-2.0. Contributions are licensed under it, and **each contributor keeps copyright
+over their own work** — there is no copyright assignment.
+
+Attribution is collective. `LICENSE` reads *"Copyright (c) 2026 The dot-agent Authors"*, and
+[`AUTHORS`](AUTHORS) is the list of who that means. **Add yourself to `AUTHORS` in the same commit as your
+first contribution**, sorted by first appearance.
+
+Source files carry a one-line SPDX identifier and no per-file copyright line:
+
+```
+// SPDX-License-Identifier: Apache-2.0
+```
+
+A per-file copyright line goes stale the moment somebody else edits the file, which is why
+[ASF's own guidance](https://www.apache.org/legal/src-headers.html) recommends against it and why the
+name in a header is never how this project records who wrote what — `AUTHORS` and `git log` are.
+
+CI checks the header on every pull request. If it fails, run `./scripts/ensure-license-headers.sh` from
+the repository root. Two paths are excluded and must stay that way: `tools/wasi-stub/` is third-party code
+and must never carry our notice, and `generated-*` files are rewritten by their generator.
