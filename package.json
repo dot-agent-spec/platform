@@ -2,6 +2,7 @@
   "name": "dot-agent-workspace",
   "version": "1.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "dot-agent DSL Monorepo Workspace",
   "workspaces": [
     "packages/*",

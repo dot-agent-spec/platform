@@ -167,9 +167,11 @@ All documentation in this repository must be written in English.
 ## License rules
 
 - `.md`, `.description` and `.behavior` files need **no header** — the root `LICENSE` covers them
-- Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`, anywhere) carry the Apache 2.0 header. Fix with
-  `./scripts/ensure-license-headers.sh` (`--check` only reports); CI runs it on every PR. **Never go back
-  to a git hook** — `core.hooksPath` is repo-scoped, so one package installing it reconfigures the whole
-  monorepo ([#19](https://github.com/dot-agent-spec/platform/issues/19))
-- **`tools/wasi-stub/` is third-party and must never carry our copyright**; `pkg/`, `bindings/` and
-  `generated-*` are tool output. The script excludes all four
+- Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`, anywhere) carry a **one-line SPDX header and no
+  per-file copyright** — `// SPDX-License-Identifier: Apache-2.0`. Copyright lives in [`LICENSE`](LICENSE)
+  alone; per [ASF practice](https://www.apache.org/legal/src-headers.html) a per-file line goes stale
+- Fix with `./scripts/ensure-license-headers.sh` (`--check` only reports); CI runs it on every PR. **Never
+  go back to a git hook** — `core.hooksPath` is repo-scoped, so one package installing it reconfigures the
+  whole monorepo ([#19](https://github.com/dot-agent-spec/platform/issues/19))
+- Two exclusions, both real: **`tools/wasi-stub/` is third-party** and must never carry our copyright, and
+  `generated-*` is rewritten by its generator
