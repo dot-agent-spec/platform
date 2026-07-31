@@ -118,6 +118,7 @@ state answering
   on intent "resolved" transition to ready
 
 state escalated
+  goal "Transfer conversation to human support."
   transition to ready
 ```
 
