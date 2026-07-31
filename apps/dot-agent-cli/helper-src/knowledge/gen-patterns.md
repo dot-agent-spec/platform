@@ -1,7 +1,7 @@
 # Common agent patterns
 
-Every pattern below builds from **oriented states** — `goal` + `guide`/`teach` + `interact`, paired
-with `on intent`/`on offtopic` handlers — and, where a state only routes, a **router**: no
+Every pattern below builds from **Oriented States** — `goal` + `guide`/`teach` + `interact`, paired
+with `on intent`/`on offtopic` handlers — and, where a state only routes, a **Setup State**: no
 orientation, handlers that do nothing but `transition to`. See `dsl_states` for the definition.
 
 ## 1. Multi-stage workflow

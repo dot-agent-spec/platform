@@ -37,9 +37,9 @@ state greeting
 - `interact` emits a `request_interact` effect (signals the agent is waiting for user input); it
   pairs with `goal` — a state with `goal` but no `interact` gets a W012 lint warning, and
   `interact` without `goal` gets W013
-- `goal`/`guide`/`teach` are state-level only, valid in an **oriented state** (one that also
-  declares `interact`); a state with none of those is a **router** — see `dsl_states` for the full
-  statement/handler reference
+- `goal`/`guide`/`teach` are state-level only, valid in an **Oriented State** (one that also
+  declares `interact`); a state with none of those is a **Setup State** — see `dsl_states` for the
+  full statement/handler reference
 
 ## Merge
 

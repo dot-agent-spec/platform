@@ -48,8 +48,8 @@ state dsl_description
     transition to dsl_description
 
 state dsl_states
-  goal "Explain state anatomy — orientation statements, handlers, and the oriented-state/router split."
-  guide "A state is oriented (goal, guide, teach, interact) or a router (on intent/on offtopic that only transition to). That is the full statement set."
+  goal "Explain state anatomy — orientation statements, handlers, and the Oriented State/Setup State split."
+  guide "A state is an Oriented State (goal, guide, teach, interact) or a Setup State (on intent/on offtopic that only transition to). That is the full statement set."
   teach "knowledge/dsl-states.md"
   interact
   on intent "dsl_overview"
