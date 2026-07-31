@@ -233,7 +233,15 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   81KB). Both diffed file-by-file against a recorded `npm pack --dry-run` baseline; nothing added, no
   runtime file lost. Bundled language server verified by LSP `initialize` over stdio.
 - [ ] Track C — [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md)
-- [ ] Track D — [`license-header-ci-enforcement.md`](../tasks/license-header-ci-enforcement.md) (closes #19)
+- [x] 2026-07-31 — Track D complete
+  ([`license-header-ci-enforcement.md`](../tasks/license-header-ci-enforcement.md), closes #19): script
+  gained `--check`, moved to `scripts/`, discovery switched to `git ls-files`; first `pull_request`
+  workflow added; fossil hook, `prepare` and the package-local script deleted. 18 files of accumulated
+  backlog fixed. `core.hooksPath` untouched, graphify `post-commit` still resolves.
+- [x] 2026-07-31 — Track E item for `apps/dot-agent-cli/` partially done: its `AGENTS.md` license
+  paragraph, `.githooks/` layout row and self-maintenance trigger corrected in the same commit, since
+  Track D falsified them. Remaining for that folder: the general content review
+  ([`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) items 3 and 4).
 - [ ] Track E — [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md)
 - [ ] Track E — [`agents-md-language-server.md`](../tasks/agents-md-language-server.md)
 - [ ] Track E — [`agents-md-vscode-extension.md`](../tasks/agents-md-vscode-extension.md)
@@ -372,6 +380,29 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   `apps/vscode-extension` also packages with `vsce package --no-dependencies`, so nothing from
   `node_modules` reaches the `.vsix` either. `postcss` is comparable but honestly labelled:
   `vitest → vite → postcss`, development.
+
+- Observation: `tools/wasi-stub/` is **third-party code**, so the license-header sweep had to exclude it
+  on licensing grounds rather than stylistic ones — a mechanical fixer run over the whole tree would have
+  stamped this repository's copyright onto someone else's work.
+  Evidence: its `Cargo.toml` declares `authors = ["Arnaud Golfouse <arnaud.golfouse@laposte.net>"]`,
+  `repository = "https://github.com/typst-community/wasm-minimal-protocol"` and
+  `version = "0.3.0-patched"` — a vendored, locally patched copy. Three `.rs` files there were among the
+  22 the first survey flagged. Excluded by name in `scripts/ensure-license-headers.sh`, with the reason
+  written next to the exclusion so a later reader does not "fix" it.
+
+- Observation: The license-header convention was **narrower on paper than in practice**, so matching the
+  script to the documented policy would have removed enforcement from files that already complied.
+  Evidence: the root `AGENTS.md` said "Rust and TypeScript source files in `packages/`", but a survey
+  found 90 files carrying the header across `packages/` **and** `apps/` — including 26 in
+  `apps/dot-agent-cli` and 19 in `packages/language-server`. The policy was widened to match reality
+  rather than the script narrowed to match the policy.
+
+- Observation: Being unenforced since the flatten cost 18 files, not zero — the convention had been
+  eroding quietly the whole time.
+  Evidence: `./scripts/ensure-license-headers.sh --check` reported 18 first-party files without a header
+  once third-party and generated files were excluded, concentrated in test files, `tsdown.config.ts`
+  files and build scripts — exactly the files nobody opens during review. Fixing them was +252 lines with
+  nothing removed.
 
 ## Decision Log
 
