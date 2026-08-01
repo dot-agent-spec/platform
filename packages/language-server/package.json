@@ -59,7 +59,7 @@
     "@dot-agent/tree-sitter": "0.10.1",
     "vscode-languageserver": "^10.0.0",
     "vscode-languageserver-textdocument": "^1.0.12",
-    "web-tree-sitter": "^0.26.9"
+    "web-tree-sitter": "^0.26.11"
   },
   "publishConfig": {
     "access": "public"

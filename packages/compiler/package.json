@@ -82,7 +82,7 @@
     "@dot-agent/parser-dsl": "0.10.2",
     "@dot-agent/tree-sitter": "0.10.1",
     "jszip": "^3.10.1",
-    "web-tree-sitter": "^0.26.9"
+    "web-tree-sitter": "^0.26.11"
   },
   "publishConfig": {
     "access": "public"
