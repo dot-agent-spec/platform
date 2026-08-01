@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@dot-agent/cli"><img src="https://img.shields.io/npm/v/%40dot-agent%2Fcli?label=%40dot-agent%2Fcli" alt="npm @dot-agent/cli"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=dot-agent.vscode-dot-agent"><img src="https://img.shields.io/visual-studio-marketplace/v/dot-agent.vscode-dot-agent?label=VS%20Code" alt="VS Code Marketplace"></a>
+  <a href="https://open-vsx.org/extension/dot-agent/vscode-dot-agent"><img src="https://img.shields.io/open-vsx/v/dot-agent/vscode-dot-agent?label=.agent%20DSL" alt=".agent DSL editor extension"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="Apache-2.0"></a>
 </p>
 
@@ -122,9 +122,11 @@ Full command surface: [`apps/dot-agent-cli`](apps/dot-agent-cli).
 
 ### In an editor
 
-The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=dot-agent.vscode-dot-agent)
-adds syntax highlighting, hover documentation and live diagnostics for both file types, backed by the
-same linter the CLI runs.
+The **.agent DSL** extension adds syntax highlighting, hover documentation and live diagnostics for both
+file types, backed by the same linter the CLI runs. It is published on
+[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dot-agent.vscode-dot-agent)
+and on [Open VSX](https://open-vsx.org/extension/dot-agent/vscode-dot-agent), for editors that do not
+ship Microsoft's registry.
 
 ### In Claude Code
 
