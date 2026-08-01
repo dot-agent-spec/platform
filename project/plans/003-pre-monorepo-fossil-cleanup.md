@@ -163,19 +163,20 @@ items, the change procedure and the acceptance. This plan keeps the design ratio
 record; the tasks are deleted at closure while this file stays.
 
 A dossier named below **without a link** has been closed and deleted — that is the normal end of a task,
-not a missing file. The three closed so far are readable at the commit that still carried them:
+not a missing file. Each is readable at the commit that still carried it:
 
 ```
 git show 2c885e6:project/tasks/fossil-lockfiles-and-runtime-deps.md
 git show 2c885e6:project/tasks/npm-publish-allowlists.md
 git show 2c885e6:project/tasks/license-header-ci-enforcement.md
+git show 30a7ffb:project/tasks/esbuild-and-dependabot-config.md
 ```
 
 | Track | Task | What it delivers |
 |---|---|---|
 | A — Fossils and runtime security | `fossil-lockfiles-and-runtime-deps.md` | Deletes the five nested lockfiles and the dead `dsl/*` glob; patches `fast-uri` and raises `@modelcontextprotocol/sdk` to unblock `@hono/node-server`. Takes the alert count from 18 to 4. |
 | B — Packaging | `npm-publish-allowlists.md` | Converts `apps/dot-agent-cli` and `packages/language-server` from denylist/no-list to a `files` allowlist. |
-| C — esbuild and Dependabot config | [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md) | Raises `esbuild` to `^0.28.1` across four manifests; adds `.github/dependabot.yml` with grouped security updates. |
+| C — esbuild and Dependabot config | `esbuild-and-dependabot-config.md` | Raises `esbuild` to `^0.28.1` across the four manifests that declare it and re-approves the root's `allowScripts` pin; patches `brace-expansion` and `postcss`; adds `.github/dependabot.yml`, which the repository had never had. |
 | D — License enforcement in CI | `license-header-ci-enforcement.md` | Adds a check mode to the script, moves it to the repo root, adds the repository's first `pull_request` workflow, deletes the fossil hook. **Closes #19.** |
 | E — Per-folder `AGENTS.md` | [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md) · [`agents-md-language-server.md`](../tasks/agents-md-language-server.md) · [`agents-md-vscode-extension.md`](../tasks/agents-md-vscode-extension.md) · [`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) | The full Plan-001 Track 3 sequence per folder: review → repoint dead links → deliver via `CLAUDE.md`. |
 
@@ -231,7 +232,13 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   `apps/dot-agent-cli` 48 → 47 files (one removal), `packages/language-server` 24 → 17 files (110KB →
   81KB). Both diffed file-by-file against a recorded `npm pack --dry-run` baseline; nothing added, no
   runtime file lost. Bundled language server verified by LSP `initialize` over stdio.
-- [ ] Track C — [`esbuild-and-dependabot-config.md`](../tasks/esbuild-and-dependabot-config.md)
+- [x] 2026-07-31 — Track C complete
+  (`esbuild-and-dependabot-config.md`), three commits on
+  `chore/esbuild-and-dependabot`: `esbuild` 0.21.5 → 0.28.1 in the four manifests that declare it, with
+  the root's `allowScripts` pin re-approved; `brace-expansion` 5.0.7 → 5.0.9 and `postcss` 8.5.16 → 8.5.25
+  (`npm audit` → 0); `.github/dependabot.yml` created. `npm ls esbuild` no longer reports `invalid`. Full
+  build green, 287 + 16 tests passing, and the rebuilt extension's bundled server driven headlessly to
+  real diagnostics.
 - [x] 2026-07-31 — Track D complete
   (`license-header-ci-enforcement.md`, closes #19): script
   gained `--check`, moved to `scripts/`, discovery switched to `git ls-files`; first `pull_request`
@@ -403,6 +410,34 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   files and build scripts — exactly the files nobody opens during review. Fixing them was +252 lines with
   nothing removed.
 
+- Observation: The root `package.json` carries an **`allowScripts` block that pins by exact version**, so
+  every bump of a dependency with an install script silently invalidates its own approval. Nothing in the
+  repository documented this, and the only signal is a warning inside `npm install` output.
+  Evidence: bumping esbuild left `"esbuild@0.21.5": true` plus a `"esbuild@0.27.7": true` that nothing had
+  resolved to since the block was written in `d40b7a9`, while `npm install` warned that 0.28.1's
+  `postinstall: node install.js` was unreviewed. `npm approve-scripts esbuild` collapsed all three into
+  one current pin. The field is advisory in npm 11.17 — scripts still run — but `npm help approve-scripts`
+  states a future release blocks unreviewed ones, and esbuild's postinstall is what places its native
+  binary. A stale allowlist is therefore a build break scheduled for whenever npm flips that switch.
+
+- Observation: An alert whose `manifest_path` is `package-lock.json` has **no manifest to edit** — it
+  describes a transitive package hoisted into the root lockfile, and it clears when whatever pulls it in
+  is bumped. Reading the field as a file to open sends you looking for a declaration that was never there.
+  Evidence: the task dossier counted five manifests for esbuild, listing the root among them; the root has
+  never declared esbuild. Four packages do (`parser-dsl`, `kernel-dsl`, `sdk`, `vscode-extension`), and
+  alert #8 is filed against `package-lock.json` because `vitest → vite → esbuild` hoists there. It cleared
+  with the same bump. The same reading explains alerts #24 and #27 (`postcss`, `brace-expansion`).
+
+- Observation: An LSP `initialize` handshake proves the bundle **loads**, not that it works — the
+  externalized WASM chain is only exercised once a document is opened. Track B's verification stopped one
+  step short of the thing most likely to break.
+  Evidence: driving `dist/server.mjs` to `initialize` returns all nine providers even though nothing has
+  parsed yet. Sending `textDocument/didOpen` with `languageId: "behavior"` (not the extension's
+  `dot-agent-behavior` id — the server filters on the short form) returns `E004` from the tree-sitter
+  grammar and `W012` from the compiler linter, which is what proves the copied `parser-dsl`/`web-tree-sitter`
+  packages and the `createRequire` banner resolve at runtime. That is the failure mode a bundler bump has,
+  and no unit test covers it.
+
 ## Decision Log
 
 - Decision: Triage the Dependabot alerts by *reach* — does the dependency ship to a consumer of a
@@ -446,6 +481,17 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   keeps the checkbox meaningful: a single task across four folders and ~530 lines invites ticking four
   boxes off one skim. It also shrinks this plan, which now holds rationale and the working record while
   the tasks hold the procedure.
+  Date / Author: 2026-07-31 / Danilo Borges
+
+- Decision: Enable Dependabot **version** updates, not only security ones, and never add an `ignore` block
+  to quiet the resulting major-version pull requests.
+  Rationale: The plan's own most expensive finding was not a CVE — esbuild sat seven minors behind until
+  vitest's bundled vite required a range the pin no longer satisfied, and no advisory reports that. Version
+  updates are the only thing that prevents a repeat, so they are worth their noise once grouped. The
+  `ignore` prohibition is the non-obvious half: ignore conditions apply to security updates as well as
+  version updates, so the natural way to silence major PRs would also suppress an advisory whose only fix
+  is a major bump, silently and exactly when it matters. Recorded as a comment in
+  [`.github/dependabot.yml`](../../.github/dependabot.yml) because that is where someone will be tempted.
   Date / Author: 2026-07-31 / Danilo Borges
 
 - Decision: On `@hono/node-server`, stop and report rather than reaching for `overrides` automatically.

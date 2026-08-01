@@ -1,0 +1,45 @@
+version: 2
+
+updates:
+  # One entry, at the root. This is an npm workspaces monorepo: every package
+  # resolves through the root package-lock.json, and per-package `directory`
+  # entries would re-create exactly the split-brain scanning that the nested
+  # lockfiles caused before they were deleted (see plan 003, Track A).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # Advisories batch into one pull request instead of one per alert.
+      # Ungrouped, the 18 alerts plan 003 cleared would have arrived as 18 PRs.
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      # Routine bumps are a separate PR from security ones, so an urgent patch
+      # is never queued behind a version bump nobody asked for. Majors are
+      # deliberately outside this group: they arrive individually, because a
+      # breaking change deserves its own review rather than a line in a batch.
+      npm-minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+# Note for whoever edits this next: do not add an `ignore` block for
+# major versions to quiet the individual PRs. Ignore conditions apply to
+# security updates as well as version updates, so it would also suppress an
+# advisory whose only fix is a major bump — silently, and precisely when it
+# matters most. Close the PRs you don't want instead.
+#
+# Version updates are enabled, not just security ones, because the expensive
+# problem this repository actually hit was not a CVE. esbuild sat seven minors
+# behind until vitest's bundled vite required a range the pin no longer
+# satisfied and `npm ls` reported the tree as invalid. No advisory would have
+# reported that; a routine bump would have prevented it.
+#
+# This file covers npm only. The `github-actions` ecosystem is a real and
+# separate gap — the workflows here pin action versions that nothing watches.
