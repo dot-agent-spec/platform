@@ -138,33 +138,15 @@ on intent "confirmed" transition to next_state
 
 ---
 
-## License rules
+## License — what is specific to this package
 
-- **Every new authored file** must carry the Apache 2.0 header at the top.
-  - `.js` / `.c` files: use the block comment form (`/* ... */`)
-  - `.scm` files: use the line comment form (`; Copyright ...`)
-- **Generated files** (`src/parser.c`, `src/grammar.json`, `src/node-types.json`, and flow equivalents): no header — they are overwritten on regeneration.
-- **tree-sitter upstream headers** (`src/tree_sitter/*.h`): no header — they carry their own MIT license, attributed in `NOTICE`.
-- Do **not** modify `NOTICE` unless a new third-party library is incorporated.
+The repo-wide rule (one-line `// SPDX-License-Identifier: Apache-2.0`, CI-enforced) is in the root
+[`AGENTS.md`](../../AGENTS.md). Only two things here are not covered by it:
 
-The Apache 2.0 header text:
-```
-/*
- * Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-```
+- `src/tree_sitter/*.h` are **tree-sitter upstream, MIT** — they keep their own headers and are attributed
+  in this package's [`NOTICE`](NOTICE). Do not modify `NOTICE` unless a new third-party library is vendored.
+- `.scm`, `.c` and `.json` are outside the enforcement globs entirely, so the generated `src/parser.c`,
+  `src/grammar.json` and `src/node-types.json` need no header and get none.
 
 ---
 

@@ -91,17 +91,10 @@ wasm-pack build --target web --out-dir pkg
 
 `pkg/` is the artifact consumed by frontends. Never edit files inside `pkg/` manually — they are all generated.
 
-## License rules
+## License
 
-- **Every new `.rs` file** must carry the Apache 2.0 header using `//` line comments (idiomatic Rust style):
-  ```rust
-  // Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
-  //
-  // Licensed under the Apache License, Version 2.0 (the "License");
-  // ...
-  ```
-- **Generated files in `pkg/`**: no header — overwritten on every `wasm-pack build`.
-- **No NOTICE file**: no third-party source is distributed in this repo. Cargo dependencies are resolved at build time only.
+Repo-wide rule only — one-line `// SPDX-License-Identifier: Apache-2.0`, CI-enforced; see the root
+[`AGENTS.md`](../../AGENTS.md). `pkg/` is wasm-pack output and untracked, so the check never reaches it.
 
 ## Publishing
 
