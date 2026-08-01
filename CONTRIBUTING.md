@@ -2,11 +2,15 @@
 
 ## Toolchain setup
 
-Install Rust (stable), Node.js ≥ 20, and npm ≥ 10. Then install workspace dependencies:
+Install Rust (stable), Node.js ≥ 24 (enforced by the root `engines` field), and npm ≥ 10. Then install
+workspace dependencies:
 
 ```bash
 npm install
 ```
+
+This is a real monorepo — `packages/*` and `apps/*` are plain npm workspaces, not submodules. There is no
+`git submodule update --init` step.
 
 ### wasi-stub (required for WASM builds)
 
@@ -22,19 +26,35 @@ cargo install --path tools/wasi-stub --force
 
 The failure is worth recognising, because it does not look like a build problem: `dist/` is never produced, and the next thing you run reports *test* failures — several `apps/dot-agent-cli` files failing to **load** with `Cannot find module …/@dot-agent/tree-sitter/dist/index.cjs`, shown as failed files with zero failing assertions. Start Docker, rebuild, and they pass.
 
-## Build
+### Rust WASM targets (required for `parser-dsl` and `kernel-dsl`)
 
-Each package has a `build` script. To build everything in dependency order, run the release script in check mode (no commits, no publish):
+Both crates compile to WASM through the shared [`scripts/build-wasm.sh`](scripts/build-wasm.sh) at the
+repository root — not a per-package script. It needs `zig` on `$PATH` and `wasm-bindgen-cli`:
 
 ```bash
-node scripts/release.mjs --dry-run
+cargo install wasm-bindgen-cli
+# zig: https://ziglang.org/download/
+```
+
+## Build
+
+The root script builds every package in dependency order:
+
+```bash
+npm run build
 ```
 
 Or build individual packages:
 
 ```bash
-cd packages/kernel-dsl && npm run build
-cd packages/compiler && npm run build
+npm run build --workspace=packages/compiler
+cd packages/kernel-dsl && npm run build:debug   # faster, larger WASM binary
+```
+
+To check the whole release build without committing or publishing anything:
+
+```bash
+node scripts/release.mjs --dry-run
 ```
 
 ## Tests
@@ -46,6 +66,21 @@ cargo test --workspace
 # TypeScript / Node.js tests
 npm test --workspaces --if-present
 ```
+
+## Releases
+
+Publishing is **tag-driven; there is no local `npm publish`.** Versions are bumped and cross-package
+dependencies re-pinned on `main`, then a `<package>@<version>` tag is pushed — `tree-sitter@0.4.1`,
+`kernel-dsl@0.1.3`, `vscode@0.3.3` — and the matching `publish-*.yml` workflow in
+[`.github/workflows/`](.github/workflows/) runs `npm publish --provenance` over OIDC.
+
+The packages depend on each other with exact pins, so a release cascades: bumping a package obliges you to
+re-pin and re-release its dependents, in topological order. The full runbook, including the
+human-approval gate before any tag is pushed, is the `/publish` skill in
+[`.agents/skills/publish/`](.agents/skills/publish/).
+
+The two version axes — the DSL milestone and per-package semver — and the rule that maps one to the other
+are in [`ROADMAP.md`](ROADMAP.md).
 
 ## Changing a dependency
 
