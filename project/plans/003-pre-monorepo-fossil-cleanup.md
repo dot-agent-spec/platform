@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | In Progress |
+| Status | Shipped (2026-08-01) — Track E lands with [PR #37](https://github.com/dot-agent-spec/platform/pull/37); the file is kept, as plans are |
 | Created | 2026-07-31 |
 | Author | Danilo Borges |
 | Tracking issue | [#29](https://github.com/dot-agent-spec/platform/issues/29) — owns status and the executive summary; this file owns the design and the working record. |
@@ -530,22 +530,97 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
 
 ## Outcomes & Retrospective
 
-*Not yet written — the plan has not started.*
+### Against the five goals
+
+1. **Fossils gone.** Yes. One root `package-lock.json`, the five nested ones deleted, the dead `dsl/*`
+   workspace glob dropped, the `.githooks/` fossil and its `prepare` script removed. `npm pack --dry-run`
+   in `apps/dot-agent-cli` lists 47 files with no `src/` or `tests/`.
+2. **Alert count to zero.** Yes — `0` open, every one closed by a fix and none by dismissal. The number
+   moved 18 → 7 → 0, and the middle figure is the interesting one: see below.
+3. **`fast-uri` and `@hono/node-server` patched.** Yes: `fast-uri@3.1.5`, `@hono/node-server@2.0.12`,
+   both reached by raising `@modelcontextprotocol/sdk` rather than by an `overrides` pin, which was the
+   thing the Decision Log said not to do silently.
+4. **License-header enforcement in CI.** Yes, and it is the repository's first `pull_request`-triggered
+   workflow. `#19` closed.
+5. **Build and tests green at the end of every track.** Yes, and Track C added a check the goal did not
+   ask for, because a green suite would not have caught a bad bundler artifact: the extension's bundled
+   server is now driven over a real stdio LSP session to actual diagnostics.
+
+### Where the plan was wrong, and in which direction
+
+Two predictions failed, both by underestimating.
+
+**"18 alerts → 4."** Reality was 7. Two advisories published mid-flight, and a fifth `esbuild` manifest
+that had been *masked* by the very nested lockfile Track A deleted. Deleting a fossil made a real problem
+visible, which is the argument for deleting fossils.
+
+**Track E scoped at "three or four dead links per folder."** It was 22 links and roughly 20 false claims,
+including two whole sections describing schemes this repository has never used. The estimate came from
+what a link checker can see from outside a package; nothing mechanical sees a false claim. Any future
+per-folder review should be scoped from the second number, not the first.
+
+### What is still open
+
+- Plan-001's Track 3 has **five folders left**: `packages/parser-dsl`, `kernel-dsl`, `compiler`,
+  `plugins/claude`, and the zero-byte `dogfood/mentor-agent/AGENTS.md`. This plan closed four of nine.
+- The `github-actions` Dependabot ecosystem is deliberately unconfigured; the workflows pin action
+  versions nothing watches. Named in `.github/dependabot.yml`, not fixed.
+- `apps/vscode-extension`'s snippets offer `on complete`, `on failed` and `on fallback`, none of which the
+  grammar accepts. **Kept deliberately** — [RFC-0015](../rfcs/0015-cross-agent.md) proposes `on complete`,
+  so these are ahead of the grammar rather than behind it.
+
+### Routing
+
+Of 25 `Surprises & Discoveries` entries, three were promoted out of this file and the rest stay here as
+the working record — which is the correct outcome for an entry that is evidence rather than instruction.
+
+| Entry | Went to |
+|---|---|
+| `allowScripts` pins install-script approval by exact version | [CONTRIBUTING.md](../../CONTRIBUTING.md) → *Changing a dependency*, together with the negative result that `--allow-scripts-pending` exits 0 either way |
+| An LSP `initialize` proves the bundle loads, not that it works | [`apps/vscode-extension/AGENTS.md`](../../apps/vscode-extension/AGENTS.md) → *Build and release* |
+| A `manifest_path` of `package-lock.json` means a hoisted transitive | **Not promoted, deliberately.** True of any npm-workspaces repository, so by the routing table it is not this repository's knowledge |
+
+Three became guards rather than prose, and each was proven to fail before being trusted:
+`scripts/ensure-license-headers.sh --check` (Track D), `.github/dependabot.yml` (Track C — verified in
+production: it opened one grouped PR for five minor/patch bumps and a separate one for the major, exactly
+as configured), and `scripts/verify-license-text.sh` (from the license sweep that ran alongside).
+
+**One promotion was refused on evidence.** The `allowScripts` trap looked like it wanted a CI guard rather
+than a paragraph — the promotion test prefers guards. Testing it against a deliberately restored stale pin
+showed `npm approve-scripts --allow-scripts-pending` prints the pending package and **still exits 0**. A
+check built on it would have passed forever while detecting nothing, so the prose stands in for a guard
+that cannot be written cheaply. Prose over a guard is the wrong default; it is right here only because the
+guard was tried and found inert.
+
+### Demotion
+
+Nothing new. Track D already performed this plan's one demotion — the root `AGENTS.md` License rules
+section shrank when the CI check replaced the prose describing what a correct header looks like, leaving
+the file one line shorter than it started. The guards added since (`dependabot.yml`,
+`verify-license-text.sh`) make no existing instruction line redundant: neither replaces a sentence anyone
+had written.
+
+The root `AGENTS.md` remains **over its 150-line budget at 174**, which this plan did not cause and did
+not fix. It is Plan-001's to resolve, and Track E's remaining five folders are where the relocated content
+would land.
 
 ---
 
-## Open questions
+## Open questions — answered at closure
 
-- Should any of the four folders in Track E get a **path-scoped rule** under `.agents/rules/` instead of
-  the `CLAUDE.md`? The root `AGENTS.md` reserves the nested `AGENTS.md` + `CLAUDE.md` pair for authoring
-  detail a reader looks up on purpose, and routes anything that must fire *when work touches a folder*
-  into a `paths:`-scoped rule. `apps/vscode-extension/AGENTS.md` carries at least one hard guardrail
-  ("never add LSP feature logic to `extension.js`") that fits the rule shape better. Each task raises this
-  at its own step 3 rather than deciding it here, because the answer depends on what the review finds.
-- Does the license-header check pass on the current tree? The convention has been unenforced since the
-  flatten, so there may be a backlog of headerless files. If it is large, Track D has to decide between
-  fixing the backlog and narrowing the check — landing a CI gate that fails on `main` from its first run
-  is not an option. Deliberately unanswered until the script has a check mode to run.
+- **Path-scoped rule instead of the `CLAUDE.md`?** No, and the reasoning changed once the review was done.
+  The root `AGENTS.md` and Plan-001's Track 3 came from the *same commit*, so they are not in conflict —
+  the root file's criterion is about **content**, not mechanism: a guardrail belongs in a `paths:` rule, a
+  nested `AGENTS.md` survives for package authoring detail. After the review, what remains in these four
+  files is overwhelmingly the second kind, so `CLAUDE.md` is the right delivery. The one candidate for
+  promotion to a rule — *"never add LSP feature logic to `extension.js`"* — was left in place because it
+  is only meaningful next to the file-responsibilities table it sits beside; extracting it into a rule
+  would strand it from its context. Revisit if a second guardrail of that shape appears.
+- **Did the license-header check pass on the current tree?** No — there was a backlog of 18 first-party
+  files, concentrated in test files, `tsdown.config.ts` and build scripts. Track D chose to fix the
+  backlog rather than narrow the check (+252 lines, nothing removed), so the gate was green on `main` from
+  its first run. The prediction that a backlog might exist was right; the estimate of "may be large" was
+  not — 18 files across a repository this size is small.
 
 ## Related
 
