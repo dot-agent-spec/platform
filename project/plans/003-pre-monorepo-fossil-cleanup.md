@@ -170,6 +170,10 @@ git show 2c885e6:project/tasks/fossil-lockfiles-and-runtime-deps.md
 git show 2c885e6:project/tasks/npm-publish-allowlists.md
 git show 2c885e6:project/tasks/license-header-ci-enforcement.md
 git show 30a7ffb:project/tasks/esbuild-and-dependabot-config.md
+git show 8b06f75:project/tasks/agents-md-tree-sitter.md
+git show 8b06f75:project/tasks/agents-md-language-server.md
+git show 8b06f75:project/tasks/agents-md-vscode-extension.md
+git show 8b06f75:project/tasks/agents-md-dot-agent-cli.md
 ```
 
 | Track | Task | What it delivers |
@@ -178,7 +182,7 @@ git show 30a7ffb:project/tasks/esbuild-and-dependabot-config.md
 | B — Packaging | `npm-publish-allowlists.md` | Converts `apps/dot-agent-cli` and `packages/language-server` from denylist/no-list to a `files` allowlist. |
 | C — esbuild and Dependabot config | `esbuild-and-dependabot-config.md` | Raises `esbuild` to `^0.28.1` across the four manifests that declare it and re-approves the root's `allowScripts` pin; patches `brace-expansion` and `postcss`; adds `.github/dependabot.yml`, which the repository had never had. |
 | D — License enforcement in CI | `license-header-ci-enforcement.md` | Adds a check mode to the script, moves it to the repo root, adds the repository's first `pull_request` workflow, deletes the fossil hook. **Closes #19.** |
-| E — Per-folder `AGENTS.md` | [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md) · [`agents-md-language-server.md`](../tasks/agents-md-language-server.md) · [`agents-md-vscode-extension.md`](../tasks/agents-md-vscode-extension.md) · [`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) | The full Plan-001 Track 3 sequence per folder: review → repoint dead links → deliver via `CLAUDE.md`. |
+| E — Per-folder `AGENTS.md` | `agents-md-tree-sitter.md` · `agents-md-language-server.md` · `agents-md-vscode-extension.md` · `agents-md-dot-agent-cli.md` | The full Plan-001 Track 3 sequence per folder: review → repoint dead links → deliver via `CLAUDE.md`. Closed Plan-001's Track 3 for all four folders. |
 
 ### Why Track E is four tasks rather than one sweep
 
@@ -247,11 +251,11 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
 - [x] 2026-07-31 — Track E item for `apps/dot-agent-cli/` partially done: its `AGENTS.md` license
   paragraph, `.githooks/` layout row and self-maintenance trigger corrected in the same commit, since
   Track D falsified them. Remaining for that folder: the general content review
-  ([`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) items 3 and 4).
-- [ ] Track E — [`agents-md-tree-sitter.md`](../tasks/agents-md-tree-sitter.md)
-- [ ] Track E — [`agents-md-language-server.md`](../tasks/agents-md-language-server.md)
-- [ ] Track E — [`agents-md-vscode-extension.md`](../tasks/agents-md-vscode-extension.md)
-- [ ] Track E — [`agents-md-dot-agent-cli.md`](../tasks/agents-md-dot-agent-cli.md) (last — depends on A, B, D)
+  (`agents-md-dot-agent-cli.md` items 3 and 4) — completed the next day, see below.
+- [x] 2026-08-01 — Track E complete, all four folders, on `chore/track-e-nested-agents-md`. Roughly 20
+  false claims and 22 dead links corrected across `packages/tree-sitter`, `packages/language-server` and
+  `apps/vscode-extension`; `apps/dot-agent-cli` audited clean. Each folder then got its one-line
+  `CLAUDE.md`, in that order. The four dossiers are closed and deleted.
 
 ## Surprises & Discoveries
 
@@ -409,6 +413,29 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
   once third-party and generated files were excluded, concentrated in test files, `tsdown.config.ts`
   files and build scripts — exactly the files nobody opens during review. Fixing them was +252 lines with
   nothing removed.
+
+- Observation: Track E was scoped as "repoint three or four dead links per folder" and the folders held
+  roughly **twenty false claims** on top of twenty-two dead links — including two nested `AGENTS.md`
+  sections describing schemes the repository has never used. Link rot is visible from outside a package;
+  a false claim is not, and estimating one from the other underestimates by an order of magnitude.
+  Evidence: `packages/tree-sitter/AGENTS.md` carried a whole "Dual-Versioning Strategy" naming a
+  `1.0.0-draft` spec version and `spec-vX.Y` git tags — `dsl/VERSION` contains `0.1` and `git tag -l`
+  matches no such tag. `packages/language-server/AGENTS.md` named a dependency, `@dot-agent/behavior-parser`,
+  that has never existed here. The four dossiers each predicted an XS/S link edit and one M review.
+
+- Observation: The two most valuable corrections were **claims that were true when written and quietly
+  became load-bearing**, not ordinary rot.
+  Evidence: `parse()` was documented as reparsing incrementally, while `parser.js` deliberately does a full
+  reparse because incremental corrupts node byte ranges — the doc actively invited someone to "optimize" it
+  back. And `server.js contains only LSP wiring` was written as an invariant; it is violated in three
+  places, and stating it as fact is what let the drift pass review. It now records the intent plus its
+  three exceptions, pointing at issue #4.
+
+- Observation: An audit report is not evidence. One finding from the Track E sweep — that the grammar
+  workflow lives in `CONTRIBUTING.md` — was wrong, and acting on it would have added a dead link inside
+  the commit that removes twenty-two.
+  Evidence: `CONTRIBUTING.md` has no grammar section; its headings are Toolchain setup, Build, Tests,
+  Changing a dependency and Licensing. Caught by checking the anchor before writing the link.
 
 - Observation: The root `package.json` carries an **`allowScripts` block that pins by exact version**, so
   every bump of a dependency with an install script silently invalidates its own approval. Nothing in the

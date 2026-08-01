@@ -204,23 +204,26 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
       touches it, after doing the three steps in the track description (review content → fix dead links →
       add the sibling `CLAUDE.md`). Surveyed 2026-07-30; line counts are from that date.
 
-  - [ ] `packages/tree-sitter/` (178 lines) — links to the archived `dot-agent-spec/dot-agent-kernel`,
-        `dot-agent-spec/language-server` and `dot-agent-spec/vscode-dot-agent` repos.
-  - [ ] `packages/language-server/` (175 lines) — links to the archived `dot-agent-spec/kernel-dsl`; its
-        `README.md` links to the archived `dot-agent-spec/tree-sitter`, and lines 99/103 hold the
-        `memory-slugs` false positive that must **not** be edited (see vibe-ops#6).
-  - [ ] `packages/parser-dsl/` (157 lines) — `README.md` link to `LICENSE` does not resolve.
+  - [x] 2026-08-01 `packages/tree-sitter/` — done in Plan-003 Track E. The link rot was the smaller half:
+        it also carried a versioning scheme this repo has never used and two grammar nodes that do not
+        exist.
+  - [x] 2026-08-01 `packages/language-server/` — done in Plan-003 Track E. Ten false claims, including a
+        dependency that never existed and an invariant the code violates in three places.
+  - [x] 2026-08-01 `apps/vscode-extension/` — done in Plan-003 Track E. Confirmed the worst of the four,
+        and its `agent/behaviorGraph` section was additionally written in Portuguese.
+  - [x] 2026-08-01 `apps/dot-agent-cli/` — done in Plan-003 Track E; audited clean, `CLAUDE.md` already
+        present from Plan-002. The survey line count (115) was stale — the file is 82 lines.
+  - [ ] `packages/parser-dsl/` (157 lines) — the `README.md` → `LICENSE` link **now resolves**: that file
+        was created by the license-text sweep (workspace Plan-002). Still needs the content review and the
+        `CLAUDE.md`.
   - [ ] `packages/kernel-dsl/` (124 lines) — `AGENTS.md` link to `API.md` does not resolve.
   - [ ] `packages/compiler/` (86 lines) — `README.md` link to `../../architecture_map.md` does not
         resolve; the architecture map is at `docs/explanation/architecture/map.md`.
-  - [ ] `apps/dot-agent-cli/` (115 lines) — also owns the empty `templates/AGENTS.md` below.
-  - [ ] `apps/vscode-extension/` (97 lines) — the worst link rot: four archived-repo links across
-        `AGENTS.md` and `README.md`, including one to `dot-agent-spec/dot-agent/blob/main/dsl/language.md`,
-        a path that does not exist in this repository under any name.
   - [ ] `plugins/claude/` (48 lines) — no known link rot; needs only the review and the `CLAUDE.md`.
-  - [ ] Two zero-byte `AGENTS.md` files to delete or fill: `apps/dot-agent-cli/templates/AGENTS.md` and
-        `dogfood/mentor-agent/AGENTS.md`. An empty instruction file is a promise of guidance that is not
-        there; deleting is the default unless the folder genuinely needs one.
+  - [ ] One zero-byte `AGENTS.md` left to delete or fill: `dogfood/mentor-agent/AGENTS.md`. An empty
+        instruction file is a promise of guidance that is not there; deleting is the default unless the
+        folder genuinely needs one. (`apps/dot-agent-cli/templates/AGENTS.md` is already gone — Plan-002
+        removed it.)
 
 ## Surprises & Discoveries
 
