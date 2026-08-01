@@ -6,7 +6,7 @@ Full IDE support for the **.agent DSL** (`.description`, `.type`, `.behavior`) u
 
 ## Architecture
 
-This extension is a thin LSP client. Most IDE features (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting) are provided by the **[.agent DSL Language Server](https://github.com/dot-agent-spec/language-server)** — a standalone Node.js process started automatically when the extension activates. The server is bundled with the extension and speaks the Language Server Protocol over stdio.
+This extension is a thin LSP client. Most IDE features (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting) are provided by the **[.agent DSL Language Server](https://github.com/dot-agent-spec/platform/tree/main/packages/language-server)** — a standalone Node.js process started automatically when the extension activates. The server is bundled with the extension and speaks the Language Server Protocol over stdio.
 
 Two features are implemented directly in the extension (VS Code-specific):
 - **Behavior Graph** — Mermaid state diagram rendered in a WebView panel
@@ -178,7 +178,7 @@ state confirmation
 Install from the `.vsix` file:
 
 ```bash
-code --install-extension vscode-dot-agent-0.3.1.vsix
+code --install-extension vscode-dot-agent-0.10.1.vsix
 ```
 
 Or build from source:

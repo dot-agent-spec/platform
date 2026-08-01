@@ -6,7 +6,15 @@ AI collaboration guide for maintaining and evolving the VS Code extension.
 
 ## What this extension is
 
-A **thin LSP client**. Almost all IDE intelligence (hover, completions, diagnostics, go-to-definition, references, rename, symbols, formatting, document links) is provided by the [.agent DSL Language Server](https://github.com/dot-agent-spec/language-server) — a separate Node.js process started automatically on activation. This extension is responsible only for VS Code-specific features that cannot be delivered over LSP.
+A **thin LSP client**. Almost all IDE intelligence (hover, completions, diagnostics, go-to-definition,
+references, rename, symbols, formatting, document links) comes from
+[`packages/language-server/`](../../packages/language-server/) — a separate Node.js process started
+automatically on activation. This extension owns only what cannot be delivered over LSP.
+
+**The server is bundled, not installed.** `scripts/build.mjs` bundles
+`packages/language-server/server.js` straight from the monorepo path into `dist/server.mjs`. The
+`@dot-agent/language-server` entry in `package.json` is not what ships — reading `package.json` alone
+leads you to assume npm resolution, and that assumption is wrong.
 
 ---
 
@@ -21,9 +29,10 @@ A **thin LSP client**. Almost all IDE intelligence (hover, completions, diagnost
 | `behavior-language-configuration.json` | Same for `.behavior` plus indentation rules |
 | `snippets.json` | Code snippets for `.description` files |
 | `behavior-snippets.json` | Code snippets for `.behavior` files |
-| `agent-icon.svg`, `behavior-icon.svg` | File-type icons in the Explorer |
+| `agent-icon.svg`, `behavior-icon.svg`, `description-icon.svg` (+ `-light` variants) | File-type icons in the Explorer, registered under `contributes.languages` |
 
-**Rule:** Never add LSP feature logic to `extension.js`. If you need a new hover, completion, diagnostic, or definition behavior, add it to [`language-server/features/`](https://github.com/dot-agent-spec/language-server) instead.
+**Rule:** Never add LSP feature logic to `extension.js`. A new hover, completion, diagnostic or definition
+belongs in [`packages/language-server/features/`](../../packages/language-server/features/) instead.
 
 ---
 
@@ -37,61 +46,59 @@ Things that require the VS Code API and cannot be expressed as LSP responses:
 
 ---
 
-## `agent/behaviorGraph` — formato da resposta
+## `agent/behaviorGraph` — response format
 
-O LSP request `agent/behaviorGraph` retorna uma **string SCXML** (W3C State Chart XML) gerada pelo behavior-parser WASM a partir do texto do documento.
+The LSP request `agent/behaviorGraph` returns an **SCXML string** (W3C State Chart XML), produced by the
+`@dot-agent/parser-dsl` WASM from the document text.
 
-A extension converte para Mermaid `stateDiagram-v2` com `scxmlToMermaid()` em `extension.js`. O parser extrai:
-- `initial="X"` no elemento raiz `<scxml>` → `[*] --> X` (entry point)
+The extension converts it to a Mermaid `stateDiagram-v2` with `scxmlToMermaid()` in `extension.js`, which
+extracts:
+
+- `initial="X"` on the root `<scxml>` element → `[*] --> X` (entry point)
 - `<state id="X"><transition target="Y"/></state>` → `X --> Y`
-- `<transition event="E" target="Y"/>` dentro de estado → `X --> Y : E`
-- Estados sem conexões → linha isolada (nó sem arestas no diagrama)
+- `<transition event="E" target="Y"/>` inside a state → `X --> Y : E`
+- states with no connections → an isolated line (a node with no edges in the diagram)
 
 ---
 
 ## Build and release
 
 ```bash
-npm run package       # runs vsce package → produces vscode-dot-agent-X.Y.Z.vsix
+npm run compile       # node scripts/build.mjs → dist/
+npm run package       # vsce package --no-dependencies → vscode-dot-agent-X.Y.Z.vsix
 npm run install-ext   # installs the latest .vsix into VS Code
 ```
 
-**Never commit `.vsix` files** — they are in `.gitignore` and are build artifacts. Regenerate with `npm run package` when needed.
+**The monorepo-root `npm run build` does not include this package.** From the root, use
+`npm run compile -w apps/vscode-extension`. Debugging is the `Run Extension` config in
+`.vscode/launch.json` (F5), which opens an Extension Development Host.
 
----
+**Never commit `.vsix` files** — they are in `.gitignore` and are build artifacts.
 
-## License rules
+### What `scripts/build.mjs` arranges, and why not to flatten it
 
-- **`extension.js`** must carry the Apache 2.0 header using `/* */` block comment style.
-- **`.json` files** (grammars, snippets, config): no license header — JSON does not support comments.
-- No NOTICE file — npm dependencies are not distributed as source.
+Three packages are deliberately kept **external** from the server bundle and copied verbatim into
+`dist/node_modules/`: `@dot-agent/parser-dsl`, `@dot-agent/tree-sitter` and `web-tree-sitter`. They locate
+their WASM relative to their own file, so bundling them breaks that path math. The server is emitted as
+ESM with a `.mjs` extension and a `createRequire` banner, because `vscode-languageserver` is CJS and does a
+`require()` esbuild cannot statically resolve — in plain ESM output that becomes a throwing stub.
 
-The Apache 2.0 header:
-```
-/*
- * Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-```
+**Verifying a change to any of this needs more than an `initialize` handshake.** `initialize` returns all
+nine providers before anything has parsed, so it only proves the bundle loads. Drive
+`textDocument/didOpen` with `languageId: "behavior"` — the short id the server filters on, not the
+selector this extension registers — and assert real diagnostics come back. That is what exercises the
+externalized WASM chain and the banner.
 
 ---
 
 ## Key references
 
+These were standalone repositories before the monorepo flatten
+([DA00-05](../../project/adr/DA00-05-monorepo-flatten.md)); the canonical code is in this tree now.
+
 | Resource | Link |
 |----------|------|
-| Language specification | [language.md](https://github.com/dot-agent-spec/dot-agent/blob/main/dsl/language.md) |
-| Language server (LSP features) | [language-server](https://github.com/dot-agent-spec/language-server) |
-| Tree-sitter grammar | [dot-agent-tree-sitter](https://github.com/dot-agent-spec/dot-agent-tree-sitter) |
-| WASM execution engine | [dot-agent-kernel](https://github.com/dot-agent-spec/dot-agent-kernel) |
+| Language reference | [`dsl/reference/`](../../dsl/reference/) |
+| Language server (LSP features) | [`packages/language-server/`](../../packages/language-server/) |
+| Tree-sitter grammar | [`packages/tree-sitter/`](../../packages/tree-sitter/) |
+| WASM execution engine | [`packages/kernel-dsl/`](../../packages/kernel-dsl/) |
