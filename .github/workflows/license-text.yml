@@ -1,0 +1,42 @@
+name: License text
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Every LICENSE is checked, not just the root one. This repository shipped ten
+      # Apache-2.0 files that were a paraphrase of the license rather than the license,
+      # and the root was only one of them; a check that read the root alone would have
+      # reported the repository as healthy. Discovery is by `find`, so a package added
+      # later is covered without anyone remembering to extend a list.
+      - name: Verify every Apache-2.0 LICENSE is the real text
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r f; do
+            found=$((found + 1))
+            bash scripts/verify-license-text.sh "$f"
+          done < <(find . -name LICENSE \
+                     -not -path './node_modules/*' -not -path '*/node_modules/*' \
+                     -not -path './target/*' \
+                     -not -path './apps/dot-agent-cli/templates/*' | sort)
+          # The exclusion above is the MIT scaffold, checked in the next step against a
+          # different digest. A find that silently matched nothing would pass, so assert.
+          [ "$found" -ge 10 ] || { echo "expected at least 10 Apache LICENSE files, found $found" >&2; exit 1; }
+          echo "checked $found Apache-2.0 license files"
+
+      # apps/dot-agent-cli/templates/LICENSE is MIT, not this repository's license: it is
+      # the file `dot-agent init` copies into a user's own project, so it keeps the
+      # <year>/<copyright holders> placeholders for them to fill in.
+      - name: Verify the CLI scaffold LICENSE is the real MIT text
+        run: |
+          bash scripts/verify-license-text.sh \
+            apps/dot-agent-cli/templates/LICENSE \
+            7c9b48b52decb9837c70f608678129e1ac79e056829c8d1e82e8cdd8aed562f8
