@@ -1,6 +1,6 @@
 # Agent DSL Language Server
 
-A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/) server for the **.agent DSL** (`.description`, `.type`, `.behavior`) files. Shared by the VS Code and Zed extensions.
+A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/) server for the **.agent DSL** (`.description`, `.type`, `.behavior`) files. Consumed by the VS Code extension in this repository, and usable by any LSP-capable editor.
 
 ## Features
 
@@ -15,15 +15,15 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 | **Document Symbols** | Agents, types | States, `on event` observers |
 | **Formatting** | 0 / 2-space indentation | 0 / 2 / 4-space indentation by block depth |
 
-> The VS Code extension adds two capabilities on top: **Behavior Graph** (Mermaid state diagram WebView) and **status bar** (current state indicator). Those are VS Code-specific and live in [`extension.js`](https://github.com/daniloborges/vscode-dot-agent/blob/main/extension.js).
+> The VS Code extension adds two capabilities on top: **Behavior Graph** (Mermaid state diagram WebView) and **status bar** (current state indicator). Those are VS Code-specific and live in [`extension.js`](https://github.com/dot-agent-spec/platform/blob/main/apps/vscode-extension/extension.js).
 
 ## Architecture
 
 ```
 ┌──────────────┐   LSP/stdio   ┌─────────────────────────────────┐
 │  VS Code     │ ←──────────── │  server.js                      │
-│  Zed         │               │   ├── features/hover.js          │
-│  Neovim/etc  │               │   ├── features/completions.js    │
+│  any LSP     │               │   ├── features/hover.js          │
+│  editor      │               │   ├── features/completions.js    │
 └──────────────┘               │   ├── features/diagnostics.js    │
                                │   ├── features/definition.js     │
                                │   ├── features/references.js     │
@@ -36,35 +36,33 @@ A standalone [Language Server Protocol (LSP)](https://microsoft.github.io/langua
 
 The server speaks LSP over `stdio`. Each editor starts it as a subprocess and communicates via JSON-RPC messages.
 
-All structural analysis uses the **tree-sitter** parse trees from [`@dot-agent/tree-sitter`](https://github.com/dot-agent-spec/tree-sitter). `parser.js` initializes the WASM-based parsers during `initialize` and maintains a per-document AST cache with incremental reparse.
+All structural analysis uses the **tree-sitter** parse trees from [`@dot-agent/tree-sitter`](https://github.com/dot-agent-spec/platform/tree/main/packages/tree-sitter). `parser.js` initializes the WASM-based parsers during `initialize` and maintains a per-document AST cache. The reparse is full, not incremental — incremental mode corrupts node byte ranges here.
 
 ## Prerequisites
 
 The grammar package must have its WASM binaries built before first use:
 
 ```bash
-cd dsl/tree-sitter-agent
-npm run build          # requires Emscripten; generates dist/*.wasm
+cd packages/tree-sitter
+npm run build          # generates dist/*.wasm — needs Docker running, not a local Emscripten
 ```
 
 When consuming the package from npm (published), `dist/` is already included — no build step needed.
 
 ## Installation
 
-**Standalone (Neovim, Helix, or any LSP-capable editor):**
+**From npm** — the normal path for any LSP-capable editor:
 
 ```bash
-git clone git@github.com:daniloborges/language-server.git
-cd language-server
-# Build the grammar WASMs first (see Prerequisites above)
-npm install
+npm install @dot-agent/language-server
 ```
 
-**As a git submodule:**
+The published package already includes the grammar WASMs, so there is no build step.
 
-```bash
-git submodule add git@github.com:daniloborges/language-server.git dsl/language-server
-```
+**From source**, to work on the server itself: it lives in the
+[`dot-agent-spec/platform`](https://github.com/dot-agent-spec/platform) monorepo and is consumed through
+npm workspaces. Clone the monorepo and run `npm install` at its root — not here. It was a standalone
+repository once and is not one any more, so there is no clone URL of its own and no git submodule step.
 
 ## Usage
 
@@ -111,11 +109,7 @@ args = ["/path/to/language-server/server.js", "--stdio"]
 
 ## VS Code Integration
 
-The [VS Code extension](https://github.com/daniloborges/vscode-dot-agent) installs the server as an npm dependency and starts it automatically via `vscode-languageclient`. No manual setup needed — install the `.vsix` and the server starts with the editor.
-
-## Zed Integration
-
-Configured in `zed-agent/extension.toml` under `[language_servers.agent-dsl-lsp]`. Note: Zed extensions with full LSP support may require Rust bindings depending on the Zed version.
+The [VS Code extension](https://github.com/dot-agent-spec/platform/tree/main/apps/vscode-extension) bundles this server into its own build output via `scripts/build.mjs` and starts it via `vscode-languageclient`. No manual setup needed — install the `.vsix` and the server starts with the editor.
 
 ## Development
 
@@ -129,7 +123,7 @@ Configured in `zed-agent/extension.toml` under `[language_servers.agent-dsl-lsp]
 | Export | Description |
 |---|---|
 | `initParsers()` | Async — initializes both WASM parsers. Called once inside `onInitialize`. |
-| `parse(uri, langId, text, version)` | Returns a cached `Tree` for the document, reparsing incrementally on version change. |
+| `parse(uri, langId, text, version)` | Returns a cached `Tree` for the document, doing a full reparse on version change. |
 | `evict(uri)` | Removes a document's cached tree on close. |
 | `nodesOfType(tree, type)` | `SyntaxNode[]` — all descendants of the given node type. |
 | `nodeAtOffset(tree, offset)` | The deepest node at a byte offset. |
@@ -181,6 +175,6 @@ p.stdout.on('data', d => { console.log(d.toString()); p.kill(); });
 
 ## License
 
-Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+Copyright is held collectively by **The dot-agent Authors** — see [AUTHORS](https://github.com/dot-agent-spec/platform/blob/main/AUTHORS).
 
 Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).

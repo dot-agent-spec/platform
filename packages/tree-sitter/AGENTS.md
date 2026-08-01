@@ -13,30 +13,26 @@ AI collaboration guide for maintaining and evolving the Tree-sitter grammars for
 | `tree-sitter-description/grammar.js` | `.description` manifests and `type` declarations | `tree-sitter-description/` |
 | `tree-sitter-behavior/grammar.js` | `.behavior` behavior files | `tree-sitter-behavior/` |
 
-Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling (syntax highlighting, LSP diagnostics, go-to-definition) across VS Code, Zed, Neovim, and Helix. 
+Both grammars are authored here and compiled by Tree-sitter CLI into C parsers that power IDE tooling
+(syntax highlighting, LSP diagnostics, go-to-definition). The only consumer in this repository is
+[`apps/vscode-extension/`](../../apps/vscode-extension/), through
+[`packages/language-server/`](../language-server/) — any editor speaking LSP can use that server, but no
+other editor integration is built or tested here.
 
 ---
 
-## Repository Organization & Versioning
+## Versioning
 
-To ensure scalability and consistency between the language specification and its implementation, we follow a dual-versioning strategy.
+The language specification and this parser are versioned separately, and **neither uses the scheme an
+earlier draft of this file described**. The spec version is the single line in
+[`dsl/VERSION`](../../dsl/VERSION); the freeze and editions model that governs it is
+[`ROADMAP.md`](../../ROADMAP.md). This package is plain SemVer in its `package.json`, pre-1.0, and is
+released by pushing a `tree-sitter@<version>` tag — the repo-wide `<pkg>@<version>` convention, which
+[`.github/workflows/publish-tree-sitter.yml`](../../.github/workflows/publish-tree-sitter.yml) triggers on.
+There are no `spec-vX.Y` or bare `vX.Y.Z` tags in this repository.
 
-### 1. Dual-Versioning Strategy
-- **Language Specification:** Versioned independently as a standard (e.g., `1.0.0-draft`). Changes to keywords, syntax rules, or semantic behavior bump this version.
-- **Tree-sitter Parser:** Follows Semantic Versioning (SemVer) in `package.json`.
-  - **MAJOR:** Breaking changes to the parser API or removal of supported language features.
-  - **MINOR:** Support for new language features or significant parser improvements.
-  - **PATCH:** Bug fixes in token recognition or internal parser logic.
-
-**Git Tagging Convention:**
-- Use `spec-vX.Y` for language specification milestones.
-- Use `vX.Y.Z` for parser releases (npm releases).
-
-### 2. Agent Mandates for Updates
-When making changes to the codebase, agents MUST follow these rules:
-
-- **Verification Rule:** After any change, run `npm run build` and `npm run test` to ensure the implementation is still valid.
-- **Changelog Rule:** Record changes in `CHANGELOG.md` (create it if missing), clearly distinguishing between **Language** changes and **Parser/Tooling** changes.
+After any change here, run `npm run generate && npm test`. `CHANGELOG.md` follows Keep a Changelog like
+every other package; there is no separate Language/Parser split in it.
 
 ---
 
@@ -47,11 +43,11 @@ When making changes to the codebase, agents MUST follow these rules:
 |------|---------|
 | `tree-sitter-description/grammar.js` | `.description`/`type` grammar rules |
 | `tree-sitter-description/queries/highlights.scm` | Syntax highlight queries for `.description`/`type` |
-| `tree-sitter-description/test/corpus/types.txt` | Corpus test cases for `.description`/`type` |
+| `tree-sitter-description/test/corpus/*.txt` | Corpus test cases for `.description`/`type` — `agent.txt`, `types.txt` |
 | `tree-sitter-description/tree-sitter.json` | Parser scope/file-type declarations for description |
 | `tree-sitter-behavior/grammar.js` | `.behavior` grammar rules |
 | `tree-sitter-behavior/queries/highlights.scm` | Syntax highlight queries for `.behavior` |
-| `tree-sitter-behavior/test/corpus/basic.txt` | Corpus test cases for `.behavior` |
+| `tree-sitter-behavior/test/corpus/*.txt` | Corpus test cases for `.behavior`, split by topic — `actions`, `control-flow`, `error-handling`, `errors`, `handlers`, `states`, `triggers-merge`, `whitespace` |
 | `tree-sitter-behavior/tree-sitter.json` | Parser scope/file-type declarations for behavior |
 | `package.json` | npm scripts and dev dependencies |
 
@@ -72,7 +68,12 @@ When making changes to the codebase, agents MUST follow these rules:
 | `dist/tree-sitter-behavior.wasm` | Same, for the behavior grammar |
 | `*.dylib` | Native macOS parser binary — local only, not versioned |
 
-The `dist/` folder is excluded from git but **included in the npm package** via the `"files"` field in `package.json`. WASM build requires [Emscripten](https://emscripten.org/) (`emcc` on `$PATH`) and runs automatically on `npm publish` via `prepublishOnly`.
+The `dist/` folder is excluded from git but **included in the npm package** via the `"files"` field in
+`package.json`, and the build runs automatically on `npm publish` via `prepublishOnly`. The WASM build uses
+[Emscripten](https://emscripten.org/), but `emcc` on `$PATH` is not required: `tree-sitter build --wasm`
+falls back to running it inside Docker, which is the path CI uses and the reason
+[CONTRIBUTING.md](../../CONTRIBUTING.md) asks for OrbStack or Docker Desktop rather than an Emscripten
+install.
 
 ### Never edit — from tree-sitter upstream (MIT, see NOTICE)
 | Files |
@@ -84,6 +85,11 @@ The `dist/` folder is excluded from git but **included in the npm package** via 
 
 ## Adding new syntax
 
+New syntax is gated by an RFC **before** the grammar is touched, and a grammar change drags the other
+layers with it — which layers, for which change, is
+[`.agents/rules/doc-sync.md`](../../.agents/rules/doc-sync.md), which loads automatically when you touch
+`packages/`.
+
 ```
 1. Edit tree-sitter-description/grammar.js (or tree-sitter-behavior/grammar.js)
        ↓
@@ -92,33 +98,47 @@ The `dist/` folder is excluded from git but **included in the npm package** via 
        ↓
 3. npx tree-sitter parse <file> --quiet   # manual smoke test
        ↓
-4. Update test/corpus/ inside the relevant grammar folder if needed
+4. Update the relevant test/corpus/ file inside that grammar folder
        ↓
 5. npm test                          # runs test-description + test-behavior
 ```
 
-Or run both grammars at once: `npm run generate && npm test`.
+Or both grammars at once: `npm run generate && npm test`.
 
-**After editing `grammar.js`**, always regenerate before committing — stale `src/parser.c` causes silent parse failures in editors.
+**After editing `grammar.js`, always regenerate before committing.** A stale `src/parser.c` causes silent
+parse failures in editors — the grammar and the committed parser disagree, and nothing warns you.
 
 ---
 
 ## Grammar architecture notes
 
-Both grammars use **keyword-delimited blocks** and explicit `$._newline` tokens instead of INDENT/DEDENT:
+Neither grammar uses an external scanner or INDENT/DEDENT. **They are opposites on whether newlines are
+significant**, and an earlier version of this file described both as the first case:
 
-- **`.description` grammar** (`tree-sitter-description/grammar.js`): no external scanner — structure is delimited entirely by keywords and newlines.
-- **`.behavior` grammar** (`tree-sitter-behavior/grammar.js`): no external scanner — structure is delimited entirely by keywords and newlines.
+- **`.description`** (`tree-sitter-description/grammar.js`): newlines **are** a token. `_newline: $ => /\r?\n/`
+  is a real rule and the grammar references it throughout — structure is delimited by keywords *and*
+  newlines.
+- **`.behavior`** (`tree-sitter-behavior/grammar.js`): newlines are **insignificant** and live in `extras`.
+  There is no `_newline` rule at all. Structure is held by reserved keywords and an explicit `end`
+  terminator, which is what makes the whitespace-invariance corpus tests possible. The grammar's own header
+  comment says this; read it before assuming the two behave alike.
 
 ### "on" disambiguation in `.behavior`
 
 ```
 on event "..."        → trigger_decl      (top-level, uses generic block)
-on intent "..."       → intent_handler    (inside oriented_state_body)
-on offtopic           → offtopic_handler  (inside oriented_state_body, optional)
+on intent "..."       → intent_handler    (inside state_body)
+on offtopic           → offtopic_handler  (inside state_body, optional)
 on failure            → failure_stmt      (inside run/apply/remove, uses block)
-on success            → success_stmt      (inside parallel only, uses block)
 ```
+
+Two corrections worth stating, because the previous version of this table asserted both:
+
+- **The node is `state_body`, flat and shared** by setup and oriented states. There is no
+  `oriented_state_body`. The grammar is deliberately permissive here and the *linter* enforces the legal
+  shape per state type — a corpus test covers exactly that ("grammar aceita, linter barra").
+- **`on success` does not exist**, and neither does a `success_stmt` node. Success is the implicit
+  sequential fall-through to the next statement. `grammar.js` says so in two separate comments.
 
 
 ### State transitions
@@ -152,9 +172,13 @@ The repo-wide rule (one-line `// SPDX-License-Identifier: Apache-2.0`, CI-enforc
 
 ## Key references
 
+These were standalone repositories before the monorepo flatten
+([DA00-05](../../project/adr/DA00-05-monorepo-flatten.md)); the canonical code is in this tree now.
+
 | Resource | Link |
 |----------|------|
-| VS Code extension | [vscode-dot-agent](https://github.com/dot-agent-spec/vscode-dot-agent) |
-| Language server (LSP) | [language-server](https://github.com/dot-agent-spec/language-server) |
-| WASM execution engine | [dot-agent-kernel](https://github.com/dot-agent-spec/dot-agent-kernel) |
+| VS Code extension | [`apps/vscode-extension/`](../../apps/vscode-extension/) |
+| Language server (LSP) | [`packages/language-server/`](../language-server/) |
+| WASM execution engine | [`packages/kernel-dsl/`](../kernel-dsl/) |
+| Language reference | [`dsl/reference/`](../../dsl/reference/) |
 
