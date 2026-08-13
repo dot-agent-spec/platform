@@ -1,11 +1,17 @@
-# LOG-DA01-03: CLI — Run Refactor and MCP Server
+# Plan-004: CLI — Run Refactor and MCP Server
+
+> **Moved and reclassified 2026-08-13.** This lived at
+> `project/pre-release/v0.1/DA01-03-cli-run-refactor-mcp-server.md` and was never a log: it is multi-track
+> work whose tracks landed at different times and some of which are still open, which is the definition
+> this repository's own governance rule gives for a plan rather than a task or a log. Its sections still
+> carry the numbered RFC shape it was written in; they have not been restructured, only rehoused.
 
 | Field | Value |
 |---|---|
 | Status | In Progress — Tracks 1–3 implemented in code; one Track 1 item and the §5 verification checklist still open (see Current State) |
-| Date | 2026-06-27 |
-| Deciders | Danilo Borges |
-| Related | DA01-01, DA01-02 |
+| Created | 2026-06-27 |
+| Author | Danilo Borges |
+| Related | [RFC-0022](../rfcs/0022-forgiving-syntax-and-prettifier.md), `DA01-02` (compiler behavior consolidation) |
 
 ## Current State (verified against source 2026-07-02)
 

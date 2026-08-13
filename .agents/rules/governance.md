@@ -80,10 +80,14 @@ the opposite of a task. Numbering is `NNN`, monotonic, never renumbered. Use a p
 work spans several phases that land at different times: a task that still has open roadmap items months
 after its first item shipped is a plan wearing the wrong template.
 
-Four sections are **living** and are maintained while the work happens, not written at the end:
-`Progress` (dated checkboxes), `Surprises & Discoveries` (`Observation:` / `Evidence:`), `Decision Log`
-(`Decision:` / `Rationale:` / `Date / Author:`), and `Outcomes & Retrospective`. Reconstructed from memory
-afterwards they are worthless — the value is entirely in writing the entry when it happens.
+Two sections are **living** and are maintained while the work happens, not written at the end:
+`Decision Log` (`Decision:` / `Rationale:` / `Date / Author:`) and `Outcomes & Retrospective`.
+Reconstructed from memory afterwards they are worthless — the value is entirely in writing the entry when
+it happens.
+
+`## Tracks` carries **one checkbox per track and no finer**, plus the `close-plan` box last. Per-step
+progress and the discoveries made along the way belong to the task dossier a track spawns, which is
+deleted at closure — the doing goes to the dossier, the design stays in the plan.
 
 If a plan carries a GitHub issue, the **issue owns status and the executive summary; the file owns the
 design and the working record**. The issue closes when the last track lands; the plan file does not.

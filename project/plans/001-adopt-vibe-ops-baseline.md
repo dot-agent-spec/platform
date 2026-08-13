@@ -1,3 +1,7 @@
+---
+vibe-ops-template: plan@3
+---
+
 # Plan-001: Adopt the vibe-ops Governance Baseline
 
 | Field | Value |
@@ -16,10 +20,19 @@ standard shape for a repository's governance: a `project/` folder holding ADRs, 
 path-scoped rule carrying their lifecycles; a `.agents/` ↔ `.claude/` symlink bridge so one canonical file
 serves every agent framework; and a validator that reports mechanical drift against that shape. This plan
 brings `dot-agent-spec` onto that baseline **without flattening the conventions this repository chose
-deliberately** — the DA decision-numbering scheme, the plural `rfcs/` folder, and
-`project/pre-release/v<minor>/` as the long-form log all stay exactly as they are. The work is split so
-that each phase leaves the repository consistent on its own, because some phases are opportunistic and may
-never finish as one piece of work.
+deliberately** — the DA decision-numbering scheme and the plural `rfcs/` folder stay exactly as they are.
+The work is split so that each phase leaves the repository consistent on its own, because some phases are
+opportunistic and may never finish as one piece of work.
+
+**One `adopt` decision was reversed on 2026-08-13: `project/pre-release/v<minor>/`.** It was kept as this
+repository's long-form log, and the cost of that turned out to be unpayable — the log location is the one
+record type `vibe-ops` cannot be told about. `RecordType` has four members and `log` is not one, so
+`records.dirs` cannot name it; `CANDIDATE_LOG_DIRS` is a separate hardcoded list (`project/log`, `log`)
+with no config override; and `/vibe-ops:new-log` writes to `project/log/` in its frontmatter, its
+description and its body. That left every closure ceremony here — `close-plan`, `close-task`,
+`/route-learnings` — routing to a destination that did not exist. `project/log/` now does exist, and the
+nine documents under `pre-release/` were routed out of it rather than moved wholesale; the reasoning per
+document is in the Decision Log.
 
 **The validator is no longer a shell script.** Tracks 1–3 were executed against
 `scripts/check-agents-md.sh`, a shell runner reached through a three-branch resolution in
@@ -39,8 +52,11 @@ cloned alone or sits beside a `vibe-ops` checkout.
    gap that made this plan itself impossible to file before today.
 4. The root `AGENTS.md` is at or under the 150-line budget the validator enforces, with everything cut
    from it relocated to a surface that loads, not deleted.
-5. Running `scripts/check-agents-md.sh` from an installed `vibe-ops` against this repository reports no
-   failure that is not a deliberate, recorded divergence.
+5. Running the `vibe-ops` gate against this repository reports no failure, and no skip, that is not a
+   deliberate divergence recorded in `vibeops.config.ts` with its reason. Restated 2026-08-13: the goal
+   originally named `scripts/check-agents-md.sh`, which no longer exists, and said nothing about skips —
+   and a silent skip is how this repository went for months with `skill-frontmatter` never examining the
+   two skills it has.
 
 ## Scope
 
@@ -59,23 +75,27 @@ to be handed over green, since a declared disablement is a debt this plan opened
 
 ### Out of scope
 
-- **Renaming anything to match the vibe-ops default.** `rfcs/` does not become `rfc/`; `pre-release/` does
-  not become `log/`; DA numbering does not become plain `NNNN`. These are `adopt` decisions, recorded in
-  the Decision Log below.
+- **Renaming anything to match the vibe-ops default.** `rfcs/` does not become `rfc/` and DA numbering
+  does not become plain `NNNN`. These are `adopt` decisions, recorded in the Decision Log below.
+  `pre-release/` was on this list until 2026-08-13 and is not any more — see the Summary.
 - **Installing the validator into CI.** Still out of scope, but the *reason* changed on 2026-08-13. It was
   "the snapshot copy ages out of sync with the plugin" — an argument Track 4 dissolves, since a
   devDependency has no snapshot to age. What remains is only that this repository has no non-publishing CI
   workflow to add a job to, which is a smaller and separate decision.
-- **The content of the `project/pre-release/v0.1/` logs.** They are immutable by rule, including the links
-  inside them that broke in the `project/` move.
 - **`docs/` and `dsl/` link rot.** Roughly 25 broken links live there. They are real but unrelated to
   governance; they belong to whoever next edits those trees.
 
-The last two are what forced the `links` check to be declared off wholesale when the gate was installed.
-Track 5 does **not** change that judgement — it changes how the exclusion is expressed, from one blanket
-disablement covering 35 findings to a declared population exclusion naming these three trees and their
-reasons. The distinction matters: a disabled check reports nothing about anything, so a *new* broken link
-under `project/` would have been invisible; an excluded population still reads everything else.
+`docs/` and `dsl/`, together with the now-retired `project/pre-release/v0.1/`, are what forced the `links`
+check to be declared off wholesale when the gate was installed. Track 5 does **not** change that judgement
+for the two that remain — it changes how the exclusion is expressed, from one blanket disablement covering
+35 findings to a declared population exclusion naming those trees and their reasons. The distinction
+matters: a disabled check reports nothing about anything, so a *new* broken link under `project/` would
+have been invisible; an excluded population still reads everything else.
+
+Retiring `pre-release/` shrank that debt without anyone aiming at it. Fourteen of the 35 lived in
+documents that have now left the tree, and twelve more were in `DA01-01`, which moved into
+`project/rfcs/` — a folder the gate *does* cover, so they had to be repointed rather than inherited. They
+were, and their targets verified.
 
 ## Design
 
@@ -111,6 +131,29 @@ it raises the chance the universal ones are discounted along with it. That is wh
 correctness target and why Track 2 relocates rather than deletes.
 
 ## Tracks
+
+- [x] **Track 1 — Governance surfaces.** The rule-based governance layer, and the retirement of what it
+      replaced. Completed 2026-07-30.
+- [x] **Track 2 — The root `AGENTS.md` budget.** 233 → 150 lines by relocation only. Completed
+      2026-07-30, and **since regressed to 174** — see Track 6.
+- [ ] **Track 3 — Per-package `AGENTS.md`.** Four folders done; `packages/{parser-dsl,kernel-dsl,compiler}`,
+      `plugins/claude`, `dogfood/mentor-agent` (zero-byte, delete or fill) and `packages/sdk` (no
+      `AGENTS.md` at all) remain. Pulled into Track 4's scope — see that track for why.
+- [ ] **Track 4 — The gate becomes the `vibe-ops` CLI.** Opened 2026-08-13 on branch
+      `chore/adopt-vibe-ops-cli-gate`.
+- [ ] **Track 5 — Close the findings the gate was handed over red with.** Opened 2026-08-13.
+- [ ] **Track 6 — The `AGENTS.md` budget, again.** Added 2026-08-13. Track 2's own retrospective predicted
+      this: it landed at exactly 150 of 150 and named the next addition as the risk. Run
+      `/vibe-ops:authoring-agents-md` rather than repeating the relocation by hand — the 2026-08-13 audit
+      declared the file's authoring quality unchecked, and that is the gap a hand pass leaves open again.
+- [ ] **Track 7 — This repository's own templates carry a version.** Added 2026-08-13. None of the seven
+      files in `project/templates/` declares `vibe-ops-template:`, so `/vibe-ops:migrate` stops on them
+      rather than inventing a jump, and `plan.md` here is still the `0.1` shape — the next plan written
+      from it is born two versions behind, with the two sections this plan just spent a migration
+      removing. Classify each by shape, stamp it, then migrate. `release-freeze-task.md` and
+      `versioning-task.md` have no upstream equivalent and are stamped as local.
+- [ ] Run `/vibe-ops:close-plan` — retrospective against the goals, the demotion check, living docs
+      propagated. The plan file itself is kept.
 
 ### Track 1 — Governance surfaces
 
@@ -256,185 +299,6 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
 
 ---
 
-## Progress
-
-- [x] **2026-07-30 — Track 1 complete.**
-  - [x] `.agents/rules/governance.md` written with `paths: ["project/**"]`, carrying the DA scheme, the
-        ADR/RFC/plan/task lifecycles and `project/pre-release/v<minor>/` as this repository's log; symlinked
-        from `.claude/rules/governance.md`.
-  - [x] `project/adr/AGENTS.md` and `project/tasks/AGENTS.md` deleted, their content absorbed into that rule.
-  - [x] `project/rfcs/AGENTS.md` reduced to the package-impact table, pointing at the rule for lifecycle.
-  - [x] `project/plans/` created; `project/templates/plan.md` copied from the plugin and given this
-        repository's Apache header plus a note that plans use `NNN`, not the DA scheme.
-  - [x] `GOVERNANCE.md` extended to four document types with an explicit plan-vs-task criterion;
-        `project/templates/README.md` updated to match.
-  - [x] `dogfood/AGENTS.md` converted to `.agents/rules/dogfood.md` with `paths: ["dogfood/**"]`.
-  - [x] Local `/new-adr` and `/new-rfc` skills deleted from `.agents/skills/` and `.claude/skills/`.
-  - [x] `ROADMAP.md`: 20 links rewritten from pre-`project/` paths.
-  - [x] The 5 remaining pre-`project/` links inside `project/` itself repointed —
-        `project/adr/DA00-03-model-tiering-for-agent-routing.md` (2) and
-        `project/rfcs/0019-memory-binding.md` (3, one of which also named a file that never existed at
-        that path).
-  - [x] Root `AGENTS.md`: layout tree, source-of-truth table and agent-config section updated.
-- [x] **2026-07-30 — Track 2 complete.** `AGENTS.md` 233 → 150 lines, at budget, by relocation only.
-  - [x] `.agents/rules/doc-sync.md` created, scoped to
-        `packages|dsl|docs|examples/**` + `project/implementation-status.md`; received the whole
-        `## Keeping docs in sync` table, `## Evolving the language`, and what `examples/` is.
-  - [x] `## After structural changes` deleted — it restated the fourth row of that table, which moved into
-        the rule with the "stale layout causes hallucination" rationale attached.
-  - [x] `## Agent config layout` reduced from 36 lines to the repository-specific part: what rules and
-        skills exist here, the nested-`AGENTS.md` guardrail, and the rule against forking the plugin's
-        skills. Bridge mechanics now link to the upstream reference instead of restating it.
-  - [x] `## Working with subagents and skills` collapsed to one paragraph pointing at
-        [DA00-03](../adr/DA00-03-model-tiering-for-agent-routing.md).
-  - [x] Layout tree collapsed: `packages/`, `apps/`, `plugins/`, `dsl/` and `docs/` subtrees replaced by
-        one line each, since the package table and each folder's own README already own that detail.
-        `project/` gained the detail it was missing instead.
-  - [x] Two stale facts corrected: `org-spec/` removed from the package table (no such directory exists),
-        and `## What this repo is` no longer places `rfcs/` and `tasks/` at the repository root.
-  - [x] Duplicate license-header line removed from the old `## Example files` section — it already existed
-        under `## License rules`, which now covers `.description`/`.behavior` anywhere, not just in
-        `examples/`.
-- [ ] **Track 3 — per-package `AGENTS.md`.** Opportunistic by design: tick a folder when work next
-      touches it, after doing the three steps in the track description (review content → fix dead links →
-      add the sibling `CLAUDE.md`). Surveyed 2026-07-30; line counts are from that date.
-
-  - [x] 2026-08-01 `packages/tree-sitter/` — done in Plan-003 Track E. The link rot was the smaller half:
-        it also carried a versioning scheme this repo has never used and two grammar nodes that do not
-        exist.
-  - [x] 2026-08-01 `packages/language-server/` — done in Plan-003 Track E. Ten false claims, including a
-        dependency that never existed and an invariant the code violates in three places.
-  - [x] 2026-08-01 `apps/vscode-extension/` — done in Plan-003 Track E. Confirmed the worst of the four,
-        and its `agent/behaviorGraph` section was additionally written in Portuguese.
-  - [x] 2026-08-01 `apps/dot-agent-cli/` — done in Plan-003 Track E; audited clean, `CLAUDE.md` already
-        present from Plan-002. The survey line count (115) was stale — the file is 82 lines.
-  - [ ] `packages/parser-dsl/` (157 lines) — the `README.md` → `LICENSE` link **now resolves**: that file
-        was created by the license-text sweep (workspace Plan-002). Still needs the content review and the
-        `CLAUDE.md`.
-  - [ ] `packages/kernel-dsl/` (124 lines) — `AGENTS.md` link to `API.md` does not resolve.
-  - [ ] `packages/compiler/` (86 lines) — `README.md` link to `../../architecture_map.md` does not
-        resolve; the architecture map is at `docs/explanation/architecture/map.md`.
-  - [ ] `plugins/claude/` (48 lines) — no known link rot; needs only the review and the `CLAUDE.md`.
-  - [ ] One zero-byte `AGENTS.md` left to delete or fill: `dogfood/mentor-agent/AGENTS.md`. An empty
-        instruction file is a promise of guidance that is not there; deleting is the default unless the
-        folder genuinely needs one. (`apps/dot-agent-cli/templates/AGENTS.md` is already gone — Plan-002
-        removed it.)
-  - [ ] `packages/sdk/` has **no `AGENTS.md` at all** — the only workspace package without one. Found by
-        the 2026-08-13 audit; it was never on the 2026-07-30 survey, which counted the eight that existed.
-- [ ] **Track 4 — the gate becomes the CLI.** Opened 2026-08-13 on branch `chore/adopt-vibe-ops-cli-gate`.
-- [ ] **Track 5 — close the red the gate was handed over with.** Opened 2026-08-13.
-
-## Surprises & Discoveries
-
-- **Observation:** The commit gate this plan installed has been dead since the runner moved inside
-  `vibe-ops`, and it is dead in every repository in the workspace that has one — seven of them.
-  **Evidence:** `scripts/check.sh` exits 2 with `no governance runner found`. All three branches of
-  `resolve_runner()` fail: no snapshot at `scripts/check-agents-md.sh`, no sibling at
-  `../vibe-ops/scripts/check-agents-md.sh` because `vibe-ops/scripts/` no longer exists (the runner is now
-  at `vibe-ops/cli/packages/module-check/sh/`), and `CLAUDE_PLUGIN_ROOT` unset. Grepping every sibling
-  `_run.sh` for the dead path matched `ai-foundation`, `ai-sdk-web-llm`, `cerrado`, `dot-agent-spec`,
-  `eita`, `help-desk` and `murici`, and none of the seven has a snapshot to fall back to. The upstream
-  harness template still ships the same dead path, so a repository set up today would inherit it.
-  Recorded here because the failure is instructive rather than embarrassing: the resolution had three
-  branches specifically so that one going missing would not matter, and all three went missing together
-  because they were three routes to the same moved directory, not three independent sources.
-
-- **Observation:** A check reporting `SKIP` was not declining to run — it was looking in a directory this
-  repository does not use, and the ported gate finds the files without any change to the repository.
-  **Evidence:** `45-skill-frontmatter.sh` guards on `[ ! -d "$PLUGIN_DIR/skills" ]` and then globs
-  `"$ROOT"/skills/*/SKILL.md`. `PLUGIN_DIR` resolves to `$ROOT` here (no `plugin/.claude-plugin/plugin.json`),
-  and this repository's skills are at `.agents/skills/`, so the check skipped. `vibe-ops agents-md` composes
-  the same detector with `paths: ["<plugin>/skills/*/SKILL.md", ".agents/skills/*/SKILL.md"]` and reports
-  `ok [skill-frontmatter] 2 examined`. Ten of seventeen fragments `SKIP` in this repository; this one was
-  a wrong address rather than an inapplicable check, and the other nine have not been re-examined with
-  that question asked.
-
-- **Observation:** The success criteria a plan is accepted against can stop being runnable while every
-  track it certified stays correct, and nothing surfaces it.
-  **Evidence:** this plan's own success criteria invoked `<vibe-ops-plugin-dir>/scripts/check-agents-md.sh`.
-  Tracks 1 and 2 were accepted against runs of it and those acceptances still hold — the work was done and
-  measured. But the command in the file has not been executable for some time, and the plan was `In
-  Progress` throughout, read several times, without that being noticed. A criterion is checked when a
-  track closes and never again; nothing re-runs it.
-
-- **Observation:** The repository's own `/new-adr` and `/new-rfc` skills had been broken for some time and
-  nothing surfaced it, because a scaffolding skill that finds no existing records simply starts numbering
-  at 1 rather than failing.
-  **Evidence:** `.agents/skills/new-adr/SKILL.md` instructed `find adr -maxdepth 1 -name
-  "[0-9][0-9][0-9][0-9]-*.md"`. The folder has been `project/adr/` since the governance reorganisation, and
-  its files are named `DA00-01-…` through `DA00-07-…` — so the command was wrong about the path *and*
-  about the numbering scheme, and returned nothing on both counts. `new-rfc` additionally promised to
-  update `rfcs/INDEX.md`, a file that does not exist in this repository.
-
-- **Observation:** The same `project/` move rotted links far outside the skills, and the rot was invisible
-  because no check ever ran over document links.
-  **Evidence:** `ROADMAP.md` alone carried 20 links of the form `](rfcs/0005-type-system.md)` and
-  `](tasks/pre-public-consolidation.md)`. The validator's `links` check found them on its first run; the
-  repository has no CI that would have.
-
-- **Observation:** Deleting a symlink with `rm` leaves it staged in git as a symlink that no longer exists
-  on disk, and the resulting state is reported as the *opposite* problem — a checkout failure.
-  **Evidence:** after `rm -f .claude/skills/new-adr`, the validator reported `.claude/skills/new-adr is a
-  symlink in git but not on disk — checked out as text (core.symlinks=false)`, pointing at a Windows
-  checkout issue that had nothing to do with the actual cause. `git rm --cached` was the fix. Worth knowing
-  because the message actively misdirects.
-
-- **Observation:** Two `vibe-ops` checks match on prose that *describes* a construct rather than uses it,
-  because neither skips fenced code blocks. The failure is self-reproducing: a document explaining the bug
-  trips the bug.
-  **Evidence:** `memory-slugs` flags `packages/language-server/README.md` lines 99 and 103, where a
-  double-bracketed `[…]` TOML array-of-tables header for `language` sits inside a ```` ```toml ```` fence
-  documenting Helix editor configuration. Separately, `plugin-root-paths` flagged this plan for quoting a
-  `CLAUDE_PLUGIN_ROOT`-relative path to the validator inside a shell fence — the plugin's script, correctly
-  absent from this repository. Both filed upstream as
-  <https://github.com/entelekheia-ai/vibe-ops/issues/6>. The two README lines are expected failures and
-  must not be "fixed" by editing the README; this plan's own two instances were reworded to keep the run
-  otherwise green, which is itself the argument for fixing the checks — a validator people learn to
-  read past is off.
-
-- **Observation:** Reviewing the root `AGENTS.md` for what should be *routed elsewhere* rather than
-  shortened found that most of its excess is duplication or non-repository knowledge, not verbosity. The
-  budget can be met by relocation alone. Recorded here so Track 2 does not have to re-derive it:
-  **Evidence:**
-  - The `## Agent config layout` section, 36 lines, restates the `.agents/` ↔ `.claude/` bridge mechanics
-    that are identical in every repository using this convention and are documented once in the plugin's
-    `references/instruction-surfaces.md`. Only the repository-specific part — which rules and skills exist
-    here, and the rule against forking the plugin's skills — is local knowledge.
-  - `## After structural changes` (10 lines) states the same obligation as the fourth row of the
-    `## Keeping docs in sync` table 15 lines below it. The same fact on two surfaces in one file.
-  - `## Keeping docs in sync` and `## Evolving the language` are both entirely scoped to `packages/**` and
-    `dsl/**`, which makes them path-scoped rules that would load exactly when someone is about to cause the
-    drift they prevent — a move up the enforcement ladder, not sideways.
-  - `## Working with subagents and skills` (11 lines) is model-tier routing advice that is true in any
-    repository; its rationale is already recorded in
-    [DA00-03](../adr/DA00-03-model-tiering-for-agent-routing.md), which makes the section a summary of a
-    record rather than repository knowledge.
-  - The `packages/`, `apps/` and `plugins/` subtrees appear both in the layout tree and in the
-    `## Package, app & plugin table` — roughly 20 duplicated lines.
-  - `## Example files` (5 lines) is scoped to `examples/**`.
-
-- **Observation:** Two facts in the root `AGENTS.md` are already false, which is the failure mode that file
-  warns about in its own text ("stale layout information here is a primary source of hallucination").
-  **Evidence:** the `## Package, app & plugin table` lists `org-spec/` as `✅ Active`, but no `org-spec`
-  directory exists in the working tree. The `## What this repo is` list still refers to `rfcs/` and
-  `tasks/` at the repository root rather than under `project/`, and does not mention `plans/`.
-
-- **Observation:** The undeliverable-instruction problem is four times larger outside `project/` than
-  inside it, and it is invisible because the files look fine — they are well-written, current-looking, and
-  nothing reads them.
-  **Evidence:** surveyed 2026-07-30, eight `AGENTS.md` files under `packages/`, `apps/` and `plugins/`
-  total roughly 980 lines, and **none of the eight has a sibling `CLAUDE.md`**. Claude Code loads
-  `CLAUDE.md`; a subdirectory `AGENTS.md` with no sibling and no `@`-import never enters context on its
-  own. The root `AGENTS.md` has said "each package has its own `AGENTS.md` — read it before making changes
-  there" the whole time, which is an instruction to a reader who was never given the file.
-
-- **Observation:** There is no continuous integration in this repository other than package publishing, so
-  every documentation invariant currently stated as prose is unenforced.
-  **Evidence:** `.github/workflows/` contains only `publish-*.yml`; `.githooks/` contains only
-  `post-commit`. In particular the `## License rules` section describes an Apache-header convention for
-  Rust and TypeScript sources with nothing checking it, and `project/implementation-status.md` has a
-  `/sync-implementation-status` skill that can detect its drift but is never run automatically.
-
 ## Decision Log
 
 - **Decision:** Keep `project/rfcs/` plural, `project/pre-release/v<minor>/` as the long-form log, and the
@@ -538,6 +402,29 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   **Date / Author:** 2026-08-13 / Danilo Borges
 
 ## Outcomes & Retrospective
+
+**Template migration, 2026-08-13: `plan@0.1` → `plan@3`.** The `0.1 → 0.2` jump drops `## Progress` and
+`## Surprises & Discoveries`, and forbids deleting a Surprises entry in place — a plan whose section is
+not empty stays at `0.1`. Eleven entries were routed. **One survived promotion**, which is the expected
+ratio and not a sign the harvest was thin:
+
+| Entry | Destination |
+|---|---|
+| `rm` on a `.claude/` symlink reports a Windows checkout failure | **`project/log/rm-on-a-bridge-symlink-reports-the-opposite-problem.md`** — the only one that could name a path where someone meets it again |
+| The forked `/new-adr` and `/new-rfc` rotted silently | already stated in `AGENTS.md` under the anti-forking rule — **discharged**, not filed twice |
+| Nothing checked document links | **demoted**: the `markdown-link` gate does now |
+| Eight `AGENTS.md` with no sibling `CLAUDE.md` | **demoted**: `no-sibling-claude-md` is a gate finding |
+| Two `vibe-ops` checks false-positive inside code fences | **demoted, verified**: the `[[language]]` TOML headers are still at `packages/language-server/README.md:97-104` and the ported `memory-slug` gate does not flag them. The upstream bug is fixed in the port |
+| The `AGENTS.md` excess is duplication, not verbosity | scaffolding for Track 2, which shipped — **dropped** |
+| Two facts in `AGENTS.md` were already false | fixed in Track 2 — **dropped** |
+| No CI beyond publishing | repository state, already an Open question — **dropped** |
+| The gate is dead in seven repositories | **kept in Open questions**: it is a finding about `vibe-ops`, not about this repository, and a repo's own plan may not be its permanent home |
+| A `SKIP` was an address error, not a declined check | **kept in Open questions**, same reason |
+| A success criterion can stop being runnable while its tracks stay correct | **discharged into Goal 5**, which now requires no unexplained skip, and into the superseded-criteria note |
+
+Four demotions in eleven entries is the part worth naming. Each was written because nothing enforced the
+thing it described; each is now enforced. That is the promotion test's third question working in reverse,
+and it is the only mechanism in this system that makes a knowledge base get *smaller*.
 
 **Track 1, 2026-07-30.** Complete. Measured against the validator, total failures went from 64 to 39
 across 8 checks; the `links` check went from 61 failures to 36, and `bridge` stayed green throughout apart

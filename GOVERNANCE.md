@@ -22,8 +22,8 @@ distill it into an **ADR** so it is findable. When work is greenlit, write a **p
 phases over time, or a **task** if it is one concrete work order.
 
 **Plan or task?** They differ by lifespan, not by size. A task is deleted when its work is done, so it
-suits work that finishes at one moment. A plan is permanent and carries a living record — `Progress`,
-`Surprises & Discoveries`, `Decision Log`, `Outcomes & Retrospective` — kept current *while* the work
+suits work that finishes at one moment. A plan is permanent and carries a living record — `Decision Log`
+and `Outcomes & Retrospective` — kept current *while* the work
 happens, so it suits work whose phases ship at different times and whose reasoning someone will want a
 year later. A task still holding open roadmap items long after its first item shipped is a plan wearing
 the wrong template.
@@ -83,10 +83,10 @@ and update the old one's `Superseded by` field. The chain of ADRs is the project
 Backlog → In Progress → Shipped     (the file is never deleted)
 ```
 
-A plan is the permanent design record for a multi-phase build. Its four living sections are maintained
-while the work happens, not written at the end — filled in retrospectively they are worthless. Closing
-one means writing the retrospective against the plan's own goals and routing each discovery to a durable
-surface; the issue closes, the file stays.
+A plan is the permanent design record for a multi-phase build. Its two living sections — `Decision Log`
+and `Outcomes & Retrospective` — are maintained while the work happens, not written at the end; filled in
+retrospectively they are worthless. Closing one means writing the retrospective against the plan's own
+goals and routing each discovery to a durable surface; the issue closes, the file stays.
 
 ## Task lifecycle
 
