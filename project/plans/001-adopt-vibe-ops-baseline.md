@@ -14,12 +14,20 @@
 `vibe-ops` is a public Claude Code plugin (<https://github.com/entelekheia-ai/vibe-ops>) that defines a
 standard shape for a repository's governance: a `project/` folder holding ADRs, RFCs, plans and tasks; a
 path-scoped rule carrying their lifecycles; a `.agents/` ↔ `.claude/` symlink bridge so one canonical file
-serves every agent framework; and a validator, `scripts/check-agents-md.sh`, that reports mechanical drift
-against that shape. This plan brings `dot-agent-spec` onto that baseline **without flattening the
-conventions this repository chose deliberately** — the DA decision-numbering scheme, the plural `rfcs/`
-folder, and `project/pre-release/v<minor>/` as the long-form log all stay exactly as they are. The work is
-split so that each phase leaves the repository consistent on its own, because the last phase is
-opportunistic and may never finish as one piece of work.
+serves every agent framework; and a validator that reports mechanical drift against that shape. This plan
+brings `dot-agent-spec` onto that baseline **without flattening the conventions this repository chose
+deliberately** — the DA decision-numbering scheme, the plural `rfcs/` folder, and
+`project/pre-release/v<minor>/` as the long-form log all stay exactly as they are. The work is split so
+that each phase leaves the repository consistent on its own, because some phases are opportunistic and may
+never finish as one piece of work.
+
+**The validator is no longer a shell script.** Tracks 1–3 were executed against
+`scripts/check-agents-md.sh`, a shell runner reached through a three-branch resolution in
+`scripts/checks/_run.sh`. That runner has since moved inside `vibe-ops` and the resolution now finds
+nothing, so the commit gate here has been dead — loudly, exiting 2 on every attempt — since it moved.
+Track 4 replaces the whole mechanism with the `vibe-ops` CLI and a `vibeops.config.ts`, which is both the
+repair and the removal of the resolution problem: an npm dependency resolves whether this repository is
+cloned alone or sits beside a `vibe-ops` checkout.
 
 ## Goals
 
@@ -43,18 +51,31 @@ The governance surfaces (`project/`, `GOVERNANCE.md`, `.agents/rules/`, `.claude
 that broke when this repository moved its governance folders under `project/`, since that migration is
 the direct cause of the drift this plan reconciles.
 
+Added 2026-08-13, with Track 4: the **mechanism** by which the validator runs here — the commit gate, its
+runner resolution, and the declaration file that replaces both. In scope because the gate this plan
+installed no longer runs at all, which makes every prose invariant Tracks 1–3 established unenforced
+again. Also in scope from that date: the pre-existing findings the gate had to declare disabled in order
+to be handed over green, since a declared disablement is a debt this plan opened and therefore owes.
+
 ### Out of scope
 
 - **Renaming anything to match the vibe-ops default.** `rfcs/` does not become `rfc/`; `pre-release/` does
   not become `log/`; DA numbering does not become plain `NNNN`. These are `adopt` decisions, recorded in
   the Decision Log below.
-- **Installing the validator into CI.** `vibe-ops` offers a snapshot copy of `check-agents-md.sh` into
-  `scripts/` plus a GitHub Actions workflow. That copy is a snapshot that never receives upstream fixes,
-  so it is a separate decision — this plan only runs the check from the installed plugin.
+- **Installing the validator into CI.** Still out of scope, but the *reason* changed on 2026-08-13. It was
+  "the snapshot copy ages out of sync with the plugin" — an argument Track 4 dissolves, since a
+  devDependency has no snapshot to age. What remains is only that this repository has no non-publishing CI
+  workflow to add a job to, which is a smaller and separate decision.
 - **The content of the `project/pre-release/v0.1/` logs.** They are immutable by rule, including the links
   inside them that broke in the `project/` move.
 - **`docs/` and `dsl/` link rot.** Roughly 25 broken links live there. They are real but unrelated to
   governance; they belong to whoever next edits those trees.
+
+The last two are what forced the `links` check to be declared off wholesale when the gate was installed.
+Track 5 does **not** change that judgement — it changes how the exclusion is expressed, from one blanket
+disablement covering 35 findings to a declared population exclusion naming these three trees and their
+reasons. The distinction matters: a disabled check reports nothing about anything, so a *new* broken link
+under `project/` would have been invisible; an excluded population still reads everything else.
 
 ## Design
 
@@ -134,22 +155,96 @@ already in that code. This track has no completion date and closes incrementally
 **A plan that touches one of these folders should pull its checklist item in and close it there** rather
 than leaving it for a later sweep that never comes.
 
+**Pulled forward 2026-08-13.** The remaining five folders are finished as part of Track 4 rather than
+waiting for work to arrive in each. What changed is the cost of leaving them: Track 4 makes
+`no-sibling-claude-md` a gate finding, so five known-failing folders would have to be declared disabled to
+hand the gate over green — and a disablement that exists because nobody got round to a one-line file is
+the kind that never gets lifted. The three-step order in this track's description is **not** relaxed by
+that: step 3 alone would start delivering stale guidance into context, which is the whole reason this
+track was written as review-first. Each folder still gets its content reviewed and its dead links fixed
+before it gets a `CLAUDE.md`.
+
+### Track 4 — The gate becomes the `vibe-ops` CLI
+
+Replace the shell runner and its three-branch resolution with the `vibe-ops` CLI driven by a
+`vibeops.config.ts`, and get a green gate back. At the end of this track `scripts/checks/_run.sh` and its
+`VIBE_OPS_DISABLED_CHECKS` block are gone, `scripts/check.sh` and `.githooks/pre-commit` invoke the CLI,
+and the declarations they carried live in a reviewed config file instead of an environment variable.
+
+Four things this track must carry across, because each is load-bearing and none is obvious from the files
+being deleted:
+
+1. **The debt ledger.** `_run.sh` declared `links` and `budget` off, with dates and reasons. They become
+   `settings.<ops>.ignore` and `settings.<ops>.level` entries — see the Scope note above on why the
+   `links` one changes shape rather than moving verbatim.
+2. **`records.dirs.rfc = "project/rfcs"` and `records.templates.*`.** This repository's plural folder and
+   its own `project/templates/` are `adopt` decisions from Track 1, and the CLI has a declaration for
+   exactly that. Note the limit found while planning this: those keys are read by the records resolver,
+   **not** by the gates, whose paths are literals in the upstream ops. Until that is fixed upstream, the
+   RFC record-header and template-version gates examine zero files here — which produces no findings and
+   therefore reads exactly like a clean run. Recorded as an open question below rather than worked around.
+3. **`artifactDir`.** `.githooks/pre-commit` exports `GATE_ARTIFACT_DIR` to `$(git rev-parse
+   --git-dir)/gate-artifacts` — per-clone, untracked, and already the shape the workspace's
+   `drain-gate-artifacts.sh` expects to ingest into `eita`. The config's `artifactDir` key replaces the
+   export. Nothing has ever been written there, because this repository owns zero check fragments.
+4. **Nothing gets copied in.** No runner snapshot, no fragment directory. The reason the snapshot-versus-
+   sibling question had no good answer here is that this repository is both public and lives beside a
+   `vibe-ops` checkout; a dependency is the answer that is right in both situations at once.
+
+Acceptance: `scripts/check.sh` exits 0 with no declared disablement that is not written down with a
+reason, and the same run from a fresh clone with no sibling `vibe-ops` directory present.
+
+### Track 5 — Close the findings the gate had to be handed over red with
+
+The three declared or pre-existing failures that Track 4's acceptance depends on, fixed rather than
+carried. This track exists separately because its work is editing documents, not wiring, and mixing the
+two is how a wiring change gets reviewed as a document change.
+
+- **The `project/`-scoped links.** Of the 35, the ones under `project/pre-release/`, `docs/` and `dsl/`
+  stay out of scope and become a declared population exclusion. The rest are fixed:
+  `packages/kernel-dsl/AGENTS.md` → `API.md`, and `packages/compiler/README.md` →
+  `../../architecture_map.md`, whose target is now `docs/explanation/architecture/map.md`.
+- **Two task headers** missing their `Issue` row: `project/tasks/compiler-api.md` and
+  `project/tasks/pre-public-consolidation.md`.
+- **One malformed breadcrumb** at `project/plans/002-dot-agent-as-claude-plugin.md:467`.
+- **`project/rfcs/rejected/`**, which `.agents/rules/governance.md` and `AGENTS.md` both promise and which
+  does not exist. Created here. `GOVERNANCE.md` additionally states that a Rejected RFC moves to
+  `rfcs/implemented/`, which contradicts the rule and is simply wrong — corrected to `rfcs/rejected/`.
+
+The `budget` failure is **not** in this track. `AGENTS.md` sits at exactly 150 of 150 lines by Track 2's
+own measurement and is now 174; bringing it back is another relocation exercise, which is Track 2's method
+and deserves its own pass rather than being appended to a wiring track.
+
 ## Success criteria
 
-Run the validator from an installed `vibe-ops` against this repository — the script is
-`scripts/check-agents-md.sh` inside the plugin's own directory, which Claude Code exposes to a skill as a
-plugin-root-relative path:
+**Superseded 2026-08-13 for Tracks 4–5; kept as written for Tracks 1–3, which were accepted against it.**
+The original criterion invoked the shell runner at a plugin-root-relative path:
 
 ```bash
 <vibe-ops-plugin-dir>/scripts/check-agents-md.sh /path/to/dot-agent-spec
 ```
 
-`budget`, `bridge`, `frontmatter` and `plugin-root-paths` must all report `ok`. `private-names` and
-`template-attribution` report `SKIP` and that is the correct result for this repository — the first
-because its deny-list of names lives outside every repository by design, the second because this
-repository ships no `skills/` directory of its own templates. The remaining `links` failures must all sit
-under `project/pre-release/`, `docs/` or `dsl/`, which this plan puts out of scope; any `links` failure
-under `project/` other than `pre-release/` is a regression.
+That path no longer exists. It required `budget`, `bridge`, `frontmatter` and `plugin-root-paths` to
+report `ok`, treated `private-names` and `template-attribution` as correctly `SKIP`, and required every
+remaining `links` failure to sit under `project/pre-release/`, `docs/` or `dsl/` — any `links` failure
+elsewhere under `project/` being a regression. That last clause survives verbatim into what follows.
+
+The criterion from Track 4 onward is the CLI, run from inside the repository:
+
+```bash
+vibe-ops agents-md && vibe-ops governance     # or scripts/check.sh, which runs both
+```
+
+Every gate reports `ok` or a `SKIP` whose reason is written down in `vibeops.config.ts`. A `SKIP` with no
+declared reason fails this criterion even though it exits 0, because an undeclared skip and a passing
+check are indistinguishable in the summary line — which is the failure mode this plan met twice.
+
+**One `SKIP` must be read as a finding, not a result.** `skill-frontmatter` reported `SKIP  no skills/
+directory` under the shell runner while this repository had two skills with frontmatter to check. The
+fragment guards on `$PLUGIN_DIR/skills` and this repository's skills are in `.agents/skills/`. The ported
+gate declares both paths and examines them, so the same repository goes from 0 to 2 files examined with no
+change to the repository at all. Any future `SKIP` gets the same question asked of it: is this check
+declining, or is it addressed at the wrong place?
 
 Independently, the plan scaffolding must work end to end without arguments explaining the repository's
 layout:
@@ -224,8 +319,43 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
         instruction file is a promise of guidance that is not there; deleting is the default unless the
         folder genuinely needs one. (`apps/dot-agent-cli/templates/AGENTS.md` is already gone — Plan-002
         removed it.)
+  - [ ] `packages/sdk/` has **no `AGENTS.md` at all** — the only workspace package without one. Found by
+        the 2026-08-13 audit; it was never on the 2026-07-30 survey, which counted the eight that existed.
+- [ ] **Track 4 — the gate becomes the CLI.** Opened 2026-08-13 on branch `chore/adopt-vibe-ops-cli-gate`.
+- [ ] **Track 5 — close the red the gate was handed over with.** Opened 2026-08-13.
 
 ## Surprises & Discoveries
+
+- **Observation:** The commit gate this plan installed has been dead since the runner moved inside
+  `vibe-ops`, and it is dead in every repository in the workspace that has one — seven of them.
+  **Evidence:** `scripts/check.sh` exits 2 with `no governance runner found`. All three branches of
+  `resolve_runner()` fail: no snapshot at `scripts/check-agents-md.sh`, no sibling at
+  `../vibe-ops/scripts/check-agents-md.sh` because `vibe-ops/scripts/` no longer exists (the runner is now
+  at `vibe-ops/cli/packages/module-check/sh/`), and `CLAUDE_PLUGIN_ROOT` unset. Grepping every sibling
+  `_run.sh` for the dead path matched `ai-foundation`, `ai-sdk-web-llm`, `cerrado`, `dot-agent-spec`,
+  `eita`, `help-desk` and `murici`, and none of the seven has a snapshot to fall back to. The upstream
+  harness template still ships the same dead path, so a repository set up today would inherit it.
+  Recorded here because the failure is instructive rather than embarrassing: the resolution had three
+  branches specifically so that one going missing would not matter, and all three went missing together
+  because they were three routes to the same moved directory, not three independent sources.
+
+- **Observation:** A check reporting `SKIP` was not declining to run — it was looking in a directory this
+  repository does not use, and the ported gate finds the files without any change to the repository.
+  **Evidence:** `45-skill-frontmatter.sh` guards on `[ ! -d "$PLUGIN_DIR/skills" ]` and then globs
+  `"$ROOT"/skills/*/SKILL.md`. `PLUGIN_DIR` resolves to `$ROOT` here (no `plugin/.claude-plugin/plugin.json`),
+  and this repository's skills are at `.agents/skills/`, so the check skipped. `vibe-ops agents-md` composes
+  the same detector with `paths: ["<plugin>/skills/*/SKILL.md", ".agents/skills/*/SKILL.md"]` and reports
+  `ok [skill-frontmatter] 2 examined`. Ten of seventeen fragments `SKIP` in this repository; this one was
+  a wrong address rather than an inapplicable check, and the other nine have not been re-examined with
+  that question asked.
+
+- **Observation:** The success criteria a plan is accepted against can stop being runnable while every
+  track it certified stays correct, and nothing surfaces it.
+  **Evidence:** this plan's own success criteria invoked `<vibe-ops-plugin-dir>/scripts/check-agents-md.sh`.
+  Tracks 1 and 2 were accepted against runs of it and those acceptances still hold — the work was done and
+  measured. But the command in the file has not been executable for some time, and the plan was `In
+  Progress` throughout, read several times, without that being noticed. A criterion is checked when a
+  track closes and never again; nothing re-runs it.
 
 - **Observation:** The repository's own `/new-adr` and `/new-rfc` skills had been broken for some time and
   nothing surfaced it, because a scaffolding skill that finds no existing records simply starts numbering
@@ -366,6 +496,47 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   otherwise write-once. Both edits changed only path text.
   **Date / Author:** 2026-07-30 / Danilo Borges
 
+- **Decision:** Replace the shell gate with the `vibe-ops` CLI and a `vibeops.config.ts`, rather than
+  repairing the runner path.
+  **Rationale:** The repair has no good form. This repository is public and is cloned on its own, which the
+  upstream harness contract says calls for a runner snapshot; it also sits beside a `vibe-ops` checkout,
+  which the workspace's own onboarding rule says forbids one, because a snapshot there becomes a stale
+  duplicate that *wins* the resolution order. Both are right about their own case, and today the
+  repository has the worst of both — a tracked gate that an outside clone inherits and can never resolve.
+  A devDependency is correct in both situations simultaneously, which is not a compromise between the two
+  positions but the removal of the question. The three-branch resolution, the composition assertion and
+  the snapshot-refresh caveat all cease to exist rather than being fixed.
+  **Date / Author:** 2026-08-13 / Danilo Borges
+
+- **Decision:** Express the `links` exclusion as a declared population exclusion naming three trees, not as
+  a disabled check.
+  **Rationale:** The judgement underneath is unchanged and still correct — `project/pre-release/` is
+  immutable by rule, and `docs/`/`dsl/` rot has unrelated causes. What was wrong is the granularity. A
+  disabled check reports nothing about anything, so a newly broken link under `project/` — precisely the
+  regression this plan's own success criteria call out by name — would have been invisible for as long as
+  the disablement stood. The exclusion keeps the same files out of the population and keeps reading
+  everything else.
+  **Date / Author:** 2026-08-13 / Danilo Borges
+
+- **Decision:** Finish Track 3's remaining folders as part of Track 4 instead of leaving them
+  opportunistic, but keep the review-first order.
+  **Rationale:** The original argument for opportunism was that a `CLAUDE.md` added ahead of a content
+  review starts *delivering* stale guidance that was previously inert — that argument is untouched and the
+  three-step order stands. What changed is the cost of the other side: under Track 4 the missing siblings
+  are gate findings, so leaving five of them means declaring them disabled to hand the gate over green,
+  and a disablement whose reason is "nobody got round to it" is the kind nobody ever lifts. Doing the
+  reviews now is cheaper than opening a debt entry that outlives them.
+  **Date / Author:** 2026-08-13 / Danilo Borges
+
+- **Decision:** Correct `GOVERNANCE.md` to say a Rejected RFC moves to `rfcs/rejected/`, and create that
+  folder.
+  **Rationale:** `GOVERNANCE.md` says `implemented/` and `.agents/rules/governance.md` says `rejected/`;
+  they cannot both be right, and the rule is the operational surface that actually loads when someone is
+  working inside `project/`. Filing a rejected proposal among the implemented ones also destroys the one
+  distinction the two folders exist to make. The folder itself was promised by two documents and existed
+  in neither the tree nor anyone's expectations.
+  **Date / Author:** 2026-08-13 / Danilo Borges
+
 ## Outcomes & Retrospective
 
 **Track 1, 2026-07-30.** Complete. Measured against the validator, total failures went from 64 to 39
@@ -406,13 +577,30 @@ budget that the enforcement-ladder framing does not make on its own.
 
 ## Open questions
 
-- Should `scripts/check-agents-md.sh` be copied into this repository and wired into CI? It is the only way
-  the checks run on a pull request, but the copy is a snapshot that silently ages out of sync with the
-  plugin, and this repository has no non-publishing CI to add it to today. Deferred, not rejected.
+- ~~Should `scripts/check-agents-md.sh` be copied into this repository and wired into CI?~~ **Half
+  answered, 2026-08-13.** The copy question is closed by Track 4's decision — there is no copy, so nothing
+  ages. Whether to add a CI job that runs `vibe-ops` on a pull request is still open, and is now an
+  ordinary question about adding a workflow rather than a question about snapshots.
 - Is `project/implementation-status.md` drift better served by running `/sync-implementation-status` in CI
   than by the prose obligation in `AGENTS.md`? That would move it to the top of the enforcement ladder and
   make part of the `## Keeping docs in sync` table deletable — but it needs the previous question answered
   first.
+- **Should the gates read `records.dirs` / `records.templates`, or should this repository declare gate
+  paths a second time?** Opened 2026-08-13 by Track 4. `vibe-ops` already resolves a record type's folder
+  and template through a search order that *includes* this repository's plural `project/rfcs/` and its own
+  `project/templates/`, with a config key to override — the exact `adopt` decisions Track 1 made. But that
+  resolver serves the records module only; the governance ops names `project/rfc/**/*.md` and
+  `<plugin>/templates/adr.md` as literals. The consequence here is silent: those entries examine zero
+  files, which produces no findings and reads as clean. This is an upstream question and this plan should
+  not work around it — a local override would be a third copy of an answer that already exists twice.
+- **What do the other nine `SKIP`s mean?** Ten of seventeen shell fragments skip in this repository, and
+  the first one examined turned out to be addressed at the wrong directory rather than inapplicable. The
+  remaining nine have not been checked with that question asked. Track 4 makes this cheaper to answer than
+  to keep deferring, since the ported gates declare their populations explicitly.
+- **Nothing drains `GATE_ARTIFACT_DIR` in this repository.** The workspace's `drain-gate-artifacts.sh`
+  translates a spooled artifact into `eita`'s registry, and the spool directory here is already the right
+  shape and location for it, but neither this repository's `post-commit` nor the workspace's calls the
+  drain. Moot while nothing emits; it stops being moot the moment a gate here declares `emits`.
 
 ## Related
 

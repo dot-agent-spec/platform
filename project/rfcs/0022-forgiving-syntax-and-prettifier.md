@@ -1,10 +1,18 @@
-# LOG-DA01-01: Forgiving Syntax and Prettifier Architecture
+# RFC-0022: Forgiving Syntax and Prettifier Architecture
 
-> Migrated from RFC-0021 under [DA00-01](../../adr/DA00-01-traceability-scheme.md).
+> Migrated from RFC-0021 under [DA00-01](../adr/DA00-01-traceability-scheme.md).
+
+> **Moved and reclassified 2026-08-13.** This lived at
+> `project/pre-release/v0.1/DA01-01-forgiving-syntax.md` and was never a log: it carries Motivation,
+> Design Details, Drawbacks & Trade-offs and Alternatives Considered, which is the RFC shape, and it
+> proposes rather than records. Its header said `Draft` and its item table said `Active`, but the design
+> has shipped — `on_failure` is in `packages/parser-dsl/src/{parser,ast,analysis}.rs`. **The per-item
+> statuses below were written before that and have not been re-verified one by one**, so treat `Active`
+> as "unknown, probably done" rather than as a to-do list.
 
 | Field | Value |
 |---|---|
-| Status | Draft |
+| Status | Implemented |
 | Date | 2026-06-25 |
 | Deciders | Danilo Borges |
 
@@ -26,7 +34,7 @@ This RFC also serves as the **master plan for the v0.1 tree-sitter and parser-ds
 
 ## 2. Motivation
 
-During three dogfooding passes — [`dogfood/rfc-author/EXPRESSIVENESS.md`](../dogfood/rfc-author/EXPRESSIVENESS.md), [`dogfood/sync-implementation-status/EXPRESSIVENESS.md`](../dogfood/sync-implementation-status/EXPRESSIVENESS.md), and [`dogfood/new-adr/EXPRESSIVENESS.md`](../dogfood/new-adr/EXPRESSIVENESS.md) — we identified a cluster of usability failures:
+During three dogfooding passes — [`dogfood/rfc-author/EXPRESSIVENESS.md`](../../dogfood/rfc-author/EXPRESSIVENESS.md), [`dogfood/sync-implementation-status/EXPRESSIVENESS.md`](../../dogfood/sync-implementation-status/EXPRESSIVENESS.md), and [`dogfood/new-adr/EXPRESSIVENESS.md`](../../dogfood/new-adr/EXPRESSIVENESS.md) — we identified a cluster of usability failures:
 
 1. **LLM Token Waste:** LLMs struggle to guess invisible syntactic constraints (exact block order in `.description`, implicit newline rules in `parallel` and `on failure`), leading to generic `E004: Syntax error` and wasted generation roundtrips.
 2. **Confusing Error Messages:** Syntactic errors surface prematurely, preventing semantic context. AST mapping errors (`E006`) leak internal Rust type names (`IntentBody`) at `line 1:1`, with no relationship to the actual offending line. Grammar errors (`E004`) and semantic errors (`E006`) share a flat error code, making the fix path opaque.
@@ -220,10 +228,10 @@ The following gaps were surfaced in dogfooding but fall outside the grammar/AST-
 
 ## Related
 
-- [`dogfood/rfc-author/EXPRESSIVENESS.md`](../dogfood/rfc-author/EXPRESSIVENESS.md) — primary source: G2, G3, G5, G7, D1–D4
-- [`dogfood/sync-implementation-status/EXPRESSIVENESS.md`](../dogfood/sync-implementation-status/EXPRESSIVENESS.md) — S1, S3, S5
-- [`dogfood/new-adr/EXPRESSIVENESS.md`](../dogfood/new-adr/EXPRESSIVENESS.md) — Gap 1
+- [`dogfood/rfc-author/EXPRESSIVENESS.md`](../../dogfood/rfc-author/EXPRESSIVENESS.md) — primary source: G2, G3, G5, G7, D1–D4
+- [`dogfood/sync-implementation-status/EXPRESSIVENESS.md`](../../dogfood/sync-implementation-status/EXPRESSIVENESS.md) — S1, S3, S5
+- [`dogfood/new-adr/EXPRESSIVENESS.md`](../../dogfood/new-adr/EXPRESSIVENESS.md) — Gap 1
 - [RFC-0019: Memory Binding](0019-memory-binding.md) — S2 and S4 deferred here; G1 and G4 resolved there
 - [RFC-0006: Experimental Roadmap](0006-experimental-roadmap.md) — Gap 5 (effort annotation on subagent) tracked there
-- [`dsl/reference/behavior.md`](../dsl/reference/behavior.md) — canonical `run`, `on failure`, `parallel`, `if` semantics
-- [`dsl/reference/description.md`](../dsl/reference/description.md) — description block ordering (D3/G7)
+- [`dsl/reference/behavior.md`](../../dsl/reference/behavior.md) — canonical `run`, `on failure`, `parallel`, `if` semantics
+- [`dsl/reference/description.md`](../../dsl/reference/description.md) — description block ordering (D3/G7)

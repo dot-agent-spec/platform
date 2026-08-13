@@ -29,3 +29,15 @@ It becomes trivial to evolve the DSL's data structures because changing the Rust
 ## Related
 
 This decision directly stems from the build pipeline investigation and unblocks the consolidation of the TS/WASM build tracks.
+
+- That investigation — the long-form record of the fragmentation this decision resolves, with its
+  Specification, Rationale, Decisions Closed and Open Questions. It was never linked from here, so the
+  ADR asserted a source nobody could reach. Removed from the tree on 2026-08-13 when
+  `project/pre-release/` was retired; recoverable in full:
+  `git show 71cbf9f0755b60278eaf0dae3efaa640b25a815a:project/pre-release/v0.1/DA00-06-build-pipeline-investigation.md`
+
+  **Checked 2026-08-13:** the work this investigation produced is the commit `6cd17e2` ("unify build
+  pipeline — tsup, ts-rs, central build-wasm.sh"), which is also what added `tools/wasi-stub/` to this
+  repository — the vendored `0.3.0-patched` crate that `scripts/build-wasm.sh` invokes today. That
+  restoration reversed the removal recorded in the DA00-05 log; the trap it left behind is
+  [`project/log/wasi-stub-removed-then-restored-vendored.md`](../log/wasi-stub-removed-then-restored-vendored.md).
