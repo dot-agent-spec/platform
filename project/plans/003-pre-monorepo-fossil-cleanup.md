@@ -1,5 +1,5 @@
 ---
-vibe-ops-template: plan@0.1
+vibe-ops-template: plan@3
 ---
 
 # Plan-003: Pre-Monorepo Fossil Cleanup and Dependency Security Baseline
@@ -59,8 +59,9 @@ enforcement into CI.
   patched version, this plan records the fact rather than vendoring or patching around it.
 - **A build-and-test CI workflow.** Track D adds the repository's first `pull_request` workflow, but it
   runs only the license-header check. That no workflow currently runs tests on a pull request is a real
-  gap (see `Surprises & Discoveries`); closing it involves matrix and caching decisions that would make a
-  small security fix unreviewable, so it is raised separately.
+  gap — every workflow here is triggered by a publish tag, so build and test failures surface only at
+  release time — and closing it involves matrix and caching decisions that would make a small security fix
+  unreviewable, so it is raised separately.
 - **The four Plan-001 Track 3 folders not touched here** — `packages/parser-dsl/`, `packages/kernel-dsl/`,
   `packages/compiler/` and `plugins/claude/`. They carry their own link rot and stay on Track 3's
   opportunistic schedule.
@@ -188,6 +189,22 @@ git show 8b06f75:project/tasks/agents-md-dot-agent-cli.md
 | D — License enforcement in CI | `license-header-ci-enforcement.md` | Adds a check mode to the script, moves it to the repo root, adds the repository's first `pull_request` workflow, deletes the fossil hook. **Closes #19.** |
 | E — Per-folder `AGENTS.md` | `agents-md-tree-sitter.md` · `agents-md-language-server.md` · `agents-md-vscode-extension.md` · `agents-md-dot-agent-cli.md` | The full Plan-001 Track 3 sequence per folder: review → repoint dead links → deliver via `CLAUDE.md`. Closed Plan-001's Track 3 for all four folders. |
 
+- [x] **Track A — Fossils and runtime security.** 2026-07-31. Five nested lockfiles deleted, the dead
+      `dsl/*` glob dropped, `fast-uri` and `@modelcontextprotocol/sdk` raised. The alert count stayed at
+      18 until the merge, because Dependabot scans the default branch and not a PR branch.
+- [x] **Track B — Packaging.** 2026-07-31. Both packages moved to a `files` allowlist, each diffed
+      file-by-file against a recorded `npm pack --dry-run` baseline: nothing added, no runtime file lost.
+- [x] **Track C — esbuild and Dependabot config.** 2026-07-31. Raised across the four manifests that
+      declare it, the root's `allowScripts` pin re-approved, and `.github/dependabot.yml` created — the
+      repository had never had one.
+- [x] **Track D — License enforcement in CI.** 2026-07-31, closes #19. The script gained `--check` and
+      moved to the repository root, discovery switched to `git ls-files`, the first `pull_request`
+      workflow was added and the fossil hook deleted. 18 files of accumulated backlog fixed.
+- [x] **Track E — Per-folder `AGENTS.md`.** 2026-08-01, all four folders. Roughly 20 false claims and 22
+      dead links corrected; `apps/dot-agent-cli` audited clean. Closed Plan-001's Track 3 for these four.
+- [x] Run `/vibe-ops:close-plan` — the retrospective, the demotion check and the routing were performed
+      on 2026-08-14 while migrating this plan to `plan@3`. The file is kept, as plans are.
+
 ### Why Track E is four tasks rather than one sweep
 
 [Plan-001](001-adopt-vibe-ops-baseline.md) Track 3 defines a three-step per-folder sequence — review the
@@ -223,251 +240,6 @@ is sequenced **last** because Tracks A, B and D all falsify statements the file 
 ---
 
 <!-- ===== LIVING SECTIONS — maintained during the work, not written at the end ===== -->
-
-## Progress
-
-- [x] 2026-07-31 — Scanned the repository for pre-flatten fossils; findings recorded below and in the
-  Design section.
-- [x] 2026-07-31 — Broke the five tracks into eight task dossiers under [`../tasks/`](../tasks/), folding
-  the Plan-001 Track 3 content review into Track E as real work rather than deferring it.
-- [x] 2026-07-31 — Track A complete
-  (`fossil-lockfiles-and-runtime-deps.md`), four commits
-  on `chore/plan-003-fossil-cleanup`: five nested lockfiles deleted; `fast-uri` 3.1.3 → 3.1.5;
-  `@modelcontextprotocol/sdk` 1.29.0 → 1.30.0 with `@hono/node-server` 1.19.14 → 2.0.12; dead `dsl/*`
-  glob dropped. Full build green, 287 tests passing across the three suites. The Dependabot count is
-  still 18 and stays there until this merges — Dependabot scans the **default branch**, not a PR branch.
-- [x] 2026-07-31 — Track B complete (`npm-publish-allowlists.md`):
-  `apps/dot-agent-cli` 48 → 47 files (one removal), `packages/language-server` 24 → 17 files (110KB →
-  81KB). Both diffed file-by-file against a recorded `npm pack --dry-run` baseline; nothing added, no
-  runtime file lost. Bundled language server verified by LSP `initialize` over stdio.
-- [x] 2026-07-31 — Track C complete
-  (`esbuild-and-dependabot-config.md`), three commits on
-  `chore/esbuild-and-dependabot`: `esbuild` 0.21.5 → 0.28.1 in the four manifests that declare it, with
-  the root's `allowScripts` pin re-approved; `brace-expansion` 5.0.7 → 5.0.9 and `postcss` 8.5.16 → 8.5.25
-  (`npm audit` → 0); `.github/dependabot.yml` created. `npm ls esbuild` no longer reports `invalid`. Full
-  build green, 287 + 16 tests passing, and the rebuilt extension's bundled server driven headlessly to
-  real diagnostics.
-- [x] 2026-07-31 — Track D complete
-  (`license-header-ci-enforcement.md`, closes #19): script
-  gained `--check`, moved to `scripts/`, discovery switched to `git ls-files`; first `pull_request`
-  workflow added; fossil hook, `prepare` and the package-local script deleted. 18 files of accumulated
-  backlog fixed. `core.hooksPath` untouched, graphify `post-commit` still resolves.
-- [x] 2026-07-31 — Track E item for `apps/dot-agent-cli/` partially done: its `AGENTS.md` license
-  paragraph, `.githooks/` layout row and self-maintenance trigger corrected in the same commit, since
-  Track D falsified them. Remaining for that folder: the general content review
-  (`agents-md-dot-agent-cli.md` items 3 and 4) — completed the next day, see below.
-- [x] 2026-08-01 — Track E complete, all four folders, on `chore/track-e-nested-agents-md`. Roughly 20
-  false claims and 22 dead links corrected across `packages/tree-sitter`, `packages/language-server` and
-  `apps/vscode-extension`; `apps/dot-agent-cli` audited clean. Each folder then got its one-line
-  `CLAUDE.md`, in that order. The four dossiers are closed and deleted.
-
-## Surprises & Discoveries
-
-- Observation: Two thirds of the repository's Dependabot alerts — including both criticals and two of
-  three highs — describe software that is not installed, because Dependabot scans nested
-  `package-lock.json` files that npm workspaces ignore.
-  Evidence: `packages/compiler/package-lock.json` and `apps/dot-agent-cli/package-lock.json` produce 6
-  alerts each. They claim `vitest < 3.2.6` (critical) and `vite <= 6.4.2` (high), while
-  `npm ls vitest vite` in the workspace reports `vitest@4.1.10` and `vite@8.1.4`, neither in a vulnerable
-  range. Both files were last touched in June 2026; the root lockfile in July.
-
-- Observation: License-header enforcement has been silently inert since the flatten, in a repository
-  whose `AGENTS.md` documents the header convention as active policy.
-  Evidence: `git config --get core.hooksPath` returns `.githooks`, resolved from the worktree root, where
-  only a `post-commit` exists — so the tracked `apps/dot-agent-cli/.githooks/pre-commit` is never
-  invoked. Even if reached, its body runs `bash scripts/ensure-license-headers.sh` with git's working
-  directory set to the repository root, and no such file exists there; the script lives at
-  `apps/dot-agent-cli/scripts/`. No CI workflow matches `license-header` or `ensure-license` either.
-  Independently diagnosed in issue #19.
-
-- Observation: The npm-workspaces glob `dsl/*` matches nothing and has presumably matched nothing since
-  the flatten, without any tool reporting it.
-  Evidence: `dsl/` contains only `explanation/`, `reference/`, `tutorials/`, `README.md`, `VERSION` and a
-  `.DS_Store`; no subfolder has a `package.json`. npm neither warns nor errors on a workspace glob with
-  no matches.
-
-- Observation: `@dot-agent/language-server` publishes its own source and tests to npm.
-  Evidence: its `package.json` declares no `files` array, and the package carries no `.npmignore`, so npm
-  falls back to publishing everything not excluded by default. Six of the eight publishable packages here
-  do declare `files`.
-
-- Observation: Two of the pre-flatten repositories referenced in package documentation are not merely
-  archived but deleted, so the links are hard 404s rather than pointers to a read-only mirror. A third
-  link fails differently and more deceptively: its *repository* is alive, but the file is gone.
-  Evidence: `gh api repos/dot-agent-spec/dot-agent-kernel` and
-  `gh api repos/dot-agent-spec/dot-agent-tree-sitter` both return 404, while `language-server`,
-  `kernel-dsl`, `tree-sitter` and `vscode-dot-agent` return `"archived": true`. Separately,
-  `apps/vscode-extension/AGENTS.md` links to `dot-agent-spec/dot-agent/blob/main/dsl/language.md`;
-  `gh api repos/dot-agent-spec/dot-agent` succeeds and reports the repository active, but
-  `gh api repos/dot-agent-spec/dot-agent/contents/dsl/language.md` returns 404.
-
-- Observation: No workflow in this repository runs on `pull_request` or on push to `main`. Every one is
-  triggered by a publish tag, so build and test failures are only discovered at release time.
-  Evidence: all five files in `.github/workflows/` declare `on: push: tags:` — `publish-kernel-dsl.yml`,
-  `publish-parser-dsl.yml`, `publish-tree-sitter.yml`, `publish-ts.yml`, `publish-vscode.yml`. Three of
-  them run tests, but only as part of publishing. Consequence for this plan: adding a license-header check
-  means creating the repository's *first* PR-triggered workflow, not adding a job to an existing one.
-
-- Observation: The script the fossil hook invokes is a **fixer**, not a checker — it rewrites source files
-  in place — and its exclusion patterns only work from a package root, not from the monorepo root.
-  Evidence: `ensure-license-headers.sh` inserts a header into any matching file lacking one. Its `find`
-  excludes `./dist/*` and `./node_modules/*`, which at the monorepo root do not match `packages/*/dist/`
-  or `packages/*/node_modules/`. Run as-is from the root it would scan build output and dependencies. It
-  also globs `.ts/.tsx/.js/.jsx` while the root `AGENTS.md` states the policy as "Rust and TypeScript
-  source files in `packages/`" — the script and the documented policy have never agreed.
-
-- Observation: `apps/dot-agent-cli/AGENTS.md` already documents the hook defect correctly, and carries a
-  self-maintenance trigger that this plan is about to fire. Fixing the hook therefore *breaks* a currently
-  accurate document.
-  Evidence: line 15 lists ``.githooks/`` as "Present but never invoked"; lines 51–54 explain the
-  `core.hooksPath` mechanism and tell the reader to run the script manually; line 77 lists "the hook gets
-  wired correctly" as a condition for updating the file. All four statements become false when Track D
-  lands. This is why `agents-md-dot-agent-cli.md` is sequenced last.
-
-- Observation: Raising the MCP SDK was necessary but **not sufficient** to move `@hono/node-server` off
-  the vulnerable line. npm leaves a dependency alone when the installed version still satisfies the range,
-  and `1.19.14` satisfies the first branch of `^1.19.9 || ^2.0.5`.
-  Evidence: after `npm install @modelcontextprotocol/sdk@1.30.0`, `npm ls @hono/node-server` still
-  reported `1.19.14` even though the SDK now permitted `2.x`. An explicit `npm update @hono/node-server`
-  then resolved it to `2.0.12`. No `overrides` entry was needed — the plan had flagged that as the
-  fallback, and it turned out to be unnecessary.
-
-- Observation: `apps/dot-agent-cli`'s green test suite proves nothing about the HTTP transport it appears
-  to cover, because the test mocks the transport outright — so a major-version bump of the library that
-  transport actually loads passes CI untouched.
-  Evidence: `tests/mcp-http-session.test.ts:25` calls
-  `vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', …)`, so the test exercises this repo's
-  own session-routing logic and never loads `@hono/node-server`. The real dependency is at
-  `node_modules/@modelcontextprotocol/sdk/dist/esm/server/streamableHttp.js:9` —
-  `import { getRequestListener } from '@hono/node-server'`. Verified separately with a probe driving the
-  real path: `getRequestListener` is still exported by 2.x, still bridges Node to Web Standard, and an
-  MCP `initialize` over a real socket returned 200 with a valid session id.
-
-- Observation: `npm run build` cannot complete on a machine without a running Docker daemon, and the
-  failure surfaces as a broken *test* suite in unrelated packages rather than as an obvious build error.
-  Evidence: `packages/tree-sitter`'s `build:wasm` runs `tree-sitter build --wasm`, which invokes `emcc`
-  inside Docker; with the daemon down it fails with "failed to connect to the docker API". Because
-  `build:wasm` precedes `tsdown`, `packages/tree-sitter/dist/` is never produced — and since `dist/` is
-  gitignored build output, four `apps/dot-agent-cli` test files then fail to *load* with
-  `Cannot find module @dot-agent/tree-sitter/dist/index.cjs`, showing as `4 failed | 6 passed` with zero
-  failing assertions. Starting Docker and rebuilding restored all 287 tests. Worth knowing before
-  diagnosing a "test regression" that is really a missing build artifact.
-
-- Observation: `packages/language-server` has no `src/` and no `tsconfig.json` — it ships **JS source as
-  its published artifact**, so the Design section above was wrong about what its missing `files` array was
-  leaking.
-  Evidence: its `build` script is literally `echo 'language-server ships JS source directly, no build step
-  needed'`, `main` is `server.js`, and the tarball's runtime is `server.js`, `parser.js`, `merge-graph.js`
-  and `features/*.js` at the package root. The only surplus content was `tests/` (7 files). The corrected
-  allowlist therefore names the root `.js` files explicitly rather than a `dist/`.
-
-- Observation: `apps/dot-agent-cli` was publishing `scripts/ensure-license-headers.sh` to npm — the same
-  script Track D relocates to the repository root.
-  Evidence: it appears in the recorded `npm pack --dry-run` baseline. Had the allowlist simply mirrored
-  the old denylist's output, Track D would later have left a dangling entry. Dropped deliberately; it is
-  the single content change in that package's tarball (48 → 47 files).
-
-- Observation: `git add` aborts the **entire** add when any one pathspec fails to match, so a
-  `git rm`-then-`git add` sequence can produce a commit containing only the deletion, silently.
-  Evidence: `git add apps/dot-agent-cli/{package.json,.npmignore} packages/language-server/package.json`
-  failed with `pathspec '.npmignore' did not match any files` — because `git rm` had already staged it —
-  and the commit that followed contained *only* the `.npmignore` deletion; both `files` allowlists were
-  left unstaged. Caught by reading `git show --stat` afterwards, fixed with `--amend`. Always verify what
-  landed rather than trusting that a commit followed a successful-looking sequence.
-
-- Observation: Merging Tracks A and B took the alert count 18 → **7**, not the predicted 4. The twelve
-  phantom alerts closed as expected, but the fresh scan the merge triggered surfaced three the original
-  enumeration never contained — and one of them shows the `scope` field can mislead just as the severity
-  label does.
-  Evidence: three alerts carry `created_at` of `2026-07-31T18:17`, the merge timestamp of PR #30.
-  `brace-expansion` (high) and `postcss` (high) are advisories **published 2026-07-24**, a week before
-  this work — genuinely new, not caused by it. The third is a fifth `esbuild` alert, against
-  `packages/kernel-dsl/package.json`, previously masked by that package's own nested lockfile: deleting
-  the fossil revealed a real declaration underneath it. Track C therefore covers **five** manifests, not
-  the four the plan first named.
-
-- Observation: Dependabot labelled `brace-expansion` **`scope: runtime`**, but it reaches nobody. The
-  plan already argued severity is a poor triage signal; the dependency *scope* is no better here, because
-  a single root lockfile flattens away each workspace's dev/prod distinction.
-  Evidence: `npm ls brace-expansion` traces it to `vscode-dot-agent → @vscode/vsce → minimatch →
-  brace-expansion`, and `@vscode/vsce` is a **devDependency** — it is the VS Code packaging tool.
-  `apps/vscode-extension` also packages with `vsce package --no-dependencies`, so nothing from
-  `node_modules` reaches the `.vsix` either. `postcss` is comparable but honestly labelled:
-  `vitest → vite → postcss`, development.
-
-- Observation: `tools/wasi-stub/` is **third-party code**, so the license-header sweep had to exclude it
-  on licensing grounds rather than stylistic ones — a mechanical fixer run over the whole tree would have
-  stamped this repository's copyright onto someone else's work.
-  Evidence: its `Cargo.toml` declares `authors = ["Arnaud Golfouse <arnaud.golfouse@laposte.net>"]`,
-  `repository = "https://github.com/typst-community/wasm-minimal-protocol"` and
-  `version = "0.3.0-patched"` — a vendored, locally patched copy. Three `.rs` files there were among the
-  22 the first survey flagged. Excluded by name in `scripts/ensure-license-headers.sh`, with the reason
-  written next to the exclusion so a later reader does not "fix" it.
-
-- Observation: The license-header convention was **narrower on paper than in practice**, so matching the
-  script to the documented policy would have removed enforcement from files that already complied.
-  Evidence: the root `AGENTS.md` said "Rust and TypeScript source files in `packages/`", but a survey
-  found 90 files carrying the header across `packages/` **and** `apps/` — including 26 in
-  `apps/dot-agent-cli` and 19 in `packages/language-server`. The policy was widened to match reality
-  rather than the script narrowed to match the policy.
-
-- Observation: Being unenforced since the flatten cost 18 files, not zero — the convention had been
-  eroding quietly the whole time.
-  Evidence: `./scripts/ensure-license-headers.sh --check` reported 18 first-party files without a header
-  once third-party and generated files were excluded, concentrated in test files, `tsdown.config.ts`
-  files and build scripts — exactly the files nobody opens during review. Fixing them was +252 lines with
-  nothing removed.
-
-- Observation: Track E was scoped as "repoint three or four dead links per folder" and the folders held
-  roughly **twenty false claims** on top of twenty-two dead links — including two nested `AGENTS.md`
-  sections describing schemes the repository has never used. Link rot is visible from outside a package;
-  a false claim is not, and estimating one from the other underestimates by an order of magnitude.
-  Evidence: `packages/tree-sitter/AGENTS.md` carried a whole "Dual-Versioning Strategy" naming a
-  `1.0.0-draft` spec version and `spec-vX.Y` git tags — `dsl/VERSION` contains `0.1` and `git tag -l`
-  matches no such tag. `packages/language-server/AGENTS.md` named a dependency, `@dot-agent/behavior-parser`,
-  that has never existed here. The four dossiers each predicted an XS/S link edit and one M review.
-
-- Observation: The two most valuable corrections were **claims that were true when written and quietly
-  became load-bearing**, not ordinary rot.
-  Evidence: `parse()` was documented as reparsing incrementally, while `parser.js` deliberately does a full
-  reparse because incremental corrupts node byte ranges — the doc actively invited someone to "optimize" it
-  back. And `server.js contains only LSP wiring` was written as an invariant; it is violated in three
-  places, and stating it as fact is what let the drift pass review. It now records the intent plus its
-  three exceptions, pointing at issue #4.
-
-- Observation: An audit report is not evidence. One finding from the Track E sweep — that the grammar
-  workflow lives in `CONTRIBUTING.md` — was wrong, and acting on it would have added a dead link inside
-  the commit that removes twenty-two.
-  Evidence: `CONTRIBUTING.md` has no grammar section; its headings are Toolchain setup, Build, Tests,
-  Changing a dependency and Licensing. Caught by checking the anchor before writing the link.
-
-- Observation: The root `package.json` carries an **`allowScripts` block that pins by exact version**, so
-  every bump of a dependency with an install script silently invalidates its own approval. Nothing in the
-  repository documented this, and the only signal is a warning inside `npm install` output.
-  Evidence: bumping esbuild left `"esbuild@0.21.5": true` plus a `"esbuild@0.27.7": true` that nothing had
-  resolved to since the block was written in `d40b7a9`, while `npm install` warned that 0.28.1's
-  `postinstall: node install.js` was unreviewed. `npm approve-scripts esbuild` collapsed all three into
-  one current pin. The field is advisory in npm 11.17 — scripts still run — but `npm help approve-scripts`
-  states a future release blocks unreviewed ones, and esbuild's postinstall is what places its native
-  binary. A stale allowlist is therefore a build break scheduled for whenever npm flips that switch.
-
-- Observation: An alert whose `manifest_path` is `package-lock.json` has **no manifest to edit** — it
-  describes a transitive package hoisted into the root lockfile, and it clears when whatever pulls it in
-  is bumped. Reading the field as a file to open sends you looking for a declaration that was never there.
-  Evidence: the task dossier counted five manifests for esbuild, listing the root among them; the root has
-  never declared esbuild. Four packages do (`parser-dsl`, `kernel-dsl`, `sdk`, `vscode-extension`), and
-  alert #8 is filed against `package-lock.json` because `vitest → vite → esbuild` hoists there. It cleared
-  with the same bump. The same reading explains alerts #24 and #27 (`postcss`, `brace-expansion`).
-
-- Observation: An LSP `initialize` handshake proves the bundle **loads**, not that it works — the
-  externalized WASM chain is only exercised once a document is opened. Track B's verification stopped one
-  step short of the thing most likely to break.
-  Evidence: driving `dist/server.mjs` to `initialize` returns all nine providers even though nothing has
-  parsed yet. Sending `textDocument/didOpen` with `languageId: "behavior"` (not the extension's
-  `dot-agent-behavior` id — the server filters on the short form) returns `E004` from the tree-sitter
-  grammar and `W012` from the compiler linter, which is what proves the copied `parser-dsl`/`web-tree-sitter`
-  packages and the `createRequire` banner resolve at runtime. That is the failure mode a bundler bump has,
-  and no unit test covers it.
 
 ## Decision Log
 
@@ -575,8 +347,18 @@ per-folder review should be scoped from the second number, not the first.
 
 ### Routing
 
-Of 25 `Surprises & Discoveries` entries, three were promoted out of this file and the rest stay here as
-the working record — which is the correct outcome for an entry that is evidence rather than instruction.
+Of 25 `Surprises & Discoveries` entries, three were promoted out of this file at closure and the rest
+stayed as the working record — which is the correct outcome for an entry that is evidence rather than
+instruction.
+
+**A second pass on 2026-08-14 collected exactly what the first one had nowhere to put**, and the section
+itself is now gone: migrating this plan to `plan@3` drops `Surprises & Discoveries`, and the jump's own
+rule is that a section is deleted only once every entry has a destination. Four entries were promoted to
+the workspace's cross-repository learnings base — Dependabot's three misreadings of a workspaces repo, the
+`allowScripts` exact-version expiry, `git add` aborting on one failed pathspec, and the two cases where
+npm silently declines to act. The `manifest_path` row below predicted this: it was declined here for being
+true of any npm-workspaces repository, which is precisely the category that belongs one level up. The rest
+were dropped out loud — measurements, one-off repo state, or facts a surface here already carries.
 
 | Entry | Went to |
 |---|---|
