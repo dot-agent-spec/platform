@@ -369,7 +369,7 @@ This track exists separately because its work is editing documents, not wiring, 
 a wiring change gets reviewed as a document change. A gate handed over red is the one people switch off
 within the week.
 
-The work is [`project/tasks/close-the-red-findings.md`](../tasks/close-the-red-findings.md). Its counts
+The work is `project/tasks/close-the-red-findings.md` (closed dossier — `git show e9cb6745683708fd807e64b5df6e788a60315919:project/tasks/close-the-red-findings.md`). Its counts
 are the authority, not the ones this track was written with: re-measuring after `project/pre-release/`
 was retired moved every figure, and the dossier records why each moved rather than restating a total.
 
@@ -728,3 +728,6 @@ budget that the enforcement-ladder framing does not make on its own.
 - Task dossiers closed and removed per the task lifecycle (`Planned → In Progress → Done → file removed, git history is the archive`):
   - `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/vibe-ops-cli-gate.md`
   - `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/per-package-agents-md.md`
+
+- Task dossiers closed and removed per the task lifecycle (`Planned → In Progress → Done → file removed, git history is the archive`):
+  - `git show e9cb6745683708fd807e64b5df6e788a60315919:project/tasks/close-the-red-findings.md`
