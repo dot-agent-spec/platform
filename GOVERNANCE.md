@@ -16,6 +16,7 @@ Each kind of change has a home. Picking the right one is the first decision.
 | **ADR** | "We decided X, because Y" | [`project/adr/`](project/adr/) | [`project/templates/adr.md`](project/templates/adr.md) | The decision itself |
 | **Plan** | "How do we build X?" | [`project/plans/`](project/plans/) | [`project/templates/plan.md`](project/templates/plan.md) | No |
 | **Task** | "We decided to do X — here's what to change" | [`project/tasks/`](project/tasks/) | [`project/templates/task.md`](project/templates/task.md) | No |
+| **Log** | "We tried this and it failed" | [`project/log/`](project/log/) | [`project/templates/log.md`](project/templates/log.md) | No |
 
 Rule of thumb: if the design is still open, it is an **RFC**. Once a load-bearing choice is settled,
 distill it into an **ADR** so it is findable. When work is greenlit, write a **plan** if it will land in
@@ -86,7 +87,8 @@ Backlog → In Progress → Shipped     (the file is never deleted)
 A plan is the permanent design record for a multi-phase build. Its two living sections — `Decision Log`
 and `Outcomes & Retrospective` — are maintained while the work happens, not written at the end; filled in
 retrospectively they are worthless. Closing one means writing the retrospective against the plan's own
-goals and routing each discovery to a durable surface; the issue closes, the file stays.
+goals and running the demotion check; the issue closes, the file stays. What the work discovered was
+recorded in the task dossier each track spawned, and routed when that dossier closed.
 
 ## Task lifecycle
 

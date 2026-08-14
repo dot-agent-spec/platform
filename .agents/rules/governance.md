@@ -122,12 +122,28 @@ spawns an ADR if a hard-to-reverse decision emerged, **routes every `Surprises &
 durable surface, then distills and deletes the dossier. Never skip the write-back or the routing: those
 are what keep the docs from drifting and keep a learning from being deleted along with the file.
 
-### Pre-release log (`project/pre-release/v<minor>/`)
+### Log (`project/log/`)
 
-This repo's long-form narrative companion — the equivalent of a `log/` folder, named for the milestone it
-belongs to. Optional appendices to a DA decision: rich context for agents, dead ends, what was tried and
-abandoned, the reasoning an ADR is too terse to carry. No community review, and **gaps are expected** —
-most decisions need no log, so the numbering here is sparse by design.
+Write-once narrative context, for either of two reasons: what an ADR is too terse to carry (dead ends, the
+reasoning behind a decision — pairs with that ADR and links to it both ways), or the rich context of one
+unit of work, decision or not. **Gaps are expected**: most work needs no log.
 
-Never retro-edit a log to match a later decision; a superseding decision gets its own ADR and optionally
-its own log.
+A log entry **MUST** name, in its `path:`, the file, folder or package where someone meets the trap again.
+That field is the admission test and the retirement detector at once — a fact with no locatable place to
+recur is a decision (an ADR) or nothing, and an entry whose `path:` no longer exists on disk is deleted.
+Entries are written with `/vibe-ops:new-log`, never by hand, and indexed in
+[`../../project/log/README.md`](../../project/log/README.md).
+
+A log **MUST NOT** be retro-edited to agree with a later decision; a superseding decision gets its own ADR
+and optionally its own log.
+
+### Pre-release log (`project/pre-release/v<minor>/`) — retired
+
+**This is not where a log goes. `project/log/` above is.** The folder was this repo's long-form companion
+before the record type existed here, and it was retired on 2026-08-13 because it is the one location the
+tooling cannot be told about — every closure ceremony routed to a destination that did not exist. Its
+documents were routed out one at a time rather than moved wholesale; the reasoning per document is in
+[Plan-001](../../project/plans/001-adopt-vibe-ops-baseline.md)'s Decision Log.
+
+One document remains and is awaiting a decision about where it belongs:
+`v0.1/DA01-02-compiler-behavior-consolidation.md`. Nothing new **MUST** be written here.
