@@ -41,8 +41,8 @@ All types derive `Debug`, `Clone`, `Serialize`, `Deserialize`.
 | `Teach` | `teach_stmt` | |
 | `Interact` | `interact_stmt` | `handlers` is always `[]` — see Grammar Quirks |
 | `Transition` | `transition_stmt` | field `target` serializes as `"state"` |
-| `OnIntent` | `intent_trigger` | `body` is `IntentBody` (untagged) |
-| `OnOfftopic` | `offtopic_stmt` | |
+| `OnIntent` | `intent_handler` | `body` is `IntentBody` (untagged) |
+| `OnOfftopic` | `offtopic_handler` | |
 | `After` | `after_stmt` | |
 | `Run` | `run_stmt` | newtype wrapping `RunStmt` |
 | `Set` | `memory_stmt` | fields `path`→`"target"`, `op`→`"op"`, `value`→`"value"` |
@@ -73,9 +73,9 @@ All types derive `Debug`, `Clone`, `Serialize`, `Deserialize`.
 
 ## Grammar Quirks
 
-### `intent_trigger` and `offtopic_stmt` as body siblings
+### `intent_handler` and `offtopic_handler` as body siblings
 
-The grammar places `intent_trigger` and `offtopic_stmt` as direct siblings inside the state body, **not** nested inside `interact_stmt.handlers`. This is a structural artifact of the tree-sitter grammar.
+The grammar places `intent_handler` and `offtopic_handler` as direct siblings inside the state body, **not** nested inside `interact_stmt.handlers`. This is a structural artifact of the tree-sitter grammar.
 
 ```
 state welcome

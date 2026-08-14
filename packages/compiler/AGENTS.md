@@ -15,9 +15,9 @@ convention in `guides/linting.md`, and every diagnostic code in `reference/lint-
 This is the correction that matters most, because this file asserted the opposite as hard requirements
 until 2026-08-13, and a reader trusting it would look for grammar errors that can no longer occur.
 
-RFC-0022 flattened the grammar: `state_body` is now `repeat1(choice(...))` and `oriented_state_body` **does
-not exist**; `agent_decl` is `repeat(choice(...))`, so `.description` blocks are accepted in **any order**.
-Everything that used to be a parse failure is now a lint rule:
+RFC-0022 flattened the grammar: `state_body` is `repeat1(choice(...))` and is the **only** body node,
+shared by setup and oriented states; `agent_decl` is `repeat(choice(...))`, so `.description` blocks are
+accepted in **any order**. Everything that used to be a parse failure is now a lint rule:
 
 - a state with `interact` must declare `goal`
 - an oriented state must end with `on offtopic`

@@ -140,17 +140,17 @@ correctness target and why Track 2 relocates rather than deletes.
       `plugins/claude` declared a pairing exception rather than given a sibling, `packages/sdk` decided
       against, `dogfood/mentor-agent` deleted.
 - [x] **Track 4 — The gate becomes the `vibe-ops` CLI.** Completed 2026-08-13.
-- [ ] **Track 8 — The rename that never reached the docs.** Opened 2026-08-13 by Track 3's review, and
-      the only work it uncovered that it did not also close. `intent_trigger` and `oriented_state_body`
-      are node names the grammar dropped — the first in the DA01-01 rename, the second when RFC-0022
-      flattened `state_body`. The code moved; the documents did not. `intent_trigger` survives in
-      `packages/parser-dsl`'s `README.md` and `docs/reference/api.md`; `oriented_state_body` in
-      `packages/tree-sitter/AGENTS.md`, `project/implementation-status.md` and its generated `.html`, and
-      **`.agents/skills/sync-implementation-status/SKILL.md`**. The skill is the one that matters: an
-      `AGENTS.md` with no sibling never loads, which is why the rest went unnoticed, but a skill loads and
-      runs. Decide first whether this wants a guard rather than a repair — the root `AGENTS.md` already
-      records this same skill mis-mapping on a stale node-name table once, and a second occurrence of one
-      failure is the argument the third repair will not settle it.
+- [x] **Track 8 — The renames that never reached the docs.** Opened 2026-08-13 by Track 3's review as the
+      only work it uncovered without closing; closed 2026-08-14. It was scoped as two retired grammar node
+      names and turned out to be **five**, which is the finding rather than a detail — see the Decision Log
+      and the retrospective. Every surface that teaches is now clean, verified name by name against the
+      grammar and the `#[serde(rename = "…")]` attributes in `packages/parser-dsl/src/ast.rs`. What
+      remains is covered by a rule rather than by judgement: `dogfood/**` is write-once, RFC-0022 is
+      `Implemented` and frozen, and one internal review under `docs/explanation/research/` gained a
+      dated-snapshot banner instead of a per-name repair, because it describes a pre-flatten tree
+      throughout and correcting one name would have made it read as current. **The guard is not written
+      here**: it is being scoped as a `vibe-ops` gate, since the same machine already exists there as
+      `template-heading-drift` over a different vocabulary.
 - [x] **Track 5 — Close the findings the gate was handed over red with.** Opened 2026-08-13, closed
       2026-08-14. Five items, and the last one to fall was the only one waiting on a decision that was not
       the dossier's to make: `DA01-02` does not become an ADR, so `project/pre-release/` is gone entirely.
@@ -610,6 +610,28 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   over `project/rfc/**/*.md` and this repository uses `rfcs/`. Excluding a file from an empty population
   would read as protection while protecting nothing, which is the same class of lie as a check that skips
   silently.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
+- **Decision:** A retired name is **deleted**, never kept in order to be denied — and a resolved
+  discrepancy is removed from the table that tracked it, not marked resolved.
+  **Rationale:** the first sweep classified four files as correct because each named a dead node only to
+  say it no longer exists. That is wrong, and a `grep` proves it: the search returns the occurrence, not
+  the sentence around it, so a reader looking for the current name meets the retired one and the negation
+  never loads. The code is the source of truth; if a document mentions a node at all it mentions the live
+  one and stops there. The same argument retires four rows from `implementation-status.md`'s node-name
+  table — a resolved discrepancy is not a discrepancy, and that table had become the single largest source
+  of retired names in the repository, while being the very table the sync skill treats as authoritative.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
+- **Decision:** Do not write the guard in this repository. Scope it as a `vibe-ops` gate instead.
+  **Rationale:** `.agents/rules/doc-sync.md` already obliges a grammar change to move the package docs,
+  the tracker and that package's `AGENTS.md`. It is correct, it is path-scoped so it loads, and it was
+  ignored twice — which is the textbook case for writing the guard rather than more prose. The reason it
+  does not belong here is that the machine already exists upstream: `template-heading-drift` reads
+  migration notes for what was dropped, templates for what is live, and attributes each occurrence to a
+  record type before judging it. Swap "template section" for "grammar node" and it is the same gate over a
+  different dictionary. Building a local `grep` in the commit hook would be a third copy of a mechanism
+  that wants one home.
   **Date / Author:** 2026-08-14 / Danilo Borges
 
 ## Outcomes & Retrospective

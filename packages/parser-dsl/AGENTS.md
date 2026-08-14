@@ -73,9 +73,7 @@ Which *other* packages the change obliges you to update is
 Updating it is part of any task that changes how this package parses or builds. Triggers: a grammar node
 is renamed or added; a quirk above stops being true; the build pipeline moves; a new export appears.
 
-**A renamed grammar node is the trigger that has already been missed once.** On 2026-08-13 this file, the
-README and `docs/reference/api.md` still called the handler node `intent_trigger`, which the DA01-01
-rename replaced with `intent_handler` — the code had moved in seventeen files while three documents in
-this package kept the old name. This file is corrected; the other two are not, and are recorded in the
-per-package AGENTS.md dossier (closed —
-`git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/per-package-agents-md.md`).
+**A renamed grammar node is the trigger that has already been missed once.** The handler node is
+`intent_handler`. The DA01-01 rename moved the code across seventeen files and left three documents in
+this package — this one, the README and `docs/reference/api.md` — still naming the node it replaced, for
+months. Check the grammar before trusting any node name written down here.

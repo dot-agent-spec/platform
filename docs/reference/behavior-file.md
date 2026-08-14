@@ -35,7 +35,7 @@
 - **Field removals or renames**: breaking — treated as a major version bump.
 - **New `Statement` variants** (new `type` values): non-breaking for consumers that use an exhaustive-or-ignore pattern; breaking only for consumers that treat unknown variants as errors.
 
-The `type` discriminant field on `Statement` uses the grammar node name (e.g. `goal_stmt`, `intent_trigger`) and is stable.
+The `type` discriminant field on `Statement` uses the grammar node name (e.g. `goal_stmt`, `intent_handler`) and is stable.
 
 ---
 
@@ -77,16 +77,16 @@ Statements use a `"type"` discriminant. The `body` of `StateDef` and `TriggerDec
 
 ```typescript
 { type: "interact_stmt"; handlers: Statement[] }
-// Note: handlers is always [] in current grammar; intent_trigger and
-// offtopic_stmt appear as siblings in the parent body, not inside handlers.
+// Note: handlers is always [] in current grammar; intent_handler and
+// offtopic_handler appear as siblings in the parent body, not inside handlers.
 
 { type: "transition_stmt"; state: string }
 
-{ type: "intent_trigger"; intent: string; body: string | Statement[] }
+{ type: "intent_handler"; intent: string; body: string | Statement[] }
 // body is a string (target state name) for inline form,
 // Statement[] for block form.
 
-{ type: "offtopic_stmt"; body: Statement[] }
+{ type: "offtopic_handler"; body: Statement[] }
 
 { type: "after_stmt"; prompts: number; body: Statement[] }
 
@@ -149,7 +149,7 @@ type Value = string | number | boolean | null;
       "body": [
         { "type": "goal_stmt", "text": "Help the user" },
         { "type": "interact_stmt", "handlers": [] },
-        { "type": "intent_trigger", "intent": "help", "body": "helping" }
+        { "type": "intent_handler", "intent": "help", "body": "helping" }
       ]
     },
     {

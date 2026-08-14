@@ -153,7 +153,7 @@ All functions are **stateless**: they accept raw source text and return JSON str
       "body": [
         { "type": "goal_stmt", "text": "Help the user get started" },
         { "type": "interact_stmt", "handlers": [] },
-        { "type": "intent_trigger", "intent": "help", "body": "helping" }
+        { "type": "intent_handler", "intent": "help", "body": "helping" }
       ]
     }
   ]
