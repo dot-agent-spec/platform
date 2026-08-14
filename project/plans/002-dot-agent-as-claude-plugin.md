@@ -301,13 +301,6 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   against the spawned process confirmed the server registers correctly. It is a display limitation of that
   subcommand — do not use it to diagnose a registration problem, and do not re-investigate this.
 
-- **Observation:** A `UserPromptSubmit` hook cannot drive `tick_prompt`, even though both exist and the
-  pairing looks obvious.
-  **Evidence:** `tick_prompt` only does something once an agent is loaded — that is, once the `Runtime`
-  holder is filled — and a shell hook has no way to know that state or to call a specific tool on a
-  specific connection. `after N prompts` therefore remains a documented degradation on this surface until a
-  proper tick channel exists.
-
 - **Observation:** The guard against the two `SKILL.md` copies drifting was already written down, in a file
   that never loads. Track 8 is not hygiene — it is why the guard failed.
   **Evidence:** `plugins/claude/AGENTS.md` has said "the two copies are kept byte-identical, verify with
@@ -474,10 +467,13 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   **Date / Author:** preserved from the source task
 
 - **Decision:** Defer the `UserPromptSubmit` hook that would drive `tick_prompt`, after scoping it for v1.
-  **Rationale:** See the corresponding entry under *Surprises & Discoveries* — a shell hook cannot know
-  whether an agent is loaded or address a specific tool on a specific connection. The candidate replacement
-  is a `dot-agent tick` subcommand plus a local channel the running runtime honors. Recorded as decision 4
-  in the [DA00-07 log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
+  **Rationale:** `tick_prompt` only does something once an agent is loaded — that is, once the `Runtime`
+  holder is filled — and a shell hook has no way to know that state or to address a specific tool on a
+  specific connection, so the pairing that looks obvious cannot be built at all. `after N prompts`
+  therefore remains a documented degradation on this surface until a proper tick channel exists. The
+  candidate replacement is a `dot-agent tick` subcommand plus a local channel the running runtime honors.
+  Recorded as decision 4 in the
+  [DA00-07 log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
   **Date / Author:** preserved from the source task
 
 - **Decision:** Bundle no runtime with the plugin; depend on the single globally-installed `dot-agent` CLI,
