@@ -24,7 +24,7 @@ Docker running, and its absence surfaces as *test* failures rather than a build 
 
 ## Repository layout
 
-Each `packages/*`, `apps/*` and `plugins/*` folder has its own `AGENTS.md` and README — read it before
+Most `packages/*`, `apps/*` and `plugins/*` folders have their own `AGENTS.md` and README — read it before
 changing anything there. The table further down lists them with their status.
 
 ```

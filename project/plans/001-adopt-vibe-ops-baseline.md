@@ -136,11 +136,21 @@ correctness target and why Track 2 relocates rather than deletes.
       replaced. Completed 2026-07-30.
 - [x] **Track 2 — The root `AGENTS.md` budget.** 233 → 150 lines by relocation only. Completed
       2026-07-30, and **since regressed to 174** — see Track 6.
-- [ ] **Track 3 — Per-package `AGENTS.md`.** Four folders done; `packages/{parser-dsl,kernel-dsl,compiler}`,
-      `plugins/claude`, `dogfood/mentor-agent` (zero-byte, delete or fill) and `packages/sdk` (no
-      `AGENTS.md` at all) remain. Pulled into Track 4's scope — see that track for why.
-- [ ] **Track 4 — The gate becomes the `vibe-ops` CLI.** Opened 2026-08-13 on branch
-      `chore/adopt-vibe-ops-cli-gate`.
+- [x] **Track 3 — Per-package `AGENTS.md`.** Completed 2026-08-13. Three rebuilt against the disk,
+      `plugins/claude` declared a pairing exception rather than given a sibling, `packages/sdk` decided
+      against, `dogfood/mentor-agent` deleted.
+- [x] **Track 4 — The gate becomes the `vibe-ops` CLI.** Completed 2026-08-13.
+- [ ] **Track 8 — The rename that never reached the docs.** Opened 2026-08-13 by Track 3's review, and
+      the only work it uncovered that it did not also close. `intent_trigger` and `oriented_state_body`
+      are node names the grammar dropped — the first in the DA01-01 rename, the second when RFC-0022
+      flattened `state_body`. The code moved; the documents did not. `intent_trigger` survives in
+      `packages/parser-dsl`'s `README.md` and `docs/reference/api.md`; `oriented_state_body` in
+      `packages/tree-sitter/AGENTS.md`, `project/implementation-status.md` and its generated `.html`, and
+      **`.agents/skills/sync-implementation-status/SKILL.md`**. The skill is the one that matters: an
+      `AGENTS.md` with no sibling never loads, which is why the rest went unnoticed, but a skill loads and
+      runs. Decide first whether this wants a guard rather than a repair — the root `AGENTS.md` already
+      records this same skill mis-mapping on a stale node-name table once, and a second occurrence of one
+      failure is the argument the third repair will not settle it.
 - [ ] **Track 5 — Close the findings the gate was handed over red with.** Opened 2026-08-13.
 - [ ] **Track 6 — The `AGENTS.md` budget, again.** Added 2026-08-13. Track 2's own retrospective predicted
       this: it landed at exactly 150 of 150 and named the next addition as the risk. Run
@@ -206,9 +216,29 @@ the kind that never gets lifted. The three-step order above is **not** relaxed b
 start delivering stale guidance into context, which is the whole reason this track was written as
 review-first.
 
-The work is [`project/tasks/per-package-agents-md.md`](../tasks/per-package-agents-md.md) — six, not five:
-`packages/sdk` has no `AGENTS.md` at all and was never on the 2026-07-30 survey, which counted the eight
-that existed.
+**Closed 2026-08-13.** Six folders, and the review-first order earned itself twice — the recipe's third
+step would have been wrong in both cases, and only reading first caught it.
+
+`plugins/claude` **must not have a `CLAUDE.md`**: the folder is a Claude Code plugin, copied byte for byte
+into every user's cache, so the file would have shipped to every install while never loading. Declared as a
+`pairing` exclusion in `vibeops.config.ts` instead — which also had to be done *before* the next write,
+because the authoring skill's hook created the file automatically and a hook repairing a finding cannot
+know which findings a repository has declared out of scope.
+
+`packages/sdk` gets no file at all. Every fact that could have earned one already had a better home, the
+call-order contract included — the README states it in a numbered quick start with **before** bolded
+twice. Writing one would have produced this track's own defect: a nested file restating a README, never
+loading, drifting on the first change.
+
+The three that were rebuilt shrank by more than half, and what came out was not mostly links. Each carried
+an instruction that could not be followed: a "do not delete this script" guarding a file absorbed into the
+shared build script; two grammar paths under a pre-flatten directory, cited by a sentence telling readers
+to verify node names against them; and, in **two** packages with the identical wording, an instruction to
+bump the version of a `path` dependency that has none. `packages/compiler` was worse — four of its five
+"grammar rules to remember" were stated as parse requirements that RFC-0022 had moved into the linter.
+
+What none of them had was a sibling `CLAUDE.md`. Nothing read them, so nothing corrected them; the drift
+is a consequence of the defect this track existed to fix, not an unrelated finding.
 
 ### Track 4 — The gate becomes the `vibe-ops` CLI
 
@@ -223,8 +253,20 @@ being deleted: **the debt ledger** `_run.sh` held in an environment variable; **
 **`artifactDir`**, replacing the hook's `GATE_ARTIFACT_DIR` export; and **that nothing gets copied in** —
 no runner snapshot, no fragment directory.
 
-The work is [`project/tasks/vibe-ops-cli-gate.md`](../tasks/vibe-ops-cli-gate.md), which carries each of
-those as a work item with its reason.
+**Closed 2026-08-13.** `scripts/checks/_run.sh` is gone, `vibeops.config.ts` holds the declarations, and
+`harness resolve` shows the swap as a state change: `RUNNER=(none)`, `CONFIG=vibeops.config.ts`.
+
+**One of the four did not carry across the way this track predicted.** The ledger was to become `settings`
+entries — but `vibe-ops check` runs the seventeen shell fragments through their own runner, which at the
+time read only `VIBE_OPS_DISABLED_CHECKS`. Deleting `_run.sh` therefore removed the only mechanism that
+could declare a fragment off, and the shell half went from green to 38 failures. The stopgap put the
+export in both entry points, which a session hook exposed within the minute by running `vibe-ops check`
+directly and seeing all 38: a declaration that lives in two shell scripts is invisible to every other
+caller. Fixed upstream the same day — `module-check` now translates `settings.check.disabled` into that
+variable, an env-set value still winning, and both exports are gone.
+
+Nothing is `disabled` on the gate side. Everything real is `warn` with its owner named, because a disabled
+check reports nothing about anything and a *new* instance of the same defect would be invisible.
 
 **What resolves the runner, corrected 2026-08-13.** This track was written claiming an npm dependency
 makes the gate resolve whether the repository is cloned alone or sits beside a `vibe-ops` checkout. There
