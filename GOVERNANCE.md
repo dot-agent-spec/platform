@@ -43,7 +43,7 @@ While the language is pre-v1.0, the project iterates rapidly and decisions break
 
 - **ID format `DA<minor>-<seq>`.** `DA00-xx` for decisions that govern **all** milestones (cross-cutting); `DA0N-xx` for decisions anchored to milestone v0.N. Boundary test: *one milestone or all?* Numeric only; **never renumbered**.
 - **ADRs are the index** (`project/adr/`) — the terse "what we decided". Breaks across milestones are tracked with `Supersedes` / `Superseded by` (e.g. `DA02-03` supersedes `DA01-11`).
-- **Long-form logs are optional appendices** in `project/pre-release/v<minor>/` (e.g. `DA01-021-forgiving-syntax.md`) — rich context for LLM agents, no community review. Not every decision needs one, so log numbering has gaps.
+- **Long-form logs are optional appendices** in [`project/log/`](project/log/) — rich context for LLM agents, no community review. Not every decision needs one, so gaps are expected. They were kept in `project/pre-release/v<minor>/` until 2026-08-13; that folder is gone and nothing should be written under it.
 - **External proposals** during incubation use the public RFC lifecycle (`project/rfcs/`), not the DA scheme.
 
 ---

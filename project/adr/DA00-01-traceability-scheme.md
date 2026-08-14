@@ -90,5 +90,6 @@ The DA scheme is itself a pre-1.0 measure.
 ## Related
 
 - [`GOVERNANCE.md`](../../GOVERNANCE.md) — § Pre-1.0 Incubation (DA01 Lifecycle)
-- [`project/pre-release/`](../pre-release/) — long-form incubation logs
+- [`project/log/`](../log/) — long-form logs. They lived in `project/pre-release/v<minor>/` when this
+  decision was written; that folder was retired on 2026-08-13 and removed on 2026-08-14.
 - [`ROADMAP.md`](../../ROADMAP.md) — milestones the minors map to

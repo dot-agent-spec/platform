@@ -41,7 +41,7 @@ dot-agent-spec/
 │   ├── rfcs/                       ← design proposals (+ implemented/ and rejected/, frozen)
 │   ├── plans/                      ← permanent design records for multi-phase work
 │   ├── tasks/                      ← work orders, deleted once done
-│   ├── pre-release/v0.1/           ← long-form logs for DA decisions
+│   ├── log/                        ← write-once traps, addressed by the path where they recur
 │   └── implementation-status.md    ← per-feature tracker across the layers
 ├── dsl/                            ← language spec, Diátaxis (reference · explanation · how-to · tutorials)
 ├── docs/                           ← implementation docs, Diátaxis (reference · explanation · how-to)

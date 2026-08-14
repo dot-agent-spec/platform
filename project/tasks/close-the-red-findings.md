@@ -102,18 +102,30 @@ text where `memory-slug` reads the masked document model, so an inline code span
 example. It is the same false-positive class already fixed once, in the other gate. Until it is fixed
 here, a document cannot describe a broken breadcrumb without becoming one.
 
-### 4. `project/pre-release/AGENTS.md`, left behind — P1
+### 4. `project/pre-release/AGENTS.md`, left behind — P1 — **done 2026-08-14: the whole folder is gone**
 
-**What:** `project/pre-release/` was emptied on 2026-08-13, but its `AGENTS.md` was not removed and
-`v0.1/` still holds `DA01-02-compiler-behavior-consolidation.md`.
+**What it was:** `project/pre-release/` was emptied on 2026-08-13, but its `AGENTS.md` survived and `v0.1/`
+still held `DA01-02-compiler-behavior-consolidation.md`. `harness audit` listed that `AGENTS.md` as an
+always-on guide, 34 lines, describing the authoring conventions of a folder being retired — worse than no
+guide, because it loads.
 
-**Why:** `harness audit` lists that file as an **always-on guide**, 34 lines, describing the authoring
-conventions of a folder that is being retired. A guide that loads and describes a folder nobody should
-write into any more is worse than no guide.
+**DA01-02 was not made into an ADR, and that was the decision blocking this item.** Read against the
+current tree, almost all of it is already documented, in a *more* current form: `pipeline.md` carries the
+description discovery, the behavior resolution, the consolidation algorithm and the bundle structure with
+eight pack steps and `E018`/`W015`/`W016`, none of which existed when the log was written; `lint-codes.md`
+carries `E012`–`E017` and `W014`, correctly marking `E012`–`E014` as thrown rather than emitted, which the
+log got wrong. Ten decisions in one document is not one ADR's shape, and nine of them had become simply how
+the compiler works.
 
-**Change:** delete `project/pre-release/AGENTS.md` once `DA01-02` has its own destination — its decision
-is pending (it carries ten architectural decisions with rationale and no ADR records them, so it is a
-candidate for becoming one). Do not delete the folder while that file is still in it.
+What was genuinely missing was its **§3.5 security model** — verified by search: `symlink` appeared nowhere
+under `docs/`, `dsl/` or `packages/*/docs`, and neither did the threat table. `E014` was documented in
+three places as a rule with no reason attached. That, the reason `init` resolves by name rather than by
+position, and why the kernel still carries `flatten_merges`, moved into `pipeline.md`,
+`dsl/reference/behavior.md` and `dsl/reference/description.md`. The rest is implementation history the code
+now answers, so the log was deleted with the folder.
+
+The original is recoverable:
+`git show 2f18d916758c6a56d2401a12684550ec241438bc:project/pre-release/v0.1/DA01-02-compiler-behavior-consolidation.md`
 
 ### 5. `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction — P1
 
@@ -142,12 +154,12 @@ diagram in `AGENTS.md`, which promised both folders and is now true on disk.
 P0:  2, 3   — mechanical, no judgement, do first
 P0:  1      — needs a decision per link
 P1:  5      — independent
-P1:  4      — blocked on DA01-02's destination
+P1:  4      — was blocked on DA01-02's destination; decided and closed 2026-08-14
 ```
 
 Item 1 last among the P0s because each link needs its intended target established, and two of its rows
-are closed in another dossier rather than here. Item 4 last of all: it is the only one waiting on a
-decision that is not this dossier's to make.
+are closed in another dossier rather than here. Item 4 was last of all, being the only one waiting on a
+decision that was not this dossier's to make.
 
 ## Closing
 

@@ -73,7 +73,7 @@ Tracked in `tasks/pre-public-consolidation.md`, closed 2026-06-27 and removed pe
 - `.description` honesty: write `terms`/`privacy`, wire the `behavior` block, **drop** the placeholder `purpose` field (returns later as a real feature — see *Distribution & identity*).
 - Remove dead grammar/AST nodes (`on complete`/`on failed` standalone, `run … each`).
 - ✅ **Stamp provenance into `aboutme.json`** — done. `dslVersion` (renamed from `schemaVersion`, DA00-02) is sourced from `dsl/VERSION` and `compiler` from `@dot-agent/compiler`'s real package version; both are build-time constants, no more hardcoded literals.
-- ✅ Packaging gates: all packages published for real under `0.10.0` — npm (`latest`), crates.io (`tree-sitter`), and the VS Code Marketplace/Open VSX. See `project/pre-release/v0.1/` for the rehearsal and release log.
+- ✅ Packaging gates: all packages published for real under `0.10.0` — npm (`latest`), crates.io (`tree-sitter`), and the VS Code Marketplace/Open VSX. The rehearsal and release log was `project/pre-release/v0.1/`, retired 2026-08-13; recover it with `git show 71cbf9f0755b60278eaf0dae3efaa640b25a815a:project/pre-release/v0.1/`.
 
 ---
 

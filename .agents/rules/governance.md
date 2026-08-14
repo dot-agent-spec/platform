@@ -137,13 +137,9 @@ Entries are written with `/vibe-ops:new-log`, never by hand, and indexed in
 A log **MUST NOT** be retro-edited to agree with a later decision; a superseding decision gets its own ADR
 and optionally its own log.
 
-### Pre-release log (`project/pre-release/v<minor>/`) — retired
-
-**This is not where a log goes. `project/log/` above is.** The folder was this repo's long-form companion
-before the record type existed here, and it was retired on 2026-08-13 because it is the one location the
-tooling cannot be told about — every closure ceremony routed to a destination that did not exist. Its
-documents were routed out one at a time rather than moved wholesale; the reasoning per document is in
-[Plan-001](../../project/plans/001-adopt-vibe-ops-baseline.md)'s Decision Log.
-
-One document remains and is awaiting a decision about where it belongs:
-`v0.1/DA01-02-compiler-behavior-consolidation.md`. Nothing new **MUST** be written here.
+> **`project/pre-release/v<minor>/` is gone.** It held this repo's long-form logs before the record type
+> existed here, and was retired on 2026-08-13 because it is the one location the tooling cannot be told
+> about — every closure ceremony routed to a destination that did not exist. Its ten documents were routed
+> out one at a time rather than moved wholesale, and the folder was removed on 2026-08-14 with the last of
+> them. A log **MUST** go to `project/log/` above. The reasoning per document is in
+> [Plan-001](../../project/plans/001-adopt-vibe-ops-baseline.md)'s Decision Log.
