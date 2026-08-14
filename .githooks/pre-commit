@@ -1,72 +1,49 @@
 #!/usr/bin/env bash
 # pre-commit — run the governance gate before a commit is allowed to land.
 #
-# Wiring only, no check logic: the checks are fragments under scripts/checks/, composed with the
-# runner's built-ins by scripts/checks/_run.sh. To run the identical thing by hand without committing,
-# use scripts/check.sh — never the runner directly (see _run.sh for why a bare invocation is a silent
-# trap).
+# Wiring only, no check logic. To run the identical thing by hand without committing, use
+# scripts/check.sh — which is also where the two shell fragments this repository declares off are
+# declared, with their reasons. Both files export the same variable rather than sharing a sourced file:
+# the sourced file was scripts/checks/_run.sh, whose three-branch runner resolution is exactly what broke
+# and what this migration removed. `git grep VIBE_OPS_DISABLED_CHECKS` still finds every declaration in
+# the workspace, which is the property that shape existed for.
 #
-# `set -e` is deliberately absent: the runner's exit code is captured, never propagated by accident.
+# `set -e` is deliberately absent: the exit code is captured, never propagated by accident.
 #
-# SILENT ON SUCCESS. The runner prints a banner, its composition list, and one line per passing or
-# skipped check — none of which asks for an action. The expensive reader is not the terminal but the
-# agent: a commit made through a tool call puts every one of those lines into a conversation, on every
-# commit, forever. So a clean run says nothing, and a failure says only what failed. GATE_VERBOSE=1
-# gets the full run back.
+# SILENT ON SUCCESS. The expensive reader is not the terminal but the agent: a commit made through a tool
+# call puts every printed line into a conversation, on every commit, forever. So a clean run says nothing
+# and a failure says only what failed — not even the summary, which scripts/check.sh prints because it
+# was asked for. GATE_VERBOSE=1 gets the full run back.
 #
-# To skip once: git commit --no-verify. Wired via `git config core.hooksPath .githooks` — that setting
-# is local and does not travel with a clone, so a tracked hook nobody wired is still silently absent.
+# To skip once: git commit --no-verify. Wired via `git config core.hooksPath .githooks` — local config
+# that no clone inherits, which is also why an outside clone having no gate is not the gap it looks like:
+# it never had one to lose.
 set -uo pipefail
 
+if ! command -v vibe-ops >/dev/null 2>&1; then
+  echo "pre-commit: vibe-ops is not on PATH — the gate cannot run. Commit refused." >&2
+  echo "Install it, or use --no-verify if you accept an unchecked commit." >&2
+  exit 2
+fi
+
 ROOT=$(git rev-parse --show-toplevel)
-CHECK_DIR="$ROOT/scripts/checks"
+cd "$ROOT" || exit 2
 
-# A destination for the reading taken at *this* attempt, whether or not the commit that follows is
-# allowed to happen — which is the whole reason "attempt" is the moment a gate measures. A blocked
-# commit never reaches anything that fires afterwards, and that reading is the data point.
-#
-# Per-clone and .git/-relative: this is neither shared nor meant to travel with a clone. Created here
-# rather than by a fragment, because a fragment must not write outside this directory and mkdir on a
-# path only this hook knows is the honest place for it. Never set for a manual scripts/check.sh run:
-# the population this feeds is commit attempts, and a manual run backs none.
-GIT_DIR=$(git rev-parse --git-dir)
-export GATE_ARTIFACT_DIR="$GIT_DIR/gate-artifacts"
-mkdir -p "$GATE_ARTIFACT_DIR"
+# See scripts/check.sh for why this is here and not in vibeops.config.ts: the shell fragments do not read
+# the config at all. Keep the two copies in step; they are two lines and one grep finds both.
+export VIBE_OPS_DISABLED_CHECKS="links:superseded by the markdown-link gate, which honours the dsl/ docs/ dogfood/ exclusions declared in vibeops.config.ts — this fragment has no population control and reports all three (2026-08-13)
+budget:same finding the budget gate reports, where it is a warning with Track 6 named as its owner (2026-08-13)"
 
-# The fragments' own self-test, when and only when the fragments changed. It costs about as much as the
-# whole gate, and a fragment cannot stop detecting on its own — staging one is the only moment its
-# answer can change.
-if git diff --cached --name-only --diff-filter=ACMR | grep -q '^scripts/checks/'; then
-  if [ -x "$CHECK_DIR/self-test.sh" ]; then
-    if ! "$CHECK_DIR/self-test.sh"; then
-      echo "pre-commit: the fragments' self-test failed — commit refused." >&2
-      exit 1
-    fi
+export NODE_OPTIONS="${NODE_OPTIONS:-} --no-warnings"
+
+RC=0
+for ops in check agents-md governance; do
+  if [ "${GATE_VERBOSE:-}" = "1" ]; then
+    vibe-ops "$ops" --verbose || RC=$?
+  else
+    OUT=$(vibe-ops "$ops" 2>&1) || RC=$?
+    printf '%s\n' "$OUT" | grep -E '^(FAIL|WARN) ' || true
   fi
-fi
+done
 
-if [ ! -f "$CHECK_DIR/_run.sh" ]; then
-  echo "pre-commit: $CHECK_DIR/_run.sh not found — scripts/checks/ is missing or moved." >&2
-  echo "The gate cannot even check its own composition without this file. Commit refused." >&2
-  exit 1
-fi
-# shellcheck source=scripts/checks/_run.sh
-. "$CHECK_DIR/_run.sh"
-run_composed_checks "$ROOT"
-RC=$?
-
-if [ "${GATE_VERBOSE:-}" = "1" ]; then
-  printf '%s\n' "$RUN_OUTPUT"
-  exit "$RC"
-fi
-
-# A failing run prints its FAIL and WARN lines and nothing else — success stays silent even here. A
-# gate-integrity failure has no FAIL line to filter to, so it falls through to the whole message, which
-# is correct: there the message is the finding.
-if [ "$RC" -ne 0 ]; then
-  run_actionable_lines
-  exit "$RC"
-fi
-
-printf '%s\n' "$RUN_OUTPUT" | grep -E '^WARN ' || true
-exit 0
+exit "$RC"
