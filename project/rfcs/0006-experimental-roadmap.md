@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0006: Experimental Roadmap & Open Questions
 
 | Field | Value |

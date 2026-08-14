@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # ADR-0006: Use ts-rs as the Single Source of Truth for AST JSON Contracts
 
 | Field | Value |

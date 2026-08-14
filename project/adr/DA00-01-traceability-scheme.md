@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # DA00-01: Pre-1.0 decision traceability (the DA scheme)
 
 | Field | Value |

@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0022: Forgiving Syntax and Prettifier Architecture
 
 > Migrated from RFC-0021 under [DA00-01](../adr/DA00-01-traceability-scheme.md).

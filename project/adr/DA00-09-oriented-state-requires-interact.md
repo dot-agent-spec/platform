@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # ADR-DA00-09: Orientation Statements Require an Oriented State
 
 | Field | Value |

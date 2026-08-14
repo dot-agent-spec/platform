@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0007: GenUI and Templates
 
 | Field | Value |

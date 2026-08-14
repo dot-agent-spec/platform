@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0011: dot-agent:// scheme and Agent Pack
 
 | Field | Value |

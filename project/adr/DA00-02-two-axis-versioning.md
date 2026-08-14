@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # DA00-02: Two-axis versioning — DSL version vs package versions
 
 > Migrated from legacy ADR-0001 under [DA00-01](DA00-01-traceability-scheme.md).

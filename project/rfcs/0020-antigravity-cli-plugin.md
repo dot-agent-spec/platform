@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0020: Antigravity CLI Plugin & Runtime Hooks
 
 | Field | Value |

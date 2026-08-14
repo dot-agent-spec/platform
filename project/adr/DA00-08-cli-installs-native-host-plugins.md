@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # ADR-DA00-08: CLI Installs Native Host Plugins Instead of Writing Host Config
 
 | Field | Value |

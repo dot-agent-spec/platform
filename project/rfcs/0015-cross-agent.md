@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0015: Cross-Agent Calls
 
 | Field | Value |

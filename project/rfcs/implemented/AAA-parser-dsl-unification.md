@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-AAA: Parser DSL Unification
 
 | Field | Value |

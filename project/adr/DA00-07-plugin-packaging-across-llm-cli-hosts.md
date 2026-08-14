@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # ADR-DA00-07: Package dot-agent as a Portable Plugin Across LLM Coding-Agent CLI Hosts
 
 | Field | Value |
