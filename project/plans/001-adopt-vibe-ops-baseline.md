@@ -579,6 +579,8 @@ budget that the enforcement-ladder framing does not make on its own.
   `<plugin>/templates/adr.md` as literals. The consequence here is silent: those entries examine zero
   files, which produces no findings and reads as clean. This is an upstream question and this plan should
   not work around it — a local override would be a third copy of an answer that already exists twice.
+
+  > Promoted to learning on 2026-08-13
 - ~~**`module-check` does not read `settings.check.disabled`.**~~ **Closed 2026-08-13, the day it was
   opened.** It spawned the seventeen fragments with `GATE_VERBOSE` and nothing else, so a fragment could
   only be declared off through the `VIBE_OPS_DISABLED_CHECKS` environment variable — which only a caller
@@ -606,6 +608,8 @@ budget that the enforcement-ladder framing does not make on its own.
   to and a repository fully current produce the same line. This is the principle the ops layer enforces
   as *zero examined is not a reading*, not applied to this overlay. Upstream, and worth carrying into the
   consolidated `vibe-ops` learning rather than filing here.
+
+  > Promoted to learning on 2026-08-13
 - **What do the other nine `SKIP`s mean?** Ten of seventeen shell fragments skip in this repository, and
   the first one examined turned out to be addressed at the wrong directory rather than inapplicable. The
   remaining nine have not been checked with that question asked. Track 4 makes this cheaper to answer than

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | Done — every work item closed 2026-08-13; the dossier survives only because `vibe-ops task close` is blocked, see below |
 | Created | 2026-08-13 |
 | Author | Danilo Borges |
 | Issue | — (no tracking issue; the design record is Plan-001 Track 4) |
@@ -156,3 +156,15 @@ between commits. 4 before 5 or verification reports the exclusions as findings.
 
 - [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
       runs; a dossier that looks otherwise finished but has this box open is not done.
+
+**Attempted 2026-08-13 and refused, which is Track 7's problem surfacing here.** `vibe-ops task close`
+exits 2 with *the template declares no version, so no record under it can be compared*. Stamping
+`project/templates/task.md` is only the first of three mismatches against `task@3`: this repository's
+template also calls the section `## Closing` where the tool ticks `## Closure`, and has no
+`## Surprises & Discoveries` at all — which is the only input the closure ceremony's routing step reads.
+
+Steps 1–5 of the ceremony ran anyway and are committed: the write-back to Plan-001, the demotion check
+(empty), the propagation, and the routing, whose surviving facts were promoted to the workspace learnings
+base. Only the distil-and-delete step is blocked.
+
+> Promoted to learning on 2026-08-13

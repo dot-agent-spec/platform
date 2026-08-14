@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | Done — all six items closed 2026-08-13; the dossier survives only because `vibe-ops task close` is blocked on the template, see vibe-ops-cli-gate.md |
 | Created | 2026-08-13 |
 | Author | Danilo Borges |
 | Issue | — (no tracking issue; the design record is Plan-001 Track 3) |
@@ -168,3 +168,5 @@ there** rather than leaving it for a sweep.
 
 - [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
       runs; a dossier that looks otherwise finished but has this box open is not done.
+
+> Promoted to learning on 2026-08-13
