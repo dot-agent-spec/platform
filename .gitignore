@@ -27,3 +27,15 @@ graphify-out/
 dogfood/**/examples/
 
 tmp/
+
+# Clone-local vibe-ops configuration. Layers over the committed vibeops.config.ts and holds what is true
+# of one clone on one machine — an operator's plugin path, a personal artifact location. A machine path
+# committed into the tracked config is what the `machine-paths` check exists to catch.
+vibeops.config.local.ts
+vibeops.config.local.mjs
+vibeops.config.local.js
+
+# Written by `vibe-ops harness sync`: which template version this clone was promulgated to, and which
+# ownership boundary it agreed to. State about a working tree, not a product of it — committing it would
+# turn every promulgation into a diff in a file the repository owns.
+vibeops.config.local.json
