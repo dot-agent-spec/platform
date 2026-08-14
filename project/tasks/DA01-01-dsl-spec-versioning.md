@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Stamp DSL/spec version provenance into aboutme.json — DA01-01
 
 | Field | Value |
@@ -163,3 +167,18 @@ real `@dot-agent/compiler` version this task's build-time script will embed — 
 step (item 4 here) after any package version bump, not just once. `dsl/VERSION` itself was bumped from
 `0.1-alpha` to `0.1` as part of the real `0.10.0` package jump, since the public v0.1 milestone is no
 longer a rehearsal.
+
+## Surprises & Discoveries
+
+<!-- Fill this WHILE the work happens; reconstructed at the end it is worthless. One entry per non-obvious
+     fact the work turns up. At closure each is routed: does it hold beyond this repository (-> a workspace
+     learning), can you name the file or package where someone meets it again (-> project/log/), or
+     neither (-> dropped, out loud). -->
+
+- Observation: …
+  Evidence: …
+
+## Closure
+
+- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+      runs; a dossier that looks otherwise finished but has this box open is not done.

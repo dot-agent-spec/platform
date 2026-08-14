@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Compiler Work — DA01-01 §4.3
 
 | Field | Value |
@@ -9,11 +13,17 @@
 | Decision Log | [RFC-0022: Forgiving Syntax and Prettifier](../rfcs/0022-forgiving-syntax-and-prettifier.md) |
 | Depends on | grammar unfreeze (for items 2–4) — completed, task file removed |
 
-Items 2–4 require the grammar unfreeze to be complete. Item 1 (Native States) has no grammar dependency and can ship now.
+## Context
 
----
+The compiler half of [RFC-0022](../rfcs/0022-forgiving-syntax-and-prettifier.md) §4.3, which owns the
+*why* — this dossier owns only what to build and in what order.
 
-## 1. Native States — ship before unfreeze
+Items 2–4 require the grammar unfreeze to be complete; it is, and the task that tracked it has been
+removed. Item 1 (Native States) never had a grammar dependency and can ship on its own.
+
+## Work items
+
+### 1. Native States — ship before unfreeze
 
 **What:** Add `ended` to the compiler linter's known-states allowlist so `transition to ended` does not emit `E005: Undefined state`.
 
@@ -23,7 +33,7 @@ Items 2–4 require the grammar unfreeze to be complete. Item 1 (Native States) 
 
 ---
 
-## 2. AST Context for E006 — after unfreeze
+### 2. AST Context for E006 — after unfreeze
 
 **What:** Upgrade `E006` errors to include the AST context at the point of failure instead of reporting `line 1:1` with a Rust internal type name.
 
@@ -35,7 +45,7 @@ Items 2–4 require the grammar unfreeze to be complete. Item 1 (Native States) 
 
 ---
 
-## 3. Error Code Reform (D4) — after AST Context
+### 3. Error Code Reform (D4) — after AST Context
 
 **What:** Distinguish grammar errors from semantic/mapper errors in user-facing messages so authors know which layer failed and what the fix path is.
 
@@ -50,7 +60,7 @@ We decided to introduce `E007` instead of relying solely on prefixes. The goal i
 
 ---
 
-## 4. Prettifier MVP — after unfreeze
+### 4. Prettifier MVP — after unfreeze
 
 **What:** Build `toCanonicalString(ast)` in `@dot-agent/compiler` using `web-tree-sitter` to re-serialize a parsed DSL file into the canonical, readable form.
 
@@ -76,3 +86,18 @@ We decided to introduce `E007` instead of relying solely on prefixes. The goal i
 3. Error Code Reform    ─ needs AST Context (builds on E006 upgrade)
 4. Prettifier MVP       ─ needs relaxed grammar to canonicalize
 ```
+
+## Surprises & Discoveries
+
+<!-- Fill this WHILE the work happens; reconstructed at the end it is worthless. One entry per non-obvious
+     fact the work turns up. At closure each is routed: does it hold beyond this repository (-> a workspace
+     learning), can you name the file or package where someone meets it again (-> project/log/), or
+     neither (-> dropped, out loud). -->
+
+- Observation: …
+  Evidence: …
+
+## Closure
+
+- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+      runs; a dossier that looks otherwise finished but has this box open is not done.

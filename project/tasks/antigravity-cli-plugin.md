@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Antigravity CLI Plugin Implementation
 
 | Field | Value |
@@ -69,3 +73,18 @@ P0: Implement Hook Adapter in SDK
 P1: Dynamic Tool Sync
 P1: Sidecar Visualizer
 ```
+
+## Surprises & Discoveries
+
+<!-- Fill this WHILE the work happens; reconstructed at the end it is worthless. One entry per non-obvious
+     fact the work turns up. At closure each is routed: does it hold beyond this repository (-> a workspace
+     learning), can you name the file or package where someone meets it again (-> project/log/), or
+     neither (-> dropped, out loud). -->
+
+- Observation: …
+  Evidence: …
+
+## Closure
+
+- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+      runs; a dossier that looks otherwise finished but has this box open is not done.

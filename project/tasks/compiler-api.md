@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Compiler API — Prerequisites for Transpiler Infrastructure
 
 | Field | Value |
@@ -16,7 +20,7 @@ These are concrete API changes to `@dot-agent/compiler` and `@dot-agent/compiler
 
 ---
 
-## Tasks
+## Work items
 
 ### 1. Move `AgentFiles` from SDK to `compiler/core`
 
@@ -147,7 +151,7 @@ export async function loadBundle(bytes: Uint8Array): Promise<TranspileInput>
 
 ---
 
-## Implementation Order
+## Implementation order
 
 Tasks 1 and 2 have no dependencies — do them first (type changes, no logic).  
 Task 3 (`resolveMerges`) depends on 2 (`BehaviorChunk`).  
@@ -159,3 +163,18 @@ Task 5 (`loadBundle`) depends on 1, 2, and 3.
 2 (BehaviorChunk)   ──┼──→ 3 (resolveMerges) ──→ 5 (loadBundle)
 4 (collectMemory)   ──┘
 ```
+
+## Surprises & Discoveries
+
+<!-- Fill this WHILE the work happens; reconstructed at the end it is worthless. One entry per non-obvious
+     fact the work turns up. At closure each is routed: does it hold beyond this repository (-> a workspace
+     learning), can you name the file or package where someone meets it again (-> project/log/), or
+     neither (-> dropped, out loud). -->
+
+- Observation: …
+  Evidence: …
+
+## Closure
+
+- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+      runs; a dossier that looks otherwise finished but has this box open is not done.
