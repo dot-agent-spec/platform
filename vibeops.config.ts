@@ -98,17 +98,21 @@ export default {
           "dogfood/**",
         ],
 
-        // POPULATION, AND THE DISTINCTION IS THE WHOLE POINT: an index over the records is not one of
-        // them. This file lists its folder's contents and was not written from a template, so a version
-        // stamp would assert a shape it does not have. Not debt, and it has no owner — it is never
-        // going to be stamped.
+        // POPULATION, AND THE DISTINCTION IS THE WHOLE POINT: a file that lives among the records is not
+        // necessarily one of them. An index lists its folder's contents and an AGENTS.md is authoring
+        // guidance; neither was written from a template, so a header table or a version stamp would
+        // assert a shape it does not have. Not debt, and with no owner — nothing here is ever going to
+        // be stamped.
         //
-        // `project/rfcs/INDEX.md` is the identical case and gets NO entry here, deliberately. The rfc
-        // gates are composed over the literal `project/rfc/**/*.md` and this repository uses the plural
-        // `rfcs/`, so their population is empty and an exclusion would read as protection while
-        // protecting nothing. See Plan-001's open question — the template half of that literal was
-        // fixed upstream on 2026-08-14; the directory half was not.
+        // The rfc entries were deliberately absent until 2026-08-14 and are here now because the reason
+        // for their absence expired. The rfc gates were composed over the literal `project/rfc/**/*.md`
+        // while this repository uses the plural `rfcs/`, so their population was empty and an exclusion
+        // would have read as protection while protecting nothing. Upstream replaced the ten directory
+        // literals with `<records:<type>>` the same day; the folder became visible, its 23 RFCs with it,
+        // and the two non-records needed declaring for the first time.
         "template-version-log": ["project/log/README.md"],
+        "template-version-rfc": ["project/rfcs/INDEX.md", "project/rfcs/AGENTS.md"],
+        "record-header-rfc": ["project/rfcs/INDEX.md", "project/rfcs/AGENTS.md"],
       },
 
       level: {

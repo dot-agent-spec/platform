@@ -17,8 +17,8 @@ vibe-ops-template: rfc@2
 | Field | Value |
 |---|---|
 | Status | Implemented |
-| Date | 2026-06-25 |
-| Deciders | Danilo Borges |
+| Created | 2026-06-25 |
+| Author | Danilo Borges |
 
 | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) |
 |---|---|---|---|---|
