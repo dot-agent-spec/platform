@@ -57,11 +57,23 @@ export default {
     },
 
     "agents-md": {
-      // A nested AGENTS.md that a writer looks up ON PURPOSE, which Plan-001's Design names as the one
-      // job such a file still does honestly: `project/rfcs/AGENTS.md` is the package-impact authoring
-      // table, and it is deliberately not auto-loaded. Excluded from the population rather than given a
-      // CLAUDE.md, because giving it one would contradict the design decision instead of recording it.
-      ignore: { pairing: ["project/rfcs/AGENTS.md"] },
+      // Two nested AGENTS.md files that must NOT get a sibling, for different reasons. Excluded from the
+      // population rather than repaired, because repairing them would contradict a decision instead of
+      // recording it.
+      //
+      // `project/rfcs/AGENTS.md` is the package-impact authoring table — Plan-001's Design names it as
+      // the one job a nested file still does honestly: detail a writer looks up on purpose.
+      //
+      // `plugins/claude/AGENTS.md` is the harder one, and the reason this list is not merely tidiness.
+      // That folder is a Claude Code plugin: no build, no `files` allowlist, copied byte for byte into
+      // every user's `~/.claude/plugins/cache/`. A `CLAUDE.md` at a plugin root therefore SHIPS to every
+      // user while never loading as project context, and `claude plugin validate` warns about it. The
+      // guardrails live in `.agents/rules/plugin-claude.md` instead, which is paths-scoped and does load.
+      //
+      // Measured 2026-08-13: `authoring-agents-md`'s pairing hook created that exact file automatically
+      // on the next write to the AGENTS.md, because a hook repairing a finding cannot know which findings
+      // a repository has declared out of scope. This entry is what makes the hook agree.
+      ignore: { pairing: ["project/rfcs/AGENTS.md", "plugins/claude/AGENTS.md"] },
 
       // WARN, NOT DISABLED, AND THE DIFFERENCE IS THE POINT. A disabled check reports nothing about
       // anything, so a NEW instance of the same defect would be invisible for as long as the
