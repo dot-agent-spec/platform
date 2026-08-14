@@ -369,7 +369,8 @@ This track exists separately because its work is editing documents, not wiring, 
 a wiring change gets reviewed as a document change. A gate handed over red is the one people switch off
 within the week.
 
-The work is `project/tasks/close-the-red-findings.md` (closed dossier — `git show e9cb6745683708fd807e64b5df6e788a60315919:project/tasks/close-the-red-findings.md`). Its counts
+The work was its own dossier, closed on 2026-08-14 —
+`git show e9cb6745683708fd807e64b5df6e788a60315919:project/tasks/close-the-red-findings.md`. Its counts
 are the authority, not the ones this track was written with: re-measuring after `project/pre-release/`
 was retired moved every figure, and the dossier records why each moved rather than restating a total.
 
