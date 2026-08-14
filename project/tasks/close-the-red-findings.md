@@ -116,15 +116,22 @@ candidate for becoming one). Do not delete the folder while that file is still i
 
 ### 5. `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction — P1
 
-**What:** create the folder, and fix the sentence that contradicts the rule.
+**Done 2026-08-13.** `project/rfcs/rejected/` exists, with a `.gitkeep` — it needed `git add -f`, since
+this repository's `.gitignore` would otherwise swallow it. `GOVERNANCE.md` said a Rejected RFC moves to
+`rfcs/implemented/`, the opposite folder, which destroys the one distinction the two exist to make. The
+rule won because it is the operational surface that loads when someone works inside `project/`.
 
-**Why:** `.agents/rules/governance.md` and `AGENTS.md` both promise `rfcs/rejected/` and it does not
-exist, so the repository's own rule dangles. Separately `GOVERNANCE.md` states a Rejected RFC moves to
-`rfcs/implemented/`, which is the opposite folder and destroys the one distinction the two exist to make.
+Fixing the line improved the diagram past what was asked. It read:
 
-**Change:** create `project/rfcs/rejected/` with a `.gitkeep`; correct `GOVERNANCE.md` to `rfcs/rejected/`.
-The rule wins over `GOVERNANCE.md` here because it is the operational surface that actually loads when
-someone is working inside `project/`.
+```text
+Draft → Review → Accepted → Implemented
+              ↘ Rejected      (→ moved to project/rfcs/implemented/, frozen)
+```
+
+The destination annotation hung off `Rejected` and named `implemented/` — so the *only* terminal state
+carrying a destination was the one carrying the wrong one, and `Implemented` had none at all. Both now
+state their own. The three sources agree: `GOVERNANCE.md`, `.agents/rules/governance.md`, and the tree
+diagram in `AGENTS.md`, which promised both folders and is now true on disk.
 
 ---
 

@@ -53,8 +53,8 @@ Modeled on staged proposal processes (TC39 stages, Rust RFCs). A proposal earns 
 may be rejected at any stage without prejudice.
 
 ```
-Draft → Review → Accepted → Implemented
-              ↘ Rejected      (→ moved to project/rfcs/implemented/, frozen)
+Draft → Review → Accepted → Implemented   (→ moved to project/rfcs/implemented/, frozen)
+              ↘ Rejected                  (→ moved to project/rfcs/rejected/, frozen)
               ↘ Superseded
 ```
 
