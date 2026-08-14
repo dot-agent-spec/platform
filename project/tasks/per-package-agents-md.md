@@ -94,10 +94,30 @@ drifted to line 52; and the same impossible instruction kernel-dsl carried — "
 The `WASM API Reference` table was deleted rather than corrected: `docs/reference/api.md` already holds
 it, and of two copies the hand-written one goes stale first — which is exactly what had happened.
 
-### 4. `packages/compiler` — P1
+### 4. `packages/compiler` — P1 — **AGENTS.md done 2026-08-13, a wider drift named**
 
-**Change:** 86 lines. `README.md` links to `../../architecture_map.md`, which does not resolve; the
-architecture map is at `docs/explanation/architecture/map.md`.
+The README link was already repaired while closing `close-the-red-findings`. The AGENTS.md review found
+something larger, and of the same shape as item 3's.
+
+**Four of its five "Grammar rules to remember" described a grammar RFC-0022 replaced**, and stated them as
+hard requirements — a reader would have hunted parse failures that can no longer occur. `state_body` is
+now `repeat1(choice(...))`, `oriented_state_body` **has zero occurrences in the grammar**, and `agent_decl`
+is `repeat(choice(...))`, so `.description` blocks parse in any order. Every one of those rules moved into
+`src/linter.ts`, which is what RFC-0022 said would happen.
+
+`oriented_state_body` survives in five files. Two are AGENTS.md — this one, corrected, and
+**`packages/tree-sitter/AGENTS.md`, which is not**. The other three are
+`project/implementation-status.md`, its generated `.html`, and
+**`.agents/skills/sync-implementation-status/SKILL.md`**.
+
+**The skill is the one that matters and the one outside this dossier's scope.** An AGENTS.md with no
+sibling never loads, which is why these drifted unnoticed; a skill loads and runs. A skill carrying a node
+name the grammar dropped will mis-map on its next run — which is the failure the root `AGENTS.md` already
+describes happening once to this same skill, over a stale node-name table. It happened again, the same
+way, and that is the argument for a guard rather than a fourth repair.
+
+Also fixed: two grammar paths under `dsl/tree-sitter/`, a pre-flatten location, cited by a sentence telling
+readers to verify node names against them. Same class as kernel-dsl's "do not delete this script".
 
 ### 5. `packages/sdk` — P1
 
