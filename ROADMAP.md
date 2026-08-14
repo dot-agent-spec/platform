@@ -34,6 +34,20 @@ The project tracks **two independent versions** — do not conflate them.
 
 Items that require **opening the grammar** (a change to `@dot-agent/tree-sitter`, which propagates down to every layer) are flagged 🔴. While the DSL is `0.x` the grammar is *preview* and may open; the goal is to open it as few times as possible and freeze it once at v1.0.
 
+### Where each package stands
+
+Feature-level status is [`project/implementation-status.md`](project/implementation-status.md); this is the coarser question of which packages a change can safely assume are current. Only the ones that are *not* simply active are listed.
+
+| Directory | Standing |
+|---|---|
+| `apps/dot-agent-cli/` | ⚠️ Pending v2 update — written against a pre-v2 surface |
+| `apps/vscode-extension/` | ⚠️ Pending v2 update — same |
+| `apps/agy/` | 🛠️ In progress — Antigravity CLI runtime plugin |
+| `plugins/claude/` | 🛠️ In progress — native Claude Code plugin |
+| `packages/transpiler-*` | 🔬 Aspirational — named by [RFC-0018](project/rfcs/0018-transpiler-infrastructure.md), no code |
+
+Everything under `packages/` not listed above is stable and current. `apps/zed-agent/` was removed; it survives only in git history.
+
 ---
 
 ## v0.1 — Conversational `[current milestone]`

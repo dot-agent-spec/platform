@@ -99,6 +99,18 @@ export default {
           // Dated write-once snapshots, never retro-corrected — .agents/rules/dogfood.md.
           "dogfood/**",
         ],
+
+        // POPULATION, AND THE DISTINCTION IS THE WHOLE POINT: an index over the records is not one of
+        // them. This file lists its folder's contents and was not written from a template, so a version
+        // stamp would assert a shape it does not have. Not debt, and it has no owner — it is never
+        // going to be stamped.
+        //
+        // `project/rfcs/INDEX.md` is the identical case and gets NO entry here, deliberately. The rfc
+        // gates are composed over the literal `project/rfc/**/*.md` and this repository uses the plural
+        // `rfcs/`, so their population is empty and an exclusion would read as protection while
+        // protecting nothing. See Plan-001's open question — the template half of that literal was
+        // fixed upstream on 2026-08-14; the directory half was not.
+        "template-version-log": ["project/log/README.md"],
       },
 
       level: {
@@ -110,6 +122,18 @@ export default {
         "record-header-task": "warn",
         // One malformed reference at project/plans/002:467 — an abbreviated sha the gate cannot verify.
         breadcrumb: "warn",
+
+        // FIVE RECORDS, AND EACH NEEDS A JUDGEMENT RATHER THAN A STAMP — Plan-001 Track 7 owns them.
+        // `project/plans/004` is an RFC wearing a plan filename, so its version is not the question its
+        // shape raises; the four task dossiers are live, none is Done, and all four are divergences of a
+        // template that predates promulgation, which means no migration note reaches them. They are
+        // brought to task@3 by hand at their own closure, as the three closed on 2026-08-13/14 were.
+        //
+        // WARN RATHER THAN DISABLED, ON THIS REPOSITORY'S STANDING RULE: a disabled check reports
+        // nothing about anything, so a NEW record born without a stamp would be invisible — and the
+        // template now carries one, so any record written from today onward gets it for free. This entry
+        // exists to stop being needed.
+        "template-version-undeclared": "warn",
       },
     },
   },

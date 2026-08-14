@@ -156,10 +156,10 @@ correctness target and why Track 2 relocates rather than deletes.
       the dossier's to make: `DA01-02` does not become an ADR, so `project/pre-release/` is gone entirely.
       Item 1 closed without this track touching a single link — every one was carried off by the work that
       owned it — which made verification the whole job rather than a formality.
-- [ ] **Track 6 — The `AGENTS.md` budget, again.** Added 2026-08-13. Track 2's own retrospective predicted
-      this: it landed at exactly 150 of 150 and named the next addition as the risk. Run
-      `/vibe-ops:authoring-agents-md` rather than repeating the relocation by hand — the 2026-08-13 audit
-      declared the file's authoring quality unchecked, and that is the gap a hand pass leaves open again.
+- [x] **Track 6 — The `AGENTS.md` budget, again.** Added 2026-08-13, closed 2026-08-14 at **113 lines**,
+      well under the 150 the budget asks for. Track 2's own retrospective predicted the regression — it
+      landed at exactly 150 of 150 and named the next addition as the risk — and the headroom is the
+      answer to that: a file at 113 survives the next three additions without a relocation exercise.
 - [ ] **Track 7 — Records and templates carry a version.** Added 2026-08-13, reshaped the same day once
       `vibe-ops harness` shipped, and **half executed 2026-08-14**: the five templates are promulgated
       with this repository's four `adopt` customisations re-applied on top, and thirty-two of the forty
@@ -585,6 +585,33 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   ordering rule exists to prevent.
   **Date / Author:** 2026-08-14 / Danilo Borges
 
+- **Decision:** Relocate the `AGENTS.md` excess into a new path-scoped rule and into `ROADMAP.md`, and
+  delete the package table rather than shrink it.
+  **Rationale:** Track 2 brought the file to exactly 150 by relocation and named the next addition as the
+  risk; it reached 174. Compressing again would buy the same fragile margin, so this pass cut to 113 by
+  moving whole subjects out. The self-improvement-loop rules, model tiering and the anti-forking rule
+  became `.agents/rules/instruction-file-hygiene.md`, scoped to `.agents/**` — they are read exactly when
+  someone edits a skill, which is strictly better than always-on, and moving a fact *up* the enforcement
+  ladder is the only thing that raises compliance. The package table's `Purpose` column restated what a
+  README and the code graph answer, so it went; its `Status` column had **no other home** — verified,
+  `implementation-status.md` is per feature, not per package — so it moved to `ROADMAP.md`, where
+  maturity already has a legend. The layout tree shrank to the rows a directory listing does not explain,
+  on the strength of the repository's own `graphify-out/` index.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
+- **Decision:** Declare `template-version-undeclared` as `warn`, and exclude `project/log/README.md` from
+  the log population — but give `project/rfcs/INDEX.md` no exclusion at all.
+  **Rationale:** the first two are this repository's standing distinction between a finding that is real
+  and owned, and a file that is not a member of the population. Five records need a judgement rather than
+  a stamp and Track 7 owns them, so `warn` keeps them visible while a *newly* unstamped record would still
+  be reported — and the template now carries a stamp, so nothing written from today onward can join them.
+  An index is not a record and never will be stamped, so it is a population statement. The third is the
+  interesting one: `INDEX.md` is the identical case and gets nothing, because the rfc gates are composed
+  over `project/rfc/**/*.md` and this repository uses `rfcs/`. Excluding a file from an empty population
+  would read as protection while protecting nothing, which is the same class of lie as a check that skips
+  silently.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
 ## Outcomes & Retrospective
 
 **Template migration, 2026-08-13: `plan@0.1` → `plan@3`.** The `0.1 → 0.2` jump drops `## Progress` and
@@ -676,6 +703,23 @@ budget that the enforcement-ladder framing does not make on its own.
   Upstream already knows the symptom without having fixed the cause: the gate's own source says its skip
   reason was rewritten *because* the old wording claimed a repository kept no records of that type while
   holding "9 ADRs, 25 RFCs and 4 plans" — this repository's exact counts.
+
+  **Half answered upstream the same day, and the half that landed is the one that mattered here.** The
+  template literal became a placeholder the resolver fills — `options: { template: "<template:adr>" }` —
+  so `records.templates` now reaches the gates, and `template-version` went from six silent skips to a
+  live reading of every record in one rebuild. It found what a whole day of work had left: two plans
+  behind, five records undeclared, and one index it should never have read. **The directory literals did
+  not move.** `record-header-rfc` and `template-version-rfc` are still composed over
+  `project/rfc/**/*.md`, so this repository's twenty-three RFCs in the plural `rfcs/` remain invisible to
+  both — an empty population that reads as a clean one. So the question stays open, narrowed to
+  `records.dirs`, and the config now says so at the point where an exclusion would otherwise have looked
+  like protection.
+
+  **A second, smaller fact fell out of the same rebuild:** the CLI on `PATH` and the `vibe-ops` MCP server
+  disagreed about this repository for the length of a turn — the CLI ran the gates and reported six
+  failures while the MCP tool reported them all skipping. The server holds the build it started with, so
+  a rebuild is live for the terminal and stale for the tools until the session restarts it. Worth knowing
+  before treating a disagreement between the two surfaces as a bug in either.
 
   > Promoted to learning on 2026-08-13
 - ~~**`module-check` does not read `settings.check.disabled`.**~~ **Closed 2026-08-13, the day it was
