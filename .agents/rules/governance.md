@@ -92,9 +92,9 @@ deleted at closure — the doing goes to the dossier, the design stays in the pl
 If a plan carries a GitHub issue, the **issue owns status and the executive summary; the file owns the
 design and the working record**. The issue closes when the last track lands; the plan file does not.
 
-At closure use `/vibe-ops:close-plan` — retrospective against the plan's own goals, every `Surprises &
-Discoveries` entry routed to a durable surface, the demotion check run, living docs propagated, issue
-closed and **the file kept**.
+At closure use `/vibe-ops:close-plan` — retrospective against the plan's own goals, the demotion check
+run, living docs propagated, issue closed and **the file kept**. It routes nothing: what the work taught
+was written into the task dossier each track spawned and was discharged when that dossier closed.
 
 ### Task (`project/tasks/`)
 
@@ -113,10 +113,14 @@ or a DA decision owns the *why* (`0018-transpiler-core.md`, `DA01-01-grammar-unf
 prefix the task only needs to say *what* and *in what order* — always link the source document in the
 header's `Sources` row.
 
+A dossier carries `## Surprises & Discoveries`, and it is the **only** record that does — the doing is
+written here, while it happens, because this file is deleted at closure and so its notes are discharged by
+construction. A note written into the permanent plan instead stays pending forever.
+
 At closure use `/vibe-ops:close-task` — it writes back to the source doc, propagates to living docs,
-spawns an ADR if a hard-to-reverse decision emerged, **routes each learning** to a durable surface, then
-distills and deletes the dossier. Never skip the write-back or the routing: those are what keep the docs
-from drifting and keep a learning from being deleted along with the file.
+spawns an ADR if a hard-to-reverse decision emerged, **routes every `Surprises & Discoveries` entry** to a
+durable surface, then distills and deletes the dossier. Never skip the write-back or the routing: those
+are what keep the docs from drifting and keep a learning from being deleted along with the file.
 
 ### Pre-release log (`project/pre-release/v<minor>/`)
 

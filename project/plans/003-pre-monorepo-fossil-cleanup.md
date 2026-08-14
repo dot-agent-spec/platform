@@ -1,3 +1,7 @@
+---
+vibe-ops-template: plan@0.1
+---
+
 # Plan-003: Pre-Monorepo Fossil Cleanup and Dependency Security Baseline
 
 | Field | Value |

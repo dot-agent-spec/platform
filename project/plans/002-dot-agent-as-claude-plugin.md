@@ -1,3 +1,7 @@
+---
+vibe-ops-template: plan@0.1
+---
+
 # Plan-002: dot-agent as a Claude Code Plugin
 
 | Field | Value |
