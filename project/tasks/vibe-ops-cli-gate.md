@@ -184,7 +184,7 @@ discharged rather than re-route.
 
 ## Closure
 
-- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+- [x] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
       runs; a dossier that looks otherwise finished but has this box open is not done.
 
 **Attempted 2026-08-13 and refused twice, which is Track 7's problem surfacing here.** First
