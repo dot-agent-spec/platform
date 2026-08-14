@@ -71,10 +71,28 @@ never existed, and repoint or delete accordingly. Do not create an `API.md` to s
 reference. This folder is the Claude Code plugin surface, so its `AGENTS.md` is also the most likely to
 have drifted against `plugin.json`.
 
-### 3. `packages/parser-dsl` — P1
+### 3. `packages/parser-dsl` — P1 — **AGENTS.md done 2026-08-13, two files left**
 
-**Change:** 157 lines at the 2026-07-30 survey. Its `README.md` → `LICENSE` link **now resolves** — that
-file was created by the license-text sweep — so only the content review and the `CLAUDE.md` remain.
+157 lines to 62, and the review found a terminology drift larger than this dossier's scope.
+
+**`intent_trigger` is a node name the grammar no longer has.** The DA01-01 rename replaced it with
+`intent_handler`, and the code moved: seventeen files use the new name. The old one survives in exactly
+four, of which **three are this package's own documentation** — `AGENTS.md`, `README.md`, and
+`docs/reference/api.md`. A reader following any of them looks for a node that is not there.
+
+`AGENTS.md` is corrected. **`README.md` and `docs/reference/api.md` are not**, and they are the open half
+of this item. They belong to the same defect but not to the same fix: `.agents/rules/doc-sync.md` already
+says a grammar change obliges the package docs, so this is that rule going unenforced rather than a
+missing instruction. Whoever closes it should ask whether the obligation deserves a guard instead of a
+third repair.
+
+Also fixed while here: the build command named `scripts/build-wasm.sh` when the script is shared at the
+repository root and reached as `../../scripts/build-wasm.sh`; a `src/analysis.rs:66` reference that had
+drifted to line 52; and the same impossible instruction kernel-dsl carried — "upgrade the
+`dot-agent-tree-sitter` version in `Cargo.toml`" against a `path` dependency that has no version.
+
+The `WASM API Reference` table was deleted rather than corrected: `docs/reference/api.md` already holds
+it, and of two copies the hand-written one goes stale first — which is exactly what had happened.
 
 ### 4. `packages/compiler` — P1
 
