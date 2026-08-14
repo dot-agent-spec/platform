@@ -125,17 +125,17 @@ export default {
         // One malformed reference at project/plans/002:467 — an abbreviated sha the gate cannot verify.
         breadcrumb: "warn",
 
-        // FIVE RECORDS, AND EACH NEEDS A JUDGEMENT RATHER THAN A STAMP — Plan-001 Track 7 owns them.
-        // `project/plans/004` is an RFC wearing a plan filename, so its version is not the question its
-        // shape raises; the four task dossiers are live, none is Done, and all four are divergences of a
-        // template that predates promulgation, which means no migration note reaches them. They are
-        // brought to task@3 by hand at their own closure, as the three closed on 2026-08-13/14 were.
+        // RAISED TO FAIL ON 2026-08-14, WHICH IS THE POINT OF THE WHOLE EXERCISE. These two were `warn`
+        // for one day while Plan-001 Track 7 migrated the population: 43 of 46 records carried no stamp
+        // at the start and every one of them now does, so a warning that fires on nothing is a warning
+        // people learn to scroll past. The upgrade guide prescribes exactly this moment — the level is
+        // correct mid-migration and wrong for a repository that has finished one.
         //
-        // WARN RATHER THAN DISABLED, ON THIS REPOSITORY'S STANDING RULE: a disabled check reports
-        // nothing about anything, so a NEW record born without a stamp would be invisible — and the
-        // template now carries one, so any record written from today onward gets it for free. This entry
-        // exists to stop being needed.
-        "template-version-undeclared": "warn",
+        // What this buys: the templates carry a stamp, so a record scaffolded from today onward inherits
+        // it for free, and the only way to produce an unstamped or behind record now is to hand-write one
+        // — which is the case worth stopping a commit for.
+        "template-version-undeclared": "fail",
+        "template-version-behind": "fail",
       },
     },
   },

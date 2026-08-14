@@ -160,13 +160,13 @@ correctness target and why Track 2 relocates rather than deletes.
       well under the 150 the budget asks for. Track 2's own retrospective predicted the regression — it
       landed at exactly 150 of 150 and named the next addition as the risk — and the headroom is the
       answer to that: a file at 113 survives the next three additions without a relocation exercise.
-- [ ] **Track 7 — Records and templates carry a version.** Added 2026-08-13, reshaped the same day once
-      `vibe-ops harness` shipped, and **half executed 2026-08-14**: the five templates are promulgated
-      with this repository's four `adopt` customisations re-applied on top, and thirty-two of the forty
-      records are stamped. Eight remain and none is a stamping job — plans 002 and 003 are genuinely
-      `plan@0.1` and their migration routes each `Surprises & Discoveries` entry through the promotion
-      test, plan 004 is an RFC wearing a plan filename, and the five live task dossiers are local
-      divergences no migration note can reach. Step 4 stays untaken until they are done.
+- [x] **Track 7 — Records and templates carry a version.** Added 2026-08-13, reshaped the same day once
+      `vibe-ops harness` shipped, executed and closed 2026-08-14. Five templates promulgated with this
+      repository's four `adopt` customisations re-applied on top; **every record now declares a version**,
+      the only exception being `project/rfcs/INDEX.md`, declared as population rather than debt because an
+      index is not a record. Step 4 is taken: `template-version-undeclared` and `template-version-behind`
+      are both `fail`, which the upgrade guide prescribes for a repository that has finished migrating and
+      warns against for one still in it.
 - [ ] Run `/vibe-ops:close-plan` — retrospective against the goals, the demotion check, living docs
       propagated. The plan file itself is kept.
 
@@ -347,20 +347,41 @@ the gitignored `vibeops.config.local.json`). Thirty-two records stamped: nine AD
 both jumps being section-preserving by their own notes, verified as thirty-two diffs of exactly `+4/-0`.
 The two finished dossiers were repaired by hand and closed.
 
-**Eight records remain, and none of them is a stamping job.** Plans 002 and 003 carry `## Progress` and
-`## Surprises & Discoveries`, so they are genuinely `plan@0.1` and their migration routes every Surprises
-entry through the promotion test — judgement per entry, not a marker insert. Plan 004 is an RFC wearing a
-plan filename (`1. Summary`, `2. Motivation`, `3. Specification`), which is a shape question rather than a
-version one. The five live task dossiers are all local divergences, three of them predating these
-conventions entirely; none is `Done`, so the migration note's skip rule does not retire them.
+**The remaining eight were finished the same day, and not one was a stamping job.**
 
-**Step 4 is deliberately not taken yet, and would be theatre if it were.** Raising
-`template-version-behind` to `fail` is prescribed for a repository that has *finished* migrating, and
-eight records say this one has not. It would also change nothing measurable: `vibe-ops governance` reported
-`13 gates, 0 failed` while forty-three records carried no stamp, because the gate flags a record that is
-*behind*, not one that is *unstamped* — and `template-version-rfc` runs over `project/rfc/**/*.md`, a
-folder this repository does not have. That is the third instance of the open question below about literal
-paths in the upstream ops, now with a measurement attached.
+Plans 002 and 003 were genuinely `plan@0.1`, and the jump's rule is that `## Progress` and
+`## Surprises & Discoveries` are deleted only once every entry has a destination — so the migration was
+the routing, and the template change its consequence. Forty-one entries; **seven promoted**, all of them
+facts about a *tool* (npm, Dependabot, git, the Claude Code host) and none about this repository. That
+split is not a coincidence: it is exactly the category a repository-level closure has no row for, which
+is why plan 003's own closure had already routed three entries to surfaces here and explicitly declined a
+fourth for being "true of any npm-workspaces repository". The rest were discharged or dropped out loud,
+and each plan's retrospective records which.
+
+Plan 004 was **not** an RFC wearing a plan filename — that reading was wrong. Its 2026-08-13 banner
+recorded a deliberate reclassification, on this repository's own definition of a plan, that left the
+numbered RFC-style headings alone. Correct for a move whose point was the classification, and the blocker
+afterwards. Its headings were remapped with nothing deleted, and the conversion earned more than a shape:
+`Current State`'s buried caveat — every track reads as done from static evidence and **none has been
+observed working** — became the reason no track is ticked, plus a checkbox of its own.
+
+The four live task dossiers were hand-shaped, none being `Done` and none written from any version of the
+norm. `DA01-01-compiler-work.md` was the real one: no `## Context`, and its four numbered top-level
+sections *were* the work items.
+
+**Step 4 is taken.** `template-version-undeclared` and `template-version-behind` are both `fail`. They
+were `warn` for one day, which is the correct level mid-migration and the wrong one after — a warning that
+fires on nothing is a warning people learn to scroll past. The templates carry a stamp, so a record
+scaffolded from today inherits it; the only way to produce an unstamped record now is to hand-write one.
+
+**What made the gate worth raising happened mid-track, upstream.** For most of this work
+`template-version` was inert here: `governance` reported `13 gates, 0 failed` over forty-three unstamped
+records, because the ops composition named `<plugin>/templates/adr.md` and `project/rfc/**/*.md` as
+literals. Both became resolver placeholders — `<template:adr>`, `<records:rfc>` — and the gate went from
+six silent skips to a live reading. Its first honest run found what a day of work had left, and one thing
+nobody had been looking for: `RFC-0022` carried `Date` and `Deciders` where an RFC declares `Created` and
+`Author`, a leftover from its own reclassification, invisible for as long as the gate was addressed at a
+folder this repository does not have.
 
 ### Track 5 — Close the findings the gate had to be handed over red with
 
@@ -705,8 +726,23 @@ budget that the enforcement-ladder framing does not make on its own.
   than by the prose obligation in `AGENTS.md`? That would move it to the top of the enforcement ladder and
   make part of the `## Keeping docs in sync` table deletable — but it needs the previous question answered
   first.
-- **Should the gates read `records.dirs` / `records.templates`, or should this repository declare gate
-  paths a second time?** Opened 2026-08-13 by Track 4. `vibe-ops` already resolves a record type's folder
+- ~~**Should the gates read `records.dirs` / `records.templates`, or should this repository declare gate
+  paths a second time?**~~ **Closed 2026-08-14, upstream, in two halves on the same day.** The template
+  literal became `<template:<type>>` and the ten directory literals became `<records:<type>>`, both
+  resolved by the records resolver — so the `adopt` decisions Track 1 made are now read by the gates
+  instead of hidden from them. The candidate map is named in core for the four types the tool ships and a
+  type it does not name resolves by the generic `project/<type>` convention, which is how `log`,
+  `research` and a custom type all work without an entry.
+
+  One deliberate divergence from the resolver is worth recording, because it is the reason the fix is
+  safe: **a declared directory is used even when it does not exist.** `findDir` throws there, which is
+  right for a verb about to write and wrong for a gate, where throwing aborts the whole run over
+  configuration. Examining zero files against the path the repository named is visible in the report and
+  attributable to the declaration; a silent fallback to somewhere else is neither. This repository proved
+  the value within the hour: making `project/rfcs/` readable surfaced a header defect in `RFC-0022` that
+  had been invisible for as long as the gate was pointed at `project/rfc/`.
+
+  Originally opened 2026-08-13 by Track 4. `vibe-ops` already resolves a record type's folder
   and template through a search order that *includes* this repository's plural `project/rfcs/` and its own
   `project/templates/`, with a config key to override — the exact `adopt` decisions Track 1 made. But that
   resolver serves the records module only; the governance ops names `project/rfc/**/*.md` and
