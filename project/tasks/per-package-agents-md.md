@@ -119,26 +119,36 @@ way, and that is the argument for a guard rather than a fourth repair.
 Also fixed: two grammar paths under `dsl/tree-sitter/`, a pre-flatten location, cited by a sentence telling
 readers to verify node names against them. Same class as kernel-dsl's "do not delete this script".
 
-### 5. `packages/sdk` — P1
+### 5. `packages/sdk` — P1 — **decided 2026-08-13: it does not get one**
 
-**What:** the only workspace package with **no `AGENTS.md` at all**.
+The only workspace package with no `AGENTS.md`, found by the audit rather than by the 2026-07-30 survey,
+which counted the eight that existed. The item asked whether it needs one. It does not, and the check was
+to look for a fact that would earn a line and find that each already has a better home:
 
-**Why:** it was never on the 2026-07-30 survey, which counted the eight that existed. Found by the
-2026-08-13 audit.
+| Candidate | Already lives in |
+|---|---|
+| The public surface — three exports | `README.md` § Public API, and the exported types |
+| Build, typecheck, test | `README.md` § Development; the scripts are stock `tsdown` / `tsc` / `node --test` |
+| **The call-order contract** — handlers before `start()`, resolver before `start()` | `README.md` § Quick start, numbered, with **before** in bold both times, plus comments at the call sites in `src/session.ts` |
+| A kernel effect obliging a handler here | [`.agents/rules/doc-sync.md`](../../.agents/rules/doc-sync.md), which loads on its own |
 
-**Change:** decide first whether it needs one. A package whose surface is fully described by its README
-and types may not — and writing a file that restates them is the drift this task exists to clean up. If it
-does need one, write it from what the code does today rather than from a sibling package's file.
+The call-order contract is the one that could have justified a file — it is a real invariant and getting
+it wrong fails at runtime. It is also already stated more clearly than a new file would state it.
 
-### 6. `dogfood/mentor-agent` — P2
+**Writing one anyway would have produced the exact defect this dossier exists to remove**: a seventh
+nested `AGENTS.md` restating a README, never loading, drifting from it on the first change. Five source
+files and three exports do not need an entry map.
 
-**What:** a zero-byte `AGENTS.md`.
+Recorded rather than left silent, so the next audit finds a decision instead of a gap and does not
+re-open it.
 
-**Why:** an empty instruction file is a promise of guidance that is not there.
+### 6. `dogfood/mentor-agent` — P2 — **done 2026-08-13: deleted**
 
-**Change:** delete it. `dogfood/` is already governed by `.agents/rules/dogfood.md`, path-scoped to
-`dogfood/**`, which is the surface that actually loads — that rule is why a nested file here has no job.
-Only fill it instead if this specific agent folder needs something the rule cannot say.
+Zero bytes, and the only `AGENTS.md` anywhere under `dogfood/`. An empty instruction file promises
+guidance that is not there, and this one had a surface already doing the job properly:
+`.agents/rules/dogfood.md` is path-scoped to `dogfood/**`, carries the guardrail against citing a snapshot
+as current behavior, and — unlike a nested file with no sibling — actually loads. Nothing was relocated
+because there was nothing in it.
 
 ---
 
