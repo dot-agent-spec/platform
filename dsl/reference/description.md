@@ -82,7 +82,7 @@ persona analyst-persona.md
 behavior analyst.behavior
 ```
 
-The compiler reads this field to locate the entry file, then recursively follows all `merge` declarations to produce the consolidated `agent.behavior` bundle. If this block is absent the compiler throws `E_DESC`. If the path is absolute or escapes the agent root, E014 is emitted. Use `PackOptions.description` to override `.description` file discovery, but the `behavior` block inside the file is always the authoritative source for the entry file name.
+The compiler reads this field to locate the entry file, then recursively follows all `merge` declarations to produce the consolidated `agent.behavior` bundle. If this block is absent the compiler throws `E_DESC`. If the path is absolute or escapes the agent root, E014 is emitted — the same check every path-bearing statement gets, because a bundle travels and a path climbing out of the root would carry the author's filesystem with it. A symlink inside the root is the one form that resolves outside it and is allowed, as the sanctioned way to share a behavior file between projects; what that costs is the author's responsibility. The full trust boundary is [the compiler's path safety model](../../packages/compiler/docs/concepts/pipeline.md#path-safety-and-the-trust-boundary). Use `PackOptions.description` to override `.description` file discovery, but the `behavior` block inside the file is always the authoritative source for the entry file name.
 
 ### `requires` — Runtime Prerequisites
 

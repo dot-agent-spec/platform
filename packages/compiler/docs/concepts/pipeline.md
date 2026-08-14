@@ -100,6 +100,39 @@ It is used by the language server to render the Mermaid flow-graph panel and by 
 8. hash + buildAboutme + JSZip → write .agent bundle
 ```
 
+### Path safety and the trust boundary
+
+Every path-bearing statement — `merge`, `behavior <path>` in the `.description`, `persona`, `guide`,
+`teach` — is resolved against the agent root and rejected if it escapes, as `E014`. The reason is that a
+bundle is distributed: a relative path climbing out of the root (`merge "../../projects/secret"`) would
+carry the author's filesystem structure, and their file contents, to whoever installs the agent. A
+behavior file written by an LLM can produce one of those innocuously, or under prompt injection.
+
+Consolidation is what makes the check sufficient. The rejected alternative was to bundle sources at their
+original relative depth and rewrite `merge` paths inside them, which needs a Rust-side `.behavior`
+serializer — an AST round-trip that has to keep pace with every grammar change. Flattening the graph at
+compile time removes both the writer and the runtime path resolution: the kernel receives one validated
+AST with no external references left to resolve.
+
+**Symlinks are followed, and that is a deliberate boundary rather than an oversight.** A symlink inside
+the agent root pointing at a shared file elsewhere is the sanctioned way to reuse one behavior file across
+projects, so the compiler resolves it and bundles the content. The bundle key is always the merge
+declaration path relative to the agent root — never the link target's absolute path — so the reuse leaks
+no filesystem structure. What it does mean is that a symlink is the one path form the platform does not
+police:
+
+| Threat | Caught by | Whose responsibility |
+|---|---|---|
+| `merge "../../.env"` — relative escape | `E014`, at compile time | the platform |
+| `merge "/etc/passwd"` — absolute path | `E014`, at compile time | the platform |
+| Any file that is not valid `.behavior` syntax | `E004`, at compile time | the platform |
+| A symlink inside the root resolving outside it | nothing — allowed by design | **the agent author** |
+| A file hand-crafted to be both secret and valid `.behavior` syntax | nothing | **the agent author** |
+
+The last two rows are the trust boundary: format validation is the security layer, and an author who
+points a symlink at something private has expressed intent the compiler cannot distinguish from
+legitimate reuse.
+
 ### What gets bundled: the linked-only rule
 
 Content files are **not** swept out of `guides/` and `knowledge/`. A file ships only when a
@@ -129,6 +162,11 @@ knowledge/           — files named by a `teach` statement (optional)
 ```
 
 `agent.behavior` is always the canonical consolidated name regardless of what the entry file is called. `files.json.behaviors` lists the merge-chain source paths for reference.
+
+The kernel resolves `merge` too — `flatten_merges` in `kernel-dsl/src/engine/mod.rs`, reached through
+`load_behavior_with_bundle`. That is not dead code left behind by consolidation: it is the path taken in
+**dev mode**, where source files are loaded directly without packing. A compiled bundle never uses it,
+because `agent.behavior` arrives with no `merge` statements left to resolve.
 
 The resulting `.agent` ZIP is self-describing: `aboutme.json` contains the agent ID, schema version, and SHA-256 integrity digest; `files.json` maps logical roles to paths inside the archive.
 
