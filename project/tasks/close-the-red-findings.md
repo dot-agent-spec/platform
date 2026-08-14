@@ -201,11 +201,15 @@ on a decision that was not this dossier's to make.
   `skills/` directory* while two skills sat in `.agents/skills/`.
   **Carried to Plan-001's open questions**, which is where the upstream half of this already lives.
 
+  > Promoted to learning on 2026-08-14
+
 - Observation: deleting a record is never only a deletion, and the cost lands on documents that never
   mentioned the record by name.
   Evidence: removing `project/pre-release/` broke a link in an accepted ADR, left a stale row in the root
   `AGENTS.md` layout tree, and left `ROADMAP.md` pointing readers at the folder **inside a code span** —
   invisible to the `markdown-link` gate, which reads links. Only the ADR was caught mechanically.
+
+  > Promoted to learning on 2026-08-14
 
 ## Closure
 
