@@ -1,5 +1,5 @@
 ---
-description: Lifecycles for project/ governance artifacts (ADR / RFC / plan / task / pre-release log) — the DA numbering scheme, when each is immutable, frozen, permanent or ephemeral, and which skill closes which.
+description: Lifecycles for project/ governance artifacts (ADR / RFC / plan / task / log) — the DA numbering scheme, when each is immutable, frozen, permanent or ephemeral, and which skill closes which.
 paths: ["project/**"]
 ---
 
@@ -142,4 +142,4 @@ and optionally its own log.
 > about — every closure ceremony routed to a destination that did not exist. Its ten documents were routed
 > out one at a time rather than moved wholesale, and the folder was removed on 2026-08-14 with the last of
 > them. A log **MUST** go to `project/log/` above. The reasoning per document is in
-> [Plan-001](../../project/plans/001-adopt-vibe-ops-baseline.md)'s Decision Log.
+> [Plan-001](../../project/plans/shipped/001-adopt-vibe-ops-baseline.md)'s Decision Log.

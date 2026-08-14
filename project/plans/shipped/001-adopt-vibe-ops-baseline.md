@@ -6,10 +6,10 @@ vibe-ops-template: plan@3
 
 | Field | Value |
 |---|---|
-| Status | In Progress |
+| Status | Shipped |
 | Created | 2026-07-30 |
 | Author | Danilo Borges |
-| Related | [DA00-01](../adr/DA00-01-traceability-scheme.md) (the DA numbering scheme this plan preserves) |
+| Related | [DA00-01](../../adr/DA00-01-traceability-scheme.md) (the DA numbering scheme this plan preserves) |
 
 ---
 
@@ -167,7 +167,7 @@ correctness target and why Track 2 relocates rather than deletes.
       index is not a record. Step 4 is taken: `template-version-undeclared` and `template-version-behind`
       are both `fail`, which the upgrade guide prescribes for a repository that has finished migrating and
       warns against for one still in it.
-- [ ] Run `/vibe-ops:close-plan` — retrospective against the goals, the demotion check, living docs
+- [x] Run `/vibe-ops:close-plan` — retrospective against the goals, the demotion check, living docs
       propagated. The plan file itself is kept.
 
 ### Track 1 — Governance surfaces
@@ -193,7 +193,7 @@ section reachable from where it now lives.
 Eight packages, apps and plugins carry an `AGENTS.md`, together about 980 lines, and **not one of them has
 a sibling `CLAUDE.md`** — so none of that guidance ever enters context. That is the same defect Track 1
 fixed inside `project/`, at four times the volume. Several also link to standalone GitHub repositories
-that were archived when this monorepo was flattened ([DA00-05](../adr/DA00-05-monorepo-flatten.md)); the
+that were archived when this monorepo was flattened ([DA00-05](../../adr/DA00-05-monorepo-flatten.md)); the
 canonical code is under `packages/` now, so those links send a reader to a dead tree.
 
 The fix per folder is three steps, in this order:
@@ -445,7 +445,7 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   DA `DA<minor>-<seq>` numbering for ADRs — do not rename any of them to the vibe-ops defaults (`rfc/`,
   `log/`, `NNNN`).
   **Rationale:** All three are referenced by name across the repository's own documents and, in the case of
-  DA numbering, by an accepted decision record ([DA00-01](../adr/DA00-01-traceability-scheme.md)) that
+  DA numbering, by an accepted decision record ([DA00-01](../../adr/DA00-01-traceability-scheme.md)) that
   argues for it explicitly. The baseline's own convergence policy treats a consistent, deliberately-chosen
   name as something to adopt rather than migrate. Renaming would break inbound links to buy nothing.
   **Date / Author:** 2026-07-30 / Danilo Borges
@@ -872,10 +872,10 @@ budget that the enforcement-ladder framing does not make on its own.
 
 ## Related
 
-- [DA00-01](../adr/DA00-01-traceability-scheme.md) — the DA numbering scheme, preserved by this plan.
-- [DA00-03](../adr/DA00-03-model-tiering-for-agent-routing.md) — model tiering; Track 2 proposes reducing
+- [DA00-01](../../adr/DA00-01-traceability-scheme.md) — the DA numbering scheme, preserved by this plan.
+- [DA00-03](../../adr/DA00-03-model-tiering-for-agent-routing.md) — model tiering; Track 2 proposes reducing
   the `AGENTS.md` section that summarises it to a pointer.
-- [DA00-05](../adr/DA00-05-monorepo-flatten.md) — the monorepo flatten that archived the standalone package
+- [DA00-05](../../adr/DA00-05-monorepo-flatten.md) — the monorepo flatten that archived the standalone package
   repositories whose stale links Track 3 cleans up.
 - <https://github.com/entelekheia-ai/vibe-ops> — the plugin defining the baseline.
 - <https://github.com/entelekheia-ai/vibe-ops/issues/6> — the `memory-slugs` false positive.

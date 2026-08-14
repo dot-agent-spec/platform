@@ -158,7 +158,7 @@ polish, and the preferred mechanism needs a spike first.
 
 ### Track 8 — Instruction-file debt in the folders this plan touches
 
-Pulled in from [Plan-001](001-adopt-vibe-ops-baseline.md) Track 3, which asks that a plan touching one of
+Pulled in from [Plan-001](./shipped/001-adopt-vibe-ops-baseline.md) Track 3, which asks that a plan touching one of
 those folders close its item rather than leave it for a sweep that never comes. This plan owns
 `apps/dot-agent-cli/` and `plugins/claude/`, so it owns their instruction-file debt: neither has a sibling
 `CLAUDE.md`, so neither `AGENTS.md` has ever loaded — 115 and 48 lines of guidance sitting inert.
@@ -223,7 +223,7 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   items long after its first item shipped is a plan wearing the wrong template. It had also grown a
   priority table, per-item Result sections and an implementation order, which is a plan's living record
   improvised inside a task. Keeping both files would reintroduce exactly the two-copies-drift problem
-  [Plan-001](001-adopt-vibe-ops-baseline.md) spent its whole length removing; git history holds the
+  [Plan-001](./shipped/001-adopt-vibe-ops-baseline.md) spent its whole length removing; git history holds the
   original at `git show 68ac4db4270fa9fb31f21cbe2c1b71b28c0edef3:project/tasks/DA00-07-dot-agent-claude-skill.md`.
   **Date / Author:** 2026-07-30 / Danilo
 
@@ -316,7 +316,7 @@ knowledge base, and the track above now names both gates explicitly so neither i
   instead of writing its config, and its
   [DA00-08-cli-installs-native-host-plugins.md).
   [platform#27](https://github.com/dot-agent-spec/platform/issues/27) tracks it upstream.
-- [Plan-001](001-adopt-vibe-ops-baseline.md) — Track 8 here closes that plan's Track 3 items for
+- [Plan-001](./shipped/001-adopt-vibe-ops-baseline.md) — Track 8 here closes that plan's Track 3 items for
   `apps/dot-agent-cli/` and `plugins/claude/`.
 - [platform#20](https://github.com/dot-agent-spec/platform/issues/20) — documentation corrections in
   `docs/reference/kernel-dsl.md` and `dsl/reference/description.md`, surfaced by a sync review of

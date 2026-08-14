@@ -10,7 +10,7 @@ vibe-ops-template: plan@3
 | Created | 2026-07-31 |
 | Author | Danilo Borges |
 | Tracking issue | [#29](https://github.com/dot-agent-spec/platform/issues/29) — owns status and the executive summary; this file owns the design and the working record. |
-| Related | [#19](https://github.com/dot-agent-spec/platform/issues/19) (closed by Track D) · [#22](https://github.com/dot-agent-spec/platform/issues/22) / [Plan-001](001-adopt-vibe-ops-baseline.md) Track 3 (advanced by Track E) |
+| Related | [#19](https://github.com/dot-agent-spec/platform/issues/19) (closed by Track D) · [#22](https://github.com/dot-agent-spec/platform/issues/22) / [Plan-001](./shipped/001-adopt-vibe-ops-baseline.md) Track 3 (advanced by Track E) |
 
 ---
 
@@ -207,7 +207,7 @@ git show 8b06f75:project/tasks/agents-md-dot-agent-cli.md
 
 ### Why Track E is four tasks rather than one sweep
 
-[Plan-001](001-adopt-vibe-ops-baseline.md) Track 3 defines a three-step per-folder sequence — review the
+[Plan-001](./shipped/001-adopt-vibe-ops-baseline.md) Track 3 defines a three-step per-folder sequence — review the
 folder's `AGENTS.md`, then repoint or delete its dead links, then add the one-line `CLAUDE.md` that makes
 Claude Code load it — and states that the order is load-bearing: adding the `CLAUDE.md` first would start
 *delivering* unreviewed guidance into agent context that is currently only sitting inert on disk. A wrong
@@ -410,7 +410,7 @@ would land.
 
 ## Related
 
-- [Plan-001: Adopt the vibe-ops Governance Baseline](001-adopt-vibe-ops-baseline.md) — Track 3 owns the
+- [Plan-001: Adopt the vibe-ops Governance Baseline](./shipped/001-adopt-vibe-ops-baseline.md) — Track 3 owns the
   per-package `AGENTS.md` link rot that Track E above partially addresses.
 - [Issue #19](https://github.com/dot-agent-spec/platform/issues/19) — the license-header hook fossil,
   diagnosed independently and in more depth than restated here; closed by Track D.
