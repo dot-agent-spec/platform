@@ -25,17 +25,15 @@ fi
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT" || exit 2
 
-# THE SHELL FRAGMENTS DO NOT READ vibeops.config.ts, AND THIS IS THE WHOLE REASON THIS VARIABLE SURVIVED
-# THE MIGRATION. `vibe-ops check` runs the seventeen fragments through their own runner, which honours
-# only this environment variable; the config's `settings` reach the ported gates in `agents-md` and
-# `governance` and nothing else. Both entries below name a fragment whose PORT already covers this
-# repository — better, because a gate's population is declared in the config and a fragment's is not.
+# NO VIBE_OPS_DISABLED_CHECKS HERE, AND THAT IS RECENT. Until 2026-08-13 this file and .githooks/pre-commit
+# each exported it, because `module-check` spawned the shell fragments with only GATE_VERBOSE and read no
+# config at all. That put the declaration in two shell scripts and nowhere a different caller could see
+# it — a session hook running `vibe-ops check` directly reported 38 failures this repository had already
+# decided about. `module-check` now translates `settings.check.disabled` into that variable itself, so
+# the ledger lives once, in vibeops.config.ts, and every caller reads the same one.
 #
-# Keeping the two halves' declarations in different places is not the shape anyone would design. It is
-# the shape RFC-0001 describes as temporary: the fragment goes away once its port is shown to agree with
-# it, and this variable goes away with the last fragment that needs it.
-export VIBE_OPS_DISABLED_CHECKS="links:superseded by the markdown-link gate, which honours the dsl/ docs/ dogfood/ exclusions declared in vibeops.config.ts — this fragment has no population control and reports all three (2026-08-13)
-budget:same finding the budget gate reports, where it is a warning with Track 6 named as its owner (2026-08-13)"
+# The variable still works and still wins when a caller sets it, which is the right precedence: a
+# declaration made at the point of invocation is narrower than one committed to the repository.
 
 # --no-warnings suppresses MODULE_TYPELESS_PACKAGE_JSON, which Node prints once per invocation because
 # vibeops.config.ts is ESM in a package with no "type": "module". Three ops means three copies of a

@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 # pre-commit — run the governance gate before a commit is allowed to land.
 #
-# Wiring only, no check logic. To run the identical thing by hand without committing, use
-# scripts/check.sh — which is also where the two shell fragments this repository declares off are
-# declared, with their reasons. Both files export the same variable rather than sharing a sourced file:
-# the sourced file was scripts/checks/_run.sh, whose three-branch runner resolution is exactly what broke
-# and what this migration removed. `git grep VIBE_OPS_DISABLED_CHECKS` still finds every declaration in
-# the workspace, which is the property that shape existed for.
+# Wiring only, no check logic: what runs is declared in vibeops.config.ts, including which shell
+# fragments are off and why. To run the identical thing by hand without committing, use scripts/check.sh.
 #
 # `set -e` is deliberately absent: the exit code is captured, never propagated by accident.
 #
@@ -29,10 +25,8 @@ fi
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT" || exit 2
 
-# See scripts/check.sh for why this is here and not in vibeops.config.ts: the shell fragments do not read
-# the config at all. Keep the two copies in step; they are two lines and one grep finds both.
-export VIBE_OPS_DISABLED_CHECKS="links:superseded by the markdown-link gate, which honours the dsl/ docs/ dogfood/ exclusions declared in vibeops.config.ts — this fragment has no population control and reports all three (2026-08-13)
-budget:same finding the budget gate reports, where it is a warning with Track 6 named as its owner (2026-08-13)"
+# Nothing is declared off here: `settings.check.disabled` in vibeops.config.ts is read by every caller,
+# including this one. See scripts/check.sh for what used to be at this line and why it left.
 
 export NODE_OPTIONS="${NODE_OPTIONS:-} --no-warnings"
 

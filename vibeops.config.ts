@@ -40,16 +40,15 @@ export default {
   },
 
   settings: {
-    // INERT TODAY, AND DECLARED ANYWAY. `module-check` spawns the seventeen shell fragments through
-    // their own runner and passes it only GATE_VERBOSE — it never reads `context.settings`, so nothing
-    // below reaches them. The live declaration is the VIBE_OPS_DISABLED_CHECKS export in
-    // scripts/check.sh and .githooks/pre-commit.
+    // The seventeen shell fragments. `module-check` translates this into the VIBE_OPS_DISABLED_CHECKS
+    // the shell runner already understood, so one declaration serves every caller — the hook, a manual
+    // scripts/check.sh, an agent running `vibe-ops check` directly. It was written here while still
+    // inert, on 2026-08-13, and went live the same day without an edit.
     //
-    // WHY IT IS HERE REGARDLESS. That export only exists inside those two files, so every other caller
-    // of `vibe-ops check` — a session hook, an agent running it directly, a future CI job — sees 38
-    // failures this repository has already decided about. Measured 2026-08-13, by a Stop hook doing
-    // exactly that. Keeping the ledger in the config is where a reader looks for it, and it goes live
-    // the day module-check translates these into the env it spawns with.
+    // NEITHER ENTRY LOSES COVERAGE, WHICH IS THE ONLY REASON EITHER IS ACCEPTABLE. Both name a fragment
+    // whose port still runs: `markdown-link` detects the same links and takes its population from the
+    // `governance` exclusions below, which the fragment cannot do; the `budget` gate reports the same
+    // 174 lines as a warning with an owner. Turning these off removes a duplicate, never a detector.
     check: {
       disabled: {
         links: "superseded by the markdown-link gate, which honours the dsl/ docs/ dogfood/ exclusions declared below — this fragment has no population control (2026-08-13)",
