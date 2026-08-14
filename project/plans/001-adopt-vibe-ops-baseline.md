@@ -657,7 +657,59 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
 
 ## Outcomes & Retrospective
 
-**Template migration, 2026-08-13: `plan@0.1` → `plan@3`.** The `0.1 → 0.2` jump drops `## Progress` and
+### Closure, 2026-08-14 — the five goals answered one by one
+
+**Goal 1 — every lifecycle stated once, on a surface that loads. Met.** `.agents/rules/governance.md`
+carries all of them, path-scoped to `project/**`, and the two nested `AGENTS.md` files that held them
+unreachably are gone. It gained a `Log` section at closure, because `project/log/` came into existence
+during the plan and the rule described only the folder it replaced — which would have sent the next
+writer to a retired location.
+
+**Goal 2 — no forked tooling. Met, and it held under pressure.** Records are opened and closed with the
+plugin throughout. The temptation this goal exists to resist showed up twice — a local `grep` guard for
+retired node names, and a local override for the ops path literals — and was refused both times, in
+writing, with the reason.
+
+**Goal 3 — `project/plans/` as a home for multi-phase work. Met**, and four plans now live there, all at
+`plan@3`.
+
+**Goal 4 — `AGENTS.md` at or under 150 lines, everything cut relocated. Met at 113**, with more margin
+than the goal asked for. That margin is the correction, not a bonus: Track 2 hit exactly 150 and named
+the next addition as the risk, and the file was at 174 within days. A budget met exactly is a budget about
+to be missed.
+
+**Goal 5 — no failure and no undeclared skip. Met, and this is the one that needed real work to answer.**
+Eleven checks skip. One is declared off in `vibeops.config.ts` (`links`, superseded by the
+`markdown-link` gate). One was the finding this goal was rewritten around — `skill-frontmatter` reporting
+*no `skills/` directory* over a repository with two skills — and the ported gate now reports
+`examined: 2` against the same unchanged tree. The remaining nine were each examined at closure rather
+than assumed: five are `vibe-ops`'s own self-checks that can never apply to a consumer
+(`manifest-sync`, `command-references`, `references-completeness`, `dogfooding-drift`,
+`template-attribution`), and four decline correctly on structure this repository genuinely lacks.
+
+**One acceptance clause was wrong and is recorded as dropped rather than quietly met.** Track 4 promised
+the gate would resolve "from a fresh clone with no sibling `vibe-ops` present". There is no npm
+dependency; the mechanism is `PATH`. The clause could not be met and was retired with its reasoning, not
+edited into agreement.
+
+**A small gap found while auditing the skips, and left open deliberately.** `manifest-sync` exists because
+a plugin's `plugin.json` and its marketplace entry drift apart. This repository has exactly that shape —
+`plugins/claude/.claude-plugin/plugin.json` under a root `marketplace.json` — and nothing checks their
+agreement, because the fragment is written against `vibe-ops`'s own manifest. Not this plan's to fix; it
+belongs to whoever next touches the plugin's release.
+
+### The demotion check
+
+Run, and it found nothing this pass. The four demotions this plan earned were all recorded in the
+2026-08-13 migration below, and each came from a guard replacing prose that had existed *because* nothing
+enforced it. The guards added since — `template-version` at `fail`, the ported `markdown-link` and
+`skill-frontmatter` — replaced no written instruction, because this repository never had prose telling
+anyone to stamp a record or to check a link by hand. A guard for something nobody wrote down demotes
+nothing, and saying so is the point of running the check.
+
+### Template migration, 2026-08-13: `plan@0.1` → `plan@3`
+
+The `0.1 → 0.2` jump drops `## Progress` and
 `## Surprises & Discoveries`, and forbids deleting a Surprises entry in place — a plan whose section is
 not empty stays at `0.1`. Eleven entries were routed. **One survived promotion**, which is the expected
 ratio and not a sign the harvest was thin:
