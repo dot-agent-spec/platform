@@ -17,7 +17,7 @@
 
 The repository ships several packages whose versions had drifted apart — `tree-sitter` `0.4.1`,
 `kernel-dsl` `0.1.3`, and `parser-dsl` / `compiler` / `sdk` at `0.1.0` (the B2 item in
-[`tasks/pre-public-consolidation.md`](../tasks/pre-public-consolidation.md)). Before the first public
+`git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md`). Before the first public
 release we needed an explicit, written version policy.
 
 Two things move at different rates and serve different audiences:
@@ -100,7 +100,7 @@ resolve, one layer down.
 
 ## Related
 
-- [`tasks/pre-public-consolidation.md`](../tasks/pre-public-consolidation.md) — B2, where this decision was recorded inline
+- `git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md` — B2, where this decision was recorded inline
 - [`tasks/DA01-01-dsl-spec-versioning.md`](../tasks/DA01-01-dsl-spec-versioning.md) — implements the DSL-axis provenance stamping described here
 - Long-form log of the `0.5.0-alpha.1`/`alpha.2` rehearsal that validated this ADR's publish mechanism
   end-to-end, and of the real `0.10.0` jump that followed it (the task file that implemented both,

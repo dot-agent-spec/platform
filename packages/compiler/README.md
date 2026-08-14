@@ -2,7 +2,7 @@
 
 AST parser, linter, graph extractor, and `.agent` packager for the dot-agent DSL.
 
-This is **Level 1** of the dot-agent tooling hierarchy (see [`architecture_map.md`](../../architecture_map.md)): it sits between the raw WASM grammars and the higher-level SDK and LSP. Both the CLI and the language server import from this package to guarantee identical diagnostics everywhere.
+This is **Level 1** of the dot-agent tooling hierarchy (see [`docs/explanation/architecture/map.md`](../../docs/explanation/architecture/map.md)): it sits between the raw WASM grammars and the higher-level SDK and LSP. Both the CLI and the language server import from this package to guarantee identical diagnostics everywhere.
 
 ---
 

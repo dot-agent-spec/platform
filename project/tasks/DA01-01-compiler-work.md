@@ -5,7 +5,8 @@
 | Status | Planned |
 | Created | 2026-06-25 |
 | Author | Danilo Borges |
-| Decision Log | [DA01-01: Forgiving Syntax and Prettifier](../pre-release/v0.1/DA01-01-forgiving-syntax.md) |
+| Issue | — (no tracking issue; the design record is RFC-0022) |
+| Decision Log | [RFC-0022: Forgiving Syntax and Prettifier](../rfcs/0022-forgiving-syntax-and-prettifier.md) |
 | Depends on | grammar unfreeze (for items 2–4) — completed, task file removed |
 
 Items 2–4 require the grammar unfreeze to be complete. Item 1 (Native States) has no grammar dependency and can ship now.

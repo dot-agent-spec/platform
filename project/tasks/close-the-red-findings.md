@@ -72,24 +72,34 @@ Out of scope, and declared as such in the config rather than fixed: `dsl/README.
 
 ### 2. Five task headers missing `Issue` — P0
 
-**What:** add the `Issue` row to `DA01-01-compiler-work.md`, `DA01-01-dsl-spec-versioning.md`,
-`antigravity-cli-plugin.md`, `compiler-api.md`, `pre-public-consolidation.md`.
+**Done 2026-08-13, and one of the five was not a header fix.** Four received the row, using the
+`— (no tracking issue; the design record is …)` form the dossiers created that day already used, so there
+is one convention rather than two.
 
-**Change:** the schema requires `Status`, `Created`, `Author`, `Issue`. Where a dossier has no tracking
-issue, say so explicitly rather than leaving the row out — the three dossiers created on 2026-08-13 use
-`— (no tracking issue; the design record is …)`, and matching them keeps one convention.
+**The fifth was `pre-public-consolidation.md`, and it was deleted instead.** Status `Done ✅`, `Closed
+2026-06-27`, every one of its fourteen items ticked with the DA decision that settled it — a dossier whose
+lifecycle says `Done → file removed` and which had simply never been removed. Stamping an `Issue` row onto
+it would have been maintenance on a file that should not exist. Recoverable:
+`git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md`
+
+That deletion closed three findings at once — its own `record-header-task`, its broken link to the
+retired compliance report, and the stale dossier — and **opened three more**, which is the part worth
+recording: `ROADMAP.md` and `project/adr/DA00-02` linked to it, and those links died with it. They now
+carry the breadcrumb instead. Deleting a record is never only a deletion; whatever pointed at it has to
+be paid for in the same pass, or the next run reports the debt as if it were new.
 
 ### 3. One malformed `breadcrumb` — P0
 
-**What:** `project/plans/002-dot-agent-as-claude-plugin.md:467` carries
-`git show 68ac4db:project/tasks/DA00-07-dot-agent-claude-skill.md`.
+**Done 2026-08-13.** `project/plans/002-dot-agent-as-claude-plugin.md` carried an abbreviated sha, which
+the gate cannot verify — a breadcrumb nobody can check is the failure mode the shape exists to prevent.
+`68ac4db` resolved to `68ac4db4270fa9fb31f21cbe2c1b71b28c0edef3` and `git cat-file -e` confirmed the path
+existed at that commit, so it was only ever an abbreviation, never a dead reference. Expanded in place.
 
-**Why:** the gate requires a **full 40-character sha** so it can verify the object still exists. An
-abbreviated one cannot be checked, and a breadcrumb nobody can verify is the failure mode the shape
-exists to prevent.
-
-**Change:** resolve `68ac4db` to its full sha and confirm the path existed at that commit. If the object
-is gone — a rewritten history — say so in the line rather than pointing at nothing.
+**A trap this exposed, worth knowing before writing about breadcrumbs.** The paragraph you are reading was
+itself reported as a finding while it quoted the malformed form, inside backticks. `breadcrumb` reads raw
+text where `memory-slug` reads the masked document model, so an inline code span does not protect a quoted
+example. It is the same false-positive class already fixed once, in the other gate. Until it is fixed
+here, a document cannot describe a broken breadcrumb without becoming one.
 
 ### 4. `project/pre-release/AGENTS.md`, left behind — P1
 

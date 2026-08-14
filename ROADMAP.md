@@ -67,7 +67,7 @@ A pure conversational finite-state machine. No side effects, no typed I/O, no ac
 
 ### Work to close v0.1
 
-Tracked in [`tasks/pre-public-consolidation.md`](project/tasks/pre-public-consolidation.md):
+Tracked in `tasks/pre-public-consolidation.md`, closed 2026-06-27 and removed per the task lifecycle — `git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md`:
 
 - Resolve `merge` at runtime (kernel load path).
 - `.description` honesty: write `terms`/`privacy`, wire the `behavior` block, **drop** the placeholder `purpose` field (returns later as a real feature — see *Distribution & identity*).

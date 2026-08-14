@@ -22,9 +22,9 @@ Legend:
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
 | **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
-> ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](pre-release/v0.1/compliance-check-2026-06-27.md).
+> ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](adr/DA00-06-ts-rs-for-ast-json-contract.md).
 >
-> 🚀 **First public release: `0.10.0`** — the one-time version jump decided in [DA00-02](adr/DA00-02-two-axis-versioning.md), published to the `latest` npm dist-tag (not `alpha`) after the pipeline was proven end-to-end by the [pre-alpha rehearsal](pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md).
+> 🚀 **First public release: `0.10.0`** — the one-time version jump decided in [DA00-02](adr/DA00-02-two-axis-versioning.md), published to the `latest` npm dist-tag (not `alpha`) after the pipeline was proven end-to-end by the [pre-alpha rehearsal](adr/DA00-02-two-axis-versioning.md).
 
 ---
 

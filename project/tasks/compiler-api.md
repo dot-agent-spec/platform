@@ -5,6 +5,7 @@
 | Status | Planned |
 | Created | 2026-06-19 |
 | Author | Danilo Borges |
+| Issue | — (no tracking issue; the design record is RFC-0018) |
 | Unblocks | [rfcs/0018-transpiler-infrastructure.md](../rfcs/0018-transpiler-infrastructure.md) |
 
 ---

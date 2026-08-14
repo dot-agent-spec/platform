@@ -5,7 +5,8 @@
 | Status | Planned |
 | Created | 2026-06-23 |
 | Author | Danilo |
-| Sources | RFC-0020 |
+| Issue | — (no tracking issue; the design record is RFC-0020) |
+| Sources | [RFC-0020](../rfcs/0020-antigravity-cli-plugin.md) |
 
 ---
 

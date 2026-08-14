@@ -43,12 +43,12 @@ into it, stop and link to the Mode A skill instead.
 ## `plugin.json`
 
 Only `mcpServers` (`dot-agent` + `dot-agent-helper`) and `skills` (auto-discovered from `skills/`) are
-declared. No `hooks` yet — see the [DA00-07 log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md)'s
+declared. No `hooks` yet — see the [DA00-07 log](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md)'s
 decision 4 before adding one.
 
 ## Full design and status
 
 Decision: [`DA00-07`](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) + its
-[log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (design
+[log](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (design
 rationale). Work items and current status: [`project/plans/002-dot-agent-as-claude-plugin.md`](../../project/plans/002-dot-agent-as-claude-plugin.md)
 — tracker: `dot-agent-spec/platform#13`.

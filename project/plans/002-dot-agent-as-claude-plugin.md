@@ -6,7 +6,7 @@
 | Created | 2026-07-30 |
 | Author | Danilo |
 | Tracking issue | [#13](https://github.com/dot-agent-spec/platform/issues/13) — owns status and the executive summary; this file owns the design and the working record |
-| Related | [DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (the decision) + its [long-form log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (full context, rationale, settled decisions) |
+| Related | [DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) — the decision, and its Related section carries a `git show` breadcrumb to the long-form log that held the full context, rationale and settled decisions until `project/pre-release/` was retired on 2026-08-13 |
 
 > Migrated from `project/tasks/DA00-07-dot-agent-claude-skill.md` on 2026-07-30. The work predates this
 > file; content below is preserved from the task, not rewritten. The reason for the move is in the
@@ -58,8 +58,8 @@ skills), `dsl/reference/comportment.md` as the canonical comportment spec, and t
 
 The full rationale — the three-layer decoupling, the role-framing bug this solves, the seven settled
 decisions and the usage taxonomy — is in
-[DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) and its
-[long-form log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md). Preserved from the
+[DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md), whose Related section breadcrumbs the
+long-form log that carried it before `project/pre-release/` was retired. Preserved from the
 source task: that split is deliberate, and this file tracks work and state rather than re-arguing the
 decision.
 
@@ -200,12 +200,12 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
       deletes any legacy `dot-agent`/`dot-agent-helper`/`dot-agent-dev` entries it finds — never writes new
       ones. `--skill`/`--mcp` no longer apply to `--claude`. Decision, evidence and rejected alternatives:
       [ADR-DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) +
-      [its log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+      [DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md).
 - [x] **`configure --claude` verified end-to-end against a live `~/.claude.json`** (2026-07-31). Backed
       up first, then ran the built branch (via `npm link`): the three legacy `dot-agent`/`dot-agent-helper`/
       `dot-agent-dev` entries disappeared from `mcpServers`, nothing else in the file changed, the plugin
       installed and reconnected cleanly, and a second run was a no-op. This also settled the question
-      [ADR-DA00-08's log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md) left open —
+      [DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) left open —
       see *Surprises & Discoveries* for the tool-namespace finding and the `SKILL.md` bug it caught.
       Covers the **warm** path only: this machine already had the marketplace, so `addMarketplace()` never
       ran. See the next entry.
@@ -353,7 +353,7 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
 - **Observation:** A plugin-provided MCP server's tools are namespaced under a `plugin_<plugin-name>_`
   prefix — `mcp__plugin_dot-agent_dot-agent__load_agent`, not the bare `mcp__dot-agent__load_agent` a
   directly-configured (non-plugin) server of the same name would get. This resolves the question
-  [ADR-DA00-08's log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md) left open —
+  [DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) left open —
   a plugin server and a same-named user-config server don't collide at the tool-name level at all; they
   are simply two distinct, differently-prefixed tool families. Matches the `chrome-devtools` /
   `plugin_chrome-devtools-mcp_chrome-devtools` pair observed independently on the same machine.
@@ -428,7 +428,7 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   reasoning, live evidence and the framings rejected first (CLI-as-migration-mechanism,
   detect-via-undocumented-internal-file, guidance-only):
   [ADR-DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) +
-  [its log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+  [DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md).
   **Date / Author:** 2026-07-30 / Danilo
 
 - **Decision:** `dot-agent configure --claude` no longer installs a skill file. Claude Code gets the skills
@@ -457,7 +457,7 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   priority table, per-item Result sections and an implementation order, which is a plan's living record
   improvised inside a task. Keeping both files would reintroduce exactly the two-copies-drift problem
   [Plan-001](001-adopt-vibe-ops-baseline.md) spent its whole length removing; git history holds the
-  original at `git show 68ac4db:project/tasks/DA00-07-dot-agent-claude-skill.md`.
+  original at `git show 68ac4db4270fa9fb31f21cbe2c1b71b28c0edef3:project/tasks/DA00-07-dot-agent-claude-skill.md`.
   **Date / Author:** 2026-07-30 / Danilo
 
 - **Decision:** Drop the HTTP endpoint for the runtime entirely, rather than deferring it.
@@ -473,7 +473,7 @@ that folder allows: a sibling `CLAUDE.md` containing `@AGENTS.md` for `apps/dot-
   therefore remains a documented degradation on this surface until a proper tick channel exists. The
   candidate replacement is a `dot-agent tick` subcommand plus a local channel the running runtime honors.
   Recorded as decision 4 in the
-  [DA00-07 log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
+  [DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
   **Date / Author:** preserved from the source task
 
 - **Decision:** Bundle no runtime with the plugin; depend on the single globally-installed `dot-agent` CLI,
@@ -515,10 +515,10 @@ the reason the connect-time constraint above is worth remembering.
 ## Related
 
 - [DA00-07](../adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) — the decision, and its
-  [long-form log](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
+  [DA00-07-plugin-packaging-across-llm-cli-hosts.md).
 - [DA00-08](../adr/DA00-08-cli-installs-native-host-plugins.md) — `configure --claude` installs the plugin
   instead of writing its config, and its
-  [long-form log](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+  [DA00-08-cli-installs-native-host-plugins.md).
   [platform#27](https://github.com/dot-agent-spec/platform/issues/27) tracks it upstream.
 - [Plan-001](001-adopt-vibe-ops-baseline.md) — Track 8 here closes that plan's Track 3 items for
   `apps/dot-agent-cli/` and `plugins/claude/`.
