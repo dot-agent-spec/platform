@@ -66,4 +66,4 @@ node-type source moves; the test pool constraint changes.
 and this file kept describing the old grammar — as did `packages/tree-sitter/AGENTS.md`,
 `project/implementation-status.md`, and `.agents/skills/sync-implementation-status/SKILL.md`, which is the
 one that actually loads and runs. Recorded in
-[`project/tasks/per-package-agents-md.md`](../../project/tasks/per-package-agents-md.md).
+`project/tasks/per-package-agents-md.md` (closed dossier — `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/per-package-agents-md.md`).

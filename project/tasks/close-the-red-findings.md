@@ -16,7 +16,7 @@ A gate handed over red is the one people switch off within the week, and the fir
 a red gate they did not cause is `--no-verify` — which switches off every other check at the same time.
 So the findings that would be live on the day the CLI gate lands are closed here, in a dossier of their
 own, because this work is editing documents and
-[`vibe-ops-cli-gate.md`](vibe-ops-cli-gate.md) is wiring. Mixing the two is how a wiring change gets
+`vibe-ops-cli-gate.md` (closed dossier — `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/vibe-ops-cli-gate.md`) is wiring. Mixing the two is how a wiring change gets
 reviewed as a document change.
 
 **The numbers in Plan-001 Track 5 are stale and are corrected here.** They were taken before
@@ -64,7 +64,7 @@ exclusion is only honest if what remains is actually clean.
 | `project/plans/002-dot-agent-as-claude-plugin.md` | 9 | largest single source; a plan file, inside `project/` |
 | `project/tasks/*` | 4 | `DA01-01-dsl-spec-versioning` (2), `pre-public-consolidation` (1), `DA01-01-compiler-work` (1) |
 | `project/implementation-status.md` | 2 | generated from `sync-implementation-status`; check whether the generator emits the bad link before editing the output |
-| `plugins/claude/AGENTS.md` | 2 | also [`per-package-agents-md.md`](per-package-agents-md.md) item 2 — close it there, not twice |
+| `plugins/claude/AGENTS.md` | 2 | also `per-package-agents-md.md` (closed dossier — `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/per-package-agents-md.md`) item 2 — close it there, not twice |
 | `packages/kernel-dsl/AGENTS.md` | 1 | also that dossier's item 1 — same |
 
 Out of scope, and declared as such in the config rather than fixed: `dsl/README.md` + `dsl/reference/types.md`

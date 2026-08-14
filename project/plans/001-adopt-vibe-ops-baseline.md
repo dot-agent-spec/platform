@@ -628,3 +628,7 @@ budget that the enforcement-ladder framing does not make on its own.
   repositories whose stale links Track 3 cleans up.
 - <https://github.com/entelekheia-ai/vibe-ops> — the plugin defining the baseline.
 - <https://github.com/entelekheia-ai/vibe-ops/issues/6> — the `memory-slugs` false positive.
+
+- Task dossiers closed and removed per the task lifecycle (`Planned → In Progress → Done → file removed, git history is the archive`):
+  - `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/vibe-ops-cli-gate.md`
+  - `git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/per-package-agents-md.md`
