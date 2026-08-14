@@ -120,10 +120,16 @@ disablement stood. An excluded population still reads everything else.
 **Change:**
 
 ```bash
+vibe-ops harness resolve .            # every surface, in one call
 bash scripts/check.sh                 # green
 vibe-ops governance --audit           # no finding
 vibe-ops agents-md --audit            # no finding
 ```
+
+`harness resolve` is the check that this item existed to hand-roll before it shipped. It prints the
+harness surfaces as a set, so the two edits this dossier makes are visible as a state change rather than
+inferred: `RUNNER` must go from `scripts/checks/_run.sh` to absent, and `CONFIG` from `(none)` to
+`vibeops.config.ts`. Run it **before** starting as well, so the diff has a baseline.
 
 **Every `SKIP` must have its reason in the config.** A skip and a pass are indistinguishable in the
 summary line, and this repository has already paid for that once: `skill-frontmatter` reported

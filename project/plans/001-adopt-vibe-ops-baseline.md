@@ -146,12 +146,12 @@ correctness target and why Track 2 relocates rather than deletes.
       this: it landed at exactly 150 of 150 and named the next addition as the risk. Run
       `/vibe-ops:authoring-agents-md` rather than repeating the relocation by hand — the 2026-08-13 audit
       declared the file's authoring quality unchecked, and that is the gap a hand pass leaves open again.
-- [ ] **Track 7 — This repository's own templates carry a version.** Added 2026-08-13. None of the seven
-      files in `project/templates/` declares `vibe-ops-template:`, so `/vibe-ops:migrate` stops on them
-      rather than inventing a jump, and `plan.md` here is still the `0.1` shape — the next plan written
-      from it is born two versions behind, with the two sections this plan just spent a migration
-      removing. Classify each by shape, stamp it, then migrate. `release-freeze-task.md` and
-      `versioning-task.md` have no upstream equivalent and are stamped as local.
+- [ ] **Track 7 — Records and templates carry a version.** Added 2026-08-13, reshaped the same day once
+      `vibe-ops harness` shipped. Three of 46 records declare `vibe-ops-template:`, and all three were
+      written today; `plan.md` here is still the `0.1` shape, so the next plan is born two versions
+      behind. `harness sync` does the template half mechanically — dry-run writes the five canonical
+      templates onto a branch and a tag, never merged, never pushed, and the two local-only templates
+      are untouched. The record half is not mechanical: see the ordering note below.
 - [ ] Run `/vibe-ops:close-plan` — retrospective against the goals, the demotion check, living docs
       propagated. The plan file itself is kept.
 
@@ -239,6 +239,33 @@ written down in `vibeops.config.ts`. The original clause — "and the same run f
 sibling `vibe-ops` present" — is dropped as unachievable rather than quietly failed: an outside clone has
 no gate until `vibe-ops` is installed. That costs less than it appears, because `core.hooksPath` is local
 config no clone inherits, so an outside clone never runs the hook until someone wires it deliberately.
+
+### Track 7 — Records and templates carry a version
+
+`vibe-ops harness` (2026-08-13) turns most of this track mechanical, and its documented order is the
+opposite of what the work looks like from here — `docs/how-to/upgrade-a-repository.md` §2 says **migrate
+the records first, then promulgate**, so that a reader never meets a repository whose template declares
+one shape and whose records declare another.
+
+**That order does not start here, and the reason is worth stating rather than discovering.** `migrate`
+reads each record's own `vibe-ops-template:` stamp and applies the recorded note per jump, stopping on a
+jump it has no note for. Three of 46 records carry a stamp. The documented flow assumes *stamped at an old
+version*; this repository is *never stamped*, which §1 of the same page names as a genuinely different
+state. So the sequence gains a step at the front:
+
+1. **Classify by shape and stamp.** A record's version is readable from its structure — a plan carrying
+   `## Progress` is `0.1`, the same identification this plan's own migration used. Mechanical per record,
+   a judgement per record type.
+2. **`/vibe-ops:migrate .`** — now that there is a stamp to read.
+3. **`vibe-ops harness sync .`** — the templates, onto a branch and a tag.
+4. **Raise the warning to a failure** once the migration is finished:
+   `settings.governance.level["template-version-behind"] = "fail"`, which §3 prescribes for exactly this
+   moment — the warning is correct mid-migration and wrong for a repository that has completed one.
+
+Step 3 is verified safe: the four templates shared with the norm carry no local customisation, so
+overwriting loses nothing, and `release-freeze-task.md` / `versioning-task.md` have no upstream
+equivalent and are outside what the norm owns. It also *adds* `log.md`, which this repository lacks, and
+a `task.md` carrying the `Issue` row whose absence is why every task dossier here fails `record-header`.
 
 ### Track 5 — Close the findings the gate had to be handed over red with
 
@@ -419,6 +446,18 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   the stale counts visible, which a single combined list would have carried forward unexamined.
   **Date / Author:** 2026-08-13 / Danilo Borges
 
+- **Decision:** Take `harness sync` for the templates and keep a hand-written stamping step in front of
+  it; do not compose `disabled-declared` or `runner-provenance` here.
+  **Rationale:** the module makes the template half mechanical and safe — the four shared templates carry
+  no local customisation, and the two local-only ones are outside what the norm owns — so hand-migrating
+  them would be work with no product. The record half is the opposite: `migrate` reads a stamp, and 43 of
+  46 records have none, so the documented migrate-then-promulgate order starts one step later than the
+  page assumes. On the two gates: `VibeOpsConfig` cannot compose a gate at all, so "configure it per
+  repository" is not an available shape, and the only local alternative is inventing an ops — which would
+  answer a question both gates' own source declares deferred upstream. They are regression guards here
+  rather than live findings, so waiting is free.
+  **Date / Author:** 2026-08-13 / Danilo Borges
+
 ## Outcomes & Retrospective
 
 **Template migration, 2026-08-13: `plan@0.1` → `plan@3`.** The `0.1 → 0.2` jump drops `## Progress` and
@@ -498,6 +537,23 @@ budget that the enforcement-ladder framing does not make on its own.
   `<plugin>/templates/adr.md` as literals. The consequence here is silent: those entries examine zero
   files, which produces no findings and reads as clean. This is an upstream question and this plan should
   not work around it — a local override would be a third copy of an answer that already exists twice.
+- **Where do `disabled-declared` and `runner-provenance` get composed?** Opened 2026-08-13.
+  `harness catalog` reports both as available and composed into no ops, and each lands exactly on a Track
+  4 concern — the first enforces that a `disabled` entry carries a reason string rather than a boolean,
+  which is what makes the debt ledger a ledger; the second detects a runner snapshot that wins the
+  resolution order and shadows a live sibling, which is the trap this repository is deliberately avoiding.
+  **This repository is not the place to answer it.** `VibeOpsConfig` has no key that composes a gate —
+  `settings.<ops>` only tunes an ops that already does — so the only local option is inventing an ops,
+  and both gates state in their own source that which population they belong to is a deferred upstream
+  decision. Answering it here would be the second answer to an open question, which is the failure mode
+  the other two entries in this list already describe. Both are regression guards rather than live
+  findings here, so waiting costs nothing.
+- **`harness audit` reports `0 behind` over a population it cannot read.** Opened 2026-08-13. Its
+  governance overlay gives `adr: 9, 0 behind` / `rfc: 25, 0` / `plan: 4, 0` / `task: 8, 0` against 46
+  records of which three carry a stamp — so it could compare at most one. A repository never promulgated
+  to and a repository fully current produce the same line. This is the principle the ops layer enforces
+  as *zero examined is not a reading*, not applied to this overlay. Upstream, and worth carrying into the
+  consolidated `vibe-ops` learning rather than filing here.
 - **What do the other nine `SKIP`s mean?** Ten of seventeen shell fragments skip in this repository, and
   the first one examined turned out to be addressed at the wrong directory rather than inapplicable. The
   remaining nine have not been checked with that question asked. Track 4 makes this cheaper to answer than

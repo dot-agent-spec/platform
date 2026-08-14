@@ -30,8 +30,11 @@ picture in three ways:
   `project/plans/002-dot-agent-as-claude-plugin.md`, with nine.
 - **`record-header-task` is 5, not 2.** Every dossier fails it, and the cause is upstream of all five:
   **`project/templates/task.md` has no `Issue` row**, so every task written from it is born failing.
-  Fixing the five without fixing the template regenerates the failure on the next task — the template is
-  Track 7's, and this dossier only fixes the instances.
+  This dossier fixes the five instances only. **The template fix is no longer hand work** — `harness sync`
+  writes the canonical `task.md`, which carries the row, and that is Track 7. Doing the instances here
+  and the template there is the right split, but the two are not independent: fixing the instances while
+  the template still lacks the row means the sixth task regenerates the failure, so **Track 7 should not
+  be left indefinitely after this dossier closes**.
 
 ## Priority overview
 
@@ -40,7 +43,8 @@ picture in three ways:
 | 1 | P0 | In-scope `links`, by location, largest first | project/, packages/, plugins/ | M |
 | 2 | P0 | Five `record-header-task` headers missing `Issue` | project/tasks | XS |
 | 3 | P0 | One malformed `breadcrumb` | project/plans | XS |
-| 4 | P1 | `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction | project/ | S |
+| 4 | P1 | `project/pre-release/AGENTS.md`, an always-on guide for a retired folder | project/ | XS |
+| 5 | P1 | `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction | project/ | S |
 
 ---
 
@@ -87,7 +91,20 @@ exists to prevent.
 **Change:** resolve `68ac4db` to its full sha and confirm the path existed at that commit. If the object
 is gone — a rewritten history — say so in the line rather than pointing at nothing.
 
-### 4. `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction — P1
+### 4. `project/pre-release/AGENTS.md`, left behind — P1
+
+**What:** `project/pre-release/` was emptied on 2026-08-13, but its `AGENTS.md` was not removed and
+`v0.1/` still holds `DA01-02-compiler-behavior-consolidation.md`.
+
+**Why:** `harness audit` lists that file as an **always-on guide**, 34 lines, describing the authoring
+conventions of a folder that is being retired. A guide that loads and describes a folder nobody should
+write into any more is worse than no guide.
+
+**Change:** delete `project/pre-release/AGENTS.md` once `DA01-02` has its own destination — its decision
+is pending (it carries ten architectural decisions with rationale and no ADR records them, so it is a
+candidate for becoming one). Do not delete the folder while that file is still in it.
+
+### 5. `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction — P1
 
 **What:** create the folder, and fix the sentence that contradicts the rule.
 
@@ -103,14 +120,16 @@ someone is working inside `project/`.
 
 ## Implementation order
 
-```
+```text
 P0:  2, 3   — mechanical, no judgement, do first
 P0:  1      — needs a decision per link
-P1:  4      — independent
+P1:  5      — independent
+P1:  4      — blocked on DA01-02's destination
 ```
 
 Item 1 last among the P0s because each link needs its intended target established, and two of its rows
-are closed in another dossier rather than here.
+are closed in another dossier rather than here. Item 4 last of all: it is the only one waiting on a
+decision that is not this dossier's to make.
 
 ## Closing
 
