@@ -157,11 +157,12 @@ correctness target and why Track 2 relocates rather than deletes.
       `/vibe-ops:authoring-agents-md` rather than repeating the relocation by hand — the 2026-08-13 audit
       declared the file's authoring quality unchecked, and that is the gap a hand pass leaves open again.
 - [ ] **Track 7 — Records and templates carry a version.** Added 2026-08-13, reshaped the same day once
-      `vibe-ops harness` shipped. Three of 46 records declare `vibe-ops-template:`, and all three were
-      written today; `plan.md` here is still the `0.1` shape, so the next plan is born two versions
-      behind. `harness sync` does the template half mechanically — dry-run writes the five canonical
-      templates onto a branch and a tag, never merged, never pushed, and the two local-only templates
-      are untouched. The record half is not mechanical: see the ordering note below.
+      `vibe-ops harness` shipped, and **half executed 2026-08-14**: the five templates are promulgated
+      with this repository's four `adopt` customisations re-applied on top, and thirty-two of the forty
+      records are stamped. Eight remain and none is a stamping job — plans 002 and 003 are genuinely
+      `plan@0.1` and their migration routes each `Surprises & Discoveries` entry through the promotion
+      test, plan 004 is an RFC wearing a plan filename, and the five live task dossiers are local
+      divergences no migration note can reach. Step 4 stays untaken until they are done.
 - [ ] Run `/vibe-ops:close-plan` — retrospective against the goals, the demotion check, living docs
       propagated. The plan file itself is kept.
 
@@ -304,10 +305,58 @@ state. So the sequence gains a step at the front:
    `settings.governance.level["template-version-behind"] = "fail"`, which §3 prescribes for exactly this
    moment — the warning is correct mid-migration and wrong for a repository that has completed one.
 
-Step 3 is verified safe: the four templates shared with the norm carry no local customisation, so
-overwriting loses nothing, and `release-freeze-task.md` / `versioning-task.md` have no upstream
-equivalent and are outside what the norm owns. It also *adds* `log.md`, which this repository lacks, and
-a `task.md` carrying the `Issue` row whose absence is why every task dossier here fails `record-header`.
+~~Step 3 is verified safe: the four templates shared with the norm carry no local customisation, so
+overwriting loses nothing.~~ **Wrong for three of the four, corrected 2026-08-14.** That sentence was
+written from the file names, not from a diff, and it is the second prediction in this plan to fail that
+way. What the norm would have deleted:
+
+| Template | What was local, and why it is not decoration |
+|---|---|
+| `rfc.md` | **The package-impact table.** `.agents/rules/governance.md` makes resolving every `?` cell the gate for Draft → Review, and `project/rfcs/AGENTS.md` owns its legend. The norm has no such table, so overwriting would have removed a ratification gate |
+| `rfc.md` | `rfcs/`, plural, in both the copy target and the pointer — an `adopt` decision from Track 1 |
+| `plan.md` | The disclaimer that plan numbering is plain `NNN` and **not** the DA scheme, which exists precisely because DA numbering is an `adopt` decision |
+| `task.md` | The `Sources` row the governance rule requires by name, the `Package(s)` column, the frozen-boundary note, and the naming convention — a dossier here is `<topic>.md` or `<ID>-<topic>.md` carrying RFC/DA provenance, **never a GitHub issue number**, which is what the norm's template prescribes |
+
+Only `adr.md` was additive. All four were re-applied on top of the norm, and the diff against
+`vibe-ops/norm-1` is now exactly those deltas and nothing else.
+
+**What made this recoverable is that `harness sync` stops at a branch.** It writes into a temporary
+worktree on `vibe-ops/norm-<version>`, never merges and never pushes, which turns promulgation into an
+ordinary reviewable diff. Had it written in place, three `adopt` decisions would have been deleted in a
+commit that read as tooling maintenance.
+
+The rest of step 3 held: `release-freeze-task.md` and `versioning-task.md` have no upstream equivalent
+and were untouched, and the sync *adds* `log.md`, which this repository lacked — the gap that sent every
+closure ceremony to a destination that did not exist.
+
+**The order inverted, and the reason generalises.** §2 of the how-to prescribes migrate-then-promulgate so
+that no reader meets a repository whose template declares one shape and whose records declare another.
+That assumes the local template is an **older version** of the norm. Here it was a **divergence** —
+authored before promulgation, never a `task@0.1` — so no migration note could reach it and the refusal
+surfaced at the template end first: `vibe-ops task close` exited 2 with *the template declares no version,
+so no record under it can be compared*. Promulgating moved the same refusal to the record end. Templates
+therefore came first here, and the two states are worth keeping apart: **behind is migrable, divergent is
+not.**
+
+**Executed 2026-08-14.** Templates promulgated (`adr@2 rfc@2 plan@3 task@3 log@2`, boundary 1, recorded in
+the gitignored `vibeops.config.local.json`). Thirty-two records stamped: nine ADRs and twenty-three RFCs,
+both jumps being section-preserving by their own notes, verified as thirty-two diffs of exactly `+4/-0`.
+The two finished dossiers were repaired by hand and closed.
+
+**Eight records remain, and none of them is a stamping job.** Plans 002 and 003 carry `## Progress` and
+`## Surprises & Discoveries`, so they are genuinely `plan@0.1` and their migration routes every Surprises
+entry through the promotion test — judgement per entry, not a marker insert. Plan 004 is an RFC wearing a
+plan filename (`1. Summary`, `2. Motivation`, `3. Specification`), which is a shape question rather than a
+version one. The five live task dossiers are all local divergences, three of them predating these
+conventions entirely; none is `Done`, so the migration note's skip rule does not retire them.
+
+**Step 4 is deliberately not taken yet, and would be theatre if it were.** Raising
+`template-version-behind` to `fail` is prescribed for a repository that has *finished* migrating, and
+eight records say this one has not. It would also change nothing measurable: `vibe-ops governance` reported
+`13 gates, 0 failed` while forty-three records carried no stamp, because the gate flags a record that is
+*behind*, not one that is *unstamped* — and `template-version-rfc` runs over `project/rfc/**/*.md`, a
+folder this repository does not have. That is the third instance of the open question below about literal
+paths in the upstream ops, now with a measurement attached.
 
 ### Track 5 — Close the findings the gate had to be handed over red with
 
@@ -499,6 +548,37 @@ for t in project/templates/plan.md templates/plan.md; do [ -f "$t" ] && echo "PL
   answer a question both gates' own source declares deferred upstream. They are regression guards here
   rather than live findings, so waiting is free.
   **Date / Author:** 2026-08-13 / Danilo Borges
+
+- **Decision:** Promulgate the norm templates **before** migrating the records, inverting the documented
+  order, and re-apply this repository's four `adopt` customisations on top of the result.
+  **Rationale:** the documented order exists so that no reader meets a repository whose template declares
+  one shape and whose records declare another, and it assumes the local template is an older *version* of
+  the norm. Ours was a *divergence* — authored before promulgation, matching no released shape — so no
+  migration note could reach it, and the tooling refused at the template end first. Re-applying rather
+  than accepting the overwrite is not a compromise: three of the four shared templates carried decisions
+  this plan itself made, including the RFC package-impact table that `.agents/rules/governance.md` uses as
+  the Draft → Review gate. The general form is worth keeping: **behind is migrable, divergent is not**, and
+  the two produce the same symptom.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
+- **Decision:** Stamp the nine accepted ADRs, despite this repository reading ADR immutability strictly.
+  **Rationale:** the `adr 0.1 → 2` note raises this as a decision the consuming repository owes rather
+  than assuming it away, and says the correct outcome where immutability is read strictly is to leave the
+  ADR unstamped and report it. Answered the same way this plan already answered the analogous case when it
+  repointed two broken links inside an accepted ADR: immutability protects a decision's **substance** — its
+  context, the choice, the options rejected, the consequences accepted — and a marker read by machines is
+  not substance. Verified mechanically rather than asserted: all thirty-two stamp diffs are exactly
+  `+4/-0`, so no status, no decision and no prose moved.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
+- **Decision:** Repair the two finished dossiers by hand instead of running `/vibe-ops:migrate` over them.
+  **Rationale:** the `task 0.1 → 0.2` note carries its own skip rule — *"Skip any dossier already at `Done`
+  and report it as skipped for that reason — never as migrated"* — and both were `Done`. Their two
+  divergences were also not version jumps: no note in the chain renames `## Closing` to `## Closure` or
+  adds `## Surprises & Discoveries`, because the norm has had both since `0.1`. Migrating would have
+  produced a file whose stamp said `task@3` while its shape did not, which is the exact inconsistency the
+  ordering rule exists to prevent.
+  **Date / Author:** 2026-08-14 / Danilo Borges
 
 ## Outcomes & Retrospective
 
