@@ -52,7 +52,6 @@ export default {
     check: {
       disabled: {
         links: "superseded by the markdown-link gate, which honours the dsl/ docs/ dogfood/ exclusions declared below — this fragment has no population control (2026-08-13)",
-        budget: "same finding the budget gate reports as a warning, with Track 6 named as its owner (2026-08-13)",
       },
     },
 
@@ -79,10 +78,9 @@ export default {
       // anything, so a NEW instance of the same defect would be invisible for as long as the
       // declaration stood. These stay visible, stay attributable, and stop blocking a commit.
       level: {
-        // 174 of 150 lines. Track 6 owns it, and its method is relocation, not compression.
-        budget: "warn",
-        // Six folders, each owned by project/tasks/per-package-agents-md.md, which fixes them in the
-        // review-first order rather than by adding six one-line files.
+        // Six folders, each owned by the per-package AGENTS.md dossier, which fixed them in the
+        // review-first order rather than by adding six one-line files. Kept as `warn` rather than
+        // removed: the population is not closed, since a new nested AGENTS.md can appear at any time.
         "no-sibling-claude-md": "warn",
       },
     },
