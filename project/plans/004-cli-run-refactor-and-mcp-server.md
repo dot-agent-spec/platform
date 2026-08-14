@@ -1,19 +1,40 @@
+---
+vibe-ops-template: plan@3
+---
+
 # Plan-004: CLI — Run Refactor and MCP Server
 
-> **Moved and reclassified 2026-08-13.** This lived at
+> **Moved and reclassified 2026-08-13, restructured 2026-08-14.** This lived at
 > `project/pre-release/v0.1/DA01-03-cli-run-refactor-mcp-server.md` and was never a log: it is multi-track
 > work whose tracks landed at different times and some of which are still open, which is the definition
-> this repository's own governance rule gives for a plan rather than a task or a log. Its sections still
-> carry the numbered RFC shape it was written in; they have not been restructured, only rehoused.
+> this repository's own governance rule gives for a plan rather than a task or a log. The move left its
+> numbered RFC-style headings alone; they have since been remapped onto the `plan@3` shape, with no
+> section deleted — see the Decision Log.
 
 | Field | Value |
 |---|---|
-| Status | In Progress — Tracks 1–3 implemented in code; one Track 1 item and the §5 verification checklist still open (see Current State) |
+| Status | In Progress — Tracks 1–3 implemented in code; one Track 1 item and the `Success criteria` checklist still open, and no track has been observed working end to end |
 | Created | 2026-06-27 |
 | Author | Danilo Borges |
 | Related | [RFC-0022](../rfcs/0022-forgiving-syntax-and-prettifier.md), `DA01-02` (compiler behavior consolidation) |
 
-## Current State (verified against source 2026-07-02)
+## Tracks
+
+Verified against source on 2026-07-02, and **statically**: the entries below say the files exist and are
+wired to each other. That is not a behavioural confirmation, and the distinction is the point — the §
+`Success criteria` checklist was never run, so nothing here has been observed working end to end.
+
+- [ ] **Track 1 — Run Refactor.** Done except version pinning: `scripts/release.mjs` still resolves
+      nothing, and the CLI's `package.json` still declares `@dot-agent/compiler` and `@dot-agent/sdk` as
+      `"*"`. That one item is what keeps this track open.
+- [ ] **Track 2 — MCP Server.** Implemented and substantial, but never re-verified line by line against
+      its own specification below.
+- [ ] **Track 3 — LLM Context.** The shipped assets match the specified shape. Same caveat.
+- [ ] **Run the `Success criteria` checklist.** The behavioural half of all three tracks, and the reason
+      none of them is ticked.
+- [ ] Run `/vibe-ops:close-plan` — the file is kept, as plans are.
+
+### The static evidence, per track (2026-07-02)
 
 - **Track 1 — Run Refactor:** done except one item. `bundleFromDir()` exists (`packages/compiler/src/bundle.ts`), exported from `compiler/src/index.ts`, and used by `apps/dot-agent-cli/src/commands/run.ts`. `AgentContext` is fully removed (no references remain in `apps/dot-agent-cli/src`). **Open:** §3.3 version pinning — `scripts/release.mjs` still has no logic to resolve `@dot-agent/compiler: "*"` / `@dot-agent/sdk: "*"` to exact versions before publish; the CLI's `package.json` still declares both as `"*"`.
 - **Track 2 — MCP Server:** `apps/dot-agent-cli/src/commands/mcp-server.ts` exists and is substantial (~7KB) — matches the tools/resources spec in shape. Not re-verified line-by-line against §3.6/§3.7.
@@ -26,7 +47,7 @@
 
 ---
 
-## 1. Summary
+## Summary
 
 Three-track work on the CLI, compiler, and LLM integration.
 
@@ -38,9 +59,9 @@ Three-track work on the CLI, compiler, and LLM integration.
 
 ---
 
-## 2. Motivation
+### Motivation — the five problems this addresses
 
-### 2.1 Duplication in run.ts
+#### Duplication in run.ts
 
 The directory path in `apps/dot-agent-cli/src/commands/run.ts` constructs an `AgentBundle` manually:
 
@@ -50,25 +71,25 @@ The directory path in `apps/dot-agent-cli/src/commands/run.ts` constructs an `Ag
 
 All of this logic already exists in `packages/compiler/src/pack.ts`. Only a disk-write-free variant that returns `AgentBundle` directly is missing.
 
-### 2.2 AgentContext is dead code
+#### AgentContext is dead code
 
 `AgentContext` (an `EventEmitter` subtype) has no external consumers. No public API depends on it. It adds indirection between `run()` and `AgentSession` with no value.
 
-### 2.3 Lint absent on directory run
+#### Lint absent on directory run
 
 `run` for directory sources skips lint entirely. The behavior must match what `pack()` would do: errors block, warnings are printed to stderr.
 
-### 2.4 LLM-driven agent testing
+#### LLM-driven agent testing
 
 The primary use case for `--mcp` is an LLM (Claude Code or another MCP client) loading a `.agent`, navigating the FSM via intents, observing effects and memory transitions, and validating behavior without writing an ad-hoc test harness. The FSM is deterministic — an LLM can cover all paths systematically.
 
-### 2.5 LLM orientation gap
+#### LLM orientation gap
 
 An LLM connecting to the MCP server has no intrinsic knowledge of: the expected interaction loop, what effects mean, when to call `tick_prompt` vs `send_intent`, or how to interpret `request_interact`. A static `dot-agent://howto` resource would close the protocol gap but dumps everything into context at once — exactly the problem the FSM model solves. The `helper.agent` replaces it with navigated, on-demand guidance: the LLM asks what it needs, in the state it needs it, and loads nothing else.
 
 ---
 
-## 3. Specification
+## Design
 
 ### Track 1: Run Refactor
 
@@ -302,7 +323,7 @@ Without this, memory is serializable (`get_memory`/`set_memory`) but the FSM pos
 
 ---
 
-## 4. Implementation Plan
+### Implementation order
 
 ### Track 1 — Prerequisite
 
@@ -336,7 +357,7 @@ Without this, memory is serializable (`get_memory`/`set_memory`) but the FSM pos
 
 ---
 
-## 5. Verification
+## Success criteria
 
 ### Track 1
 
@@ -367,3 +388,36 @@ Without this, memory is serializable (`get_memory`/`set_memory`) but the FSM pos
 - [ ] `dot-agent install-skill` copies skill to `~/.claude/skills/dot-agent/SKILL.md`
 - [ ] "run examples/hello.agent" → Claude Code starts server, enters loop
 - [ ] "what is dot-agent?" → Claude Code starts helper, navigates to `about`, answers from effect
+
+---
+
+## Decision Log
+
+- **Decision:** Reclassify this document as a plan and rehouse it, rather than leaving it among the
+  pre-release logs.
+  **Rationale:** it is multi-track work whose tracks landed at different times and some of which are still
+  open, which is exactly the definition this repository's governance rule gives for a plan rather than a
+  task or a log. The log folder it lived in has since been retired entirely.
+  **Date / Author:** 2026-08-13 / Danilo Borges
+
+- **Decision:** Restructure its headings to the `plan@3` shape instead of stamping the shape it had.
+  **Rationale:** the reclassification deliberately left the numbered RFC-style sections alone — the
+  document was rehoused, not rewritten. That was the right call then and became the blocker later: a
+  record declaring a template version it does not have is the exact inconsistency the version stamp
+  exists to prevent, and no migration note reaches a document that was never written from any version of
+  this template. The remap preserves every section: `1. Summary` → `Summary` with `Motivation` beneath it,
+  `3. Specification` → `Design`, `4. Implementation Plan` → an `Implementation order` subsection of it,
+  `5. Verification` → `Success criteria`, and `Current State` → the `Tracks` checkboxes plus the dated
+  static evidence that produced them. Nothing was deleted.
+  **Date / Author:** 2026-08-14 / Danilo Borges
+
+## Outcomes & Retrospective
+
+The work predates this shape, so there is no contemporaneous record to preserve here and none is invented
+— a retrospective reconstructed from memory is worthless, which is why this section says so rather than
+being filled in.
+
+One thing the 2026-07-02 verification did establish, and it is worth carrying: **every track reads as
+done from static evidence and none has been observed working.** The files exist and are wired to one
+another; the `Success criteria` checklist has never been run. That is the gap between this plan being
+finished in the tree and finished in fact, and it is why no track above is ticked.
