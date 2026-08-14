@@ -1,11 +1,16 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Close the findings the gate would otherwise be handed over red with
 
 | Field | Value |
 |---|---|
-| Status | Planned |
+| Status | Done — all five items closed 2026-08-14 |
 | Created | 2026-08-13 |
 | Author | Danilo Borges |
 | Issue | — (no tracking issue; the design record is Plan-001 Track 5) |
+| Plan | [Plan-001](../plans/001-adopt-vibe-ops-baseline.md) Track 5 |
 | Sources | [Plan-001](../plans/001-adopt-vibe-ops-baseline.md) Track 5 |
 
 ---
@@ -51,9 +56,27 @@ picture in three ways:
 
 ## Work items
 
-### 1. In-scope `links` — P0
+### 1. In-scope `links` — P0 — **done 2026-08-14, and not one of them was closed here**
 
-**What:** the `markdown-link` findings under paths the gate covers.
+Every in-scope row was carried off by the work that owned it. `plugins/claude/AGENTS.md` (2) and
+`packages/kernel-dsl/AGENTS.md` (1) went with the per-package dossier, as this table said they should;
+`project/tasks/*` (4) went with `pre-public-consolidation.md`'s deletion and the two closures; the nine in
+`project/plans/002` and the two in `implementation-status.md` went with the repointing those passes owed.
+
+Verified rather than assumed, because "someone else fixed it" is exactly the claim that should not be
+taken on trust: `governance --audit --json` reports `markdown-link` as **132 files examined, 48 ignored,
+zero findings**, and a run scoped to `project/plans/002-dot-agent-as-claude-plugin.md` alone reports it as
+examined — not ignored — and clean. The 48 ignored are the declared `dsl/`, `docs/` and `dogfood/`
+exclusions, which is what makes the remaining zero honest.
+
+**The same audit turned up a finding this item did not go looking for**, and it is the reason to read a
+structured report rather than a summary line. All six `template-version` gates SKIP, each saying *no
+`templates/<type>.md`*, over a repository holding five stamped templates in `project/templates/` and
+naming all five in `vibeops.config.ts`. One literal in the ops composition, `<plugin>/templates/adr.md`,
+resolves to the root in a repository that is not a plugin. Recorded in Plan-001's open questions; it is
+upstream's, not this dossier's.
+
+**What it was:** the `markdown-link` findings under paths the gate covers.
 
 **Why:** the ones that stay are declared as an excluded population in `vibeops.config.ts`, and an
 exclusion is only honest if what remains is actually clean.
@@ -150,18 +173,45 @@ diagram in `AGENTS.md`, which promised both folders and is now true on disk.
 
 ## Implementation order
 
-```text
-P0:  2, 3   — mechanical, no judgement, do first
-P0:  1      — needs a decision per link
-P1:  5      — independent
-P1:  4      — was blocked on DA01-02's destination; decided and closed 2026-08-14
-```
+- [x] P0 — item 2, the five `record-header-task` headers (2026-08-13)
+- [x] P0 — item 3, the malformed `breadcrumb` (2026-08-13)
+- [x] P1 — item 5, `project/rfcs/rejected/` and the `GOVERNANCE.md` contradiction (2026-08-13)
+- [x] P1 — item 4, `project/pre-release/` retired entirely (2026-08-14)
+- [x] P0 — item 1, the in-scope `links`, verified at zero (2026-08-14)
 
-Item 1 last among the P0s because each link needs its intended target established, and two of its rows
-are closed in another dossier rather than here. Item 4 was last of all, being the only one waiting on a
-decision that was not this dossier's to make.
+Item 1 was last among the P0s because each link needed its intended target established, and two of its
+rows were closed in another dossier rather than here. Item 4 was last of all, being the only one waiting
+on a decision that was not this dossier's to make.
 
-## Closing
+## Surprises & Discoveries
+
+- Observation: not one of item 1's links was closed by this dossier, and the item still needed a
+  verification pass rather than a tick.
+  Evidence: every in-scope row was carried off by the work that owned it — the per-package dossier, the
+  `pre-public-consolidation.md` deletion, the two closures and their repointing. "Someone else fixed it"
+  is the claim least safe to take on trust, so it was measured: `markdown-link` reports 132 examined, 48
+  ignored, zero findings, and `project/plans/002` reports as examined rather than ignored.
+
+- Observation: a summary line cannot distinguish a gate that examined its population from one addressed at
+  a path the repository does not use, and this repository has now paid for that twice.
+  Evidence: `governance --audit --json` shows all six `template-version` gates skipping with *no
+  `templates/<type>.md`*, over five stamped templates in `project/templates/` that `vibeops.config.ts`
+  names explicitly. The cause is the literal `<plugin>/templates/adr.md` in the ops composition, which in
+  a non-plugin repository resolves to the root. The first instance was `skill-frontmatter` reporting *no
+  `skills/` directory* while two skills sat in `.agents/skills/`.
+  **Carried to Plan-001's open questions**, which is where the upstream half of this already lives.
+
+- Observation: deleting a record is never only a deletion, and the cost lands on documents that never
+  mentioned the record by name.
+  Evidence: removing `project/pre-release/` broke a link in an accepted ADR, left a stale row in the root
+  `AGENTS.md` layout tree, and left `ROADMAP.md` pointing readers at the folder **inside a code span** —
+  invisible to the `markdown-link` gate, which reads links. Only the ADR was caught mechanically.
+
+## Closure
 
 - [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
       runs; a dossier that looks otherwise finished but has this box open is not done.
+
+Brought from this repository's pre-promulgation `task.md` to `task@3` by hand on 2026-08-14, not by
+`/vibe-ops:migrate`: the local template was a divergence rather than an older version, so no note in the
+chain renames `## Closing` to `## Closure` or adds `## Surprises & Discoveries`.

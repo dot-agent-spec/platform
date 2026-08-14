@@ -151,7 +151,11 @@ correctness target and why Track 2 relocates rather than deletes.
       runs. Decide first whether this wants a guard rather than a repair — the root `AGENTS.md` already
       records this same skill mis-mapping on a stale node-name table once, and a second occurrence of one
       failure is the argument the third repair will not settle it.
-- [ ] **Track 5 — Close the findings the gate was handed over red with.** Opened 2026-08-13.
+- [x] **Track 5 — Close the findings the gate was handed over red with.** Opened 2026-08-13, closed
+      2026-08-14. Five items, and the last one to fall was the only one waiting on a decision that was not
+      the dossier's to make: `DA01-02` does not become an ADR, so `project/pre-release/` is gone entirely.
+      Item 1 closed without this track touching a single link — every one was carried off by the work that
+      owned it — which made verification the whole job rather than a formality.
 - [ ] **Track 6 — The `AGENTS.md` budget, again.** Added 2026-08-13. Track 2's own retrospective predicted
       this: it landed at exactly 150 of 150 and named the next addition as the risk. Run
       `/vibe-ops:authoring-agents-md` rather than repeating the relocation by hand — the 2026-08-13 audit
@@ -659,6 +663,18 @@ budget that the enforcement-ladder framing does not make on its own.
   `<plugin>/templates/adr.md` as literals. The consequence here is silent: those entries examine zero
   files, which produces no findings and reads as clean. This is an upstream question and this plan should
   not work around it — a local override would be a third copy of an answer that already exists twice.
+
+  **Measured 2026-08-14, and it is wider than "the RFC entry reads nothing".** `governance --audit --json`
+  reports **all six** `template-version` gates as skipped, each saying *no `templates/<type>.md` — nothing
+  to compare these records against*, while `project/templates/` holds five stamped templates and
+  `vibeops.config.ts` names every one of them under `records.templates`. The cause is one literal in the
+  ops composition — `options: { template: "<plugin>/templates/adr.md" }` — and in a repository that is not
+  a plugin, `<plugin>` resolves to the root, where no `templates/` exists. So the whole `template-version`
+  enforcement is inert here. That is why `vibe-ops governance` reported `13 gates, 0 failed` over
+  forty-three unstamped records, and why Track 7's step 4 would have measured nothing had it been taken.
+  Upstream already knows the symptom without having fixed the cause: the gate's own source says its skip
+  reason was rewritten *because* the old wording claimed a repository kept no records of that type while
+  holding "9 ADRs, 25 RFCs and 4 plans" — this repository's exact counts.
 
   > Promoted to learning on 2026-08-13
 - ~~**`module-check` does not read `settings.check.disabled`.**~~ **Closed 2026-08-13, the day it was
