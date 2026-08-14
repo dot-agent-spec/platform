@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Replace the shell governance gate with the `vibe-ops` CLI
 
 | Field | Value |
@@ -152,19 +156,50 @@ P1:  4 (exclusions) → 5 (verification)
 1 before 2 because the rewired entry points read the config. 3 after 2 so the gate is never absent
 between commits. 4 before 5 or verification reports the exclusions as findings.
 
-## Closing
+## Surprises & Discoveries
+
+**Already routed on 2026-08-13, before this section existed.** The dossier was written against this
+repository's pre-promulgation `task.md`, which had no such section, so the entries below were harvested by
+`/route-learnings` from the closure summary instead and are recorded here for the ceremony to find
+discharged rather than re-route.
+
+- Observation: the debt ledger became configuration for the ported gates and stayed an environment
+  variable for the seventeen shell fragments, because `module-check` read no configuration at all.
+  Evidence: deleting `_run.sh` removed the only mechanism that could declare a fragment off and the shell
+  half went from green to 38 failures; a session hook running `vibe-ops check` directly saw all 38 within
+  the minute, proving a declaration living in two shell scripts is invisible to every other caller.
+  **Discharged:** fixed upstream the same day; Plan-001 Track 4 carries the correction.
+
+- Observation: a hook that repairs a finding cannot know which findings a repository has declared out of
+  scope, so the exclusion has to be declared *before* the write, not after.
+  Evidence: `authoring-agents-md`'s pairing hook created `plugins/claude/CLAUDE.md` automatically — a file
+  that ships to every plugin install while never loading.
+  **Promoted:** workspace `project/learnings/a-repairing-hook-writes-the-file-a-repo-declared-it-must-not-have.md`.
+
+- Observation: a record template that is a local divergence rather than an old version cannot be reached
+  by migration, and the blockage surfaces at closure rather than at authoring time.
+  Evidence: this dossier's own closure, refused twice — first on the template declaring no version, then
+  on the record declaring none.
+  **Promoted:** workspace `project/learnings/task-closure-needs-the-template-migrated-not-just-stamped.md`.
+
+## Closure
 
 - [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
       runs; a dossier that looks otherwise finished but has this box open is not done.
 
-**Attempted 2026-08-13 and refused, which is Track 7's problem surfacing here.** `vibe-ops task close`
-exits 2 with *the template declares no version, so no record under it can be compared*. Stamping
-`project/templates/task.md` is only the first of three mismatches against `task@3`: this repository's
-template also calls the section `## Closing` where the tool ticks `## Closure`, and has no
-`## Surprises & Discoveries` at all — which is the only input the closure ceremony's routing step reads.
+**Attempted 2026-08-13 and refused twice, which is Track 7's problem surfacing here.** First
+`vibe-ops task close` exited 2 with *the template declares no version, so no record under it can be
+compared*; promulgating the norm templates on 2026-08-14 moved the refusal to *this record declares no
+template version — it is not assumed to be the oldest shape*. Both refusals are the same defect seen from
+two ends, and neither was a version jump: this repository's `task.md` was a local divergence, calling the
+section `## Closing` where the tool ticks `## Closure` and carrying no `## Surprises & Discoveries` at
+all — the only input the closure ceremony's routing step reads.
+
+Repaired by hand rather than by `/vibe-ops:migrate`, because the `task 0.1 → 0.2` note's own skip rule
+says a dossier already at `Done` is skipped and reported as skipped, never migrated.
 
 Steps 1–5 of the ceremony ran anyway and are committed: the write-back to Plan-001, the demotion check
 (empty), the propagation, and the routing, whose surviving facts were promoted to the workspace learnings
-base. Only the distil-and-delete step is blocked.
+base. Only the distil-and-delete step was blocked.
 
 > Promoted to learning on 2026-08-13

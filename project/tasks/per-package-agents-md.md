@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Make the per-package `AGENTS.md` files actually load
 
 | Field | Value |
@@ -164,9 +168,43 @@ No batching constraint: each folder is independent, and each leaves the tree con
 plan or task that touches one of these folders for another reason **should pull its item in and close it
 there** rather than leaving it for a sweep.
 
-## Closing
+## Surprises & Discoveries
+
+**Already routed on 2026-08-13, before this section existed.** The dossier was written against this
+repository's pre-promulgation `task.md`, which had no such section, so the entries below were harvested by
+`/route-learnings` from the closure summary instead and are recorded here for the ceremony to find
+discharged rather than re-route.
+
+- Observation: three of the six folders carried an instruction that could not be followed, and none of
+  them had a sibling `CLAUDE.md`.
+  Evidence: a "do not delete this script" guarding a file long since absorbed into the shared build
+  script; two grammar paths under a pre-flatten directory, cited by the sentence telling readers to verify
+  node names against them; the identical impossible instruction in two packages, to bump the version of a
+  `path` dependency that has none. Nothing read the files, so nothing corrected them — the drift is a
+  consequence of the defect this dossier existed to fix.
+  **Discharged:** stated in Plan-001 Track 3's write-back, which is permanent.
+
+- Observation: the three-step recipe's final step was wrong for two of six folders, and only reviewing
+  first caught it.
+  Evidence: `plugins/claude` would have shipped a `CLAUDE.md` into every user's plugin cache;
+  `packages/sdk` would have gained a nested file restating its own README.
+  **Discharged:** both decisions are recorded in Plan-001 Track 3 and in `vibeops.config.ts`'s `pairing`
+  exclusion, which is where the next writer meets them.
+
+- Observation: two node names the grammar dropped survive in package documentation and, more seriously,
+  in a skill that loads and runs.
+  Evidence: `intent_trigger` (DA01-01) and `oriented_state_body` (RFC-0022); the latter in
+  `.agents/skills/sync-implementation-status/SKILL.md`, a skill already on record having mis-mapped once
+  on a stale node-name table.
+  **Carried forward:** Plan-001 Track 8, deliberately not closed with this dossier.
+
+## Closure
 
 - [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
       runs; a dossier that looks otherwise finished but has this box open is not done.
+
+Section renamed from `## Closing` and `## Surprises & Discoveries` added by hand on 2026-08-14, not by
+`/vibe-ops:migrate`: this repository's `task.md` was a local divergence rather than an older version, and
+the `task 0.1 → 0.2` note's skip rule says a dossier already at `Done` is skipped, never migrated.
 
 > Promoted to learning on 2026-08-13
