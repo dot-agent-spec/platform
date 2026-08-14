@@ -537,6 +537,16 @@ budget that the enforcement-ladder framing does not make on its own.
   `<plugin>/templates/adr.md` as literals. The consequence here is silent: those entries examine zero
   files, which produces no findings and reads as clean. This is an upstream question and this plan should
   not work around it — a local override would be a third copy of an answer that already exists twice.
+- **`module-check` does not read `settings.check.disabled`, so the shell half has no config.** Opened
+  2026-08-13, during Track 4's own execution. It spawns the seventeen fragments through their own runner
+  and passes it `GATE_VERBOSE` and nothing else, so the only way to declare a fragment off is the
+  `VIBE_OPS_DISABLED_CHECKS` environment variable. That variable can only be exported by a caller —
+  which means the declaration lives in `scripts/check.sh` and `.githooks/pre-commit` and **nowhere a
+  different caller can see it**. Measured the same day: a session hook running `vibe-ops check` directly
+  reported 38 failures this repository had already decided about. The fix is small and upstream —
+  translate `context.settings.disabled` into the spawn env, the way every ops already reads
+  `settings.<ops>.disabled`. Declared in `vibeops.config.ts` anyway, marked inert, so the ledger is where
+  a reader looks for it and goes live without an edit here.
 - **Where do `disabled-declared` and `runner-provenance` get composed?** Opened 2026-08-13.
   `harness catalog` reports both as available and composed into no ops, and each lands exactly on a Track
   4 concern — the first enforces that a `disabled` entry carries a reason string rather than a boolean,
