@@ -110,7 +110,12 @@ export default {
         // would have read as protection while protecting nothing. Upstream replaced the ten directory
         // literals with `<records:<type>>` the same day; the folder became visible, its 23 RFCs with it,
         // and the two non-records needed declaring for the first time.
+        // The log index needs declaring twice, once per gate that reads a record's shape: the stamp
+        // (`template-version-log`) and the frontmatter block itself (`record-frontmatter-log`). Only
+        // the stamp was declared on 2026-08-14, so its sibling detector went on failing alone against
+        // the same non-record — the rfc pair below had both from the start (2026-08-22).
         "template-version-log": ["project/log/README.md"],
+        "record-frontmatter-log": ["project/log/README.md"],
         "template-version-rfc": ["project/rfcs/INDEX.md", "project/rfcs/AGENTS.md"],
         "record-header-rfc": ["project/rfcs/INDEX.md", "project/rfcs/AGENTS.md"],
       },
