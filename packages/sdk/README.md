@@ -37,6 +37,18 @@ console.log(session.getValidIntents())
 session.dispose()
 ```
 
+---
+
+## Running in the browser
+
+`loadAgent()` is a client-side path. It unpacks the `.agent` ZIP in memory with `jszip` and imports only the browser-safe `@dot-agent/compiler/core` sub-path — no `node:` module, no filesystem, and no server-side unpack endpoint. The bytes can come from `fetch()`, an `<input type="file">`, or a drop target; a Web Worker is a supported host, because the kernel detects Node explicitly rather than checking for `window`.
+
+The one asset still fetched is the kernel WebAssembly module, once, on the first `AgentSession.create()` — a static file served from your own bundler's output.
+
+Full guide: [docs/how-to/load-an-agent-in-the-browser.md](../../docs/how-to/load-an-agent-in-the-browser.md).
+
+---
+
 If the bundle's behavior files reference a `merge "…"` path that isn't already included in
 `bundle.files.behaviors`, register a fallback resolver **before** calling `start()`:
 
