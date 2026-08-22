@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { join } from 'path'
 import { rm, stat, readFile } from 'fs/promises'
 import { init } from '../src/commands/init.js'
@@ -12,6 +12,17 @@ describe('CLI Commands Integration', () => {
   const tempDir = join(process.cwd(), 'temp_test_cli')
   const outAgent = join(tempDir, 'my-agent.agent')
   const unpackDir = join(tempDir, 'unpacked')
+
+  // init now refuses to overwrite, so a tempDir left behind by a crashed run would turn this
+  // suite red for a reason that has nothing to do with the code under test. Clear it up front
+  // as well as afterwards.
+  beforeAll(async () => {
+    try {
+      await rm(tempDir, { recursive: true, force: true })
+    } catch {
+      // ignore
+    }
+  })
 
   afterAll(async () => {
     try {

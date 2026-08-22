@@ -24,20 +24,32 @@ function applyTokens(content: string, tokens: Record<string, string>): string {
   return content.replace(/\{\{(\w+)\}\}/g, (match, key) => tokens[key] ?? match)
 }
 
-async function copyTemplateTree(srcDir: string, destDir: string, tokens: Record<string, string>, files: string[], prefix = ''): Promise<void> {
+// Walks the template tree without writing anything, so the collision check below can see the
+// whole payload before the first byte lands. Writing while walking is what let `init` clobber a
+// real repository's LICENSE and README: a collision discovered mid-walk still left every earlier
+// file overwritten.
+async function collectTemplateFiles(srcDir: string, prefix = ''): Promise<string[]> {
+  const files: string[] = []
   const entries = await readdir(srcDir)
   for (const entry of entries) {
     const srcPath = join(srcDir, entry)
     const relPath = prefix ? `${prefix}/${entry}` : entry
     const stats = await stat(srcPath)
     if (stats.isDirectory()) {
-      await mkdir(join(destDir, relPath), { recursive: true })
-      await copyTemplateTree(srcPath, destDir, tokens, files, relPath)
+      files.push(...(await collectTemplateFiles(srcPath, relPath)))
       continue
     }
-    const content = await readFile(srcPath, 'utf-8')
-    await writeFile(join(destDir, relPath), applyTokens(content, tokens))
     files.push(relPath)
+  }
+  return files
+}
+
+async function writeTemplateFiles(srcDir: string, destDir: string, tokens: Record<string, string>, relPaths: string[]): Promise<void> {
+  for (const relPath of relPaths) {
+    const destPath = join(destDir, relPath)
+    await mkdir(dirname(destPath), { recursive: true })
+    const content = await readFile(join(srcDir, relPath), 'utf-8')
+    await writeFile(destPath, applyTokens(content, tokens))
   }
 }
 
@@ -45,6 +57,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
   const dir = options.dir || process.cwd()
   const name = options.name || basename(dir)
   const domain = options.domain || 'example.com'
+  const force = options.force ?? false
 
   try {
     await stat(dir)
@@ -52,16 +65,26 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     await mkdir(dir, { recursive: true })
   }
 
-  const agentDescriptionPath = join(dir, 'agent.description')
-  try {
-    await stat(agentDescriptionPath)
-    throw new Error(`agent.description already exists at ${agentDescriptionPath}`)
-  } catch (err: any) {
-    if (err.code !== 'ENOENT') throw err
+  const templatesDir = resolveTemplatesDir()
+  const relPaths = await collectTemplateFiles(templatesDir)
+
+  // Guard the whole payload, not just agent.description — templates/ also carries LICENSE,
+  // README.md and SOUL.md, and overwriting those in a real repository is the incident this
+  // guard exists to prevent (issue #21). existsSync stays OUTSIDE any try/catch on purpose:
+  // the older shape threw from inside the try and survived only because a thrown Error has
+  // `code === undefined`.
+  if (!force) {
+    const collisions = relPaths.filter(rel => existsSync(join(dir, rel)))
+    if (collisions.length > 0) {
+      throw new Error(
+        `Refusing to overwrite existing files in ${dir}:\n` +
+          collisions.map(rel => `  ${join(dir, rel)}`).join('\n') +
+          `\nUse --force to overwrite.`
+      )
+    }
   }
 
-  const files: string[] = []
-  await copyTemplateTree(resolveTemplatesDir(), dir, { name, domain }, files)
+  await writeTemplateFiles(templatesDir, dir, { name, domain }, relPaths)
 
-  return { dir, files }
+  return { dir, files: relPaths }
 }

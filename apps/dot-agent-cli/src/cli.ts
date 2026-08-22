@@ -9,6 +9,7 @@ import * as p from '@clack/prompts'
 
 import { version } from './version.js'
 import { init, pack, unpack, run, configure, startDevMcpServer, listAgents, getAgentPath } from './index.js'
+import { USAGE, parseInitArgs, wantsHelp } from './cli-args.js'
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -29,15 +30,21 @@ function formatWarning(msg: string) {
   console.warn(`\x1b[33m⚠\x1b[0m ${msg}`)
 }
 
+function indentUsage(entry: string) {
+  return entry.split('\n').map(line => `  ${line}`).join('\n')
+}
+
 async function main() {
   try {
+    // One uniform help gate, ahead of dispatch: `init --help` must print help rather than reach
+    // the strict parser and come back as an unknown-option error.
+    if (command !== undefined && Object.hasOwn(USAGE, command) && wantsHelp(args.slice(1))) {
+      console.log(`Usage:\n${indentUsage(USAGE[command])}`)
+      return
+    }
+
     if (command === 'init') {
-      const options: any = {}
-      for (let i = 1; i < args.length; i++) {
-        if (args[i] === '--name' && i + 1 < args.length) options.name = args[++i]
-        if (args[i] === '--domain' && i + 1 < args.length) options.domain = args[++i]
-        if (args[i] === '--dir' && i + 1 < args.length) options.dir = args[++i]
-      }
+      const options = parseInitArgs(args.slice(1))
 
       const result = await init(options)
       formatSuccess(`Scaffolded agent project in ${result.dir}`)
@@ -313,16 +320,9 @@ Getting started (for an AI assistant setting this up):
      dot-agent server, then drive it the same way (send_intent, dot-agent://state, ...).
 
 Usage:
-  dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]
-  dot-agent pack [--dir <dir>] [--out <file>] [--commit <hash>] [--version <tag>]
-  dot-agent unpack <file.agent> [--out <dir>] [--force]
-  dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]
-  dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]
-  dot-agent configure [--claude] [--gemini] [--agy] [--murici] [--skill] [--mcp]
-    --claude installs the native plugin; --skill/--mcp apply only to --gemini/--murici
-  dot-agent server-mcp [--mcp-transport stdio|http] [--mcp-port <n>]
-  dot-agent agents list
-  dot-agent agents path <name>
+${Object.values(USAGE).map(indentUsage).join('\n')}
+
+Any command also accepts --help / -h for just its own usage line.
 
 Note: --mcp-transport http binds to 127.0.0.1 and keeps one shared FSM/memory instance for
 the life of the process — a debug convenience (reconnect without losing state), not
