@@ -30,6 +30,10 @@ dot-agent unpack <file.agent> --out <dir>          # extract archive to director
 dot-agent init --name <name> --domain <domain>     # scaffold new agent project
 ```
 
+`init` writes into the current directory unless given `--dir`, and refuses to start when any file it
+would create already exists — so it will not clobber a populated folder. Add `--force` only when
+overwriting is what you actually want. Every command accepts `--help`.
+
 `dot-agent run <source> --mcp` above is for a *host* embedding dot-agent directly (its own process, its
 own MCP server) — not for you. From this skill, the `dot-agent` MCP server this plugin registers is
 **already running**; run an agent by calling its `load_agent` tool (see below), not by shelling out to

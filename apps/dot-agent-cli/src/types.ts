@@ -9,6 +9,7 @@ export interface InitOptions {
   name?: string
   domain?: string
   dir?: string
+  force?: boolean
 }
 
 export interface InitResult {
