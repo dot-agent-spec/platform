@@ -35,4 +35,8 @@ This directory follows the [Diátaxis](https://diataxis.fr/) framework:
 - [Ecosystem overview](explanation/architecture/ecosystem.md)
 - [Design principles](explanation/architecture/design-principles.md)
 
+**How-to:**
+- [Three-layer packaging](how-to/packaging.md) — what a `.agent` bundle contains and how it is built
+- [Load and run a `.agent` in the browser](how-to/load-an-agent-in-the-browser.md) — client-side unpack, what crosses the network, Web Workers
+
 *Component-specific internals (compiler pipeline, parser AST) are documented in `packages/*/docs/`, not here.*
