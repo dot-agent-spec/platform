@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0001: Addon Protocol
 
 | Field | Value |

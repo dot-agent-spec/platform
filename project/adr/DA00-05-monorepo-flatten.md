@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # DA00-05: Monorepo flatten — absorb all packages into the root repo
 
 | Field | Value |

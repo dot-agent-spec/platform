@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # ADR-DA00-07: Package dot-agent as a Portable Plugin Across LLM Coding-Agent CLI Hosts
 
 | Field | Value |
@@ -64,4 +68,13 @@ decision, not a new default.
   keeps host-neutral.
 - [`project/plans/002-dot-agent-as-claude-plugin.md`](../plans/002-dot-agent-as-claude-plugin.md) — the
   Claude Code reference implementation this ADR generalizes from.
-- Paired long-form log: [`project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md`](../pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md).
+- Paired long-form log — the three-layer decoupling, the role-framing problem, the usage taxonomy, and
+  what this generalises to for Codex and Antigravity. Removed from the tree on 2026-08-13 when
+  `project/pre-release/` was retired; recoverable in full:
+  `git show 71cbf9f0755b60278eaf0dae3efaa640b25a815a:project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md`
+
+  **Checked 2026-08-13:** that log carried its own "Current State (verified against source 2026-07-27)"
+  section, which is an admission that the rest of it is dated. P0 (CLI skill reconciled into Mode A),
+  P1 (plugin manifest MCP auto-registration) and P2 (the mutable `Runtime` holder in `mcp-run.ts`, which
+  is what makes `load_agent` work from a connect-time tool list) were done at that date. P3, the Rust
+  runtime, was open then and this check did not re-verify it.

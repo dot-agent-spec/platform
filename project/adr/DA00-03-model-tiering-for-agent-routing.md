@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # DA00-03: Model tiering for subagent and skill routing
 
 > Migrated from legacy ADR-0002 under [DA00-01](DA00-01-traceability-scheme.md).

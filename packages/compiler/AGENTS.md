@@ -1,86 +1,69 @@
 # @dot-agent/compiler — Agent Guidelines
 
-AI collaboration guide for maintaining and evolving this package.
+The Level 1 tooling engine: linting (`E*`/`W*` diagnostics), behavior-graph extraction, `aboutme.json`
+manifest construction, agent-ID formatting, and the `.agent` ZIP pipeline.
 
----
+**What it is not** is the useful half of that sentence. No CLI argument parsing, no LSP JSON-RPC, no
+runtime execution — those are `dot-agent-cli`, `language-server` and `@dot-agent/sdk`. A change that needs
+one of them does not belong here.
 
-## What this package is
+Its own internals are documented in [`docs/`](docs/): the pipeline in `concepts/pipeline.md`, the calling
+convention in `guides/linting.md`, and every diagnostic code in `reference/lint-codes.md`.
 
-`@dot-agent/compiler` is the **Level 1 tooling engine** of the dot-agent ecosystem. It is the single source of truth for:
+## The grammar stopped enforcing shape — the linter does
 
-- Tree-sitter AST parsing of `.description` and `.behavior` files
-- Syntax and semantic linting (diagnostic codes `E*` / `W*`)
-- Behavior graph extraction (states, transitions, entry points)
-- Manifest construction and serialisation (`aboutme.json`)
-- Agent ID formatting (`namespace/name:version~digest`)
-- ZIP packaging pipeline (`.agent` bundles)
+This is the correction that matters most, because this file asserted the opposite as hard requirements
+until 2026-08-13, and a reader trusting it would look for grammar errors that can no longer occur.
 
-It does **not** contain CLI argument parsing, LSP JSON-RPC protocol handling, or runtime execution — those belong in `dot-agent-cli`, `language-server`, and `@dot-agent/sdk` respectively.
+RFC-0022 flattened the grammar: `state_body` is `repeat1(choice(...))` and is the **only** body node,
+shared by setup and oriented states; `agent_decl` is `repeat(choice(...))`, so `.description` blocks are
+accepted in **any order**. Everything that used to be a parse failure is now a lint rule:
 
----
+- a state with `interact` must declare `goal`
+- an oriented state must end with `on offtopic`
+- `goal` belongs only to an oriented state
+- the canonical `description → persona → behavior → capabilities → requires → input → output` order
 
-## Package layout
+The grammar accepts all of it. If one of those must fail, it fails in `src/linter.ts` or nowhere.
 
-```
-packages/compiler/
-├── src/
-│   ├── index.ts          # Public re-exports — the package surface
-│   ├── types.ts          # Shared type definitions (LintMessage, AboutMe, etc.)
-│   ├── parser.ts         # WASM init, parse(), nodesOfType(), AST helpers
-│   ├── linter.ts         # lintDescription() + lintBehavior() + diagnostic rules
-│   ├── graph.ts          # extractBehaviorGraph()
-│   ├── manifest.ts       # parseAboutme(), buildAboutme(), aboutmeToJson()
-│   ├── id.ts             # parseId(), buildId()
-│   ├── zip.ts            # readZip(), writeZip(), extractFiles(), validateZipBomb()
-│   ├── pack.ts           # collectFiles(), pack()
-│   └── types.kernel-dsl.d.ts  # Module augmentation: adds init() to kernel-dsl types
-├── tests/                # One test file per src module
-├── docs/
-│   ├── concepts/pipeline.md   # How the compiler pipeline works internally
-│   ├── guides/linting.md      # How to call lintDescription/lintBehavior in code
-│   └── reference/lint-codes.md # Full table of diagnostic codes
-├── package.json
-├── tsconfig.json
-├── tsup.config.ts
-└── vitest.config.ts
-```
+## Node type names
 
----
+They come from the grammars, and hardcoding one without checking is how a silent mismatch gets in:
 
-## Evolving the compiler
+- [`packages/tree-sitter/tree-sitter-behavior/grammar.js`](../tree-sitter/tree-sitter-behavior/grammar.js)
+- [`packages/tree-sitter/tree-sitter-description/grammar.js`](../tree-sitter/tree-sitter-description/grammar.js)
 
-### Adding a new lint rule
+One that surprises people: `domain`, `license`, `terms` and `privacy` are `agent_meta` nodes carrying
+`key`/`value` fields. There is no `domain_declaration` node and never was.
 
-1. Implement the rule in `src/linter.ts` — choose an unused `E*` code for hard errors, `W*` for warnings.
-2. Add at least one positive (triggers the rule) and one negative (valid input, no trigger) test in `tests/linter.test.ts`.
-3. Add a row to `docs/reference/lint-codes.md`.
+`web-tree-sitter` has no `Parser.SyntaxNode` / `Parser.Tree` namespace — import `Node` and `Tree`
+standalone. True since 0.25; this package is on `^0.26.9`.
 
-### Changing tree-sitter node types
+## Adding a lint rule
 
-Tree-sitter node type names (`state_decl`, `goal_stmt`, `oriented_state_body`, etc.) come from the grammars in `@dot-agent/tree-sitter`. Never hardcode a node type string without verifying it against:
-- `dsl/tree-sitter/grammar.js` (description grammar)
-- `dsl/tree-sitter/behavior/grammar.js` (behavior grammar)
+1. Implement it in `src/linter.ts`, on an unused `E*` (error) or `W*` (warning) code.
+2. Test both directions in `tests/linter.test.ts` — input that triggers it **and** valid input that must
+   not. A rule with only the positive test passes while firing on everything.
+3. Add its row to [`docs/reference/lint-codes.md`](docs/reference/lint-codes.md).
 
-The node type `Parser.SyntaxNode` / `Parser.Tree` namespace does **not** exist in web-tree-sitter v0.25+; use the standalone `Node` and `Tree` imports.
-
-### Grammar rules to remember
-
-- Every `state` with `interact` **must** declare `goal` — `oriented_state_body` requires it.
-- Every `oriented_state_body` **must** end with `on offtopic`.
-- `goal` can only appear inside an `oriented_state_body`; transit states use only `transition to`, `set`, `run`, etc.
-- Description block order is strict: `description → persona → behavior → capabilities → requires → input → output`.
-- The description grammar uses `agent_meta` nodes (with `key`/`value` fields) for `domain`, `license`, `terms`, `privacy` — there is no `domain_declaration` node.
-
-### Running tests
+## Testing
 
 ```bash
 npm test
 ```
 
-Tests require `pool: 'forks', singleFork: true` in vitest config because WASM initialisation is process-global and cannot be shared across worker threads.
+`vitest.config.ts` sets `pool: 'forks'` with a single fork, and that is load-bearing rather than tuning:
+WASM initialisation is process-global, so worker threads cannot share it and a parallel run fails in ways
+that look like parser bugs.
 
----
+## Keeping this file current
 
-## Language rule
+Updating it is part of any task that changes what this package owns or how it is tested. Triggers: a
+responsibility moves in or out of the boundary above; a grammar rule moves between parser and linter; the
+node-type source moves; the test pool constraint changes.
 
-All documentation and code comments in this package must be written in **English**.
+**The trigger already missed once is a rule moving from grammar to linter.** RFC-0022 did exactly that,
+and this file kept describing the old grammar — as did `packages/tree-sitter/AGENTS.md`,
+`project/implementation-status.md`, and `.agents/skills/sync-implementation-status/SKILL.md`, which is the
+one that actually loads and runs. Recorded in the per-package AGENTS.md dossier (closed —
+`git show 42ec13d03dd083f40b3e83916bdca51daef298c6:project/tasks/per-package-agents-md.md`).

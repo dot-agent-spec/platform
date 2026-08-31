@@ -96,7 +96,7 @@ const intents: string[] = JSON.parse(get_intents_for_state(src, 'welcome'));
 
 Returns `"[]"` if the state is not found, has no `interact` block, or the source fails to parse.
 
-**Note:** Collects intents from both `intent_trigger` nodes that are direct siblings in the state body and those nested inside an `interact_stmt.handlers` block. Both forms are grammatically valid and produce identical results here.
+**Note:** Collects intents from both `intent_handler` nodes that are direct siblings in the state body and those nested inside an `interact_stmt.handlers` block. Both forms are grammatically valid and produce identical results here.
 
 ---
 
@@ -149,8 +149,8 @@ type Statement =
       "body": [
         { "type": "goal_stmt", "text": "Help the user get started" },
         { "type": "interact_stmt", "handlers": [] },
-        { "type": "intent_trigger", "intent": "help", "body": "helping" },
-        { "type": "intent_trigger", "intent": "cancel", "body": [
+        { "type": "intent_handler", "intent": "help", "body": "helping" },
+        { "type": "intent_handler", "intent": "cancel", "body": [
           { "type": "guide_stmt", "text": "Goodbye" },
           { "type": "transition_stmt", "state": "farewell" }
         ]}
@@ -306,8 +306,8 @@ All `Statement` objects use a `"type"` discriminant field.
 | `teach_stmt` | `text: string` | `teach "text"` |
 | `interact_stmt` | `handlers: Statement[]` | `interact` |
 | `transition_stmt` | `state: string` | `transition to <state>` |
-| `intent_trigger` | `intent: string`, `body: IntentBody` | `on intent "..."` |
-| `offtopic_stmt` | `body: Statement[]` | `on offtopic` |
+| `intent_handler` | `intent: string`, `body: IntentBody` | `on intent "..."` |
+| `offtopic_handler` | `body: Statement[]` | `on offtopic` |
 | `after_stmt` | `prompts: number`, `body: Statement[]` | `after N prompts` |
 | `run_stmt` | See [RunStmt](#runstmt) | `run script/subagent/tool "..."` |
 | `memory_stmt` | `target: MemoryPath`, `op: AssignOp`, `value: Expr` | `set domain.key = value` |
@@ -318,13 +318,13 @@ All `Statement` objects use a `"type"` discriminant field.
 
 ### IntentBody
 
-`intent_trigger.body` is either a string (inline `transition to` shorthand) or a `Statement[]`:
+`intent_handler.body` is either a string (inline `transition to` shorthand) or a `Statement[]`:
 
 ```typescript
 type IntentBody = string | Statement[];
 
-// Inline: { "type": "intent_trigger", "intent": "help", "body": "helping" }
-// Block:  { "type": "intent_trigger", "intent": "help", "body": [ ... ] }
+// Inline: { "type": "intent_handler", "intent": "help", "body": "helping" }
+// Block:  { "type": "intent_handler", "intent": "help", "body": [ ... ] }
 ```
 
 ### RunStmt

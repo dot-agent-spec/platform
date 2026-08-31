@@ -1,5 +1,12 @@
 # review_dsl.md — Revisão Interna da `.agent DSL` para v1.0
 
+> ⚠️ **Dated snapshot — do not read any node name, path or rule here as current.** This review was written
+> against a tree that no longer exists: it cites `flow/grammar.js` and `main.flow`, both from before the
+> monorepo flatten, and grammar node names that later renames replaced. It is kept as a record of what was
+> being weighed at the time, not corrected into agreement with the present. The current grammar is
+> `packages/tree-sitter/`, and the AST node names are the `#[serde(rename = "…")]` attributes in
+> `packages/parser-dsl/src/ast.rs`.
+
 > **Propósito:** Documento de referência interna que consolida a sintaxe atual, mapeia ambiguidades entre a especificação e a gramática canônica, e lista as decisões em aberto para fechar a v1.0.
 >
 > **Fonte de verdade da gramática:** `dsl/tree-sitter-agent/grammar.js` (`.agent`) e `dsl/tree-sitter-agent/flow/grammar.js` (`.flow`). Quando a gramática e outro documento divergem, a gramática é o estado atual de implementação — e o conflito é registrado na Seção 3.

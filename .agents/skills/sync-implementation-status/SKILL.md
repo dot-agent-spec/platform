@@ -105,8 +105,8 @@ For each grammar node from Step 3, answer:
 **Node-name discrepancies** table at the end of `implementation-status.md`, cross-checked against the
 `#[serde(rename = "…")]` attributes on `Statement` in `ast.rs`. A copy kept in this skill goes stale
 silently and then mis-maps nodes on every subsequent run — it has already happened once, when this section
-still asserted `intent_handler → intent_trigger` and `temporal_stmt → after_stmt` long after both were
-resolved.
+carried five hardcoded pairs and every one of them had been resolved in the grammar without anybody
+editing this file.
 
 So: read the rename attributes, treat them as truth, and reconcile the doc's table against them.
 
@@ -283,9 +283,10 @@ The HTML is generated, never hand-edited.
 ## Edge cases
 
 - **The absence of a grammar node is a finding, not a lookup failure.** Before trusting a doc row that
-  describes a node, confirm it is in `node-types.json`. A row can describe a node that never existed —
-  `oriented_state_body` was documented for a long time as an "internal grammar grouping" when the grammar
-  has no such rule at all.
+  describes a node, confirm the name is in `node-types.json`. A row can describe a node the grammar has no
+  rule for at all — it has happened, with a row calling one an "internal grammar grouping" — and a row
+  like that survives every sweep, because a reader who does not check the grammar has no way to tell it
+  from a correct one.
 - **Read the grammar's comments.** `grammar.js` explains *why* a construct has no node — the oriented-state
   shape (`goal<guide<teach<interact`) is enforced by lint, not by the grammar, which is stated in a comment
   and nowhere else. That comment is the difference between "🗑️ dead" and "enforced at another layer".

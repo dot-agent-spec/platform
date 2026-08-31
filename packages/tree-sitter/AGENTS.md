@@ -132,13 +132,13 @@ on offtopic           → offtopic_handler  (inside state_body, optional)
 on failure            → failure_stmt      (inside run/apply/remove, uses block)
 ```
 
-Two corrections worth stating, because the previous version of this table asserted both:
+Two things this table has been wrong about before, stated positively so a search finds the live name:
 
-- **The node is `state_body`, flat and shared** by setup and oriented states. There is no
-  `oriented_state_body`. The grammar is deliberately permissive here and the *linter* enforces the legal
-  shape per state type — a corpus test covers exactly that ("grammar aceita, linter barra").
-- **`on success` does not exist**, and neither does a `success_stmt` node. Success is the implicit
-  sequential fall-through to the next statement. `grammar.js` says so in two separate comments.
+- **`state_body` is flat and shared** by setup and oriented states — one node for both. The grammar is
+  deliberately permissive here and the *linter* enforces the legal shape per state type; a corpus test
+  covers exactly that ("grammar aceita, linter barra").
+- **Success is the implicit sequential fall-through** to the next statement, so there is no node for it
+  and no keyword. `grammar.js` says so in two separate comments.
 
 
 ### State transitions

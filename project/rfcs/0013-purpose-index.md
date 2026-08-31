@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0013: purpose — Semantic Index via Wikidata
 
 | Field | Value |

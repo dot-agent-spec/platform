@@ -1,54 +1,44 @@
 # plugins/claude — agent guidelines
 
-Claude Code plugin for dot-agent. See [README.md](README.md) for what it bundles and why.
+The Claude Code plugin for dot-agent. [README.md](README.md) is what it bundles, and why.
 
-**There is deliberately no `CLAUDE.md` here — do not add one.** This folder is copied verbatim into every
-user's plugin cache (no build, no allowlist), and a `CLAUDE.md` at a plugin root ships to them while never
-loading as project context; `claude plugin validate` warns about it. The guardrails below are mirrored into
-[`.agents/rules/plugin-claude.md`](../../.agents/rules/plugin-claude.md), which is `paths`-scoped to this
-folder, lives outside the shipped tree, and is what actually reaches context.
+**This file does not load, and that is deliberate — do not give it a `CLAUDE.md`.** The folder is copied
+verbatim into every user's plugin cache, so a `CLAUDE.md` at a plugin root would ship to them while never
+loading as project context, and `claude plugin validate` warns about exactly that. The guardrails that
+must fire *while* someone edits here live in
+[`.agents/rules/plugin-claude.md`](../../.agents/rules/plugin-claude.md) — `paths`-scoped to this folder,
+outside the shipped tree, and therefore actually reaching context. **Read that rule first; it is the
+authority.** What follows is only what it deliberately leaves out.
 
-## Source of truth for `skills/run/SKILL.md`
+## `plugin.json`
 
-This skill's comportment rules (Mode A: embody + drive an agent) must match
-[`dsl/reference/comportment.md`](../../dsl/reference/comportment.md) — the canonical,
-transport-neutral spec — and the CLI's own copy at
-[`apps/dot-agent-cli/skills/run/SKILL.md`](../../apps/dot-agent-cli/skills/run/SKILL.md).
-All three drift-prone copies must move together. When `comportment.md` changes, update this file's
-`SKILL.md` and the CLI's in the same change — do not let this copy fall behind.
+`mcpServers` is the only functional key — `dot-agent` and `dot-agent-helper`. Skills carry **no manifest
+entry at all**: they are auto-discovered from `skills/`, so adding one is adding a folder. There are no
+`hooks`; read [DA00-07](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) decision 4
+before adding any.
 
-The two `SKILL.md` copies are kept **byte-identical** (`comportment.md` is the subset they share; the
-`SKILL.md`s add Step 0, the CLI command list, and the authoring sections on top). Verify with:
+## Verifying the byte-identity invariant
+
+The rule states that `skills/run/SKILL.md` must stay identical to the CLI's copy. The check itself:
 
 ```bash
 diff plugins/claude/skills/run/SKILL.md apps/dot-agent-cli/skills/run/SKILL.md
 ```
 
-## No bundled runtime
+Both mirror [`dsl/reference/comportment.md`](../../dsl/reference/comportment.md), which is the canonical
+transport-neutral spec and the thing that actually changed if these two disagree. `skills/test/SKILL.md`
+is outside the invariant on purpose — it points back at the Mode A skill rather than restating
+comportment, so it has nothing that could drift.
 
-This plugin deliberately ships **no copy of the runtime** — not a Bun-compiled binary, not a vendored
-`dist/cli.mjs`. It shells out to the globally-installed `dot-agent` CLI, which the skill's Step 0
-installs on first use. A second copy of the runtime inside the plugin would drift from the published
-package. See [DA00-07](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) decision 2
-before reversing this — the rule generalizes to every future host plugin, not just this one.
+## Design and status
 
-## `skills/test` (Mode B) — plugin-only, no CLI mirror
+| What | Where |
+|---|---|
+| The decision, and why the runtime is not bundled | [DA00-07](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) — its Related section breadcrumbs the long-form log |
+| Work items and current state | [`project/plans/002`](../../project/plans/002-dot-agent-as-claude-plugin.md), tracked as `platform#13` |
 
-Unlike `skills/run`, this one has **no counterpart under `apps/dot-agent-cli/skills/`** and isn't
-part of the byte-identity invariant above. It's a thin delta skill: it points back at `/dot-agent:run`
-for comportment instead of restating it, so there's nothing here that could drift from
-`comportment.md` in the first place. Keep it that way — if you find yourself copying comportment rules
-into it, stop and link to the Mode A skill instead.
+## Keeping this file current
 
-## `plugin.json`
-
-Only `mcpServers` (`dot-agent` + `dot-agent-helper`) and `skills` (auto-discovered from `skills/`) are
-declared. No `hooks` yet — see the [DA00-07 log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md)'s
-decision 4 before adding one.
-
-## Full design and status
-
-Decision: [`DA00-07`](../../project/adr/DA00-07-plugin-packaging-across-llm-cli-hosts.md) + its
-[log](../../project/pre-release/v0.1/DA00-07-plugin-packaging-across-llm-cli-hosts.md) (design
-rationale). Work items and current status: [`project/plans/002-dot-agent-as-claude-plugin.md`](../../project/plans/002-dot-agent-as-claude-plugin.md)
-— tracker: `dot-agent-spec/platform#13`.
+Updating it is part of any task that changes what ships in this folder. Triggers: a manifest key is added
+or stops being used; a skill folder appears; the relationship between the two `SKILL.md` copies changes;
+something here starts being duplicated by the rule, which is the one that loads and therefore wins.

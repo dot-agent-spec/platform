@@ -16,14 +16,15 @@ Each kind of change has a home. Picking the right one is the first decision.
 | **ADR** | "We decided X, because Y" | [`project/adr/`](project/adr/) | [`project/templates/adr.md`](project/templates/adr.md) | The decision itself |
 | **Plan** | "How do we build X?" | [`project/plans/`](project/plans/) | [`project/templates/plan.md`](project/templates/plan.md) | No |
 | **Task** | "We decided to do X — here's what to change" | [`project/tasks/`](project/tasks/) | [`project/templates/task.md`](project/templates/task.md) | No |
+| **Log** | "We tried this and it failed" | [`project/log/`](project/log/) | [`project/templates/log.md`](project/templates/log.md) | No |
 
 Rule of thumb: if the design is still open, it is an **RFC**. Once a load-bearing choice is settled,
 distill it into an **ADR** so it is findable. When work is greenlit, write a **plan** if it will land in
 phases over time, or a **task** if it is one concrete work order.
 
 **Plan or task?** They differ by lifespan, not by size. A task is deleted when its work is done, so it
-suits work that finishes at one moment. A plan is permanent and carries a living record — `Progress`,
-`Surprises & Discoveries`, `Decision Log`, `Outcomes & Retrospective` — kept current *while* the work
+suits work that finishes at one moment. A plan is permanent and carries a living record — `Decision Log`
+and `Outcomes & Retrospective` — kept current *while* the work
 happens, so it suits work whose phases ship at different times and whose reasoning someone will want a
 year later. A task still holding open roadmap items long after its first item shipped is a plan wearing
 the wrong template.
@@ -42,7 +43,7 @@ While the language is pre-v1.0, the project iterates rapidly and decisions break
 
 - **ID format `DA<minor>-<seq>`.** `DA00-xx` for decisions that govern **all** milestones (cross-cutting); `DA0N-xx` for decisions anchored to milestone v0.N. Boundary test: *one milestone or all?* Numeric only; **never renumbered**.
 - **ADRs are the index** (`project/adr/`) — the terse "what we decided". Breaks across milestones are tracked with `Supersedes` / `Superseded by` (e.g. `DA02-03` supersedes `DA01-11`).
-- **Long-form logs are optional appendices** in `project/pre-release/v<minor>/` (e.g. `DA01-021-forgiving-syntax.md`) — rich context for LLM agents, no community review. Not every decision needs one, so log numbering has gaps.
+- **Long-form logs are optional appendices** in [`project/log/`](project/log/) — rich context for LLM agents, no community review. Not every decision needs one, so gaps are expected. They were kept in `project/pre-release/v<minor>/` until 2026-08-13; that folder is gone and nothing should be written under it.
 - **External proposals** during incubation use the public RFC lifecycle (`project/rfcs/`), not the DA scheme.
 
 ---
@@ -53,8 +54,8 @@ Modeled on staged proposal processes (TC39 stages, Rust RFCs). A proposal earns 
 may be rejected at any stage without prejudice.
 
 ```
-Draft → Review → Accepted → Implemented
-              ↘ Rejected      (→ moved to project/rfcs/implemented/, frozen)
+Draft → Review → Accepted → Implemented   (→ moved to project/rfcs/implemented/, frozen)
+              ↘ Rejected                  (→ moved to project/rfcs/rejected/, frozen)
               ↘ Superseded
 ```
 
@@ -83,10 +84,11 @@ and update the old one's `Superseded by` field. The chain of ADRs is the project
 Backlog → In Progress → Shipped     (the file is never deleted)
 ```
 
-A plan is the permanent design record for a multi-phase build. Its four living sections are maintained
-while the work happens, not written at the end — filled in retrospectively they are worthless. Closing
-one means writing the retrospective against the plan's own goals and routing each discovery to a durable
-surface; the issue closes, the file stays.
+A plan is the permanent design record for a multi-phase build. Its two living sections — `Decision Log`
+and `Outcomes & Retrospective` — are maintained while the work happens, not written at the end; filled in
+retrospectively they are worthless. Closing one means writing the retrospective against the plan's own
+goals and running the demotion check; the issue closes, the file stays. What the work discovered was
+recorded in the task dossier each track spawned, and routed when that dossier closed.
 
 ## Task lifecycle
 

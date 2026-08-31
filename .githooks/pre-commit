@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# pre-commit — run the governance gate before a commit is allowed to land.
+#
+# Wiring only, no check logic: what runs is declared in vibeops.config.ts, including which shell
+# fragments are off and why. To run the identical thing by hand without committing, use scripts/check.sh.
+#
+# `set -e` is deliberately absent: the exit code is captured, never propagated by accident.
+#
+# SILENT ON SUCCESS. The expensive reader is not the terminal but the agent: a commit made through a tool
+# call puts every printed line into a conversation, on every commit, forever. So a clean run says nothing
+# and a failure says only what failed — not even the summary, which scripts/check.sh prints because it
+# was asked for. GATE_VERBOSE=1 gets the full run back.
+#
+# To skip once: git commit --no-verify. Wired via `git config core.hooksPath .githooks` — local config
+# that no clone inherits, which is also why an outside clone having no gate is not the gap it looks like:
+# it never had one to lose.
+set -uo pipefail
+
+if ! command -v vibe-ops >/dev/null 2>&1; then
+  echo "pre-commit: vibe-ops is not on PATH — the gate cannot run. Commit refused." >&2
+  echo "Install it, or use --no-verify if you accept an unchecked commit." >&2
+  exit 2
+fi
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT" || exit 2
+
+# Nothing is declared off here: `settings.check.disabled` in vibeops.config.ts is read by every caller,
+# including this one. See scripts/check.sh for what used to be at this line and why it left.
+
+export NODE_OPTIONS="${NODE_OPTIONS:-} --no-warnings"
+
+RC=0
+for ops in check agents-md governance; do
+  if [ "${GATE_VERBOSE:-}" = "1" ]; then
+    vibe-ops "$ops" --verbose || RC=$?
+  else
+    OUT=$(vibe-ops "$ops" 2>&1) || RC=$?
+    printf '%s\n' "$OUT" | grep -E '^(FAIL|WARN) ' || true
+  fi
+done
+
+exit "$RC"

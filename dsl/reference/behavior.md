@@ -22,7 +22,7 @@ For design principles and state machine philosophy, see [`dsl/explanation/design
 
 ### 1.2 Declarative scope (written in `.behavior`)
 
-- **Required entry state: `init`** — the compiler enforces this (E016 lint error) and the kernel enters it by name at startup. `onboarding`, `responsive`, and any business state names are conventional; only `init` is mandatory.
+- **Required entry state: `init`** — the compiler enforces this (E016 lint error) and the kernel enters it by name at startup. `onboarding`, `responsive`, and any business state names are conventional; only `init` is mandatory. Entry is resolved **by name, never by position**, and that is what makes `merge` safe: the compiler concatenates merged files in topological order, leaves first and the entry file last, so the first state in the consolidated text belongs to some leaf dependency rather than to the file you wrote. A positional rule would pick that state and the agent would start somewhere you never named, silently.
 - Arbitrary business states: `car_reservation`, `phases.planning`, etc.
 - All orchestration: tools, subagents, scripts, memory, conditionals
 

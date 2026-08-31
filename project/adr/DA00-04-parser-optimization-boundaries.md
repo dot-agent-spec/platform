@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # DA00-04: Parser optimization boundaries
 
 > Migrated from legacy ADR-0003 under [DA00-01](DA00-01-traceability-scheme.md).

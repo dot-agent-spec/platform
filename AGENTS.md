@@ -1,85 +1,74 @@
 # dot-agent — Agent Guidelines
 
-AI collaboration guide for maintaining and evolving this repository.
+`dot-agent-spec` is the specification **and** the implementation of the dot-agent ecosystem: a language
+for describing agent behaviour (`.description` + `.behavior`), the toolchain that compiles it, and the
+runtime that executes it.
 
----
-
-## What this repo is
-
-`dot-agent-spec` is the specification and implementation repository for the dot-agent ecosystem. It contains:
-
-- Language specification (`dsl/`) — syntax, semantics, and design of `.description` and `.behavior`
-- Implementation packages (`packages/`) — compiler, parser, kernel, SDK, language server
-- Developer-facing apps (`apps/`) — CLI, VS Code extension
-- Editor/agent-host plugins (`plugins/`) — e.g. the native Claude Code plugin
-- Governance records (`project/`) — RFCs, ADRs, plans, tasks, and pre-v1.0 decision logs
-- Annotated examples (`examples/`) — canonical `.description` + `.behavior` pairs
-
-This is a **real monorepo** — `packages/*` and `apps/*` are plain workspace folders, not git submodules.
-There is no separate `git submodule update --init` step; clone and work directly. `npm run build` needs
-Docker running, and its absence surfaces as *test* failures rather than a build error — see
+This is a **real monorepo** — `packages/*` and `apps/*` are plain workspace folders, not submodules, so
+there is no `git submodule update --init` step. `npm run build` needs **Docker running**, and its absence
+surfaces as *test* failures rather than a build error, which is the wrong place to look — see
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
----
+## Layout — only what a directory listing does not say
 
-## Repository layout
+The tree is otherwise self-explanatory, and this repository carries a generated code-graph index under
+`graphify-out/`: prefer querying it for structural questions ("what calls this", "what does this package
+depend on") over browsing the source. It covers the tracked source and markdown, **not** `target/`,
+`node_modules/` or generated WASM.
 
-Each `packages/*`, `apps/*` and `plugins/*` folder has its own `AGENTS.md` and README — read it before
-changing anything there. The table further down lists them with their status.
+| Path | What is not obvious about it |
+|---|---|
+| `dsl/` | The **language** spec — syntax and semantics as an author meets them. Not implementation docs. |
+| `docs/` | The **implementation** docs. Both trees are Diátaxis-shaped, which is exactly why they are easy to confuse. |
+| `packages/*/docs/` | A package's internals, and canonical for them — closer to the code than `docs/` is. |
+| `project/` | Governance records. Lifecycles, numbering and which command closes which are in [`.agents/rules/governance.md`](.agents/rules/governance.md), which loads on its own inside this folder. |
+| `dogfood/` | Dated write-once snapshots of how the DSL *felt* to author on one day. **Never spec truth** — [`.agents/rules/dogfood.md`](.agents/rules/dogfood.md) says why. |
+| `examples/` | CI-tested against the current grammar, so a change that breaks one is a real break, not a stale fixture. |
+| `plugins/claude/` | Shipped **byte for byte** into every user's plugin cache — no build, no allowlist. Nothing personal or machine-specific may land here, and it must not get a `CLAUDE.md`. |
+| `.claude-plugin/marketplace.json` | Stays at the root while the plugin it points at lives in `plugins/claude`. The repository is the marketplace. |
 
-```
-dot-agent-spec/
-├── README.md · LICENSE · CONTRIBUTING.md
-├── ROADMAP.md                      ← language roadmap, version policy, freeze/editions model
-├── GOVERNANCE.md                   ← decision process (RFC / ADR / plan / task)
-├── AGENTS.md                       ← this file · CLAUDE.md is one line: @AGENTS.md
-├── .agents/                        ← canonical agent config (rules, skills, agents) — see below
-├── .claude-plugin/marketplace.json ← Claude Code marketplace entry, points at plugins/claude
-├── project/                        ← governance records; lifecycles in .agents/rules/governance.md
-│   ├── templates/                  ← copy-ready: rfc, adr, plan, task
-│   ├── adr/                        ← decisions, DA<minor>-<seq> scheme
-│   ├── rfcs/                       ← design proposals (+ implemented/ and rejected/, frozen)
-│   ├── plans/                      ← permanent design records for multi-phase work
-│   ├── tasks/                      ← work orders, deleted once done
-│   ├── pre-release/v0.1/           ← long-form logs for DA decisions
-│   └── implementation-status.md    ← per-feature tracker across the layers
-├── dsl/                            ← language spec, Diátaxis (reference · explanation · how-to · tutorials)
-├── docs/                           ← implementation docs, Diátaxis (reference · explanation · how-to)
-├── packages/                       ← tree-sitter · parser-dsl · kernel-dsl · compiler · sdk · language-server
-│                                     (+ transpiler-* — aspirational, RFC-0018)
-├── apps/                           ← dot-agent-cli · vscode-extension · agy
-├── plugins/claude/                 ← native Claude Code plugin: /dot-agent:run (Mode A) + /dot-agent:test
-│                                     (Mode B); mcpServers dot-agent + dot-agent-helper
-├── dogfood/                        ← dated DSL usability snapshots — NOT spec truth, see rules/dogfood.md
-└── examples/                       ← canonical .description + .behavior pairs (CI-tested)
-```
-
----
+Most `packages/*`, `apps/*` and `plugins/*` folders carry their own `AGENTS.md` and README — read the
+one for the folder you are changing.
 
 ## Source of truth
+
+**When code and docs diverge, the code wins.** Docs describe intent; code is what runs.
 
 | What | Where |
 |---|---|
 | Language syntax and semantics | `dsl/reference/` |
 | Language design decisions | `dsl/explanation/` |
-| Package / plugin implementation | `packages/*/`, `plugins/*/` (code is canonical) |
-| Package internals docs | `packages/*/docs/` |
+| Package / plugin implementation | `packages/*/`, `plugins/*/` — the code itself |
 | Architecture overview | `docs/explanation/architecture/map.md` |
 | Feature status across layers | `project/implementation-status.md` |
-| Proposed changes | `project/rfcs/` (Draft status — not canonical) |
-| Pending work | `project/tasks/` (ephemeral) · `project/plans/` (permanent) |
-| Architecture decisions (settled) | `project/adr/` |
-| Decision process | `GOVERNANCE.md` (what/why) · `.agents/rules/governance.md` (operational) |
+| Which packages are not yet current | [`ROADMAP.md`](ROADMAP.md) § Where each package stands |
+| Proposed changes | `project/rfcs/` — Draft status is **not** canonical |
+| Decision process | [`GOVERNANCE.md`](GOVERNANCE.md) (what and why) · `.agents/rules/governance.md` (operational) |
 | Definition of done for a layer change | `.agents/rules/doc-sync.md` |
-| Roadmap & version policy | `ROADMAP.md` |
 
-**When code and docs diverge, the code wins.** Docs describe intent; code is what runs.
+## How this repo works — the parts that bite
 
-Changing a layer obliges you to move its docs with it — which docs, for which change, is
-`.agents/rules/doc-sync.md`, which loads automatically when you touch `packages/`, `dsl/`, `docs/` or
-`examples/`. New syntax is gated by an RFC before the grammar is touched.
+- **Changing a layer obliges you to move its docs with it.** Which docs, for which change, is
+  [`.agents/rules/doc-sync.md`](.agents/rules/doc-sync.md), which loads automatically on `packages/`,
+  `dsl/`, `docs/` and `examples/`. Doc drift across the layers is this repository's main failure mode.
+- **New syntax is gated by an RFC before the grammar is touched**, and a grammar change propagates to
+  every layer below it. This is the one change class where design comes first by rule.
+- **Never reinstate a git hook for licence headers.** `core.hooksPath` is repo-scoped, so one package
+  installing a hook reconfigures the whole monorepo
+  ([#19](https://github.com/dot-agent-spec/platform/issues/19)).
+- **A nested `AGENTS.md` is not a delivery mechanism.** Claude Code loads `CLAUDE.md`; an `AGENTS.md`
+  buried in a subfolder is read only by someone who already opened it, which is too late for a guardrail.
+  Anything that must fire *when work touches a folder* is a path-scoped rule (`paths: ["glob"]`). A nested
+  file survives only for authoring detail a reader looks up on purpose, like `project/rfcs/AGENTS.md`.
 
----
+## Licence
+
+- `.md`, `.description` and `.behavior` need **no header** — the root [`LICENSE`](LICENSE) covers them.
+- Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`) carry `// SPDX-License-Identifier: Apache-2.0` and
+  nothing else. Attribution is collective in [`AUTHORS`](AUTHORS), and CI rejects any other header form —
+  rationale, exclusions and the fix command are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+All documentation in this repository is written in English, whatever language the conversation is in.
 
 ## Agent config — `.agents/` is canonical, `.claude/` mirrors it
 
@@ -93,82 +82,32 @@ ln -s ../../.agents/skills/<name>    .claude/skills/<name>      # skill
 ln -s ../../.agents/agents/<name>.md .claude/agents/<name>.md   # subagent
 ```
 
-The mechanics, the Windows fallback and the `test -L` check are documented once, upstream, in
-[vibe-ops `references/instruction-surfaces.md`](https://github.com/entelekheia-ai/vibe-ops/blob/main/references/instruction-surfaces.md) —
-they are identical in every repository using this convention and are not restated here.
+The mechanics, the Windows fallback and the `test -L` check are documented once upstream, in
+[vibe-ops `references/instruction-surfaces.md`](https://github.com/entelekheia-ai/vibe-ops/blob/main/references/instruction-surfaces.md),
+and are not restated here. What each rule and skill does is its own frontmatter's job; `ls .agents/rules`
+answers the rest. Authoring one — the self-improvement loop, model tiering, and why the governance skills
+must not be forked in — is [`.agents/rules/instruction-file-hygiene.md`](.agents/rules/instruction-file-hygiene.md),
+scoped to `.agents/**`.
 
-**What lives here:** rules `governance` (`project/**`), `doc-sync` (`packages|dsl|docs|examples/**`),
-`dogfood` (`dogfood/**`), `graphify`, `context-mode`, `antigravity-rtk-rules`; skills `/publish` and
-`/sync-implementation-status`; subagent `cli-helper-agent-sync`.
+**Governance records are opened and closed with the
+[`vibe-ops`](https://github.com/entelekheia-ai/vibe-ops) plugin**, never by hand and never with a local
+fork of its skills. They read *this* repository's `project/templates/` and numbering, so the convention
+stays owned here.
 
-**A nested `AGENTS.md` is not a delivery mechanism.** Claude Code loads `CLAUDE.md`, not an `AGENTS.md`
-buried in a subfolder — a guardrail written there is read only by someone who already opened the folder,
-which is too late. Anything that must fire *when work touches a folder* is a **path-scoped rule**
-(`paths: ["glob"]`). A nested `AGENTS.md` survives only for authoring detail a reader looks up on
-purpose, like `project/rfcs/AGENTS.md`, or for a package's own docs.
+## Keeping this file current
 
-**Governance tooling is the [`vibe-ops`](https://github.com/entelekheia-ai/vibe-ops) plugin, not a local
-copy.** Records are opened with `/vibe-ops:new-{adr,rfc,plan,task}` and closed with
-`/vibe-ops:close-{plan,task}`; they read *this* repo's `project/templates/` and numbering, so the
-convention stays owned here. **Do not fork those skills into `.agents/skills/`** — a local copy is what
-rotted the previous `/new-adr`, which searched a pre-`project/` path for a numbering scheme this repo had
-abandoned, and failed silently because a scaffold that finds nothing starts at 1.
+A stale entry map is a primary source of hallucination — an agent will confidently use a path that no
+longer exists. Updating this file is **part of any task that changes the repository's shape**, not a
+follow-up. Fold the edit into the work and mention it.
 
-**Model tiering for subagents and skills:** match the tier to the task — strongest for judgment-heavy
-work, mid for structured execution, cheap for mechanical; `inherit` when unsure, and never change the
-`model` of an *existing* subagent. Rationale and reversal plan:
-[DA00-03](project/adr/DA00-03-model-tiering-for-agent-routing.md).
+Triggers specific to this repository:
 
-**Every skill and subagent carries a self-improvement loop.** A `## Self-improvement loop — keep this
-file alive` section at the end, and running it is part of the task, not an optional epilogue. Copy the
-shape from [`.agents/agents/cli-helper-agent-sync.md`](.agents/agents/cli-helper-agent-sync.md) or
-[`.agents/skills/sync-implementation-status/SKILL.md`](.agents/skills/sync-implementation-status/SKILL.md).
-The rules that matter:
+- A top-level folder or a `packages/*` / `apps/*` / `plugins/*` folder appears, is archived, or changes
+  what it is authoritative for.
+- A rule or skill is added under `.agents/` — check it is bridged into `.claude/` by symlink, not copied.
+- An invariant above stops being true, or a new one is discovered the hard way.
+- A package stops being current, or becomes current: that goes to `ROADMAP.md`, not here.
+- The graph's coverage changes, which would make the layout section's scope claim wrong.
 
-- **A fact hardcoded in an instruction file rots silently, and a rotted file is worse than a missing one
-  — it reads as authority.** `sync-implementation-status` carried a node-name discrepancy map whose five
-  entries were *all* stale; it would have mis-mapped grammar nodes on every run. Deleting a stale local
-  copy and pointing at the live source is the highest-value edit in a self-improvement pass. Same failure
-  as the forked `/new-adr` above.
-- Prefer correcting a stale assumption over appending a paragraph — these files should stay the same
-  length after ten runs and just get more accurate.
-- Keep session-specific detail (line numbers, versions, today's diff) out; it belongs in the report and
-  the commit message.
-- Never touch frontmatter in a self-improvement pass — same principle as not changing an existing
-  subagent's model.
-- Say in the report whether the file changed, so it shows up in `git diff`. Never a silent self-rewrite.
-
----
-
-## Package, app & plugin table
-
-| Directory | Purpose | Status |
-|-----------|---------|--------|
-| `packages/tree-sitter/` | WASM grammar — canonical grammar source | ✅ Active |
-| `packages/parser-dsl/` | Rust/WASM — parses `.behavior` + `.description` | ✅ Active |
-| `packages/kernel-dsl/` | Rust/WASM — FSM execution engine | ✅ Active |
-| `packages/compiler/` | TypeScript — linter, AST analysis, ZIP packaging | ✅ Active |
-| `packages/sdk/` | TypeScript — browser dispatch layer | ✅ Active |
-| `packages/language-server/` | Node.js — LSP server | ✅ Active |
-| `apps/dot-agent-cli/` | Developer CLI | ⚠️ Pending v2 update |
-| `apps/vscode-extension/` | VS Code LSP client | ⚠️ Pending v2 update |
-| `apps/agy/` | Antigravity CLI runtime plugin | 🚧 In Progress |
-| `plugins/claude/` | Native Claude Code plugin (skills + mcpServers) | 🚧 In Progress |
-
-`apps/zed-agent/` was removed — historical reference only in git history. The `transpiler-*` packages are
-aspirational (RFC-0018).
-
----
-
-## Language rule
-
-All documentation in this repository must be written in English.
-
-## License rules
-
-- `.md`, `.description` and `.behavior` files need **no header** — the root `LICENSE` covers them
-- Source files (`.ts .tsx .js .jsx .mjs .cjs .rs`) carry `// SPDX-License-Identifier: Apache-2.0` and
-  nothing else — attribution is collective in [`AUTHORS`](AUTHORS), and CI rejects any other header form.
-  Rationale, exclusions and the fix command: [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Never reinstate a git hook for this.** `core.hooksPath` is repo-scoped, so one package installing it
-  reconfigures the whole monorepo ([#19](https://github.com/dot-agent-spec/platform/issues/19))
+Adjust the one affected line and keep entries to one line, pointing at the source of truth rather than
+restating it.

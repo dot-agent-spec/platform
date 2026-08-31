@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0016: String Constraints & Primitive Types
 
 | Field | Value |

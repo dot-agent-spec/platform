@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0012: did and proof — Author Identity and Package Integrity
 
 | Field | Value |

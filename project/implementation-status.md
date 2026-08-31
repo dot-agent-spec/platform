@@ -22,9 +22,9 @@ Legend:
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
 | **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
-> ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](pre-release/v0.1/compliance-check-2026-06-27.md).
+> ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](adr/DA00-06-ts-rs-for-ast-json-contract.md).
 >
-> 🚀 **First public release: `0.10.0`** — the one-time version jump decided in [DA00-02](adr/DA00-02-two-axis-versioning.md), published to the `latest` npm dist-tag (not `alpha`) after the pipeline was proven end-to-end by the [pre-alpha rehearsal](pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md).
+> 🚀 **First public release: `0.10.0`** — the one-time version jump decided in [DA00-02](adr/DA00-02-two-axis-versioning.md), published to the `latest` npm dist-tag (not `alpha`) after the pipeline was proven end-to-end by the [pre-alpha rehearsal](adr/DA00-02-two-axis-versioning.md).
 
 ---
 
@@ -235,9 +235,9 @@ Legend:
 | ✅ `on failure` (run) | ✅ `failure_stmt` (sub-node of `run_stmt`) | ✅ `RunStmt.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |
 | ✅ `on failure` (apply/remove) | ✅ `failure_stmt` (sub-node of `apply_stmt`/`remove_stmt`) | ✅ `Apply.on_failure` / `Remove.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |
 | ✅ `parallel` | ✅ `parallel_stmt` | ✅ `Statement::Parallel` | ✅ lint E010 (no `run` stmts) | ⚠️ body executed sequentially (WASM single-threaded) | ✅ `registerHandler("run_script" / "run_subagent" / "run_tool", fn)` |
-| 🗑️ `parallel on success` (removed v0.1) | 🗑️ `success_stmt` (removed — no `on success`) | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
+| 🗑️ `parallel on success` (removed v0.1) | 🗑️ no node — success is the implicit sequential fall-through | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
 | ✅ `parallel on failure` | ✅ `on_failure` field (block) of `parallel_stmt` | ✅ `Parallel.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |
-| 🗑️ `on complete` | 🗑️ `on_complete_stmt` | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
+| 🗑️ `on complete` | 🗑️ no node | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
 | 🗑️ `on failed` | 🗑️ `on_failed_stmt` | 🗑️ removed | | 🗑️ removed | 🗑️ removed |
 | ✅ `on event "…"` | ✅ `trigger_decl` | ✅ `TriggerDecl` | | ✅ `send_event(name)` dispatches matching triggers | ✅ → `sendEvent(name)` |
 
@@ -250,9 +250,12 @@ Legend:
 | `run_stmt` field `type` | `RunStmt.kind` | Discrepancy — grammar uses `type` for run kind, but AST uses `kind` |
 | `run_type` | `RunStmt.kind` (string) | Named grammar node (`script` \| `subagent` \| `tool`); the parser flattens it to its raw source text rather than emitting a node |
 | `interact_stmt` | `Interact { handlers }` | Discrepancy — the grammar node is a **pure keyword with zero children**; the parser synthesizes `handlers[]` by absorbing sibling `intent_handler`/`offtopic_handler` nodes. No grammar field backs it |
-| 🗑️ `oriented_state_body` | — | 🗑️ Not a grammar node at all — `state_body` is a flat `repeat1(statement)` and the oriented-state shape (goal<guide<teach<interact) is enforced by lint, not by the grammar. Absent from `node-types.json` |
-| `intent_handler` | `intent_handler` | ✅ Resolved (formerly `intent_trigger` in v0.1) |
-| `offtopic_handler` | `offtopic_handler` | ✅ Resolved (formerly `offtopic_stmt` in v0.1) |
-| `temporal_stmt` | `after_stmt` | ✅ Resolved (grammar node renamed to `after_stmt` in v0.1) |
-| `run_stmt` field `parameters` | `RunStmt.parameters` | ✅ Resolved (formerly `RunStmt.label` in v0.1) |
+| `state_body` | — | Flat `repeat1(statement)`, shared by setup and oriented states. The oriented-state shape (goal<guide<teach<interact) is enforced by **lint**, not by the grammar, so there is no separate body node to look for |
+
+**A resolved discrepancy is removed from this table, not marked resolved.** Four rows were deleted on
+2026-08-14 for that reason. Keeping them meant the table was the largest single source of retired node
+names in the repository, and a name that only appears in a row explaining it is retired still answers a
+`grep` — which is how a reader looking for the current name finds the old one instead. The grammar and
+the `#[serde(rename = "…")]` attributes in `packages/parser-dsl/src/ast.rs` are the source of truth for
+what a node is called; git history is where a rename is recorded.
 

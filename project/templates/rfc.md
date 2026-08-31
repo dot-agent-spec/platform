@@ -1,7 +1,23 @@
+---
+vibe-ops-template: rfc@2
+---
+
 <!--
- RFC TEMPLATE — copy to rfcs/<number>-<kebab-name>.md and fill in.
+ Copyright (c) 2026 Danilo Borges (https://github.com/daniloborges)
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ https://www.apache.org/licenses/LICENSE-2.0
+-->
+
+<!--
+ RFC TEMPLATE — copy to rfcs/<NNNN>-<kebab-name>.md and fill in. Note the folder is `rfcs/`, plural.
  An RFC answers "should we do X, and how?". It requires ratification (see rfcs/AGENTS.md).
- Delete these HTML comments before committing. Keep the section order.
+ Delete these HTML comments before committing, and keep the section order. The `vibe-ops-template` line
+ in the frontmatter at the top of this file STAYS: /vibe-ops:migrate reads it to find artifacts written
+ against an older template, and removing it makes this file invisible to migration.
 -->
 
 # RFC-NNNN: Title
@@ -15,7 +31,7 @@
 | Related | <!-- RFC-XXXX, or remove the row --> |
 
 <!-- Package impact table — see rfcs/AGENTS.md for the symbol legend (— · ⚠️ · 🔄 · ?). -->
-<!-- All `?` cells must be resolved before this RFC moves Draft → Accepted. -->
+<!-- All `?` cells must be resolved before this RFC moves Draft → Review. -->
 
 | tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) | language-server (L3) |
 |---|---|---|---|---|---|
@@ -35,8 +51,8 @@
 
 ## Specification
 
-<!-- The design. Syntax, semantics, examples. Illustrative code is fine — it communicates
-     intent, it is not the implementation (see rfcs/AGENTS.md). Use sub-sections per feature. -->
+<!-- The design. Interfaces, semantics, examples. Illustrative code communicates intent;
+     it is not the implementation. Use sub-sections per feature. -->
 
 ## Rationale
 
@@ -48,15 +64,13 @@
 
 ## Open Questions
 
-<!-- Unresolved design decisions. Each should eventually become a closed decision,
-     a new RFC, or an entry in the Experimental Roadmap RFC. -->
+<!-- Unresolved design decisions. Each should eventually become a closed decision or a task. -->
 
 ## Decisions Closed
 
-<!-- Decisions already made during discussion, with a one-line rationale each.
-     This is the institutional memory of the RFC. Consider promoting load-bearing
+<!-- Decisions already made during discussion, one-line rationale each. Promote load-bearing
      ones to a standalone ADR (see templates/adr.md). -->
 
 ## Related
 
-<!-- Links to related RFCs, ADRs, dsl/ reference pages, or package docs. -->
+<!-- Links to related RFCs, ADRs, or docs. -->

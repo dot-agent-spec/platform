@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # ADR-DA00-08: CLI Installs Native Host Plugins Instead of Writing Host Config
 
 | Field | Value |
@@ -96,4 +100,12 @@ would catch drift that is currently held only by convention.
   the single source of registration for Claude Code.
 - [platform#27](https://github.com/dot-agent-spec/platform/issues/27) — the report that surfaced the
   double-registration behaviour.
-- Paired long-form log: [`project/pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md`](../pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md).
+- Paired long-form log — the investigation behind this decision: what was ruled out first, the live
+  `~/.claude.json` evidence that overturned the initial `wontfix` reading, and the question left open.
+  Removed from the tree on 2026-08-13 when `project/pre-release/` was retired; recoverable in full:
+  `git show 71cbf9f0755b60278eaf0dae3efaa640b25a815a:project/pre-release/v0.1/DA00-08-cli-installs-native-host-plugins.md`
+
+  **Checked 2026-08-13:** that log's header said "implementation not yet started". It has since landed —
+  [Plan-002](../plans/002-dot-agent-as-claude-plugin.md) records `configure --claude` narrowed to MCP only,
+  then switched to installing the plugin instead of writing MCP config (both 2026-07-30), and verified
+  end-to-end against a live `~/.claude.json` (2026-07-31).

@@ -34,6 +34,20 @@ The project tracks **two independent versions** — do not conflate them.
 
 Items that require **opening the grammar** (a change to `@dot-agent/tree-sitter`, which propagates down to every layer) are flagged 🔴. While the DSL is `0.x` the grammar is *preview* and may open; the goal is to open it as few times as possible and freeze it once at v1.0.
 
+### Where each package stands
+
+Feature-level status is [`project/implementation-status.md`](project/implementation-status.md); this is the coarser question of which packages a change can safely assume are current. Only the ones that are *not* simply active are listed.
+
+| Directory | Standing |
+|---|---|
+| `apps/dot-agent-cli/` | ⚠️ Pending v2 update — written against a pre-v2 surface |
+| `apps/vscode-extension/` | ⚠️ Pending v2 update — same |
+| `apps/agy/` | 🛠️ In progress — Antigravity CLI runtime plugin |
+| `plugins/claude/` | 🛠️ In progress — native Claude Code plugin |
+| `packages/transpiler-*` | 🔬 Aspirational — named by [RFC-0018](project/rfcs/0018-transpiler-infrastructure.md), no code |
+
+Everything under `packages/` not listed above is stable and current. `apps/zed-agent/` was removed; it survives only in git history.
+
 ---
 
 ## v0.1 — Conversational `[current milestone]`
@@ -67,13 +81,13 @@ A pure conversational finite-state machine. No side effects, no typed I/O, no ac
 
 ### Work to close v0.1
 
-Tracked in [`tasks/pre-public-consolidation.md`](project/tasks/pre-public-consolidation.md):
+Tracked in `tasks/pre-public-consolidation.md`, closed 2026-06-27 and removed per the task lifecycle — `git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md`:
 
 - Resolve `merge` at runtime (kernel load path).
 - `.description` honesty: write `terms`/`privacy`, wire the `behavior` block, **drop** the placeholder `purpose` field (returns later as a real feature — see *Distribution & identity*).
 - Remove dead grammar/AST nodes (`on complete`/`on failed` standalone, `run … each`).
 - ✅ **Stamp provenance into `aboutme.json`** — done. `dslVersion` (renamed from `schemaVersion`, DA00-02) is sourced from `dsl/VERSION` and `compiler` from `@dot-agent/compiler`'s real package version; both are build-time constants, no more hardcoded literals.
-- ✅ Packaging gates: all packages published for real under `0.10.0` — npm (`latest`), crates.io (`tree-sitter`), and the VS Code Marketplace/Open VSX. See `project/pre-release/v0.1/` for the rehearsal and release log.
+- ✅ Packaging gates: all packages published for real under `0.10.0` — npm (`latest`), crates.io (`tree-sitter`), and the VS Code Marketplace/Open VSX. The rehearsal and release log was `project/pre-release/v0.1/`, retired 2026-08-13; recover it with `git show 71cbf9f0755b60278eaf0dae3efaa640b25a815a:project/pre-release/v0.1/`.
 
 ---
 

@@ -1,3 +1,7 @@
+---
+vibe-ops-template: task@3
+---
+
 # Task: Stamp DSL/spec version provenance into aboutme.json — DA01-01
 
 | Field | Value |
@@ -5,10 +9,11 @@
 | Status | In Progress — code landed, doc-sync checklist pending |
 | Created | 2026-07-02 |
 | Author | Danilo Borges |
+| Issue | — (no tracking issue; the design records are ROADMAP.md and DA00-02) |
 | Version axis | DSL |
 | Sources | [ROADMAP.md § Work to close v0.1](../../ROADMAP.md) (the "Stamp provenance into `aboutme.json`" bullet), [DA00-02: two-axis versioning](../adr/DA00-02-two-axis-versioning.md) |
 | Depends on | none — can start independently |
-| Sibling task(s) | The package-version/publish-mechanism task (`DA01-01-update-version-and-packages.md`, removed after completing the real `0.10.0` release — see [`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md)) owned package version numbers and the publish mechanism; this task owns how bundle provenance is *derived and stamped*, not what any package's number is |
+| Sibling task(s) | The package-version/publish-mechanism task (`DA01-01-update-version-and-packages.md`, removed after completing the real `0.10.0` release — see [DA00-02](../adr/DA00-02-two-axis-versioning.md), whose Related section carries a `git show` breadcrumb to the rehearsal log itself) owned package version numbers and the publish mechanism; this task owns how bundle provenance is *derived and stamped*, not what any package's number is |
 
 ---
 
@@ -156,9 +161,24 @@ rehearsing "does provenance stamping work end to end."
 This task owns **how** `pack.ts`/`bundle.ts`/`manifest.ts` derive and stamp provenance values, and where
 the DSL version's source of truth lives (`dsl/VERSION`). It does **not** own what any package's version
 number is or how packages get published — that was the now-completed and removed
-`DA01-01-update-version-and-packages.md` task (see the [pre-alpha rehearsal log](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md)
+`DA01-01-update-version-and-packages.md` task (see [DA00-02](../adr/DA00-02-two-axis-versioning.md), which links the pre-alpha rehearsal log by breadcrumb
 for its full history) in full. The only coupling point: that sibling task's release bumps determine the
 real `@dot-agent/compiler` version this task's build-time script will embed — so re-run the embedding
 step (item 4 here) after any package version bump, not just once. `dsl/VERSION` itself was bumped from
 `0.1-alpha` to `0.1` as part of the real `0.10.0` package jump, since the public v0.1 milestone is no
 longer a rehearsal.
+
+## Surprises & Discoveries
+
+<!-- Fill this WHILE the work happens; reconstructed at the end it is worthless. One entry per non-obvious
+     fact the work turns up. At closure each is routed: does it hold beyond this repository (-> a workspace
+     learning), can you name the file or package where someone meets it again (-> project/log/), or
+     neither (-> dropped, out loud). -->
+
+- Observation: …
+  Evidence: …
+
+## Closure
+
+- [ ] Run `/vibe-ops:close-task` — do not just delete this file. Stays unchecked until closure actually
+      runs; a dossier that looks otherwise finished but has this box open is not done.

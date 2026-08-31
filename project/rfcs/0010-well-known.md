@@ -1,3 +1,7 @@
+---
+vibe-ops-template: rfc@2
+---
+
 # RFC-0010: .well-known/dot-agent.json
 
 | Field | Value |

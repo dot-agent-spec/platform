@@ -1,3 +1,7 @@
+---
+vibe-ops-template: adr@2
+---
+
 # DA00-02: Two-axis versioning — DSL version vs package versions
 
 > Migrated from legacy ADR-0001 under [DA00-01](DA00-01-traceability-scheme.md).
@@ -17,7 +21,7 @@
 
 The repository ships several packages whose versions had drifted apart — `tree-sitter` `0.4.1`,
 `kernel-dsl` `0.1.3`, and `parser-dsl` / `compiler` / `sdk` at `0.1.0` (the B2 item in
-[`tasks/pre-public-consolidation.md`](../tasks/pre-public-consolidation.md)). Before the first public
+`git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md`). Before the first public
 release we needed an explicit, written version policy.
 
 Two things move at different rates and serve different audiences:
@@ -100,8 +104,19 @@ resolve, one layer down.
 
 ## Related
 
-- [`tasks/pre-public-consolidation.md`](../tasks/pre-public-consolidation.md) — B2, where this decision was recorded inline
+- `git show a708a8b6308598cd36e0863ae7cb8309932d7a9f:project/tasks/pre-public-consolidation.md` — B2, where this decision was recorded inline
 - [`tasks/DA01-01-dsl-spec-versioning.md`](../tasks/DA01-01-dsl-spec-versioning.md) — implements the DSL-axis provenance stamping described here
-- [`pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`](../pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md) — long-form log of the `0.5.0-alpha.1`/`alpha.2` rehearsal that validated this ADR's publish mechanism end-to-end, and of the real `0.10.0` jump that followed it (the task file that implemented both, `DA01-01-update-version-and-packages.md`, was removed once that jump completed)
+- Long-form log of the `0.5.0-alpha.1`/`alpha.2` rehearsal that validated this ADR's publish mechanism
+  end-to-end, and of the real `0.10.0` jump that followed it (the task file that implemented both,
+  `DA01-01-update-version-and-packages.md`, was removed once that jump completed). Removed from the tree
+  on 2026-08-13 when `project/pre-release/` was retired; recoverable in full:
+  `git show 71cbf9f0755b60278eaf0dae3efaa640b25a815a:project/pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md`
+
+  **Checked 2026-08-13** against that log's three "Not addressed here" items. Two have closed: only the
+  root `package-lock.json` is tracked now, and `schemaVersion` survives in exactly one file,
+  `dogfood/mentor-agent/…/aboutme.json`, which `.agents/rules/dogfood.md` makes write-once — it is
+  correct as it stands and must not be "fixed". **One is still live:** `scripts/release.mjs` has no
+  dependency-pinning step at all; it bumps `version`, commits and tags, so the `"*"` → exact-version
+  cascade between `@dot-agent/*` packages remains manual.
 - [`ROADMAP.md`](../../ROADMAP.md) — § Two version axes (the policy in the roadmap)
 - [`GOVERNANCE.md`](../../GOVERNANCE.md) — § Versioning & stability

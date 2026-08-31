@@ -633,8 +633,8 @@
 </tr>
 </tbody></table>
 <blockquote>
-<p>✅ <strong>Compliance check 2026-06-27</strong> — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM <code>RuntimeError: unreachable</code> (P3) resolved via <code>BTreeMap</code>/<code>BTreeSet</code>; node-compat import path (P2) corrected; <code>CONTRIBUTING.md</code> created. See <a href="pre-release/v0.1/compliance-check-2026-06-27.md">compliance-check-2026-06-27.md</a>.</p>
-<p>🚀 <strong>First public release: <code>0.10.0</code></strong> — the one-time version jump decided in <a href="adr/DA00-02-two-axis-versioning.md">DA00-02</a>, published to the <code>latest</code> npm dist-tag (not <code>alpha</code>) after the pipeline was proven end-to-end by the <a href="pre-release/v0.1/DA00-02-pre-alpha-rehearsal.md">pre-alpha rehearsal</a>.</p>
+<p>✅ <strong>Compliance check 2026-06-27</strong> — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM <code>RuntimeError: unreachable</code> (P3) resolved via <code>BTreeMap</code>/<code>BTreeSet</code>; node-compat import path (P2) corrected; <code>CONTRIBUTING.md</code> created. See <a href="adr/DA00-06-ts-rs-for-ast-json-contract.md">compliance-check-2026-06-27.md</a>.</p>
+<p>🚀 <strong>First public release: <code>0.10.0</code></strong> — the one-time version jump decided in <a href="adr/DA00-02-two-axis-versioning.md">DA00-02</a>, published to the <code>latest</code> npm dist-tag (not <code>alpha</code>) after the pipeline was proven end-to-end by the <a href="adr/DA00-02-two-axis-versioning.md">pre-alpha rehearsal</a>.</p>
 </blockquote>
 <hr>
 <h2>tree-sitter package (L0 -&gt; L3)</h2>
@@ -1726,7 +1726,7 @@
 </tr>
 <tr>
 <td>🗑️ <code>parallel on success</code> (removed v0.1)</td>
-<td>🗑️ <code>success_stmt</code> (removed — no <code>on success</code>)</td>
+<td>🗑️ no node — success is the implicit sequential fall-through</td>
 <td>🗑️ removed</td>
 <td></td>
 <td>🗑️ removed</td>
@@ -1742,7 +1742,7 @@
 </tr>
 <tr>
 <td>🗑️ <code>on complete</code></td>
-<td>🗑️ <code>on_complete_stmt</code></td>
+<td>🗑️ no node</td>
 <td>🗑️ removed</td>
 <td></td>
 <td>🗑️ removed</td>
@@ -1791,31 +1791,17 @@
 <td>Discrepancy — the grammar node is a <strong>pure keyword with zero children</strong>; the parser synthesizes <code>handlers[]</code> by absorbing sibling <code>intent_handler</code>/<code>offtopic_handler</code> nodes. No grammar field backs it</td>
 </tr>
 <tr>
-<td>🗑️ <code>oriented_state_body</code></td>
+<td><code>state_body</code></td>
 <td>—</td>
-<td>🗑️ Not a grammar node at all — <code>state_body</code> is a flat <code>repeat1(statement)</code> and the oriented-state shape (goal&lt;guide&lt;teach&lt;interact) is enforced by lint, not by the grammar. Absent from <code>node-types.json</code></td>
-</tr>
-<tr>
-<td><code>intent_handler</code></td>
-<td><code>intent_handler</code></td>
-<td>✅ Resolved (formerly <code>intent_trigger</code> in v0.1)</td>
-</tr>
-<tr>
-<td><code>offtopic_handler</code></td>
-<td><code>offtopic_handler</code></td>
-<td>✅ Resolved (formerly <code>offtopic_stmt</code> in v0.1)</td>
-</tr>
-<tr>
-<td><code>temporal_stmt</code></td>
-<td><code>after_stmt</code></td>
-<td>✅ Resolved (grammar node renamed to <code>after_stmt</code> in v0.1)</td>
-</tr>
-<tr>
-<td><code>run_stmt</code> field <code>parameters</code></td>
-<td><code>RunStmt.parameters</code></td>
-<td>✅ Resolved (formerly <code>RunStmt.label</code> in v0.1)</td>
+<td>Flat <code>repeat1(statement)</code>, shared by setup and oriented states. The oriented-state shape (goal&lt;guide&lt;teach&lt;interact) is enforced by <strong>lint</strong>, not by the grammar, so there is no separate body node to look for</td>
 </tr>
 </tbody></table>
+<p><strong>A resolved discrepancy is removed from this table, not marked resolved.</strong> Four rows were deleted on
+2026-08-14 for that reason. Keeping them meant the table was the largest single source of retired node
+names in the repository, and a name that only appears in a row explaining it is retired still answers a
+<code>grep</code> — which is how a reader looking for the current name finds the old one instead. The grammar and
+the <code>#[serde(rename = &quot;…&quot;)]</code> attributes in <code>packages/parser-dsl/src/ast.rs</code> are the source of truth for
+what a node is called; git history is where a rename is recorded.</p>
 
     </main>
   </div>
