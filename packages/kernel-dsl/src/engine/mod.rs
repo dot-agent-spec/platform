@@ -141,6 +141,32 @@ impl AgentDSLKernel {
     pub fn get_graph(&self) -> Option<String> {
         self.fsm.as_ref().map(|f| f.get_graph())
     }
+
+    /// Capture the FSM position — active state plus prompt counter — for persistence.
+    ///
+    /// With no behavior loaded this returns a degenerate blob carrying an empty state name,
+    /// matching how `get_current_state` and `get_graph` answer that case. The condition is
+    /// still caught, at the other end: `restore_state` rejects an empty state name, so there
+    /// is exactly one place this pair can fail.
+    pub fn serialize_state(&self) -> fsm::FsmSnapshot {
+        self.fsm.as_ref().map(|f| f.snapshot()).unwrap_or(fsm::FsmSnapshot {
+            v: fsm::FSM_SNAPSHOT_VERSION,
+            state: String::new(),
+            prompt_count: 0,
+        })
+    }
+
+    /// Reposition the FSM from a snapshot, firing no entry effects.
+    ///
+    /// Memory is untouched by design; the host re-injects it with `set_memory`.
+    pub fn restore_state(&mut self, snap: &fsm::FsmSnapshot) -> Result<(), String> {
+        match &mut self.fsm {
+            Some(fsm) => fsm.restore(snap),
+            None => Err(
+                "restore_state: no behavior loaded — call load_behavior first".to_string()
+            ),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -284,5 +310,175 @@ mod tests {
             if let Effect::Goal { text } = e { Some(text.as_str()) } else { None }
         }).collect();
         assert_eq!(goal_text, ["from main"], "main file's state must shadow merged duplicate");
+    }
+
+    // ── §2 snapshot & restore of the FSM position ─────────────────────────────
+
+    const TWO_STATE_DSL: &str = concat!(
+        "state init\n",
+        "  interact\n",
+        "  on intent \"next\" transition to detail\n",
+        "state detail\n",
+        "  interact\n",
+        "  on intent \"done\" transition to ended\n",
+    );
+
+    fn blob_of(k: &AgentDSLKernel) -> String {
+        serde_json::to_string(&k.serialize_state()).expect("snapshot must serialize")
+    }
+
+    fn snapshot_from(json: &str) -> fsm::FsmSnapshot {
+        serde_json::from_str(json).expect("blob must deserialize")
+    }
+
+    #[test]
+    fn round_trips_state_and_prompt_count() {
+        let mut k = kernel_with(TWO_STATE_DSL);
+        k.send_intent("next");
+        assert_eq!(k.get_current_state(), "detail");
+        k.tick_prompt();
+        k.tick_prompt();
+
+        let blob = blob_of(&k);
+        assert!(blob.contains("\"state\":\"detail\""), "blob must carry the state: {}", blob);
+        // 2, not 4 — transition_to zeroes the counter, so only the ticks in `detail` count.
+        assert!(blob.contains("\"prompt_count\":2"), "blob must carry the counter: {}", blob);
+
+        let mut fresh = kernel_with(TWO_STATE_DSL);
+        assert_eq!(fresh.get_current_state(), "init");
+        fresh.restore_state(&snapshot_from(&blob)).expect("restore must succeed");
+        assert_eq!(fresh.get_current_state(), "detail");
+        assert_eq!(blob_of(&fresh), blob, "a restored kernel must re-serialize identically");
+    }
+
+    #[test]
+    fn restore_state_restores_prompt_count_so_after_handler_fires_on_the_right_turn() {
+        let dsl = concat!(
+            "state init\n",
+            "  interact\n",
+            "  on intent \"next\" transition to detail\n",
+            "state detail\n",
+            "  interact\n",
+            "  after 3 prompts\n",
+            "    set session.nudged = true\n",
+            "  end\n",
+        );
+        let mut k = kernel_with(dsl);
+        let snap = fsm::FsmSnapshot {
+            v: fsm::FSM_SNAPSHOT_VERSION,
+            state: "detail".to_string(),
+            prompt_count: 2,
+        };
+        k.restore_state(&snap).expect("restore must succeed");
+
+        let effects = k.tick_prompt();
+        let nudged = effects
+            .iter()
+            .find(|e| matches!(e, Effect::SetMemory { key, .. } if key == "nudged"));
+        assert!(
+            nudged.is_some(),
+            "the third prompt overall must fire the handler — a dropped counter would restart at 0 \
+             and this tick would be turn 1: {:?}",
+            effects
+        );
+    }
+
+    #[test]
+    fn restore_state_does_not_fire_entry_effects() {
+        let dsl = concat!(
+            "state init\n",
+            "  interact\n",
+            "  on intent \"next\" transition to detail\n",
+            "state detail\n",
+            "  goal \"welcome back\"\n",
+            "  interact\n",
+            "  on intent \"done\" transition to ended\n",
+        );
+        let mut k = kernel_with(dsl);
+        let snap = fsm::FsmSnapshot {
+            v: fsm::FSM_SNAPSHOT_VERSION,
+            state: "detail".to_string(),
+            prompt_count: 0,
+        };
+
+        // The signature carries no effects at all — repositioning is silent by construction.
+        let restored: Result<(), String> = k.restore_state(&snap);
+        assert!(restored.is_ok(), "restore must succeed: {:?}", restored);
+
+        // …and the position is genuinely live, not a bare field write.
+        assert_eq!(k.get_current_state(), "detail");
+        assert_eq!(k.get_valid_intents(), vec!["done".to_string()]);
+        let effects = k.send_intent("done");
+        assert!(
+            effects.iter().any(|e| matches!(e, Effect::Transition { to, .. } if to == "ended")),
+            "the restored state's own handlers must dispatch"
+        );
+    }
+
+    #[test]
+    fn restore_state_to_unknown_state_errors_and_leaves_kernel_untouched() {
+        let mut k = kernel_with(TWO_STATE_DSL);
+        k.tick_prompt();
+
+        let snap = fsm::FsmSnapshot {
+            v: fsm::FSM_SNAPSHOT_VERSION,
+            state: "nonexistent".to_string(),
+            prompt_count: 42,
+        };
+        let err = k.restore_state(&snap).expect_err("unknown state must be rejected");
+        assert!(err.contains("nonexistent"), "the error must name the offending state: {}", err);
+
+        // Validate-before-assign: a rejected restore moves neither field.
+        assert_eq!(k.get_current_state(), "init", "state must not change");
+        assert!(
+            blob_of(&k).contains("\"prompt_count\":1"),
+            "the counter must not change either: {}",
+            blob_of(&k)
+        );
+    }
+
+    #[test]
+    fn restore_state_to_native_ended_succeeds() {
+        let mut k = kernel_with(TWO_STATE_DSL);
+        let snap = fsm::FsmSnapshot {
+            v: fsm::FSM_SNAPSHOT_VERSION,
+            state: "ended".to_string(),
+            prompt_count: 0,
+        };
+        k.restore_state(&snap).expect("a native state is a legal position, like transition_to's");
+        assert_eq!(k.get_current_state(), "ended");
+    }
+
+    #[test]
+    fn restore_state_without_loaded_behavior_errors() {
+        let mut k = AgentDSLKernel::new();
+        let snap = fsm::FsmSnapshot {
+            v: fsm::FSM_SNAPSHOT_VERSION,
+            state: "init".to_string(),
+            prompt_count: 0,
+        };
+        let err = k.restore_state(&snap).expect_err("no FSM means nothing to reposition");
+        assert!(err.contains("no behavior loaded"), "the error must say why: {}", err);
+    }
+
+    #[test]
+    fn restore_state_rejects_malformed_snapshot() {
+        let mut k = kernel_with(TWO_STATE_DSL);
+
+        assert!(
+            serde_json::from_str::<fsm::FsmSnapshot>("{").is_err(),
+            "a non-JSON blob must not deserialize"
+        );
+        assert!(
+            serde_json::from_str::<fsm::FsmSnapshot>("{}").is_err(),
+            "a blob missing both fields must not deserialize"
+        );
+
+        // A future blob shape parses but must not be applied — the version stamp is the guard.
+        let future = snapshot_from("{\"v\":99,\"state\":\"detail\",\"prompt_count\":0}");
+        let err = k.restore_state(&future).expect_err("an unreadable version must be rejected");
+        assert!(err.contains("version"), "the error must name the version: {}", err);
+
+        assert_eq!(k.get_current_state(), "init", "no rejected blob may move the kernel");
     }
 }

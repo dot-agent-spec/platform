@@ -8,12 +8,33 @@ use dot_agent_parser_dsl::{ast::*, ParseError};
 
 const NATIVE_STATES: &[&str] = &["ended"];
 
+/// Wire version of [`FsmSnapshot`]. Bumped whenever the blob's shape changes, so a kernel
+/// handed a snapshot it does not understand fails loudly instead of restoring a partial
+/// position.
+pub const FSM_SNAPSHOT_VERSION: u8 = 1;
+
 pub struct Fsm {
     // Ordered list of state names (for SCXML output ordering).
     state_order: Vec<String>,
     states: BTreeMap<String, StateDef>,
     global_triggers: Vec<TriggerDecl>,
     pub current_state: String,
+    pub prompt_count: u32,
+}
+
+/// A serializable snapshot of the FSM's position.
+///
+/// The position is two fields, not one: the active state **and** the prompt counter that
+/// drives `after N prompts` handlers, which `transition_to` zeroes on every transition.
+/// Restoring the state name alone resumes the wrong FSM — an agent snapshotted with two
+/// ticks elapsed would resume at zero and fire `after 3 prompts` a turn late.
+///
+/// Memory is deliberately absent. It belongs to the runtime and already travels through
+/// `get_memory` / `set_memory`.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct FsmSnapshot {
+    pub v: u8,
+    pub state: String,
     pub prompt_count: u32,
 }
 
@@ -144,9 +165,50 @@ impl Fsm {
         effects
     }
 
+    /// Capture the FSM position as a serializable blob.
+    pub fn snapshot(&self) -> FsmSnapshot {
+        FsmSnapshot {
+            v: FSM_SNAPSHOT_VERSION,
+            state: self.current_state.clone(),
+            prompt_count: self.prompt_count,
+        }
+    }
+
+    /// Reposition the FSM from a snapshot, firing no entry effects.
+    ///
+    /// Both the version stamp and the state name are validated **before** either field is
+    /// written, so a rejected restore leaves the kernel exactly where it stood. A partial
+    /// write would park the FSM on a state the loaded behavior never declared — the silent
+    /// invalid position this pair exists to prevent.
+    pub fn restore(&mut self, snap: &FsmSnapshot) -> Result<(), String> {
+        if snap.v != FSM_SNAPSHOT_VERSION {
+            return Err(format!(
+                "restore_state: unsupported snapshot version {} — this kernel reads version {}",
+                snap.v, FSM_SNAPSHOT_VERSION
+            ));
+        }
+        if !self.is_known_state(&snap.state) {
+            return Err(format!(
+                "restore_state: unknown state \"{}\" — the loaded behavior does not declare it",
+                snap.state
+            ));
+        }
+        self.current_state = snap.state.clone();
+        self.prompt_count = snap.prompt_count;
+        Ok(())
+    }
+
+    /// Whether a name is a legal position for this FSM: a declared state, or a native one.
+    ///
+    /// `restore` and `transition_to` share this test so the two admissibility rules cannot
+    /// drift apart.
+    fn is_known_state(&self, name: &str) -> bool {
+        self.states.contains_key(name) || NATIVE_STATES.contains(&name)
+    }
+
     fn transition_to(&mut self, target: &str, _mem: &mut MemoryStore) -> Vec<Effect> {
         let from = self.current_state.clone();
-        if self.states.contains_key(target) || NATIVE_STATES.contains(&target) {
+        if self.is_known_state(target) {
             self.current_state = target.to_string();
             self.prompt_count = 0;
             vec![Effect::Transition { from, to: target.to_string() }]
