@@ -27,12 +27,20 @@ export class AgentSession {
   }
 
   // Call after registerHandler() — loads the behavior and fires initial effects.
-  // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.
+  // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths, and
+  // the knowledge/guide files separately so `teach`/`guide` effects arrive with their `content`
+  // filled in beside the path (the path itself is never replaced).
   start(): void {
     const bundle: Record<string, string> = {}
     for (const { path, content } of this.bundle.files.behaviors) {
       bundle[path] = content
     }
+    const contentFiles: Record<string, string> = {}
+    const named = [...(this.bundle.files.knowledge ?? []), ...(this.bundle.files.guides ?? [])]
+    for (const { path, content } of named) {
+      contentFiles[path] = content
+    }
+    this.kernel.set_content_files(JSON.stringify(contentFiles))
     this.dispatchRaw(
       this.kernel.load_behavior_with_bundle(
         this.bundle.files.behavior,

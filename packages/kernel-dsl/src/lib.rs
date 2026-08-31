@@ -7,8 +7,11 @@
 //! compiles to `cdylib` for the npm-distributed WASM build (`pkg/`). Publishing natively would
 //! require first extracting a wasm-bindgen-free core crate — real work, not a CI checkbox.
 
-mod effect;
-mod engine;
+// Public so the rlib half of this crate (integration tests, and any native embedder built from a
+// checkout) can reach the engine and the effect payloads. The wasm-bindgen surface below stays the
+// only thing JavaScript sees.
+pub mod effect;
+pub mod engine;
 
 use std::collections::BTreeMap;
 use engine::AgentDSLKernel as Inner;
@@ -81,6 +84,20 @@ impl AgentDSLKernel {
                 .ok()
                 .and_then(|v| v.as_string())
         }));
+    }
+
+    /// Hand the kernel the knowledge and guide files, so `teach`/`guide` effects carry content.
+    ///
+    /// `files_json` must be a JSON object mapping bundle paths to their contents, e.g.
+    /// `{"knowledge/cars.md": "# Cars\n…", "guides/intro.md": "…"}`. A `teach "knowledge/cars.md"`
+    /// then arrives with `content` filled in beside the unchanged `text`; the lookup is exact, so
+    /// inline prose and unbundled paths simply arrive with `content: null`.
+    ///
+    /// Optional. A host that prefers to fetch lazily — handing the path on to its own resource
+    /// layer — skips this call and keeps receiving bare paths, at no payload cost.
+    pub fn set_content_files(&mut self, files_json: &str) {
+        let files: BTreeMap<String, String> = serde_json::from_str(files_json).unwrap_or_default();
+        self.inner.set_content_files(files);
     }
 
     /// Parse and load a .behavior DSL text, resolving `merge "…"` paths from a pre-built bundle.

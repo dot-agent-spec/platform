@@ -10,19 +10,98 @@ use dot_agent_parser_dsl::{self as parser, ast::BehaviorFile, ParseError};
 use fsm::Fsm;
 use memory::MemoryStore;
 
+type FileResolver = Option<Box<dyn Fn(&str) -> Option<String>>>;
+
+/// Look one path up, content map first, registered resolver second.
+///
+/// The precedence mirrors `flatten_merges`, which resolves `merge "…"` the same way. The lookup is
+/// **exact**: no suffix matching, no `knowledge/` prefix guessing, no extension heuristic. The
+/// packer bundles a reference verbatim at the path the author wrote, and warns (W016) at pack time
+/// when that path is unreachable — accepting a looser form here would bless a shape the packer
+/// refuses to bundle. Inline prose therefore never resolves, because prose is not a bundle key.
+fn lookup_content(
+    path: &str,
+    content_files: &BTreeMap<String, String>,
+    file_resolver: &FileResolver,
+) -> Option<String> {
+    content_files
+        .get(path)
+        .cloned()
+        .or_else(|| file_resolver.as_ref().and_then(|r| r(path)))
+}
+
+/// Fill `content` on every `Teach` / `Guide` effect whose text names a known file.
+///
+/// A path with no entry is **not** an error: the effect is still emitted, with `content: None`,
+/// and the run continues. That is the deliberate divergence from `merge`, which fails the load.
+fn fill_content(
+    effects: Vec<Effect>,
+    content_files: &BTreeMap<String, String>,
+    file_resolver: &FileResolver,
+) -> Vec<Effect> {
+    effects
+        .into_iter()
+        .map(|effect| match effect {
+            Effect::Teach { text, content: None } => {
+                let content = lookup_content(&text, content_files, file_resolver);
+                Effect::Teach { text, content }
+            }
+            Effect::Guide { text, content: None } => {
+                let content = lookup_content(&text, content_files, file_resolver);
+                Effect::Guide { text, content }
+            }
+            other => other,
+        })
+        .collect()
+}
+
 pub struct AgentDSLKernel {
     fsm: Option<Fsm>,
     memory: MemoryStore,
-    file_resolver: Option<Box<dyn Fn(&str) -> Option<String>>>,
+    file_resolver: FileResolver,
+    content_files: BTreeMap<String, String>,
 }
 
 impl AgentDSLKernel {
     pub fn new() -> Self {
-        AgentDSLKernel { fsm: None, memory: MemoryStore::new(), file_resolver: None }
+        AgentDSLKernel {
+            fsm: None,
+            memory: MemoryStore::new(),
+            file_resolver: None,
+            content_files: BTreeMap::new(),
+        }
     }
 
     pub fn set_file_resolver(&mut self, resolver: Box<dyn Fn(&str) -> Option<String>>) {
         self.file_resolver = Some(resolver);
+    }
+
+    /// Hand the kernel the knowledge and guide files, keyed by their bundle path.
+    ///
+    /// Optional, and deliberately separate from the `merge` bundle: a host that wants bare paths —
+    /// the CLI's MCP resource server hands them to the LLM host as `dot-agent://<path>` URIs and
+    /// lets it fetch lazily — simply never calls this and never pays the payload. Widening the
+    /// merge bundle instead would make `merge "knowledge/x.md"` resolvable, turning a clear
+    /// "files not found" into a confusing markdown parse error.
+    pub fn set_content_files(&mut self, files: BTreeMap<String, String>) {
+        self.content_files = files;
+    }
+
+    /// Run one FSM step and resolve the teach/guide content of everything it produced.
+    ///
+    /// Every effect-returning path goes through here so a future method cannot forget the
+    /// resolution pass. The fields are destructured because `resolve` needs `content_files` while
+    /// `f` holds `fsm` mutably — `self.fill(…)` after `&mut self.fsm` does not borrow-check.
+    fn advance(&mut self, f: impl FnOnce(&mut Fsm, &mut MemoryStore) -> Vec<Effect>) -> Vec<Effect> {
+        let Self { fsm, memory, file_resolver, content_files } = self;
+        match fsm {
+            Some(fsm) => fill_content(f(fsm, memory), content_files, file_resolver),
+            None => vec![],
+        }
+    }
+
+    fn fill(&self, effects: Vec<Effect>) -> Vec<Effect> {
+        fill_content(effects, &self.content_files, &self.file_resolver)
     }
 
     pub fn load_behavior(&mut self, text: &str) -> Result<Vec<Effect>, ParseError> {
@@ -30,7 +109,7 @@ impl AgentDSLKernel {
         let mut fsm = Fsm::new(behavior_file)?;
         let effects = fsm.enter_current_state(&mut self.memory);
         self.fsm = Some(fsm);
-        Ok(effects)
+        Ok(self.fill(effects))
     }
 
     pub fn load_behavior_with_bundle(
@@ -44,7 +123,7 @@ impl AgentDSLKernel {
         let mut fsm = Fsm::new(flattened)?;
         let effects = fsm.enter_current_state(&mut self.memory);
         self.fsm = Some(fsm);
-        Ok(effects)
+        Ok(self.fill(effects))
     }
 
     fn flatten_merges(
@@ -88,32 +167,19 @@ impl AgentDSLKernel {
     }
 
     pub fn send_intent(&mut self, intent: &str) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.send_intent(intent, &mut self.memory),
-            None => vec![],
-        }
+        self.advance(|fsm, mem| fsm.send_intent(intent, mem))
     }
 
     pub fn send_offtopic(&mut self) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.send_offtopic(&mut self.memory),
-            None => vec![],
-        }
+        self.advance(|fsm, mem| fsm.send_offtopic(mem))
     }
 
-
     pub fn send_event(&mut self, event: &str) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.send_event(event, &mut self.memory),
-            None => vec![],
-        }
+        self.advance(|fsm, mem| fsm.send_event(event, mem))
     }
 
     pub fn tick_prompt(&mut self) -> Vec<Effect> {
-        match &mut self.fsm {
-            Some(fsm) => fsm.tick_prompt(&mut self.memory),
-            None => vec![],
-        }
+        self.advance(|fsm, mem| fsm.tick_prompt(mem))
     }
 
     pub fn get_current_state(&self) -> String {
@@ -284,5 +350,126 @@ mod tests {
             if let Effect::Goal { text } = e { Some(text.as_str()) } else { None }
         }).collect();
         assert_eq!(goal_text, ["from main"], "main file's state must shadow merged duplicate");
+    }
+
+    // ── §2 teach / guide content resolution ───────────────────────────────────
+
+    fn content_map(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
+        pairs.iter().map(|(p, c)| (p.to_string(), c.to_string())).collect()
+    }
+
+    /// The (text, content) of the first Teach effect in the list.
+    fn first_teach(effects: &[Effect]) -> (&str, Option<&str>) {
+        effects
+            .iter()
+            .find_map(|e| match e {
+                Effect::Teach { text, content } => Some((text.as_str(), content.as_deref())),
+                _ => None,
+            })
+            .expect("expected a Teach effect")
+    }
+
+    fn first_guide(effects: &[Effect]) -> (&str, Option<&str>) {
+        effects
+            .iter()
+            .find_map(|e| match e {
+                Effect::Guide { text, content } => Some((text.as_str(), content.as_deref())),
+                _ => None,
+            })
+            .expect("expected a Guide effect")
+    }
+
+    #[test]
+    fn teach_resolves_bundled_knowledge_content_and_keeps_the_path() {
+        let dsl = "state init\n  teach \"knowledge/cars.md\"\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        k.set_content_files(content_map(&[("knowledge/cars.md", "# Cars")]));
+
+        let effects = k.load_behavior(dsl).expect("should load");
+
+        let (text, content) = first_teach(&effects);
+        assert_eq!(content, Some("# Cars"), "teach must carry the bundled file's content");
+        assert_eq!(
+            text, "knowledge/cars.md",
+            "the literal path must survive — the CLI's MCP resource server hands it on as a URI"
+        );
+    }
+
+    #[test]
+    fn guide_resolves_bundled_guide_content() {
+        let dsl = "state init\n  guide \"guides/intro.md\"\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        k.set_content_files(content_map(&[("guides/intro.md", "Say hello first.")]));
+
+        let effects = k.load_behavior(dsl).expect("should load");
+
+        let (text, content) = first_guide(&effects);
+        assert_eq!(content, Some("Say hello first."), "guide resolves exactly like teach");
+        assert_eq!(text, "guides/intro.md");
+    }
+
+    #[test]
+    fn teach_resolves_through_the_file_resolver_fallback() {
+        let dsl = "state init\n  teach \"knowledge/cars.md\"\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        k.set_file_resolver(Box::new(|path: &str| {
+            if path == "knowledge/cars.md" { Some("# From resolver".to_string()) } else { None }
+        }));
+
+        // Empty content map — the resolver is the only source, as it is for merge.
+        let effects = k.load_behavior(dsl).expect("should load");
+
+        let (_, content) = first_teach(&effects);
+        assert_eq!(content, Some("# From resolver"), "resolver must be the fallback source");
+    }
+
+    #[test]
+    fn teach_inside_an_intent_handler_resolves_on_send_intent() {
+        let dsl = concat!(
+            "state init\n",
+            "  interact\n",
+            "  on intent \"learn\" transition to lesson\n",
+            "state lesson\n",
+            "  teach \"knowledge/cars.md\"\n",
+            "  interact\n",
+        );
+        let mut k = AgentDSLKernel::new();
+        k.set_content_files(content_map(&[("knowledge/cars.md", "# Cars")]));
+        k.load_behavior(dsl).expect("should load");
+
+        let effects = k.send_intent("learn");
+
+        let (text, content) = first_teach(&effects);
+        assert_eq!(
+            content,
+            Some("# Cars"),
+            "resolution must happen on every advance, not only at load time"
+        );
+        assert_eq!(text, "knowledge/cars.md");
+    }
+
+    #[test]
+    fn teach_inline_prose_stays_unresolved() {
+        let dsl = "state init\n  teach \"Always confirm before proceeding.\"\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        k.set_content_files(content_map(&[("knowledge/cars.md", "# Cars")]));
+
+        let effects = k.load_behavior(dsl).expect("should load");
+
+        let (text, content) = first_teach(&effects);
+        assert_eq!(content, None, "lookup is exact — prose is not a bundle key");
+        assert_eq!(text, "Always confirm before proceeding.");
+    }
+
+    #[test]
+    fn teach_path_absent_from_content_files_is_not_an_error() {
+        let dsl = "state init\n  teach \"knowledge/missing.md\"\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+
+        let effects = k.load_behavior(dsl).expect("an unresolvable teach must not fail the load");
+
+        let (text, content) = first_teach(&effects);
+        assert_eq!(content, None, "a missing knowledge file leaves content empty");
+        assert_eq!(text, "knowledge/missing.md", "the effect is still emitted, with its path");
     }
 }
