@@ -291,9 +291,26 @@ fn node_to_value(node: Node, source: &str) -> Value {
     }
 
     // ── grammar `value` wrapper node → forward to its single named child ────────
+    //
+    // One child kind is rewritten rather than forwarded: a `state_name` reaching
+    // this point is an operand of a condition or the right-hand side of a `set`,
+    // where an unquoted dotted name means "read this from memory". The grammar
+    // already separates a literal (`with_quotes_string`) from a reference
+    // (`state_name`); forwarding both as a bare JSON string threw that away and
+    // left `Value::Path` unconstructible. Tagging it as `{"path": "..."}` keeps
+    // the distinction across the wire.
+    //
+    // The tagging is POSITIONAL on purpose. `value` only ever appears inside
+    // `expression`, and `expression` only inside a `memory_stmt` value field or
+    // a `condition`, so a state declaration's name and a `transition to` target
+    // never pass through here and stay plain strings.
     if kind == "value" {
         let mut c = node.walk();
         for child in node.named_children(&mut c) {
+            if child.kind() == "state_name" {
+                let text = &source[child.byte_range()];
+                return json!({ "path": text });
+            }
             return node_to_value(child, source);
         }
         return json!(null);
@@ -641,7 +658,7 @@ fn extract_failure_body(failure_node: Node, source: &str) -> Vec<Value> {
 #[cfg(test)]
 mod tests {
     use super::parse_behavior;
-    use crate::ast::{Statement, IntentBody};
+    use crate::ast::{CompareOp, Expr, IntentBody, Statement, Value};
 
     fn must_parse(src: &str) -> crate::ast::BehaviorFile {
         parse_behavior(src).unwrap_or_else(|e| panic!("parse failed: {}", e.0))
@@ -841,6 +858,134 @@ state planning.next
         // The grammar requires at least one declaration; empty input is a syntax error.
         let result = parse_behavior("");
         assert!(result.is_err(), "empty string should be a parse error");
+    }
+
+    // ── issue #5: a memory reference must survive as a reference ──────────────
+    //
+    // `state_name` covers both an unquoted memory path and a literal-looking
+    // bare word. Before the fix the CST→AST mapping flattened it into the same
+    // bare JSON string a quoted literal produces, so `Value::Path` was
+    // unconstructible and the kernel compared the path TEXT instead of reading
+    // memory. These tests pin the contract at the layer that owns it.
+
+    fn first_condition(bf: &crate::ast::BehaviorFile) -> &crate::ast::Condition {
+        for stmt in &bf.states[0].body {
+            if let Statement::If { condition, .. } = stmt {
+                return condition;
+            }
+        }
+        panic!("expected an `if` statement in the first state");
+    }
+
+    #[test]
+    fn condition_operand_path_is_tagged() {
+        let src = r#"
+state init
+  if context.onboarding == true
+    transition to onboarding
+  else
+    transition to responsive
+  end
+
+state onboarding
+  interact
+  on intent "done" transition to onboarding
+  on offtopic transition to onboarding
+
+state responsive
+  interact
+  on intent "done" transition to responsive
+  on offtopic transition to responsive
+"#;
+        let bf = must_parse(src);
+        let cond = first_condition(&bf);
+        assert_eq!(cond.parts.len(), 1, "expected a single comparison");
+        match &cond.parts[0].1 {
+            Expr::Compare { left, op, right } => {
+                assert!(
+                    matches!(left, Value::Path { path } if path == "context.onboarding"),
+                    "left operand must be a tagged memory path, got: {:?}",
+                    left
+                );
+                assert!(matches!(op, CompareOp::Eq), "operator must be ==, got: {:?}", op);
+                assert!(
+                    matches!(right, Value::Bool(true)),
+                    "right operand must be a real boolean, got: {:?}",
+                    right
+                );
+            }
+            other => panic!("expected Expr::Compare, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn quoted_operand_stays_str() {
+        // The guard against the rejected alternative of reordering the enum
+        // variants: a quoted string MUST NOT become a memory reference.
+        let src = r#"
+state init
+  if context.name == "danilo"
+    transition to init
+  end
+  interact
+  on intent "done" transition to init
+  on offtopic transition to init
+"#;
+        let bf = must_parse(src);
+        let cond = first_condition(&bf);
+        match &cond.parts[0].1 {
+            Expr::Compare { left, right, .. } => {
+                assert!(
+                    matches!(left, Value::Path { path } if path == "context.name"),
+                    "unquoted operand must be a path, got: {:?}",
+                    left
+                );
+                assert!(
+                    matches!(right, Value::Str(s) if s == "danilo"),
+                    "quoted operand must stay a string literal, got: {:?}",
+                    right
+                );
+            }
+            other => panic!("expected Expr::Compare, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn state_name_outside_a_value_is_not_tagged() {
+        // Blast-radius guard on the POSITIONAL tagging, not proof of the fix:
+        // this one also passes without it. `state_name` is reused for a state
+        // declaration and a `transition to` target, and neither goes through a
+        // `value` node, so both must stay plain strings.
+        let src = r#"
+state init
+  if context.ready == true
+    transition to onboarding
+  end
+  interact
+  on intent "done" transition to onboarding
+  on offtopic transition to init
+
+state onboarding
+  interact
+  on intent "done" transition to onboarding
+  on offtopic transition to onboarding
+"#;
+        let bf = must_parse(src);
+        assert_eq!(bf.states[0].name, "init", "a state declaration name stays a plain string");
+        assert_eq!(bf.states[1].name, "onboarding");
+
+        let target = bf.states[0]
+            .body
+            .iter()
+            .find_map(|s| match s {
+                Statement::If { then_body, .. } => then_body.iter().find_map(|t| match t {
+                    Statement::Transition { target } => Some(target.clone()),
+                    _ => None,
+                }),
+                _ => None,
+            })
+            .expect("expected a transition inside the if-branch");
+        assert_eq!(target, "onboarding", "a transition target stays a plain string");
     }
 
     #[test]

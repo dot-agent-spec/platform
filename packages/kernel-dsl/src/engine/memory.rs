@@ -104,8 +104,8 @@ impl MemoryStore {
             Value::Number(n) => MemValue::Num(*n),
             Value::Bool(b)   => MemValue::Bool(*b),
             Value::Null      => MemValue::Null,
-            Value::Path(p)   => self
-                .get_by_path(p)
+            Value::Path { path } => self
+                .get_by_path(path)
                 .cloned()
                 .unwrap_or(MemValue::Null),
         }

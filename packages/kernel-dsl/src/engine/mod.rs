@@ -155,6 +155,137 @@ mod tests {
         k
     }
 
+    // ── issue #5: a condition and a `set` right-hand side must READ memory ────
+    //
+    // An unquoted operand is a memory reference. Before the fix the parser
+    // handed the kernel the path TEXT as a plain string, so `resolve_value`
+    // returned that text instead of looking the path up: every comparison
+    // against memory was false, every truthy check was true, and a
+    // memory-to-memory `set` copied the literal string "session.src".
+
+    fn kernel_with_memory(seed: &[(&str, &str, MemValue)], dsl: &str) -> AgentDSLKernel {
+        let mut k = AgentDSLKernel::new();
+        for (domain, key, value) in seed {
+            k.set_memory(domain, key, value.clone());
+        }
+        k.load_behavior(dsl).expect("DSL should parse");
+        k
+    }
+
+    const I5_BOOL_DSL: &str = concat!(
+        "state init\n",
+        "  if context.onboarding == true\n",
+        "    transition to onboarding\n",
+        "  else\n",
+        "    transition to responsive\n",
+        "  end\n",
+        "\n",
+        "state onboarding\n",
+        "  interact\n",
+        "\n",
+        "state responsive\n",
+        "  interact\n",
+    );
+
+    #[test]
+    fn i5_eq_true_matches_bool_memory() {
+        // The issue's own reproduction. Both cases live in one test on purpose:
+        // the `false` case passes even without the fix (everything fell to the
+        // else branch back then), so alone it would prove nothing. It stays as
+        // an over-correction guard beside the case that actually goes red.
+        let k = kernel_with_memory(&[("context", "onboarding", MemValue::Bool(true))], I5_BOOL_DSL);
+        assert_eq!(k.get_current_state(), "onboarding", "Bool(true) must take the then-branch");
+
+        let k = kernel_with_memory(&[("context", "onboarding", MemValue::Bool(false))], I5_BOOL_DSL);
+        assert_eq!(k.get_current_state(), "responsive", "Bool(false) must take the else-branch");
+    }
+
+    #[test]
+    fn i5_numeric_compare_reads_memory() {
+        let dsl = concat!(
+            "state init\n",
+            "  if session.count > 3\n",
+            "    transition to hi\n",
+            "  else\n",
+            "    transition to lo\n",
+            "  end\n",
+            "\n",
+            "state hi\n",
+            "  interact\n",
+            "\n",
+            "state lo\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("session", "count", MemValue::Num(7.0))], dsl);
+        assert_eq!(k.get_current_state(), "hi", "a numeric comparison must read the stored number");
+    }
+
+    #[test]
+    fn i5_quoted_string_stays_a_literal() {
+        // Earns its place twice: string comparison against memory works, AND a
+        // quoted operand must NOT be resolved as a memory path.
+        let dsl = concat!(
+            "state init\n",
+            "  if context.name == \"danilo\"\n",
+            "    transition to yes\n",
+            "  else\n",
+            "    transition to nope\n",
+            "  end\n",
+            "\n",
+            "state yes\n",
+            "  interact\n",
+            "\n",
+            "state nope\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("context", "name", MemValue::Str("danilo".into()))], dsl);
+        assert_eq!(k.get_current_state(), "yes", "stored string must compare against the literal");
+    }
+
+    #[test]
+    fn i5_truthy_reads_memory_not_path_text() {
+        // Disproves the workaround the issue documents: a bare truthy check used
+        // to see the non-empty path text and fire unconditionally.
+        let dsl = concat!(
+            "state init\n",
+            "  if context.flag\n",
+            "    transition to yes\n",
+            "  else\n",
+            "    transition to nope\n",
+            "  end\n",
+            "\n",
+            "state yes\n",
+            "  interact\n",
+            "\n",
+            "state nope\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("context", "flag", MemValue::Bool(false))], dsl);
+        assert_eq!(k.get_current_state(), "nope", "a falsy stored value must take the else-branch");
+    }
+
+    #[test]
+    fn i5_set_from_path_copies_memory_value() {
+        // Symptom that reaches the SDK through Effect::SetMemory.
+        let dsl = concat!(
+            "state init\n",
+            "  set context.copy = session.src\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("session", "src", MemValue::Num(42.0))], dsl);
+        let snapshot = k.get_memory();
+        let copied = snapshot
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "copy")
+            .expect("context.copy must exist after the set");
+        assert!(
+            matches!(copied.value, MemValue::Num(n) if n == 42.0),
+            "set from a memory path must copy the VALUE, got: {:?}",
+            copied.value
+        );
+    }
+
     #[test]
     fn transition_to_ended_emits_effect_and_updates_state() {
         let dsl = "state init\n  interact\n  on intent \"done\" transition to ended\n";
