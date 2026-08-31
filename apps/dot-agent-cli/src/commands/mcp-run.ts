@@ -49,7 +49,11 @@ export async function loadBundleAndSession(source: string): Promise<{ bundle: Ag
     : await bundleFromDir(source)
 
   const session = await AgentSession.create(bundle)
-  session.start()
+  // `resolveContent: false` — this server is the lazy-fetch host. It forwards raw effect JSON to
+  // the LLM host and publishes the files as `dot-agent://<path>` resources for it to read on
+  // demand; letting the kernel inline `content` would push every knowledge file into every
+  // send_intent result, then have the host fetch it a second time through the resource anyway.
+  session.start({ resolveContent: false })
   return { bundle, session }
 }
 

@@ -38,7 +38,7 @@ A state has an optional **setup phase** (imperative actions on entry) followed b
 state car_reservation
   goal "Collect car reservation details from the user"
   guide "Ask for pickup date, return date, and car category. Confirm before proceeding."
-  teach "car-categories.md"
+  teach "knowledge/car-categories.md"
   interact
   on intent "details confirmed" transition to payment
   on intent "cancel"            transition to responsive
@@ -49,7 +49,7 @@ state car_reservation
 |---|---|---|---|
 | `goal "text"` | Yes | First | Orients the LLM on this state's objective |
 | `guide "text"` | No | After `goal` | Detailed instructions for LLM behavior |
-| `teach "filename"` | No | After `guide`, repeatable | Loads a knowledge file into LLM context |
+| `teach "path"` | No | After `guide`, repeatable | Names a knowledge file for the LLM's reusable cache |
 | `interact` | Yes | Before handlers | Releases control to the LLM for a user turn |
 | `on intent "..."` | Yes (one+) | After `interact` | Routes user intent to an action or block |
 | `on offtopic` | No | Optional, last handler | Handles off-topic user turns |
@@ -89,19 +89,37 @@ Required as the first statement in an oriented state. Injected into the LLM's me
 
 ```
 guide "Ask for: pickup date, return date, car category. Always confirm before proceeding."
-guide "instructions/car-rental.md"   // filepath form — loaded at runtime
+guide "guides/car-rental.md"   // filepath form — resolved at runtime
 ```
 
 Optional. Injected into message context after `goal`. Accepts inline text or a file path.
 
+The file path is **bundle-relative and must carry its namespace** — `guides/…` or `knowledge/…`,
+exactly as the packer bundles it. A bare `car-rental.md` is bundled at the root instead, which the
+linter reports as unreachable (W016).
+
 ### `teach` — Knowledge Injection
 
 ```
-teach "car-categories.md"
-teach "pricing-rules.md"   // repeatable
+teach "knowledge/car-categories.md"
+teach "knowledge/pricing-rules.md"   // repeatable
 ```
 
-Loads a file into the LLM's reusable cache (not context). Optional, repeatable.
+Names a file for the LLM's reusable cache (not context). Optional, repeatable. Same path rule as
+`guide`: bundle-relative, namespace included.
+
+### How a `teach` / `guide` path is resolved
+
+The runtime resolves both against the files the bundle carries under `knowledge/` and `guides/`,
+and hands the result to the host **beside the path, never in place of it** — the effect carries
+`text` (always the literal argument, unchanged) and `content` (the file's text, or null).
+
+- The match is **exact**. A path the bundle does not carry, and inline prose, arrive with
+  `content: null`; a host that wants them fetches or displays them itself. This is not an error and
+  does not stop the run — unlike `merge`, whose missing file fails the load.
+- Both forms therefore stay usable: a host that wants the text reads `content ?? text`; a host that
+  prefers to fetch lazily — the CLI hands the path on as a `dot-agent://<path>` resource URI —
+  ignores `content` and keeps using `text`.
 
 ### `interact` — LLM Turn
 
