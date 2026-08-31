@@ -131,9 +131,16 @@ type Expr =
   | Value
   | { left: Value; op: "==" | "!=" | ">" | "<" | ">=" | "<="; right: Value }
 
-type Value = string | number | boolean | null;
-// string covers both literal strings and memory path references (e.g. "session.lang")
+type Value = string | number | boolean | null | { path: string };
+// A quoted operand is a literal and arrives as a plain string.
+// An unquoted one is a memory reference and arrives tagged: { path: "session.lang" }.
+// The tag exists because the enum is untagged in Rust and discriminates by JSON shape
+// alone — a bare string could never be told apart from a literal. See ADR DA00-10.
 ```
+
+The tag is **positional**: it is applied only to an operand inside a condition or a `set` right-hand
+side. A state's `name` and a `transition_stmt`'s `state` come from the same grammar node but are plain
+strings, because neither is an operand.
 
 ---
 
