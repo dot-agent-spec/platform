@@ -57,7 +57,7 @@ npx @dot-agent/cli <command>
 
 | Command | What it does |
 |---|---|
-| `dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>]` | Scaffold an agent project |
+| `dot-agent init [--name <name>] [--domain <domain>] [--dir <dir>] [--force]` | Scaffold an agent project |
 | `dot-agent pack [--dir <dir>] [--out <file>] [--version <tag>] [--commit <hash>]` | Lint and package into a `.agent` archive |
 | `dot-agent unpack <file.agent> [--out <dir>] [--force]` | Extract an `.agent` back to editable sources |
 | `dot-agent run <file.agent \| dir>` | Load an agent and start its state machine |
@@ -70,8 +70,9 @@ npx @dot-agent/cli <command>
 
 The MCP commands take `--mcp-transport stdio|http` and `--mcp-port <n>`.
 
-**`init` writes into the current directory** unless you pass `--dir`, and it overwrites existing files
-without asking — including `LICENSE` and `README.md`. Run it in a new, empty folder.
+**`init` writes into the current directory** unless you pass `--dir`. It refuses to start when any file
+it would write already exists — naming every collision at once, before writing anything — so pointing it
+at a populated folder is safe. Pass `--force` to overwrite them deliberately.
 
 Without `--version`, `pack` prompts for one in a terminal and packs versionless otherwise; it never
 invents a default.
