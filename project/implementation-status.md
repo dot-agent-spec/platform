@@ -124,6 +124,8 @@ Legend:
 | ✅1️⃣ `get_graph()` → `string` | → `getGraph()` | SCXML with runtime `_active="true"`; 🔄 `parser-dsl` `to_scxml` |
 | ✅🗓️ `get_memory()` → `string` | → `getMemory()` | `{domain, key, value}[]` snapshot |
 | ✅🗓️ `set_memory(domain, key, value_json)` | → `injectMemory(domain, key, value)` | |
+| ✅2️⃣ `serialize_state()` → `string` | ❌ no wrapper yet (issue #17, Wave 2) | FSM position only: `{"v":1,"state":…,"prompt_count":…}`; shape from [RFC-0004](rfcs/0004-kernel-protocol.md) § State serialization, which is **Draft** and whose memory-ownership half is *not* adopted; the blob excludes memory by design — that half is `get_memory` / `set_memory` |
+| ✅2️⃣ `restore_state(state_json)` → throws | ❌ no wrapper yet (issue #17, Wave 2) | repositions the FSM without firing entry effects ([Plan-004 §3.14](plans/004-cli-run-refactor-and-mcp-server.md)); validates version + state name before writing either field, so a rejected restore leaves the kernel untouched; the only `Result` on this wasm surface — a bad blob throws rather than no-op'ing silently |
 | ✅ `Effect::ParseError { message }` | ⚠️ no dedicated wrapper | `effect.rs`; emitted by `load_behavior` / `load_behavior_with_bundle` when the parse fails (`lib.rs`); reaches sdk only via the generic `registerHandler("parse_error", fn)` |
 | ✅1️⃣ `observe(callback: Function)` | ⚠️ replaced by `registerHandler` + `setEffectListener` | push model; sdk uses pull-style per-effect handlers plus one global listener instead |
 | ✅1️⃣ `free()` (wasm-bindgen auto) | → `dispose()` | WASM memory cleanup |

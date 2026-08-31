@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **`serialize_state()` / `restore_state(state_json)` — the FSM position is now persistable.** A host could already persist memory through `get_memory` / `set_memory`, but nothing exposed where the FSM stood, so a runtime could not evict the kernel and resume. `serialize_state()` returns a compact versioned blob (`{"v":1,"state":"booking","prompt_count":3}`) and `restore_state()` repositions the FSM from it **without firing entry effects**. The prompt counter travels with the state name because `after N prompts` handlers fire off it and a transition zeroes it — restoring the name alone would fire those handlers a turn late. The blob **excludes memory** by design; that half stays the runtime's, through the existing pair. `restore_state` throws (rather than returning a value a caller can ignore) when the blob is malformed, carries an unreadable version, names a state the loaded behavior does not declare, or when no behavior has been loaded; it validates before writing, so a rejected restore leaves the kernel untouched.
+
+---
+
 ## [0.10.3] - 2026-07-16
 
 ### Fixed

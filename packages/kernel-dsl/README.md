@@ -203,6 +203,10 @@ engine.get_valid_intents();  // Array<string>
 engine.get_memory();                          // [{ domain, key, value }]
 engine.set_memory("session", "lang", '"pt"'); // value as JSON string
 
+// Snapshot & restore — the FSM position only; memory travels via get_memory/set_memory
+engine.serialize_state();   // '{"v":1,"state":"booking","prompt_count":3}'
+engine.restore_state(blob); // throws on a malformed blob, an unknown state, or no behavior loaded
+
 // State graph (for VS Code Flow Graph panel)
 engine.get_graph();
 // → { states: ["responsive", "planning"], transitions: [{from, to, label}], current: "responsive" }

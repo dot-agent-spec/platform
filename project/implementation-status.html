@@ -1117,6 +1117,16 @@
 <td></td>
 </tr>
 <tr>
+<td>✅2️⃣ <code>serialize_state()</code> → <code>string</code></td>
+<td>❌ no wrapper yet (issue #17, Wave 2)</td>
+<td>FSM position only: <code>{&quot;v&quot;:1,&quot;state&quot;:…,&quot;prompt_count&quot;:…}</code>; shape from <a href="rfcs/0004-kernel-protocol.md">RFC-0004</a> § State serialization, which is <strong>Draft</strong> and whose memory-ownership half is <em>not</em> adopted; the blob excludes memory by design — that half is <code>get_memory</code> / <code>set_memory</code></td>
+</tr>
+<tr>
+<td>✅2️⃣ <code>restore_state(state_json)</code> → throws</td>
+<td>❌ no wrapper yet (issue #17, Wave 2)</td>
+<td>repositions the FSM without firing entry effects (<a href="plans/004-cli-run-refactor-and-mcp-server.md">Plan-004 §3.14</a>); validates version + state name before writing either field, so a rejected restore leaves the kernel untouched; the only <code>Result</code> on this wasm surface — a bad blob throws rather than no-op&#39;ing silently</td>
+</tr>
+<tr>
 <td>✅ <code>Effect::ParseError { message }</code></td>
 <td>⚠️ no dedicated wrapper</td>
 <td><code>effect.rs</code>; emitted by <code>load_behavior</code> / <code>load_behavior_with_bundle</code> when the parse fails (<code>lib.rs</code>); reaches sdk only via the generic <code>registerHandler(&quot;parse_error&quot;, fn)</code></td>
