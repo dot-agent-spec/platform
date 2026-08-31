@@ -27,11 +27,16 @@ const bundle = await loadAgent(await file.arrayBuffer())
 **From a drop target:**
 
 ```ts
-const file = event.dataTransfer.items[0].getAsFile()
-const bundle = await loadAgent(await file.arrayBuffer())
+// `items` may lead with a `kind: 'string'` entry when a link or selected text is
+// dragged, and `getAsFile()` returns null for those — find the file entry.
+const item = [...event.dataTransfer.items].find((entry) => entry.kind === 'file')
+const file = item?.getAsFile()
+if (file) {
+  const bundle = await loadAgent(await file.arrayBuffer())
+}
 ```
 
-The last two reach the network never: the user's own file is unpacked in the tab.
+Neither of the last two touches the network: the user's own file is unpacked in the tab.
 
 ---
 
@@ -42,9 +47,17 @@ Two static GETs, and nothing else:
 | Request | When | Size |
 |---|---|---|
 | The `.agent` file | Only when you fetch it, rather than reading a local file | Whatever the bundle weighs |
-| The kernel WebAssembly module | Once, on the first `AgentSession.create()` | ~725 KB, measured on this repository's current build |
+| The kernel WebAssembly module | On the first `AgentSession.create()` that reaches it | 725 KB raw, 225 KB gzipped, on this repository's current build |
 
-The WASM request is worth naming, because "no server hop" is true of the **unpack** and false of the **session**. `AgentSession.create()` calls the kernel's `init()`, which in any non-Node runtime resolves `../pkg/dot_agent_kernel_dsl_bg.wasm` against `import.meta.url` and fetches it (`packages/kernel-dsl/src/ts/index.ts`). That URL points into your own bundler's output, so it is a static asset on your own origin, cached like any other — and it is a real request that shows up in DevTools.
+The WASM request is worth naming, because "no server hop" is true of the **unpack** and false of the **session**. `AgentSession.create()` calls the kernel's `init()`, which in any non-Node runtime resolves `../pkg/dot_agent_kernel_dsl_bg.wasm` against `import.meta.url` and fetches it (`packages/kernel-dsl/src/ts/index.ts`).
+
+Where that URL lands is your bundler's decision, not the kernel's, and the three common answers differ enough to check before assuming:
+
+- **Vite, library build** — inlines the module as a `base64` `data:` URI inside the JS. Nothing is fetched, and the "once" row above does not apply; you pay the ~33% base64 overhead in the bundle instead.
+- **A bundler that emits it as an asset** — a static file on your own origin, cached like any other, and a real request in DevTools.
+- **esbuild with no asset loader configured** — resolves neither. Copy `dot_agent_kernel_dsl_bg.wasm` into your output yourself and keep the relative path intact.
+
+`init()` sets its `_initialized` flag only after the glue import and the fetch have both resolved, so two `AgentSession.create()` calls started in the same tick can each begin a fetch. Serialise the first `create()` if that matters to you.
 
 What does not exist: an unpack route, an FSM running server-side, and any per-dispatch round trip. Once the bundle is loaded and the kernel is initialized, `sendIntent()` and its siblings are synchronous local calls into WebAssembly.
 
@@ -52,11 +65,11 @@ What does not exist: an unpack route, an FSM running server-side, and any per-di
 
 ## Why no server route is needed
 
-`packages/sdk/src/load.ts` imports exactly two things: `jszip`, and the `@dot-agent/compiler/core` sub-path. Neither carries a `node:` specifier. `core` is the sub-path the compiler exposes precisely so a browser consumer gets the parsing and the safety checks — `validateMagicBytes`, `validateZipBomb`, `classifyContentPath` — without the packer's filesystem half.
+`packages/sdk/src/load.ts` has two runtime imports — `jszip` and the `@dot-agent/compiler/core` sub-path — plus a type-only import that disappears at build. Neither runtime import carries a `node:` specifier. `core` is the sub-path the compiler exposes precisely so a browser consumer gets the parsing and the safety checks — `validateMagicBytes`, `validateZipBomb`, `classifyContentPath` — without the packer's filesystem half.
 
 A guard stands behind that claim. `packages/sdk/tests/browser-bundle.test.js` bundles the whole `sdk → kernel-dsl` chain for a browser target with esbuild and no externals, so a `node:` scheme leaking anywhere along that chain fails the test instead of a consumer's build. It gates the publish workflow; `packages/sdk/CHANGELOG.md` records it under 0.10.3.
 
-The dependency argument is drawn out in full at layer 4 of the [architecture map](../explanation/architecture/map.md).
+The [architecture map](../explanation/architecture/map.md) records the same constraint at layer 4, in one line. The argument for it is the bundle test above.
 
 ---
 
@@ -67,6 +80,8 @@ A worker is a first-class host here, not a special case. The kernel splits on `i
 `packages/kernel-dsl/tests/env-detection.test.js` is the regression guard, asserting `isNodeRuntime()` in both directions, including the case where a bundler polyfills `process` with no version information.
 
 Running the session inside a worker keeps dispatch off the main thread. The kernel is synchronous once initialized, so a host that also renders pays for every dispatch in its frame budget otherwise.
+
+One consequence to design for: effect handlers run in whatever context owns the session. Put the session in a worker and your `registerHandler` callbacks run there too, with no `document` to touch — they must `postMessage` the effect out and let the main thread render it. The complete example below keeps the session on the main thread for exactly that reason, so its handlers can call the DOM directly.
 
 ---
 
