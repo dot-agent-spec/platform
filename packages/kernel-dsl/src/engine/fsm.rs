@@ -29,13 +29,36 @@ pub struct Fsm {
 /// Restoring the state name alone resumes the wrong FSM — an agent snapshotted with two
 /// ticks elapsed would resume at zero and fire `after 3 prompts` a turn late.
 ///
+/// `behavior` is the third field and it carries **identity**, which the other two do not.
+/// `v` guards the blob's *shape* — it changes only when this crate changes — so without a
+/// fingerprint a blob is admitted on a bare state-name match, and one agent's position
+/// restores into an unrelated agent that happens to declare the same name. Because every
+/// behavior must declare `init` and `ended` is native, a snapshot taken at either position
+/// would otherwise restore into literally any agent.
+///
 /// Memory is deliberately absent. It belongs to the runtime and already travels through
 /// `get_memory` / `set_memory`.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FsmSnapshot {
     pub v: u8,
+    pub behavior: String,
     pub state: String,
     pub prompt_count: u32,
+}
+
+/// FNV-1a, 64-bit, over the FSM's canonical rendering — see [`Fsm::fingerprint`].
+///
+/// Hand-rolled rather than `DefaultHasher` on purpose: `DefaultHasher`'s algorithm is
+/// explicitly unspecified across Rust releases, and this value is persisted by hosts. A
+/// toolchain upgrade would invalidate every stored snapshot with no shape change to justify
+/// it. FNV-1a is ten lines and is fixed forever.
+fn fnv1a64(bytes: &[u8]) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in bytes {
+        hash ^= *byte as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
 }
 
 impl Fsm {
@@ -149,7 +172,12 @@ impl Fsm {
     }
 
     pub fn tick_prompt(&mut self, mem: &mut MemoryStore) -> Vec<Effect> {
-        self.prompt_count += 1;
+        // Saturating, not `+= 1`. The counter is restorable from host storage, so an
+        // arbitrary u32 can reach it: `+= 1` at u32::MAX aborts the module in debug (the
+        // workspace sets `panic = "abort"`, so the host cannot catch it) and wraps to 0 in
+        // release, silently re-arming every `after N prompts` handler in the state. Saturating
+        // makes the pathological counter stick instead of firing anything.
+        self.prompt_count = self.prompt_count.saturating_add(1);
         let count = self.prompt_count;
         let name = self.current_state.clone();
         let mut effects = Vec::new();
@@ -165,10 +193,52 @@ impl Fsm {
         effects
     }
 
+    /// Identity of the loaded behavior, as a 16-hex-digit fingerprint.
+    ///
+    /// Computed from the FSM's own shape, not from the source text: state names in
+    /// declaration order, and per state the intent names with their `transition to` targets,
+    /// the presence of an offtopic handler, and every `after N` threshold. Those are exactly
+    /// the things a restored position depends on, so the fingerprint changes when — and only
+    /// when — an old position may have stopped meaning what it meant. Hashing the source text
+    /// instead would invalidate every stored snapshot over a reformatted comment.
+    ///
+    /// It is a collision-resistance argument, not a security one: the fingerprint stops an
+    /// honest mix-up between agents or revisions, and a caller who controls host storage
+    /// controls the blob either way.
+    pub fn fingerprint(&self) -> String {
+        let mut canon = String::new();
+        for name in &self.state_order {
+            canon.push_str("s:");
+            canon.push_str(name);
+            canon.push('\n');
+            let Some(state) = self.states.get(name) else { continue };
+            for stmt in &state.body {
+                match stmt {
+                    Statement::OnIntent { intent, body } => {
+                        canon.push_str("  i:");
+                        canon.push_str(intent);
+                        if let IntentBody::Next(target) = body {
+                            canon.push('>');
+                            canon.push_str(target);
+                        }
+                        canon.push('\n');
+                    }
+                    Statement::OnOfftopic { .. } => canon.push_str("  o\n"),
+                    Statement::After { prompts, .. } => {
+                        canon.push_str(&format!("  a:{}\n", prompts));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        format!("{:016x}", fnv1a64(canon.as_bytes()))
+    }
+
     /// Capture the FSM position as a serializable blob.
     pub fn snapshot(&self) -> FsmSnapshot {
         FsmSnapshot {
             v: FSM_SNAPSHOT_VERSION,
+            behavior: self.fingerprint(),
             state: self.current_state.clone(),
             prompt_count: self.prompt_count,
         }
@@ -176,15 +246,37 @@ impl Fsm {
 
     /// Reposition the FSM from a snapshot, firing no entry effects.
     ///
-    /// Both the version stamp and the state name are validated **before** either field is
-    /// written, so a rejected restore leaves the kernel exactly where it stood. A partial
-    /// write would park the FSM on a state the loaded behavior never declared — the silent
-    /// invalid position this pair exists to prevent.
+    /// Three admissibility rules run **before** any field is written, so a rejected restore
+    /// leaves the kernel exactly where it stood: the blob's shape (`v`), the behavior it came
+    /// from (`behavior`), and the state name. A partial write would park the FSM on a
+    /// position the loaded behavior never declared — the silent invalid position this pair
+    /// exists to prevent.
+    ///
+    /// `prompt_count` deliberately has no rule of its own, and cannot have a useful one: every
+    /// value up to `u32::MAX` is reachable by an honest run, since the counter keeps climbing
+    /// past the largest declared `after N`. The damage a hostile counter could do is closed at
+    /// the other end instead — `tick_prompt` saturates rather than overflowing.
     pub fn restore(&mut self, snap: &FsmSnapshot) -> Result<(), String> {
         if snap.v != FSM_SNAPSHOT_VERSION {
             return Err(format!(
                 "restore_state: unsupported snapshot version {} — this kernel reads version {}",
                 snap.v, FSM_SNAPSHOT_VERSION
+            ));
+        }
+        if snap.behavior.is_empty() && snap.state.is_empty() {
+            return Err(
+                "restore_state: the snapshot was taken before any behavior was loaded — it \
+                 carries no position to restore"
+                    .to_string(),
+            );
+        }
+        let expected = self.fingerprint();
+        if snap.behavior != expected {
+            return Err(format!(
+                "restore_state: snapshot belongs to a different behavior (fingerprint {}, this \
+                 kernel is {}) — a position from another agent, or from a revision that changed \
+                 the state graph, is not a legal position here",
+                snap.behavior, expected
             ));
         }
         if !self.is_known_state(&snap.state) {

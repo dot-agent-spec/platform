@@ -169,25 +169,31 @@ impl AgentDSLKernel {
 
     /// Serialize the FSM position as compact JSON, for storage between interactions.
     ///
-    /// Shape: `{"v":1,"state":"booking","prompt_count":3}`. The counter travels with the
-    /// state name because `after N prompts` handlers fire off it, and a transition zeroes it.
+    /// Shape: `{"v":1,"behavior":"9f2c…","state":"booking","prompt_count":3}`. The counter
+    /// travels with the state name because `after N prompts` handlers fire off it, and a
+    /// transition zeroes it. `behavior` fingerprints the loaded behavior's state graph, so a
+    /// blob cannot be restored into a different agent that happens to reuse a state name.
     ///
     /// The blob **excludes memory** — that half is the runtime's, and it already has its own
     /// pair in `get_memory` / `set_memory`. Restore with `restore_state`.
     pub fn serialize_state(&self) -> String {
-        let snapshot = self.inner.serialize_state();
-        serde_json::to_string(&snapshot).unwrap_or_else(|_| String::new())
+        self.inner.serialize_state_json()
     }
 
     /// Reposition the FSM from a blob produced by `serialize_state`, firing no entry effects.
     ///
-    /// Throws when the blob is malformed, carries a version this kernel does not read, names
-    /// a state the loaded behavior does not declare, or when no behavior has been loaded yet.
-    /// A rejected restore leaves the kernel exactly where it stood — it never half-applies.
+    /// Throws when the blob is malformed, carries a version this kernel does not read, was
+    /// taken from a different behavior, names a state the loaded behavior does not declare, or
+    /// when no behavior has been loaded yet. A rejected restore leaves the kernel exactly
+    /// where it stood — it never half-applies.
+    ///
+    /// **Load first, then restore, and drop what the load emits.** This call requires a loaded
+    /// behavior, and `load_behavior` enters the init state — so its entry effects reach the
+    /// observer before the position is corrected, and describe a state the session has already
+    /// left. The rehydration sequence is `load_behavior` → discard its effects →
+    /// `restore_state` → `set_memory` → `send_intent`.
     pub fn restore_state(&mut self, state_json: &str) -> Result<(), JsError> {
-        let snapshot: engine::fsm::FsmSnapshot = serde_json::from_str(state_json)
-            .map_err(|e| JsError::new(&format!("restore_state: malformed snapshot — {}", e)))?;
-        self.inner.restore_state(&snapshot).map_err(|e| JsError::new(&e))
+        self.inner.restore_state_json(state_json).map_err(|e| JsError::new(&e))
     }
 
     /// Return the state graph as SCXML (W3C https://www.w3.org/TR/scxml/) with
