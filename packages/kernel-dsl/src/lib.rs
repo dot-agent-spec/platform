@@ -71,11 +71,20 @@ impl AgentDSLKernel {
         serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
-    /// Register a synchronous fallback for resolving merge paths not in the bundle.
+    /// Register a synchronous fallback for resolving a file path the kernel was not handed.
     ///
-    /// The callback receives the path string declared in `merge "…"` and must return
-    /// the file content as a string, or null/undefined if the path cannot be resolved.
-    /// Only called when `load_behavior_with_bundle` encounters a path absent from the bundle.
+    /// The callback receives a path string and must return the file content as a string, or
+    /// null/undefined if the path cannot be resolved. It is called for two things:
+    ///
+    /// - a `merge "…"` path absent from the bundle given to `load_behavior_with_bundle` — the
+    ///   original use, and the only one where returning nothing fails the load;
+    /// - a `teach "…"` / `guide "…"` path absent from the map given to `set_content_files`, whose
+    ///   miss is not an error and simply leaves `content: null`.
+    ///
+    /// The path is normalized the way the packer normalizes it before bundling (a leading `./`
+    /// stripped, `\` converted to `/`), so what arrives here is the bundle key, not necessarily the
+    /// literal argument. Inline prose never reaches the callback: only text ending in `.txt`/`.md`
+    /// — the packer's own test for a file reference — is offered to it.
     pub fn set_file_resolver(&mut self, callback: Function) {
         use std::rc::Rc;
         let cb = Rc::new(callback);
@@ -90,8 +99,10 @@ impl AgentDSLKernel {
     ///
     /// `files_json` must be a JSON object mapping bundle paths to their contents, e.g.
     /// `{"knowledge/cars.md": "# Cars\n…", "guides/intro.md": "…"}`. A `teach "knowledge/cars.md"`
-    /// then arrives with `content` filled in beside the unchanged `text`; the lookup is exact, so
-    /// inline prose and unbundled paths simply arrive with `content: null`.
+    /// then arrives with `content` filled in beside the unchanged `text`. The key is the reference
+    /// normalized the way the packer normalizes it — a leading `./` stripped, `\` converted to `/`
+    /// — and the match on it is exact, so inline prose and unbundled paths arrive with
+    /// `content: null`.
     ///
     /// Optional. A host that prefers to fetch lazily — handing the path on to its own resource
     /// layer — skips this call and keeps receiving bare paths, at no payload cost.

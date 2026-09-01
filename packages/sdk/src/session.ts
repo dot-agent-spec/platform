@@ -20,8 +20,14 @@ export class AgentSession {
     return new AgentSession(kernel, bundle)
   }
 
-  // Register a synchronous fallback called when a `merge "…"` path is not in the bundle.
-  // Must be called before start(). Return null/undefined if the path cannot be resolved.
+  // Register a synchronous fallback for a file path the kernel was not handed: a `merge "…"` path
+  // absent from the bundle (where returning nothing fails the load), and a `teach`/`guide` path
+  // absent from the content map (where it just leaves `content` null). Must be called before
+  // start(). Return null/undefined if the path cannot be resolved.
+  //
+  // The path arrives normalized as the packer normalizes it — leading `./` stripped, `\` turned
+  // into `/` — so it is the bundle key rather than the literal DSL argument. Inline prose never
+  // reaches the resolver: only text ending in `.txt`/`.md` is offered to it.
   setFileResolver(resolver: (path: string) => string | null | undefined): void {
     this.kernel.set_file_resolver(resolver as unknown as Function)
   }

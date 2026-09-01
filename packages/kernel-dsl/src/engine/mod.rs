@@ -12,22 +12,54 @@ use memory::MemoryStore;
 
 type FileResolver = Option<Box<dyn Fn(&str) -> Option<String>>>;
 
-/// Look one path up, content map first, registered resolver second.
+/// The packer's `normalizeRefPath`, reproduced.
 ///
-/// The precedence mirrors `flatten_merges`, which resolves `merge "…"` the same way. The lookup is
-/// **exact**: no suffix matching, no `knowledge/` prefix guessing, no extension heuristic. The
-/// packer bundles a reference verbatim at the path the author wrote, and warns (W016) at pack time
-/// when that path is unreachable — accepting a looser form here would bless a shape the packer
-/// refuses to bundle. Inline prose therefore never resolves, because prose is not a bundle key.
+/// The bundle key is **not** the raw argument. `pack.ts` converts `\` to `/` and strips one leading
+/// `./` before deciding where the file lands, so `teach "./knowledge/cars.md"` packs clean — no
+/// E018, no W015, no W016 — under the key `knowledge/cars.md`. Looking the raw text up would miss
+/// it and hand the host `content: null` with no diagnostic at either end.
+///
+/// This is normalization, not the prefix/suffix guessing [`lookup_content`] refuses: it maps a
+/// reference onto the one key the packer would have written for it, and onto nothing else. Keep it
+/// identical to `normalizeRefPath` — the two are one rule expressed twice.
+fn normalize_ref_path(text: &str) -> String {
+    let slashed = text.replace('\\', "/");
+    slashed.strip_prefix("./").unwrap_or(&slashed).to_string()
+}
+
+/// The packer's `FILE_REF_RE`, reproduced: a trailing `.txt`/`.md` is what makes an argument a file
+/// reference rather than prose, and it is the only signal either layer has.
+fn looks_like_file_ref(text: &str) -> bool {
+    let lower = text.to_ascii_lowercase();
+    lower.ends_with(".txt") || lower.ends_with(".md")
+}
+
+/// Look one reference up, content map first, registered resolver second.
+///
+/// The precedence mirrors `flatten_merges`, which resolves `merge "…"` the same way. The key is
+/// [`normalize_ref_path`] of the effect text and the match on it is **exact**: no suffix matching,
+/// no `knowledge/` prefix guessing, no extension heuristic. The packer bundles a reference at that
+/// normalized path and warns (W016) at pack time when it is unreachable — accepting a looser form
+/// here would bless a shape the packer refuses to bundle.
+///
+/// The resolver is consulted only for text that [`looks_like_file_ref`]. Without that gate a state
+/// carrying two prose statements fires the host's callback once per sentence per entry: a syscall
+/// per sentence for a filesystem-backed resolver, and an opening for a permissive one to answer a
+/// sentence with something that silently becomes `content`. The map lookup stays unconditional —
+/// it is a pure in-memory hit on a key the host chose itself, so it has neither cost nor surprise.
 fn lookup_content(
-    path: &str,
+    text: &str,
     content_files: &BTreeMap<String, String>,
     file_resolver: &FileResolver,
 ) -> Option<String> {
-    content_files
-        .get(path)
-        .cloned()
-        .or_else(|| file_resolver.as_ref().and_then(|r| r(path)))
+    let path = normalize_ref_path(text);
+    if let Some(found) = content_files.get(&path) {
+        return Some(found.clone());
+    }
+    if !looks_like_file_ref(&path) {
+        return None;
+    }
+    file_resolver.as_ref().and_then(|r| r(&path))
 }
 
 /// Fill `content` on every `Teach` / `Guide` effect whose text names a known file.
@@ -471,5 +503,65 @@ mod tests {
         let (text, content) = first_teach(&effects);
         assert_eq!(content, None, "a missing knowledge file leaves content empty");
         assert_eq!(text, "knowledge/missing.md", "the effect is still emitted, with its path");
+    }
+
+    #[test]
+    fn normalize_ref_path_matches_the_packer() {
+        // These three lines are `normalizeRefPath` in packages/compiler/src/pack.ts. If that
+        // function grows a rule, this test is where the kernel finds out it fell behind.
+        assert_eq!(normalize_ref_path("knowledge/cars.md"), "knowledge/cars.md");
+        assert_eq!(normalize_ref_path("./knowledge/cars.md"), "knowledge/cars.md");
+        assert_eq!(normalize_ref_path("knowledge\\cars.md"), "knowledge/cars.md");
+        // One leading `./`, like the packer's `^\.\//` — not a loop.
+        assert_eq!(normalize_ref_path(".././knowledge/cars.md"), ".././knowledge/cars.md");
+    }
+
+    #[test]
+    fn teach_resolves_a_reference_written_with_a_leading_dot_slash() {
+        // The packer accepts this form and bundles it under `knowledge/cars.md`, with no E018 and
+        // no warning. Before the kernel normalized too, it packed clean and arrived content: null.
+        let dsl = "state init\n  teach \"./knowledge/cars.md\"\n  interact\n";
+        let mut k = AgentDSLKernel::new();
+        k.set_content_files(content_map(&[("knowledge/cars.md", "# Cars")]));
+
+        let effects = k.load_behavior(dsl).expect("should load");
+
+        let (text, content) = first_teach(&effects);
+        assert_eq!(content, Some("# Cars"), "the lookup key must be normalized as the packer does");
+        assert_eq!(text, "./knowledge/cars.md", "the literal argument still survives untouched");
+    }
+
+    #[test]
+    fn the_file_resolver_is_never_handed_inline_prose() {
+        // A host resolver may touch the filesystem or answer permissively. Handing it a sentence
+        // costs a lookup per prose statement per state entry, and invites a bogus `content`.
+        use std::cell::RefCell;
+        use std::rc::Rc;
+
+        let dsl = concat!(
+            "state init\n",
+            "  guide \"Always confirm before proceeding.\"\n",
+            "  teach \"Never guess a price.\"\n",
+            "  teach \"knowledge/cars.md\"\n",
+            "  interact\n",
+        );
+        let seen: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
+        let recorder = Rc::clone(&seen);
+
+        let mut k = AgentDSLKernel::new();
+        k.set_file_resolver(Box::new(move |path: &str| {
+            recorder.borrow_mut().push(path.to_string());
+            Some("# Whatever the host had".to_string())
+        }));
+
+        let effects = k.load_behavior(dsl).expect("should load");
+
+        assert_eq!(
+            seen.borrow().as_slice(),
+            ["knowledge/cars.md"],
+            "only the .md reference may reach the resolver"
+        );
+        let (_, content) = first_guide(&effects);
+        assert_eq!(content, None, "prose must not pick up whatever the resolver returns");
     }
 }
