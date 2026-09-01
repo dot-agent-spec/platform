@@ -114,10 +114,13 @@ async function run(url: string) {
 
   // 4. Handlers must be registered before start().
   session.registerHandler('goal', ({ text }) => render('goal', text))
-  session.registerHandler('guide', ({ text }) => render('guide', text))
+  // `guide "guides/x.md"` arrives with the file's text in `content` and the path still in `text`.
+  session.registerHandler('guide', ({ text, content }) => render('guide', content ?? text))
   session.registerHandler('request_interact', () => focusInputBox())
 
-  // 5. Fire the init state's effects.
+  // 5. Fire the init state's effects. start() also hands the bundle's knowledge and guide files
+  //    to the kernel, which is what fills `content` above; pass { resolveContent: false } if this
+  //    host would rather serve those files itself from the path.
   session.start()
 
   // 6. Drive it. Synchronous local calls into WebAssembly.

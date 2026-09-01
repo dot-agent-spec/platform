@@ -62,7 +62,7 @@ Full guide: [docs/how-to/load-an-agent-in-the-browser.md](../../docs/how-to/load
 |--------|-------------|
 | `loadAgent(input)` | Parse a `.agent` ZIP (`Uint8Array` \| `ArrayBuffer`) into an `AgentBundle` |
 | `AgentSession.create(bundle)` | Construct a session around a loaded bundle; initializes the WASM kernel |
-| `session.setFileResolver(fn)` | Register the Mode B fallback for `merge` paths missing from the bundle |
+| `session.setFileResolver(fn)` | Register the fallback for a `merge` path missing from the bundle (Mode B), and for a `teach`/`guide` path missing from the content map |
 | `session.registerHandler(type, fn)` | Register a per-effect-type handler (`goal`, `guide`, `teach`, `request_interact`, `transition`, `run_script`, `run_subagent`, `run_tool`, `set_memory`, `apply_css`, `remove_css`, …) |
 | `session.setEffectListener(fn)` | Optional catch-all called for every effect, in addition to per-type handlers |
 | `session.start(options?)` | Load the behavior into the kernel and fire the `init` state's effects; also hands the bundle's `knowledge/` and `guides/` files to the kernel, unless `{ resolveContent: false }` |

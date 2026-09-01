@@ -50,8 +50,8 @@ const engine = new AgentDSLKernel();
 engine.observe((effect: Effect) => {
   switch (effect.type) {
     case "goal":             handleGoal(effect.text); break;
-    case "guide":            handleGuide(effect.text); break;
-    case "teach":            handleTeach(effect.text); break;
+    case "guide":            handleGuide(effect.text, effect.content); break;
+    case "teach":            handleTeach(effect.text, effect.content); break;
     case "request_interact": handleInteract(); break;
     case "run_script":       handleScript(effect); break;
     case "run_subagent":     handleSubagent(effect); break;
@@ -274,10 +274,14 @@ case "guide":
 | Property | Consequence |
 |---|---|
 | The call is **optional** | A host that never calls `set_content_files` keeps receiving bare paths, at no payload cost. |
-| The lookup is **exact** | Inline prose and paths the bundle does not carry arrive with `content: null`. There is no suffix matching and no `knowledge/` prefix guessing — the packer bundles a reference verbatim at the path the author wrote, and warns (W016) when that path is unreachable. |
+| The key is the **normalized** reference | The packer strips a leading `./` and converts `\` to `/` before choosing the bundle path, so `teach "./knowledge/cars.md"` is bundled — and looked up — as `knowledge/cars.md`. The kernel applies the same two rules. |
+| The match is **exact** | Beyond that normalization there is no suffix matching and no `knowledge/` prefix guessing: the packer bundles a reference at exactly that path and warns (W016) when it is unreachable, so a looser match here would bless a shape the packer refuses to produce. Inline prose and paths the bundle does not carry arrive with `content: null`. |
 | A miss is **not an error** | The effect is still emitted and the run continues, unlike `merge`, whose missing file fails the load. |
+| `set_file_resolver` is the **fallback** | A path absent from the map is offered to the resolver callback, which therefore now serves both `merge` and `teach`/`guide`. Only text ending in `.txt`/`.md` is offered — the packer's own test for a file reference — so a resolver is never handed inline prose. |
 
-The `@dot-agent/sdk` does this for you: `AgentSession.start()` feeds the bundle's `files.knowledge` and `files.guides` to `set_content_files` before loading the behavior.
+**What a host retiring its own lookup should check.** The kernel resolves the namespaced bundle path and nothing else. An archive packed before the explicit-path rule can carry bare-name references (`teach "cars.md"`), which a host's hand-written resolver may still resolve by scanning and the kernel will not: those arrive with `content: null`. Repack such agents before deleting the host-side resolver.
+
+The `@dot-agent/sdk` does the wiring for you: `AgentSession.start()` feeds the bundle's `files.knowledge` and `files.guides` to `set_content_files` before loading the behavior, and `start({ resolveContent: false })` skips that for a host that serves the files itself.
 
 ```typescript
 case "teach":

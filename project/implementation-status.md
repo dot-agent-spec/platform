@@ -113,7 +113,8 @@ Legend:
 | ✅1️⃣ `new AgentDSLKernel()` (wasm class ctor) | 🔄 `sdk` | constructed inside `AgentSession` |
 | ✅1️⃣ `load_behavior(text)` → `string` | → `start()` (single-file) | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON; E016 if no `init` state |
 | ✅1️⃣ `load_behavior_with_bundle(text, bundle_json)` → `string` | → `start()` | flattens `merge` paths from bundle map; effects JSON; E016 if no `init` state |
-| ✅1️⃣ `set_file_resolver(callback: Function)` | → `setFileResolver(fn)` | Mode B fallback; called when bundle lacks a merge path |
+| ✅1️⃣ `set_file_resolver(callback: Function)` | → `setFileResolver(fn)` | fallback for a `merge` path the bundle lacks (Mode B) **and** for a `teach`/`guide` path the content map lacks; receives the normalized bundle path, never inline prose |
+| ✅1️⃣ `set_content_files(files_json: string)` | → fed by `start()` unless `{ resolveContent: false }` | knowledge/guides map, bundle path → text; exact lookup (after the packer's `./` and `\` normalization) fills `Effect::Teach`/`Guide.content`, then falls back to `set_file_resolver` |
 | ✅1️⃣ `send_intent(intent)` → `string` | → `sendIntent(intent)` | effects JSON |
 | ✅1️⃣ `send_offtopic()` → `string` | → `sendOfftopic()` | |
 | ✅1️⃣ `send_event(event)` → `string` | → `sendEvent(event)` | matches global `trigger_decl` |
@@ -140,8 +141,8 @@ Legend:
 |---|---|---|
 | ✅1️⃣ `loadAgent(input: Uint8Array \| ArrayBuffer)` → `Promise<AgentBundle>` | `load.ts` | 🔄 `compiler/core` `parseAboutme` + `extractFiles` |
 | ✅1️⃣ `AgentSession` (class) | `session.ts` | private ctor; wraps `AgentDSLKernel` |
-| ✅1️⃣ `AgentSession.start()` | | 🔄 `kernel.load_behavior_with_bundle`; passes `files.behaviors[]` as bundle |
-| ✅1️⃣ `AgentSession.setFileResolver(fn)` | | 🔄 `kernel.set_file_resolver`; Mode B fallback for missing merge paths |
+| ✅1️⃣ `AgentSession.start(options?)` | | 🔄 `kernel.load_behavior_with_bundle` (passes `files.behaviors[]` as bundle) + `kernel.set_content_files` (passes `files.knowledge[]` + `files.guides[]`), the second skipped by `{ resolveContent: false }` |
+| ✅1️⃣ `AgentSession.setFileResolver(fn)` | | 🔄 `kernel.set_file_resolver`; Mode B fallback for a missing `merge` path, and for a `teach`/`guide` path absent from the content map |
 | ✅1️⃣ `AgentSession.registerHandler(type, handler)` | | pull-style replacement for kernel `observe`; one handler per effect type |
 | ✅ `AgentSession.setEffectListener(listener?)` | `session.ts` | global observer — called for **every** effect before the typed handler runs; pass `undefined` to clear |
 | ✅1️⃣ `sendIntent` · `sendEvent` · `sendOfftopic` · `tickPrompt` | | thin wrappers → `dispatchRaw(kernel.*)` |
@@ -218,7 +219,7 @@ Legend:
 | ✅1️⃣ `state` | ✅ `state_decl` | ✅ `StateDef` | ✅ lint + FSM validation | ✅ FSM state map | ✅ transparent via kernel |
 | ✅1️⃣ `goal` | ✅ `goal_stmt` | ✅ `Statement::Goal` | ✅ lint W002 (>280 chars) | ✅ → `Effect::Goal {text}` | ✅ `registerHandler("goal", fn)` |
 | ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W010 (>280 chars) · content-namespace checks E018 (file not found) · E020 (reserved bundle path) · W015 (orphan) · W016 (outside `guides/`/`knowledge/`) | ✅ → `Effect::Guide {text, content}` (`content` = bundled file's text, or null) | ✅ `registerHandler("guide", fn)`; `start()` feeds, unless `resolveContent: false`, `files.guides[]` to `set_content_files` |
-| ✅1️⃣ `teach` | ✅ `teach_stmt` | ✅ `Statement::Teach` | ✅ content-namespace checks E018 · E020 · W015 · W016 (same linked-only rule as `guide`) | ✅ → `Effect::Teach {text, content}`; exact lookup in `set_content_files`, then the file resolver | ✅ `registerHandler("teach", fn)`; `start()` feeds, unless `resolveContent: false`, `files.knowledge[]` to `set_content_files` |
+| ✅1️⃣ `teach` | ✅ `teach_stmt` | ✅ `Statement::Teach` | ✅ content-namespace checks E018 · E020 · W015 · W016 (same linked-only rule as `guide`) | ✅ → `Effect::Teach {text, content}`; exact lookup in `set_content_files` on the packer-normalized path, then the file resolver | ✅ `registerHandler("teach", fn)`; `start()` feeds, unless `resolveContent: false`, `files.knowledge[]` to `set_content_files` |
 | ✅1️⃣ `interact` | ✅ `interact_stmt` | ✅ `Statement::Interact` | ✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal w/o interact) · E009 (no intent handlers) | ✅ → `Effect::RequestInteract` | ✅ `registerHandler("request_interact", fn)` |
 | ✅1️⃣ `on intent "…"` | ✅ `intent_handler` | ✅ `Statement::OnIntent` | ✅ lint E005/W005 (dangling transition) | ✅ `send_intent()` dispatches body | ✅ → `sendIntent(intent)` |
 | ✅1️⃣ `on offtopic` | ✅ `offtopic_handler` | ✅ `Statement::OnOfftopic` | ✅ lint (missing offtopic) | ✅ `send_offtopic()` dispatches body | ✅ → `sendOfftopic()` |

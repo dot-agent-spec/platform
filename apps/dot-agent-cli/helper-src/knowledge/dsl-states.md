@@ -32,7 +32,7 @@ State-level only — never inside a handler body.
 |---|---|---|---|
 | `goal` | `goal "text"` | `goal` | Sets the LLM's current objective — pairs with `interact` (W012 if `goal` has no `interact`; W013 the other way round) |
 | `guide` | `guide "text"` | `guide` | Instruction or context — use it immediately |
-| `teach` | `teach "filename.md"` | `teach` | References a knowledge file by name |
+| `teach` | `teach "knowledge/filename.md"` | `teach` | References a knowledge file by its bundle path |
 | `interact` | `interact` | `request_interact` | Pauses — agent is waiting for user input; marks the state an Oriented State |
 
 ## Handlers
@@ -58,7 +58,7 @@ teaches. Moving to an Oriented State re-enters it, firing its `goal`/`guide`/`te
 state example
   goal "Current LLM objective — incorporate this."
   guide "Instruction or context for the LLM."
-  teach "filename.md"
+  teach "knowledge/filename.md"
   interact
   on intent "next"
     transition to next_state

@@ -114,9 +114,11 @@ The runtime resolves both against the files the bundle carries under `knowledge/
 and hands the result to the host **beside the path, never in place of it** — the effect carries
 `text` (always the literal argument, unchanged) and `content` (the file's text, or null).
 
-- The match is **exact**. A path the bundle does not carry, and inline prose, arrive with
-  `content: null`; a host that wants them fetches or displays them itself. This is not an error and
-  does not stop the run — unlike `merge`, whose missing file fails the load.
+- The match is **exact**, on the path the packer normalized: a leading `./` is stripped and `\`
+  becomes `/`, so `teach "./knowledge/cars.md"` resolves, and nothing else is guessed at. A path the
+  bundle does not carry, and inline prose, arrive with `content: null`; a host that wants them
+  fetches or displays them itself. This is not an error and does not stop the run — unlike `merge`,
+  whose missing file fails the load.
 - Both forms therefore stay usable: a host that wants the text reads `content ?? text`; a host that
   prefers to fetch lazily — the CLI hands the path on as a `dot-agent://<path>` resource URI —
   ignores `content` and keeps using `text`.
