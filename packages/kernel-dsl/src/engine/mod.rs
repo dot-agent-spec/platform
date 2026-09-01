@@ -286,6 +286,90 @@ mod tests {
         );
     }
 
+    /// `state init` … the two branch states, appended to a condition body.
+    const BRANCHES: &str = "\n\nstate yes\n  interact\n\nstate lo\n  interact\n";
+
+    fn branch_taken(condition: &str, seed: &[(&str, &str, MemValue)]) -> String {
+        let dsl = format!(
+            "state init\n  if {}\n    transition to yes\n  else\n    transition to lo\n  end{}",
+            condition, BRANCHES
+        );
+        kernel_with_memory(seed, &dsl).get_current_state().to_string()
+    }
+
+    #[test]
+    fn i5_both_operands_are_tagged_under_a_non_eq_operator() {
+        // The tagging applies to an operand POSITION, so the right-hand side of a
+        // comparison is a reference too, and every operator goes through the same
+        // `resolve_value`. Pinned because a future mapping change could keep the
+        // left side working and silently drop the right.
+        let seed = |a: f64, b: f64| {
+            vec![
+                ("session", "a", MemValue::Num(a)),
+                ("session", "b", MemValue::Num(b)),
+            ]
+        };
+        assert_eq!(branch_taken("session.a != session.b", &seed(1.0, 2.0)), "yes");
+        assert_eq!(branch_taken("session.a != session.b", &seed(2.0, 2.0)), "lo");
+        assert_eq!(branch_taken("session.a >= session.b", &seed(2.0, 2.0)), "yes");
+    }
+
+    // ── DA00-11: an unresolvable reference is null, and null equality is how a
+    // behavior tests whether a path is set ───────────────────────────────────
+
+    #[test]
+    fn null_equality_tests_whether_a_path_is_set() {
+        let set = [("context", "x", MemValue::Str("v".into()))];
+        assert_eq!(branch_taken("context.x == null", &[]), "yes", "an unset path IS null");
+        assert_eq!(branch_taken("context.x == null", &set), "lo", "a set path is not null");
+        assert_eq!(branch_taken("context.x != null", &set), "yes", "`!= null` means: is set");
+        assert_eq!(branch_taken("context.x != null", &[]), "lo", "an unset path fails `!= null`");
+    }
+
+    #[test]
+    fn an_unset_path_compared_to_a_literal() {
+        // The rest of the table in dsl/reference/memory.md, pinned so the document
+        // and the kernel cannot drift apart: `==` is false, `!=` is true, an
+        // ordering comparison is false, and null is not truthy.
+        assert_eq!(branch_taken("context.missing == \"x\"", &[]), "lo");
+        assert_eq!(branch_taken("context.missing != \"x\"", &[]), "yes");
+        assert_eq!(branch_taken("context.missing > 3", &[]), "lo");
+        assert_eq!(branch_taken("context.missing", &[]), "lo");
+    }
+
+    #[test]
+    fn an_unqualified_bare_word_on_a_set_stores_null() {
+        // The one observable break DA00-10 accepts: a lookup needs
+        // `<domain>.<key>`, so `planning` is a reference that cannot resolve and
+        // the store receives null — where the pre-tagging runtime wrote the text
+        // `"planning"`. Quoting it is what makes it a literal again.
+        let dsl = "state init\n  set context.stage = planning\n  interact\n";
+        let bare = kernel_with_memory(&[], dsl).get_memory();
+        let stored = bare
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "stage")
+            .expect("context.stage must exist after the set");
+        assert!(
+            matches!(stored.value, MemValue::Null),
+            "an unqualified bare word has no domain to read, so it resolves to null, got: {:?}",
+            stored.value
+        );
+
+        let quoted = "state init\n  set context.stage = \"planning\"\n  interact\n";
+        let quoted = kernel_with_memory(&[], quoted).get_memory();
+        let stored = quoted
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "stage")
+            .expect("context.stage must exist after the set");
+        assert!(
+            matches!(&stored.value, MemValue::Str(s) if s == "planning"),
+            "a quoted right-hand side is a literal and must survive, got: {:?}",
+            stored.value
+        );
+    }
+
     #[test]
     fn transition_to_ended_emits_effect_and_updates_state() {
         let dsl = "state init\n  interact\n  on intent \"done\" transition to ended\n";
@@ -417,3 +501,4 @@ mod tests {
         assert_eq!(goal_text, ["from main"], "main file's state must shadow merged duplicate");
     }
 }
+

@@ -429,6 +429,12 @@ fn eval_compare(l: &MemValue, op: &CompareOp, r: &MemValue) -> bool {
             CompareOp::Ne => a != b,
             _             => false,
         },
+        // Two nulls are equal. An unresolvable reference resolves to Null, so
+        // `== null` / `!= null` is how a behavior asks whether a path is set —
+        // the mixed-pair arm below would answer both of those backwards. See
+        // ADR DA00-11. Ordering against null stays false, as it is for every
+        // other mismatched pair.
+        (MemValue::Null, MemValue::Null) => matches!(op, CompareOp::Eq),
         _ => match op {
             CompareOp::Eq => false,
             CompareOp::Ne => true,
