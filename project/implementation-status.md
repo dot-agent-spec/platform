@@ -22,6 +22,13 @@ Legend:
 | **Exports** | npm (wasm file paths) · 🦀 rlib (via `cc`) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="16"> wasm `cdylib` (npm) · 🦀 rlib | npm only (esm + cjs) |
 | **Types (.d.ts)** | ✅ `tsup` auto | ✅ `tsup` auto (ts-rs AST types) | ✅ `tsup` auto (full) | ✅ `tsup` auto (ts-rs Effect types) | ✅ `tsup` auto (full) |
 
+> 🧊 **The freeze cells track *published* releases, and lag unreleased API by design.** `Status` and
+> `Version` answer "what is on npm", so a package can carry `🧊 Frozen` while its `CHANGELOG.md` has an
+> open `## [Unreleased]` block and the tables below already list exports that landed in `main`. A cell
+> flips to `🔥 Active` when an unfreeze *window* is opened by a versioning task, and back to `🧊 Frozen`
+> when [that task's release step closes it](templates/versioning-task.md) — not when a commit lands.
+> Where the two disagree, the feature tables are the newer of the two.
+>
 > ✅ **Compliance check 2026-06-27** — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM `RuntimeError: unreachable` (P3) resolved via `BTreeMap`/`BTreeSet`; node-compat import path (P2) corrected; `CONTRIBUTING.md` created. See [compliance-check-2026-06-27.md](adr/DA00-06-ts-rs-for-ast-json-contract.md).
 >
 > 🚀 **First public release: `0.10.0`** — the one-time version jump decided in [DA00-02](adr/DA00-02-two-axis-versioning.md), published to the `latest` npm dist-tag (not `alpha`) after the pipeline was proven end-to-end by the [pre-alpha rehearsal](adr/DA00-02-two-axis-versioning.md).
@@ -124,8 +131,8 @@ Legend:
 | ✅1️⃣ `get_graph()` → `string` | → `getGraph()` | SCXML with runtime `_active="true"`; 🔄 `parser-dsl` `to_scxml` |
 | ✅🗓️ `get_memory()` → `string` | → `getMemory()` | `{domain, key, value}[]` snapshot |
 | ✅🗓️ `set_memory(domain, key, value_json)` | → `injectMemory(domain, key, value)` | |
-| ✅2️⃣ `serialize_state()` → `string` | ❌ no wrapper yet (issue #17, Wave 2) | FSM position only: `{"v":1,"state":…,"prompt_count":…}`; shape from [RFC-0004](rfcs/0004-kernel-protocol.md) § State serialization, which is **Draft** and whose memory-ownership half is *not* adopted; the blob excludes memory by design — that half is `get_memory` / `set_memory` |
-| ✅2️⃣ `restore_state(state_json)` → throws | ❌ no wrapper yet (issue #17, Wave 2) | repositions the FSM without firing entry effects ([Plan-004 §3.14](plans/004-cli-run-refactor-and-mcp-server.md)); validates version + state name before writing either field, so a rejected restore leaves the kernel untouched; the only `Result` on this wasm surface — a bad blob throws rather than no-op'ing silently |
+| ✅2️⃣ `serialize_state()` → `string` | ❌ no wrapper yet (issue #17, Wave 2) | FSM position only: `{"v":1,"behavior":…,"state":…,"prompt_count":…}`. [RFC-0004](rfcs/0004-kernel-protocol.md) § State serialization contributes the **two names**, not the field set: it is **Draft**, it describes the payload as "active state, transition history", and **no transition history is carried** — restore repositions, it does not replay. `behavior` fingerprints the loaded state graph, so a blob from another agent is refused instead of applied on a bare state-name match. The RFC's memory-ownership half is *not* adopted; the blob excludes memory by design — that half is `get_memory` / `set_memory` |
+| ✅2️⃣ `restore_state(state_json)` → throws | ❌ no wrapper yet (issue #17, Wave 2) | repositions the FSM without firing entry effects — but it requires a loaded behavior, and `load_behavior` enters `init` and emits *its* entry effects, which the host must discard first ([Plan-004 §3.14](plans/004-cli-run-refactor-and-mcp-server.md), whose two-export shape this supersedes). Validates version, behavior fingerprint and state name before writing either field, so a rejected restore leaves the kernel untouched; the only `Result` on this wasm surface — a bad blob throws rather than no-op'ing silently. `prompt_count` has no rule of its own (every value is reachable honestly); `tick_prompt` saturates so a hostile counter cannot overflow or wrap |
 | ✅ `Effect::ParseError { message }` | ⚠️ no dedicated wrapper | `effect.rs`; emitted by `load_behavior` / `load_behavior_with_bundle` when the parse fails (`lib.rs`); reaches sdk only via the generic `registerHandler("parse_error", fn)` |
 | ✅1️⃣ `observe(callback: Function)` | ⚠️ replaced by `registerHandler` + `setEffectListener` | push model; sdk uses pull-style per-effect handlers plus one global listener instead |
 | ✅1️⃣ `free()` (wasm-bindgen auto) | → `dispose()` | WASM memory cleanup |

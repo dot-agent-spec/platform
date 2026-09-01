@@ -204,13 +204,29 @@ engine.get_memory();                          // [{ domain, key, value }]
 engine.set_memory("session", "lang", '"pt"'); // value as JSON string
 
 // Snapshot & restore — the FSM position only; memory travels via get_memory/set_memory
-engine.serialize_state();   // '{"v":1,"state":"booking","prompt_count":3}'
-engine.restore_state(blob); // throws on a malformed blob, an unknown state, or no behavior loaded
+engine.serialize_state();   // '{"v":1,"behavior":"3d9c…","state":"booking","prompt_count":3}'
+engine.restore_state(blob); // throws: malformed blob, foreign behavior, unknown state, nothing loaded
 
 // State graph (for VS Code Flow Graph panel)
 engine.get_graph();
 // → { states: ["responsive", "planning"], transitions: [{from, to, label}], current: "responsive" }
 ```
+
+#### Resuming an evicted session
+
+`restore_state` fires no entry effects — but it needs a loaded behavior, and `load_behavior`
+enters `init` and emits *its* entry effects. They describe a state the session already left, so
+the host must drop them before repositioning:
+
+```javascript
+const onLoad = engine.load_behavior(text); // → [goal "say hello", request_interact] — discard
+engine.restore_state(blob);                // now the FSM is back where it stopped
+for (const { domain, key, value } of saved) engine.set_memory(domain, key, value);
+engine.send_intent(next);                  // the session continues
+```
+
+The blob's `behavior` field fingerprints the loaded state graph, so a snapshot from another
+agent — or from a revision that changed the graph — is rejected instead of silently applied.
 
 ### Effect types
 
