@@ -368,6 +368,22 @@ mod tests {
             "a quoted right-hand side is a literal and must survive, got: {:?}",
             stored.value
         );
+
+        // `true`, `false` and `null` are literals to the grammar, not bare words —
+        // which is why `set session.supersedes = true`, the only `set` in the
+        // tracked corpus, is unaffected by any of this.
+        let boolean = "state init\n  set context.flag = true\n  interact\n";
+        let boolean = kernel_with_memory(&[], boolean).get_memory();
+        let stored = boolean
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "flag")
+            .expect("context.flag must exist after the set");
+        assert!(
+            matches!(stored.value, MemValue::Bool(true)),
+            "a boolean literal is not a bare word, got: {:?}",
+            stored.value
+        );
     }
 
     #[test]

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **Conditions and `set` read memory.** An unquoted operand used to reach the kernel as the path
+  *text*, so it was compared as a string: `if context.onboarding == true` was always false,
+  `if session.count > 3` was always false, a bare `if context.flag` was always true even for a stored
+  `false`, and `set context.a = session.b` stored the literal text `"session.b"` and shipped it to the
+  host as an `Effect::SetMemory`. Each now resolves against `MemoryStore`. **This corrects behavior
+  silently**: a flow that always took the `then` branch may now always take the `else` branch, with no
+  diagnostic. Requires `@dot-agent/parser-dsl` with the tagged `Value` contract (ADR DA00-10).
+- **`== null` and `!= null` answer whether a path is set.** Two nulls compared as unequal, so
+  `if context.x == null` could never be true and `if context.x != null` was true for an unset path —
+  both backwards. A behavior that relied on the old `!= null` flips. See ADR DA00-11.
+
+### Changed
+
+- **BREAKING — an unquoted operand with no domain resolves to null.** A lookup needs
+  `<domain>.<key>`, so `set context.stage = planning` now stores null where it stored the text
+  `"planning"`. Quote it — `set context.stage = "planning"` — to keep the literal. A comparison
+  against such a word was already false and does not move.
+
+---
+
 ## [0.10.3] - 2026-07-16
 
 ### Fixed

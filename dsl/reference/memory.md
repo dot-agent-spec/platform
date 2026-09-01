@@ -78,8 +78,29 @@ A reference reads as its stored type. `if session.count > 3` compares numbers wh
 holds a number; `if context.onboarding` is true only when the stored value is itself truthy.
 
 **A reference is null when it cannot be resolved** — an unset path, and equally an operand with no
-domain prefix, since a lookup needs `<domain>.<key>`. Nothing is raised: a comparison against null is
-simply false, and null is not truthy. Always give an operand a domain when a condition has to see it.
+domain prefix, since a lookup needs `<domain>.<key>`. Nothing is raised. What each comparison then does,
+with `context.missing` never written:
+
+| Written | Result |
+|---|---|
+| `if context.missing == null` | **true** — this is how a behavior asks whether a path is set |
+| `if context.missing != null` | false — and true for a path that *is* set |
+| `if context.missing == "x"` | false |
+| `if context.missing != "x"` | **true** — an unset path is not `"x"` |
+| `if context.missing > 3` | false — an ordering comparison against null is always false |
+| `if context.missing` | false — null is not truthy |
+
+A stored null is the same thing as an unset path here: `set context.x = null` makes
+`if context.x == null` true. The language does not distinguish "holds nothing" from "was never written".
+
+**An operand with no domain is a reference too, so it resolves to null** — it is not a bare string:
+
+```
+set context.stage = planning       # writes null: `planning` has no domain to read from
+set context.stage = "planning"     # writes the text: quoting makes it a literal
+```
+
+Always give an operand a domain when a condition has to see it, and quote what you mean literally.
 
 ---
 

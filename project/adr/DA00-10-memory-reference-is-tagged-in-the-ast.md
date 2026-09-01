@@ -107,22 +107,44 @@ checks firing unconditionally; they now evaluate honestly, and a flow that alway
 branch may now always take the `else` branch. No diagnostic fires. This is the most likely source of a
 downstream report, and it is the bug being fixed rather than a new one.
 
-**An unqualified bare word resolves to nothing.** An operand with no domain prefix — `if mode == active`
-— is now a reference whose lookup fails, yielding null. Measured before adopting this: such a
-comparison was **already false** under the old behavior, because the left side was the path text and
-the right side the bare word, and the two never matched. So the observable result does not move. What
+**An unqualified bare word resolves to nothing, and on a `set` that is an observable break.** An
+operand with no domain prefix is now a reference whose lookup fails, yielding null. The two operand
+positions part company here, and only one of them is safe:
+
+| Position | Before | After |
+|---|---|---|
+| Condition — `if mode == active` | false: path text vs bare word, never equal | false: null vs null on the left, null on the right |
+| `set` right-hand side — `set context.stage = planning` | stored `Str("planning")` | stores `Null` |
+
+Both rows are measured, on this branch and on the commit before it. The condition does not move — what
 moves is the *reason*, and the earlier proposal that a bare word "happens to work today" did not
-survive measurement.
+survive measurement. The `set` **does** move: a behavior that used a bare word as a string literal now
+writes null, and the `Effect::SetMemory` shipped to every SDK host carries that null. No diagnostic
+fires. Quoting the word restores the literal, and that is the migration.
+
+Accepting the break rather than special-casing it is deliberate. A fallback to "if it has no domain,
+treat it as a string" is Option B above, narrowed: it puts the meaning of an operand back in the hands
+of whether the text happens to contain a dot, which is the ambiguity this record exists to remove. The
+in-tree corpus is safe — the only `set` statements in any tracked `.behavior` file are
+`dogfood/new-adr/adr-author.behavior`'s `= true` and `= false`, which the grammar reads as boolean
+literals rather than bare words, and there is no `if` in the corpus at all. Both facts are pinned by
+kernel tests, so nothing here regresses.
 
 **The disjoint-shape invariant is now load-bearing.** This works because `{"path": …}` is the only
 object-shaped variant of `Value`. Adding a second object-shaped variant reintroduces exactly the
 shadowing this record exists to remove. Anyone extending `Value` is holding that invariant.
 
-**Follow-up, deliberately not taken here.** A lint that flags an unquoted operand with no memory domain
-would make the null-resolving case visible instead of silent. It belongs to the compiler, needs its own
-diagnostic code, and is out of scope for this change.
+**Follow-up, deliberately not taken here.** A lint that flags an unquoted operand with no memory
+domain is the only thing that would make the `set` break above visible instead of silent: it would fire
+on `set context.stage = planning` and say "quote it, or give it a domain". It belongs to the compiler
+and needs its own diagnostic code, so it is out of scope for this change — but it is the mitigation
+this record is accepting the absence of, not a nice-to-have, and it should be carried as a tracked
+issue rather than as this paragraph.
 
 ## Related
 
 - DA00-06 — the AST as the single source of truth for the JSON contract, which makes this a recorded
   decision rather than a quiet commit.
+- [DA00-11](DA00-11-null-equality-answers-whether-a-path-is-set.md) — makes `== null` and `!= null`
+  answer whether a path is set. Forced by this decision: an unresolvable reference now resolves to
+  null, so an author needs a way to ask about it.
