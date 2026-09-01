@@ -157,3 +157,106 @@ test('AgentSession.getGraph returns topology', async () => {
 
   session.dispose()
 })
+
+// ── teach / guide content resolution ─────────────────────────────────────────
+//
+// The Rust tests build the content map by hand and call the engine directly, so they skip the two
+// seams that only exist on this side: the JSON boundary of `set_content_files`, and the agreement
+// between the bundle key `load.ts` produces and the key the kernel looks up. These pin both.
+//
+// They run against `../dist`, so they need the chain built first:
+//   npm run build -w packages/kernel-dsl   (cargo test + wasm32-wasip1 + wasm-bindgen + wasi-stub)
+//   npm run build -w packages/compiler && npm run build -w packages/sdk
+// `cargo test -p dot-agent-kernel-dsl` alone cannot reach any of this.
+
+const CONTENT_BEHAVIOR = `
+state init
+  goal "Talk about cars"
+  guide "guides/tone.md"
+  teach "knowledge/cars.md"
+  teach "./knowledge/cars.md"
+  teach "Never guess a price."
+  interact
+  on intent "next" transition to goodbye
+  on offtopic transition to init
+
+state goodbye
+  goal "All done"
+  interact
+  on intent "restart" transition to init
+  on offtopic transition to goodbye
+`
+
+const CARS_MD = '# Car categories\nCompact, SUV, van.'
+const TONE_MD = 'Stay concise.'
+
+async function buildContentBundle() {
+  const zip = new JSZip()
+  zip.file('.agent/aboutme.json', JSON.stringify(ABOUTME))
+  zip.file('.agent/files.json', JSON.stringify({
+    description: 'sdk-test.description',
+    behavior: 'sdk-test.behavior',
+    knowledge: ['knowledge/cars.md'],
+    guides: ['guides/tone.md'],
+  }))
+  zip.file('sdk-test.description', DESCRIPTION)
+  zip.file('sdk-test.behavior', CONTENT_BEHAVIOR)
+  zip.file('knowledge/cars.md', CARS_MD)
+  zip.file('guides/tone.md', TONE_MD)
+  return zip.generateAsync({ type: 'uint8array' })
+}
+
+async function collectContentEffects(startOptions) {
+  const bytes = await buildContentBundle()
+  const bundle = await loadAgent(bytes)
+  const session = await AgentSession.create(bundle)
+
+  const teach = []
+  const guide = []
+  session.registerHandler('teach', (e) => teach.push(e))
+  session.registerHandler('guide', (e) => guide.push(e))
+
+  if (startOptions === undefined) session.start()
+  else session.start(startOptions)
+  await new Promise(r => setImmediate(r))
+
+  session.dispose()
+  return { teach, guide }
+}
+
+test('AgentSession.start() fills teach/guide content from the bundle files', async () => {
+  const { teach, guide } = await collectContentEffects()
+
+  assert.equal(teach.length, 3, `Expected 3 teach effects, got ${teach.length}`)
+  assert.equal(teach[0].text, 'knowledge/cars.md', 'the literal path must survive untouched')
+  assert.equal(teach[0].content, CARS_MD, 'content must come from files.knowledge')
+
+  assert.equal(guide.length, 1)
+  assert.equal(guide[0].text, 'guides/tone.md')
+  assert.equal(guide[0].content, TONE_MD, 'content must come from files.guides')
+})
+
+test('AgentSession.start() resolves a ./-prefixed reference, as the packer bundles it', async () => {
+  // The packer's normalizeRefPath strips the leading './' before choosing the bundle key, so this
+  // form packs clean. If the kernel stopped normalizing, it would arrive with content null.
+  const { teach } = await collectContentEffects()
+
+  assert.equal(teach[1].text, './knowledge/cars.md', 'the literal argument is still the path given')
+  assert.equal(teach[1].content, CARS_MD, 'the lookup key must be normalized as the packer does')
+})
+
+test('AgentSession.start() leaves inline prose unresolved', async () => {
+  const { teach } = await collectContentEffects()
+
+  assert.equal(teach[2].text, 'Never guess a price.')
+  assert.equal(teach[2].content, null, 'prose is not a bundle key and must not resolve')
+})
+
+test('AgentSession.start({ resolveContent: false }) keeps bare paths', async () => {
+  // The opt-out the CLI's MCP server uses: it serves the files itself as dot-agent://<path>.
+  const { teach, guide } = await collectContentEffects({ resolveContent: false })
+
+  assert.equal(teach[0].text, 'knowledge/cars.md', 'the path is still delivered')
+  assert.equal(teach[0].content, null, 'no content map was handed over, so nothing resolves')
+  assert.equal(guide[0].content, null)
+})
