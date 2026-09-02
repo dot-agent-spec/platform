@@ -1064,7 +1064,7 @@
 <tr>
 <td>✅1️⃣ <code>set_file_resolver(callback: Function)</code></td>
 <td>→ <code>setFileResolver(fn)</code></td>
-<td>fallback for a <code>merge</code> path the bundle lacks (Mode B) <strong>and</strong> for a <code>teach</code>/<code>guide</code> path the content map lacks; receives the normalized bundle path, never inline prose</td>
+<td>fallback for a <code>merge</code> path the bundle lacks (Mode B) <strong>and</strong> for a <code>teach</code>/<code>guide</code> path the content map lacks; for teach/guide receives the normalized bundle path, never inline prose — for merge (Mode B) receives the literal unnormalized <code>merge &quot;…&quot;</code> argument, extension unfiltered</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>set_content_files(files_json: string)</code></td>

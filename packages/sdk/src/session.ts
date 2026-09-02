@@ -25,9 +25,12 @@ export class AgentSession {
   // absent from the content map (where it just leaves `content` null). Must be called before
   // start(). Return null/undefined if the path cannot be resolved.
   //
-  // The path arrives normalized as the packer normalizes it — leading `./` stripped, `\` turned
-  // into `/` — so it is the bundle key rather than the literal DSL argument. Inline prose never
-  // reaches the resolver: only text ending in `.txt`/`.md` is offered to it.
+  // For the teach/guide case, the path arrives normalized as the packer normalizes it — leading
+  // `./` stripped, `\` turned into `/` — so it is the bundle key rather than the literal DSL
+  // argument, and inline prose never reaches the resolver: only text ending in `.txt`/`.md` is
+  // offered to it. The merge case gets none of that: the kernel passes the literal `merge "…"`
+  // argument as written, unnormalized and with whatever extension the author gave it (typically
+  // `.behavior`) — do not gate on `.txt`/`.md` or assume a stripped leading `./` there.
   setFileResolver(resolver: (path: string) => string | null | undefined): void {
     this.kernel.set_file_resolver(resolver as unknown as Function)
   }

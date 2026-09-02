@@ -113,7 +113,7 @@ Legend:
 | ✅1️⃣ `new AgentDSLKernel()` (wasm class ctor) | 🔄 `sdk` | constructed inside `AgentSession` |
 | ✅1️⃣ `load_behavior(text)` → `string` | → `start()` (single-file) | 🔄 `parser-dsl` rlib `parse_behavior`; returns effects JSON; E016 if no `init` state |
 | ✅1️⃣ `load_behavior_with_bundle(text, bundle_json)` → `string` | → `start()` | flattens `merge` paths from bundle map; effects JSON; E016 if no `init` state |
-| ✅1️⃣ `set_file_resolver(callback: Function)` | → `setFileResolver(fn)` | fallback for a `merge` path the bundle lacks (Mode B) **and** for a `teach`/`guide` path the content map lacks; receives the normalized bundle path, never inline prose |
+| ✅1️⃣ `set_file_resolver(callback: Function)` | → `setFileResolver(fn)` | fallback for a `merge` path the bundle lacks (Mode B) **and** for a `teach`/`guide` path the content map lacks; for teach/guide receives the normalized bundle path, never inline prose — for merge (Mode B) receives the literal unnormalized `merge "…"` argument, extension unfiltered |
 | ✅1️⃣ `set_content_files(files_json: string)` | → fed by `start()` unless `{ resolveContent: false }` | knowledge/guides map, bundle path → text; exact lookup (after the packer's `./` and `\` normalization) fills `Effect::Teach`/`Guide.content`, then falls back to `set_file_resolver` |
 | ✅1️⃣ `send_intent(intent)` → `string` | → `sendIntent(intent)` | effects JSON |
 | ✅1️⃣ `send_offtopic()` → `string` | → `sendOfftopic()` | |

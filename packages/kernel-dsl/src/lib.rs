@@ -81,10 +81,12 @@ impl AgentDSLKernel {
     /// - a `teach "…"` / `guide "…"` path absent from the map given to `set_content_files`, whose
     ///   miss is not an error and simply leaves `content: null`.
     ///
-    /// The path is normalized the way the packer normalizes it before bundling (a leading `./`
-    /// stripped, `\` converted to `/`), so what arrives here is the bundle key, not necessarily the
-    /// literal argument. Inline prose never reaches the callback: only text ending in `.txt`/`.md`
-    /// — the packer's own test for a file reference — is offered to it.
+    /// For the `teach`/`guide` case, the path is normalized the way the packer normalizes it before
+    /// bundling (a leading `./` stripped, `\` converted to `/`), so what arrives here is the bundle
+    /// key, not necessarily the literal argument; inline prose never reaches the callback, since only
+    /// text ending in `.txt`/`.md` — the packer's own test for a file reference — is offered to it.
+    /// The `merge` case gets neither guarantee: `flatten_merges` passes the `merge "…"` argument
+    /// exactly as written in the DSL, unnormalized and with no extension filter.
     pub fn set_file_resolver(&mut self, callback: Function) {
         use std::rc::Rc;
         let cb = Rc::new(callback);
