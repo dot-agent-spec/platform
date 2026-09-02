@@ -113,14 +113,20 @@ positions part company here, and only one of them is safe:
 
 | Position | Before | After |
 |---|---|---|
-| Condition — `if mode == active` | false: path text vs bare word, never equal | false: null vs null on the left, null on the right |
+| Condition, one side resolvable — `if context.plan == free` with `context.plan` set | false | false |
+| Condition, neither side resolvable — `if mode == active`, or `if context.missing == planning` | false: two distinct strings | **true**: null equals null, under [DA00-11](DA00-11-null-equality-answers-whether-a-path-is-set.md) |
 | `set` right-hand side — `set context.stage = planning` | stored `Str("planning")` | stores `Null` |
 
-Both rows are measured, on this branch and on the commit before it. The condition does not move — what
-moves is the *reason*, and the earlier proposal that a bare word "happens to work today" did not
-survive measurement. The `set` **does** move: a behavior that used a bare word as a string literal now
-writes null, and the `Effect::SetMemory` shipped to every SDK host carries that null. No diagnostic
-fires. Quoting the word restores the literal, and that is the migration.
+All three rows are measured, on this branch and on the commit before it. **Both the condition and the
+`set` move**, and the condition's move is the composition of this record with DA00-11 rather than
+anything this one does alone: tagging makes an unqualified word resolve to null, DA00-11 makes null
+equal itself, and together they turn a comparison between two unresolvable operands from false into
+true. `if user.plan == free`, written meaning a literal, now fires whenever `user.plan` is unset — the
+opposite of the author's intent, and silently. The `set` moves for the reason above: a bare word used
+as a string literal now writes null, and the `Effect::SetMemory` shipped to every SDK host carries it.
+
+No diagnostic fires for either. Quoting the word restores the literal in both positions, and that is
+the migration.
 
 Accepting the break rather than special-casing it is deliberate. A fallback to "if it has no domain,
 treat it as a string" is Option B above, narrowed: it puts the meaning of an operand back in the hands

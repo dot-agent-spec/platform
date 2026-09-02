@@ -327,6 +327,21 @@ mod tests {
     }
 
     #[test]
+    fn bare_word_equality_is_null_equality() {
+        // The larger half of DA00-11's consequence, and the one an author is most
+        // likely to be bitten by: DA00-10 makes an operand with no domain prefix a
+        // reference that resolves to null, and reflexive null equality then makes any
+        // two unresolvable operands equal. `if user.plan == free`, written meaning a
+        // string literal, fires whenever `user.plan` is unset. Pinned here so a later
+        // change to eval_compare cannot revert the documented behavior in silence.
+        let set = [("context", "plan", MemValue::Str("pro".into()))];
+        assert_eq!(branch_taken("mode == active", &[]), "yes", "two bare words are both null, so equal");
+        assert_eq!(branch_taken("mode != active", &[]), "lo", "and therefore not unequal");
+        assert_eq!(branch_taken("context.missing == planning", &[]), "yes", "unset path vs bare word: both null");
+        assert_eq!(branch_taken("context.plan == free", &set), "lo", "a resolvable operand is not null, so no match");
+    }
+
+    #[test]
     fn an_unset_path_compared_to_a_literal() {
         // The rest of the table in dsl/reference/memory.md, pinned so the document
         // and the kernel cannot drift apart: `==` is false, `!=` is true, an

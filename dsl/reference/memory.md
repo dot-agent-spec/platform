@@ -89,6 +89,8 @@ with `context.missing` never written:
 | `if context.missing != "x"` | **true** — an unset path is not `"x"` |
 | `if context.missing > 3` | false — an ordering comparison against null is always false |
 | `if context.missing` | false — null is not truthy |
+| `if context.missing == planning` | **true** — the right side has no domain, so it is also null, and null equals null |
+| `if mode == active` | **true** — for the same reason, with neither side resolvable |
 
 A stored null is the same thing as an unset path here: `set context.x = null` makes
 `if context.x == null` true. The language does not distinguish "holds nothing" from "was never written".

@@ -48,6 +48,23 @@ if context.x != null      # the path is set
 
 Mismatched pairs are untouched: a set path is still `!= null`, and an unset path is still `!= "x"`.
 
+**What this reaches beyond the two forms above.** Making null reflexive makes *every* pair of
+unresolvable operands equal, not only the ones written against the `null` literal. Composed with
+[DA00-10](DA00-10-memory-reference-is-tagged-in-the-ast.md), under which an operand with no domain
+prefix resolves to null, that turns two bare words into a true comparison:
+
+```
+if mode == active                    # both unresolvable -> both null -> TRUE
+if context.missing == planning       # unset path vs bare word -> TRUE
+```
+
+Measured on this branch, and false on the commit before it. This is the larger half of the
+consequence and it belongs here, in the record that causes it: DA00-10 alone would have left both
+comparisons false. An author who writes `if user.plan == free` meaning a literal now gets a branch
+that fires whenever `user.plan` is unset. Quoting is the fix, and
+`bare_word_equality_is_null_equality` in `engine/mod.rs` pins the behavior so a later change to
+`eval_compare` cannot revert it in silence.
+
 ## Options considered
 
 - **Option A — Leave the behavior and document the hole.** Rejected. It records a defect as a

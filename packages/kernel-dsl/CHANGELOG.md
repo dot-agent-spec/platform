@@ -26,8 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING — an unquoted operand with no domain resolves to null.** A lookup needs
   `<domain>.<key>`, so `set context.stage = planning` now stores null where it stored the text
-  `"planning"`. Quote it — `set context.stage = "planning"` — to keep the literal. A comparison
-  against such a word was already false and does not move.
+  `"planning"`. Quote it — `set context.stage = "planning"` — to keep the literal.
+- **BREAKING — a comparison between two unresolvable operands is now true.** This is the two changes
+  above composed: an unquoted word with no domain resolves to null, and null now equals itself, so
+  `if mode == active` and `if context.missing == planning` take the `then` branch where they took
+  `else`. The shape to audit is a bare word written meaning a literal — `if user.plan == free` now
+  fires whenever `user.plan` is unset, which is the opposite of the intent. Quoting the word restores
+  the old result. No diagnostic fires for either half.
 
 ---
 
