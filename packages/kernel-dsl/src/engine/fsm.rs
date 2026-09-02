@@ -204,7 +204,9 @@ impl Fsm {
     ///
     /// It is a collision-resistance argument, not a security one: the fingerprint stops an
     /// honest mix-up between agents or revisions, and a caller who controls host storage
-    /// controls the blob either way.
+    /// controls the blob either way. It also does not stop a mix-up between agents that share a
+    /// graph shape but differ only in statement payloads the `match` above drops — `goal` text
+    /// included — so two behaviors built from the same template can fingerprint identically.
     pub fn fingerprint(&self) -> String {
         let mut canon = String::new();
         for name in &self.state_order {

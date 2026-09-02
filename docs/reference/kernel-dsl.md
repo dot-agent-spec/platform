@@ -217,7 +217,7 @@ engine.serialize_state();
 | Field | What it is |
 |---|---|
 | `v` | Wire version of the blob's **shape**. Changes only when the kernel changes it. |
-| `behavior` | Fingerprint of the loaded state graph — its **identity**. Two agents that reuse a state name have different fingerprints. |
+| `behavior` | Fingerprint of the loaded state graph's **shape** — state names, intent targets, offtopic presence, `after N` thresholds. Two agents with the same graph shape share a fingerprint even if their prompt text (`goal`, etc.) differs. |
 | `state` | The active state name. |
 | `prompt_count` | Ticks since the last transition, so `after N prompts` handlers fire on the right turn. |
 

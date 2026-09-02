@@ -221,7 +221,7 @@ the host must drop them before repositioning:
 ```javascript
 const onLoad = engine.load_behavior(text); // → [goal "say hello", request_interact] — discard
 engine.restore_state(blob);                // now the FSM is back where it stopped
-for (const { domain, key, value } of saved) engine.set_memory(domain, key, value);
+for (const { domain, key, value } of saved) engine.set_memory(domain, key, JSON.stringify(value));
 engine.send_intent(next);                  // the session continues
 ```
 
