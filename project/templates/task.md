@@ -13,10 +13,8 @@ vibe-ops-template: task@3
 -->
 
 <!--
- TASK DOSSIER TEMPLATE — copy to tasks/<topic>.md, or tasks/<ID>-<topic>.md when an RFC or a DA decision
- owns the WHY (0018-transpiler-core.md, DA01-01-grammar-unfreeze.md). The name carries the provenance;
- it is NOT a GitHub issue number here — see .agents/rules/governance.md.
- A dossier is the detailed WORKING LOG for one unit of work already decided (see the project/**
+ TASK DOSSIER TEMPLATE — copy to tasks/<NNN>-<slug>.md (NNN = the GitHub issue number).
+ A dossier is the detailed WORKING LOG for one issue, for work already decided (see the project/**
  governance rule). If the design is still open, write an RFC first. The dossier is EPHEMERAL: committed
  live, then closed via /vibe-ops:close-task (write-back to the source doc, then distill + delete).
 
@@ -36,9 +34,8 @@ vibe-ops-template: task@3
 | Status | Planned |
 | Created | YYYY-MM-DD |
 | Author | Your Name |
-| Issue | <!-- <repo-url>/issues/NNN, or "—" when there is none — this repo often has none --> |
+| Issue | <!-- <repo-url>/issues/NNN, or "pending" until opened --> |
 | Plan | <!-- plans/NNN-slug.md and the track this dossier serves, or remove this row --> |
-| Sources | <!-- links to the RFC, ADR, or status doc that motivates this work --> |
 
 <!-- Status lifecycle: Planned → In Progress → Done → (dossier removed; git history is the archive) -->
 
@@ -46,15 +43,14 @@ vibe-ops-template: task@3
 
 ## Context
 
-<!-- Why this work exists and how the items below were identified. Where an issue exists it holds the
-     one-line intent + a link here; THIS file holds the detail the issue does not carry. Note which items
-     cross a frozen package boundary (flag them, e.g. 🧊 needs unfreeze decision). -->
+<!-- Why this work exists and how the items below were identified. The issue holds the one-line
+     intent + a link here; THIS file holds the detail the issue does not carry. -->
 
 ## Work items
 
-| # | Priority | Item | Package(s) | Effort |
-|---|---|---|---|---|
-| 1 | P0 | … | … | S |
+| # | Priority | Item | Effort |
+|---|---|---|---|
+| 1 | P0 | … | S |
 
 ### 1. Item title — P0
 
