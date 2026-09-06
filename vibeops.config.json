@@ -13,7 +13,8 @@
       "project/templates/rfc.md": "norm",
       "project/templates/plan.md": "norm",
       "project/templates/task.md": "norm",
-      "project/templates/log.md": "norm"
+      "project/templates/log.md": "norm",
+      ".gitignore": "seed"
     }
   }
 }
