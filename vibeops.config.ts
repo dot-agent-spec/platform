@@ -11,11 +11,11 @@
 import type { VibeOpsConfig } from "@entelekheia/vibe-ops-core";
 
 export default {
-  // `self` is deliberately absent. Its composition hardcodes `<plugin>/templates/*.md` and
-  // `<plugin>/skills/migrate/migrations`, which resolve to this repository's root — where neither
-  // exists — so every gate in it skips. It is the norm-owner's ops, not a consumer's, and listing it
-  // here would buy a line that always reads clean because it always reads nothing.
-  modules: ["check", "agents-md", "governance", "harness", "plan", "task", "log", "records"],
+  // `modules` is deliberately absent: `vibe-ops mcp` then exposes every built-in, and a new noun reaches
+  // this repository the day it ships instead of waiting on this list — the hand-kept one had fallen five
+  // nouns behind (config, ownership, mirror, exposure, self; reported by the modules-omits-builtin gate,
+  // 2026-09-06). `self` is among them and examines nothing here (its one entry reads the norm-owner's
+  // migration notes), so it reports SKIP, which is a reading, never a false clean.
 
   // Per-clone and inside .git/ deliberately: these are observations about a working tree, not a product
   // of it, and committing them would make every run a diff. `.githooks/pre-commit` used to export this
