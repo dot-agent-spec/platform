@@ -1,11 +1,12 @@
 # Architecture
 
+How this repository's own packages — compiler, kernel, SDK, and the tooling around them — fit together
+and why they are split the way they are. This is implementation architecture, not language design; see
+[`dsl/explanation/`](../../../dsl/explanation/) for that.
+
 ## Reference (current state)
 - [map.md](./map.md) — Dependency diagram, layer breakdown, runtime sequence
-- [implementation-status.md](./implementation-status.md) — Caniuse-style feature tracking per package
-
-## Design decisions
-- [OPTION-A-REFACTOR.md](./OPTION-A-REFACTOR.md) — WASM-First plan: merge compiler into SDK, subpath exports, rich types
+- [implementation-status.md](../../../project/implementation-status.md) — Caniuse-style feature tracking per package
 
 ## Research & analysis
-See [`../research/`](../research/) for the investigations and comparisons that led to the decisions above.
+See [`../research/`](../research/) for the investigations and comparisons behind this layer breakdown.

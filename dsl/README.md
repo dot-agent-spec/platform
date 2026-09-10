@@ -16,7 +16,6 @@ This directory follows the [Diátaxis](https://diataxis.fr/) framework:
 |---|---|
 | [`reference/`](reference/) | Complete syntax specifications — keywords, statements, forms. The authoritative source for what the language accepts. |
 | [`explanation/`](explanation/) | Design background — why the language is the way it is. Read this to understand the reasoning behind constraints. |
-| [`how-to/`](how-to/) | Practical recipes for common authoring tasks. |
 | [`tutorials/`](tutorials/) | Step-by-step guides for learning the language from scratch. |
 
 ---
@@ -37,7 +36,7 @@ This directory follows the [Diátaxis](https://diataxis.fr/) framework:
 - [Antipatterns](explanation/antipatterns.md) — common mistakes and alternatives
 
 **Proposed features (RFCs):**
-- [RFC-0014](../rfcs/0014-data-contract.md) — Data contract (`on intent with TypeName`, `complete`)
-- [RFC-0015](../rfcs/0015-cross-agent.md) — Cross-agent calls (`start ... in`)
-- [RFC-0016](../rfcs/0016-string-constraints.md) — String constraints & primitive types
-- [RFC-0017](../rfcs/0017-standard-library.md) — Standard library (`std.*`)
+- [RFC-0014](../project/rfcs/0014-data-contract.md) — Data contract (`on intent with TypeName`, `complete`)
+- [RFC-0015](../project/rfcs/0015-cross-agent.md) — Cross-agent calls (`start ... in`)
+- [RFC-0016](../project/rfcs/0016-string-constraints.md) — String constraints & primitive types
+- [RFC-0017](../project/rfcs/0017-standard-library.md) — Standard library (`std.*`)
