@@ -45,7 +45,10 @@ export NODE_OPTIONS="${NODE_OPTIONS:-} --no-warnings"
 # because they check a plugin's surfaces; what it uniquely contributes here is `private-names` and
 # `machine-paths`, neither of which has a port yet. `agents-md` and `governance` are the ported gates.
 RC=0
-for ops in check agents-md governance; do
+# `agents-md` is BOTH a module noun and an ops id, and the module wins the dispatch — `vibe-ops agents-md`
+# refuses for want of a subcommand and exits 2, which this loop then propagates. The full specifier is
+# unambiguous. Same repair as `.githooks/pre-commit`; filed as entelekheia-ai/vibe-ops#28.
+for ops in check @entelekheia/vibe-ops-agents-md governance; do
   if [ "${GATE_VERBOSE:-}" = "1" ]; then
     vibe-ops "$ops" --verbose || RC=$?
   else
