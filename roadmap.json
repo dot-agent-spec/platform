@@ -1,0 +1,76 @@
+{
+  "id": "dot-agent-spec",
+  "version": "0.1.0",
+  "summary": "The open issues ordered in release waves by distance from tree-sitter: each wave bumps the packages it names, and the exact-pin cascade carries the bump to everything downstream. Waves 0 and 1 landed as #43-#45 and #49-#51.",
+  "corpus": "dot-agent-spec",
+  "waves": [
+    {
+      "id": "w0",
+      "name": "Put the commit gate back to green",
+      "goal": "The Apache 2.0 headers workflow passes on main and scripts/check.sh exits 0 against the current vibe-ops CLI, so the next wave commits without --no-verify.",
+      "items": [
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/pull/54",
+          "note": "Adds the SPDX header vibeops.config.ts shipped without in #45. Every commit on main has failed the licence workflow since, which showed as the red check on #49-#51."
+        },
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/tree/main",
+          "note": "scripts/check.sh on origin/main stops at 'agents-md needs a command: resolve' against the current vibe-ops CLI. The fix exists as unpushed commits on a local main checkout from another session (5a928a4, 54acb7c among five); that main has diverged from origin/main and needs a rebase before the push."
+        }
+      ]
+    },
+    {
+      "id": "w1",
+      "name": "Wave 2 — compiler to sdk",
+      "goal": "compiler and sdk are bumped once, with #14, #7 and #9 fixed and the AgentSession snapshot API on top of the kernel primitive.",
+      "items": [
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/14",
+          "note": "compiler only. ADR DA00-09 rejects changing the grammar; the fix is generalising W012/W013 to guide/teach in packages/compiler/src/linter.ts:263-291, plus a lint for a duplicate interact."
+        },
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/7",
+          "note": "compiler. unpack writes the consolidated behavior as agent.behavior but leaves the .description declaring the original name, so the next pack fails E012. DA01-02 fixed the pack side only; unpack.ts is the missing half. Before #9: both touch pack/unpack."
+        },
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/9",
+          "note": "compiler + sdk. W016 is warn-only in packages/compiler/src/pack.ts:339-359, and packages/sdk/src/load.ts:56-58 classifies by prefix alone. Decide whether W016 becomes an error."
+        },
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/17",
+          "note": "sdk half only. The kernel primitive landed in #51 (serialize_state / restore_state, bound to a behavior fingerprint); what remains is the snapshot and rehydrate API on AgentSession in packages/sdk/src/session.ts."
+        }
+      ]
+    },
+    {
+      "id": "w2",
+      "name": "CLI hardening — leaf, no cascade",
+      "goal": "Every CLI command rejects unknown options, the MCP init surface can pass force, and the tracker stops describing pkg-web/.",
+      "items": [
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/47",
+          "note": "dot_agent_init exposes no force (apps/dot-agent-cli/src/commands/server-mcp.ts:29), so the refusal #43 added is a dead end over MCP and its error text names a CLI flag. Can run alongside any wave: cli is a leaf."
+        },
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/46",
+          "note": "pack, unpack, run, configure and server-mcp still use the permissive loop #43 removed from init. Measured: pack --dr /tmp/x discards the typo, packs cwd and overwrites the output file with exit 0. Move them onto cli-args.ts."
+        },
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/48",
+          "note": "project/implementation-status.md:107 describes a kernel-dsl pkg-web/ that does not exist. Docs only."
+        }
+      ]
+    },
+    {
+      "id": "w3",
+      "name": "Wave 3 — language-server debt",
+      "goal": "Merge-graph resolution lives in one place in the language server, with a decision recorded on multi-root workspaces.",
+      "items": [
+        {
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/4",
+          "note": "Three call sites: features/diagnostics.js:66/86/89/109 and server.js:185-186, no cache, no multi-root. Refactor with no visible symptom; the language server is a leaf."
+        }
+      ]
+    }
+  ]
+}
