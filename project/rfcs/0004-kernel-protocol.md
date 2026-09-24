@@ -161,8 +161,8 @@ Effects are the kernel's output — the only way the kernel communicates with th
 | Effect | Fields | Description |
 |---|---|---|
 | `Goal` | `text` | Communicates the state's goal to the LLM context |
-| `Guide` | `text` | Provides instruction text (shown inline or to LLM) |
-| `Teach` | `text` | References a teaching file |
+| `Guide` | `text`, `content` | Provides instruction text (shown inline or to LLM); `content` carries the file's text when `text` names one |
+| `Teach` | `text`, `content` | References a teaching file; `content` carries that file's text when the host supplied it, `null` otherwise |
 | `RequestInteract` | — | Signals the agent is waiting for user input |
 | `Transition` | `from`, `to` | FSM state change notification |
 | `RunScript` | `target`, `label?`, `silent` | Execute a script |

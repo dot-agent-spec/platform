@@ -328,9 +328,12 @@ impl Fsm {
         match stmt {
             Statement::Goal { text } => vec![Effect::Goal { text: text.clone() }],
 
-            Statement::Guide { text } => vec![Effect::Guide { text: text.clone() }],
+            // `content` is left None here on purpose: the FSM has no notion of files. The
+            // kernel fills it in on the way out (engine::AgentDSLKernel::fill_content), which is
+            // where the content map and the file resolver live.
+            Statement::Guide { text } => vec![Effect::Guide { text: text.clone(), content: None }],
 
-            Statement::Teach { text } => vec![Effect::Teach { text: text.clone() }],
+            Statement::Teach { text } => vec![Effect::Teach { text: text.clone(), content: None }],
 
             Statement::Interact { handlers: _ } => {
                 vec![Effect::RequestInteract]
@@ -585,6 +588,12 @@ fn eval_compare(l: &MemValue, op: &CompareOp, r: &MemValue) -> bool {
             CompareOp::Ne => a != b,
             _             => false,
         },
+        // Two nulls are equal. An unresolvable reference resolves to Null, so
+        // `== null` / `!= null` is how a behavior asks whether a path is set —
+        // the mixed-pair arm below would answer both of those backwards. See
+        // ADR DA00-11. Ordering against null stays false, as it is for every
+        // other mismatched pair.
+        (MemValue::Null, MemValue::Null) => matches!(op, CompareOp::Eq),
         _ => match op {
             CompareOp::Eq => false,
             CompareOp::Ne => true,

@@ -7,8 +7,11 @@
 //! compiles to `cdylib` for the npm-distributed WASM build (`pkg/`). Publishing natively would
 //! require first extracting a wasm-bindgen-free core crate — real work, not a CI checkbox.
 
-mod effect;
-mod engine;
+// Public so the rlib half of this crate (integration tests, and any native embedder built from a
+// checkout) can reach the engine and the effect payloads. The wasm-bindgen surface below stays the
+// only thing JavaScript sees.
+pub mod effect;
+pub mod engine;
 
 use std::collections::BTreeMap;
 use engine::AgentDSLKernel as Inner;
@@ -68,11 +71,22 @@ impl AgentDSLKernel {
         serde_json::to_string(&effects).unwrap_or_else(|_| "[]".to_string())
     }
 
-    /// Register a synchronous fallback for resolving merge paths not in the bundle.
+    /// Register a synchronous fallback for resolving a file path the kernel was not handed.
     ///
-    /// The callback receives the path string declared in `merge "…"` and must return
-    /// the file content as a string, or null/undefined if the path cannot be resolved.
-    /// Only called when `load_behavior_with_bundle` encounters a path absent from the bundle.
+    /// The callback receives a path string and must return the file content as a string, or
+    /// null/undefined if the path cannot be resolved. It is called for two things:
+    ///
+    /// - a `merge "…"` path absent from the bundle given to `load_behavior_with_bundle` — the
+    ///   original use, and the only one where returning nothing fails the load;
+    /// - a `teach "…"` / `guide "…"` path absent from the map given to `set_content_files`, whose
+    ///   miss is not an error and simply leaves `content: null`.
+    ///
+    /// For the `teach`/`guide` case, the path is normalized the way the packer normalizes it before
+    /// bundling (a leading `./` stripped, `\` converted to `/`), so what arrives here is the bundle
+    /// key, not necessarily the literal argument; inline prose never reaches the callback, since only
+    /// text ending in `.txt`/`.md` — the packer's own test for a file reference — is offered to it.
+    /// The `merge` case gets neither guarantee: `flatten_merges` passes the `merge "…"` argument
+    /// exactly as written in the DSL, unnormalized and with no extension filter.
     pub fn set_file_resolver(&mut self, callback: Function) {
         use std::rc::Rc;
         let cb = Rc::new(callback);
@@ -81,6 +95,22 @@ impl AgentDSLKernel {
                 .ok()
                 .and_then(|v| v.as_string())
         }));
+    }
+
+    /// Hand the kernel the knowledge and guide files, so `teach`/`guide` effects carry content.
+    ///
+    /// `files_json` must be a JSON object mapping bundle paths to their contents, e.g.
+    /// `{"knowledge/cars.md": "# Cars\n…", "guides/intro.md": "…"}`. A `teach "knowledge/cars.md"`
+    /// then arrives with `content` filled in beside the unchanged `text`. The key is the reference
+    /// normalized the way the packer normalizes it — a leading `./` stripped, `\` converted to `/`
+    /// — and the match on it is exact, so inline prose and unbundled paths arrive with
+    /// `content: null`.
+    ///
+    /// Optional. A host that prefers to fetch lazily — handing the path on to its own resource
+    /// layer — skips this call and keeps receiving bare paths, at no payload cost.
+    pub fn set_content_files(&mut self, files_json: &str) {
+        let files: BTreeMap<String, String> = serde_json::from_str(files_json).unwrap_or_default();
+        self.inner.set_content_files(files);
     }
 
     /// Parse and load a .behavior DSL text, resolving `merge "…"` paths from a pre-built bundle.

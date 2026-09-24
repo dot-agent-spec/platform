@@ -177,6 +177,10 @@ All methods return a **JSON array of `Effect` objects**, letting JS react to flo
 ```typescript
 const engine = new AgentDSLKernel();
 
+// Optional: hand over the knowledge/guide files, so `teach` and `guide` effects
+// arrive with `content` filled in beside the path. Skip it to keep bare paths.
+engine.set_content_files(JSON.stringify({ "knowledge/cars.md": "# Car categories…" }));
+
 // Load a .behavior file and receive the entry effects of the first state
 const effects = engine.load_behavior(behaviorText);
 // → [{ type: "goal", text: "…" }, { type: "request_interact" }]
@@ -233,8 +237,8 @@ agent — or from a revision that changed the graph — is rejected instead of s
 ```typescript
 type Effect =
   | { type: "goal";             text: string }
-  | { type: "guide";            text: string }
-  | { type: "teach";            text: string }
+  | { type: "guide";            text: string; content: string | null }
+  | { type: "teach";            text: string; content: string | null }
   | { type: "request_interact" }
   | { type: "transition";       from: string; to: string }
   | { type: "run_script";       target: string; label: string | null; silent: boolean }

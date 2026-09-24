@@ -1070,7 +1070,12 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <tr>
 <td>✅1️⃣ <code>set_file_resolver(callback: Function)</code></td>
 <td>→ <code>setFileResolver(fn)</code></td>
-<td>Mode B fallback; called when bundle lacks a merge path</td>
+<td>fallback for a <code>merge</code> path the bundle lacks (Mode B) <strong>and</strong> for a <code>teach</code>/<code>guide</code> path the content map lacks; for teach/guide receives the normalized bundle path, never inline prose — for merge (Mode B) receives the literal unnormalized <code>merge &quot;…&quot;</code> argument, extension unfiltered</td>
+</tr>
+<tr>
+<td>✅1️⃣ <code>set_content_files(files_json: string)</code></td>
+<td>→ fed by <code>start()</code> unless <code>{ resolveContent: false }</code></td>
+<td>knowledge/guides map, bundle path → text; exact lookup (after the packer&#39;s <code>./</code> and <code>\</code> normalization) fills <code>Effect::Teach</code>/<code>Guide.content</code>, then falls back to <code>set_file_resolver</code></td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>send_intent(intent)</code> → <code>string</code></td>
@@ -1189,14 +1194,14 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <td>private ctor; wraps <code>AgentDSLKernel</code></td>
 </tr>
 <tr>
-<td>✅1️⃣ <code>AgentSession.start()</code></td>
+<td>✅1️⃣ <code>AgentSession.start(options?)</code></td>
 <td></td>
-<td>🔄 <code>kernel.load_behavior_with_bundle</code>; passes <code>files.behaviors[]</code> as bundle</td>
+<td>🔄 <code>kernel.load_behavior_with_bundle</code> (passes <code>files.behaviors[]</code> as bundle) + <code>kernel.set_content_files</code> (passes <code>files.knowledge[]</code> + <code>files.guides[]</code>), the second skipped by <code>{ resolveContent: false }</code></td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>AgentSession.setFileResolver(fn)</code></td>
 <td></td>
-<td>🔄 <code>kernel.set_file_resolver</code>; Mode B fallback for missing merge paths</td>
+<td>🔄 <code>kernel.set_file_resolver</code>; Mode B fallback for a missing <code>merge</code> path, and for a <code>teach</code>/<code>guide</code> path absent from the content map</td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>AgentSession.registerHandler(type, handler)</code></td>
@@ -1601,16 +1606,16 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <td>✅ <code>guide_stmt</code></td>
 <td>✅ <code>Statement::Guide</code></td>
 <td>✅ lint W010 (&gt;280 chars) · content-namespace checks E018 (file not found) · E020 (reserved bundle path) · W015 (orphan) · W016 (outside <code>guides/</code>/<code>knowledge/</code>)</td>
-<td>✅ → <code>Effect::Guide {text}</code></td>
-<td>✅ <code>registerHandler(&quot;guide&quot;, fn)</code></td>
+<td>✅ → <code>Effect::Guide {text, content}</code> (<code>content</code> = bundled file&#39;s text, or null)</td>
+<td>✅ <code>registerHandler(&quot;guide&quot;, fn)</code>; <code>start()</code> feeds, unless <code>resolveContent: false</code>, <code>files.guides[]</code> to <code>set_content_files</code></td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>teach</code></td>
 <td>✅ <code>teach_stmt</code></td>
 <td>✅ <code>Statement::Teach</code></td>
 <td>✅ content-namespace checks E018 · E020 · W015 · W016 (same linked-only rule as <code>guide</code>)</td>
-<td>✅ → <code>Effect::Teach {text}</code></td>
-<td>✅ <code>registerHandler(&quot;teach&quot;, fn)</code></td>
+<td>✅ → <code>Effect::Teach {text, content}</code>; exact lookup in <code>set_content_files</code> on the packer-normalized path, then the file resolver</td>
+<td>✅ <code>registerHandler(&quot;teach&quot;, fn)</code>; <code>start()</code> feeds, unless <code>resolveContent: false</code>, <code>files.knowledge[]</code> to <code>set_content_files</code></td>
 </tr>
 <tr>
 <td>✅1️⃣ <code>interact</code></td>
@@ -1687,17 +1692,17 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <tr>
 <td>✅ <code>set</code></td>
 <td>✅ <code>memory_stmt</code></td>
-<td>✅ <code>Statement::Set</code></td>
+<td>✅ <code>Statement::Set</code> (RHS <code>Value::Path</code> when unquoted)</td>
 <td></td>
-<td>✅ → <code>Effect::SetMemory</code> + writes <code>MemoryStore</code></td>
+<td>✅ → <code>Effect::SetMemory</code> + writes <code>MemoryStore</code>; a path RHS is resolved before the effect is emitted, and an unqualified bare word resolves to null (DA00-10)</td>
 <td>✅ <code>registerHandler(&quot;set_memory&quot;, fn)</code></td>
 </tr>
 <tr>
 <td>✅ <code>if … end</code></td>
 <td>✅ <code>conditional_stmt</code></td>
-<td>✅ <code>Statement::If</code></td>
+<td>✅ <code>Statement::If</code>; an unquoted operand is <code>Value::Path</code></td>
 <td></td>
-<td>✅ <code>eval_condition()</code> resolves at runtime</td>
+<td>✅ <code>eval_condition()</code> resolves at runtime — a path operand reads <code>MemoryStore</code> (DA00-10); an unresolvable one is null, and <code>== null</code> tests for unset (DA00-11)</td>
 <td>✅ transparent (no effect emitted)</td>
 </tr>
 <tr>

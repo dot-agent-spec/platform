@@ -67,7 +67,9 @@ All types derive `Debug`, `Clone`, `Serialize`, `Deserialize`.
 
 **`PropertyType`** — uses `#[serde(tag = "kind", content = "value", rename_all = "snake_case")]`. Variants: `primitive`, `reference`, `array` (recursive), `enum` (vec of strings).
 
-**`Value`** — `#[serde(untagged)]`. `Str` and `Path` have the same wire type (both serialize as JSON strings). Callers must distinguish by context.
+**`Value`** — `#[serde(untagged)]`, and every variant has a distinct JSON shape. A bare JSON string is always the literal `Str`; a memory reference is the struct variant `Path { path }`, serializing as `{"path": "session.count"}`. Match on the shape — never guess from the text. The disjointness is load-bearing: an untagged enum discriminates by shape alone, so a second object-shaped variant added to `Value` would shadow `Path` and make it unconstructible again, which is what [ADR DA00-10](../../../../project/adr/DA00-10-memory-reference-is-tagged-in-the-ast.md) exists to prevent.
+
+The tagging is **positional**: only an operand — either side of a comparison, or a `set` right-hand side — becomes a `Path`. A state declaration's `name` and a `Transition`'s `target` come from the same grammar node (`state_name`) and stay plain strings, because neither is an operand.
 
 ---
 

@@ -20,18 +20,42 @@ export class AgentSession {
     return new AgentSession(kernel, bundle)
   }
 
-  // Register a synchronous fallback called when a `merge "…"` path is not in the bundle.
-  // Must be called before start(). Return null/undefined if the path cannot be resolved.
+  // Register a synchronous fallback for a file path the kernel was not handed: a `merge "…"` path
+  // absent from the bundle (where returning nothing fails the load), and a `teach`/`guide` path
+  // absent from the content map (where it just leaves `content` null). Must be called before
+  // start(). Return null/undefined if the path cannot be resolved.
+  //
+  // For the teach/guide case, the path arrives normalized as the packer normalizes it — leading
+  // `./` stripped, `\` turned into `/` — so it is the bundle key rather than the literal DSL
+  // argument, and inline prose never reaches the resolver: only text ending in `.txt`/`.md` is
+  // offered to it. The merge case gets none of that: the kernel passes the literal `merge "…"`
+  // argument as written, unnormalized and with whatever extension the author gave it (typically
+  // `.behavior`) — do not gate on `.txt`/`.md` or assume a stripped leading `./` there.
   setFileResolver(resolver: (path: string) => string | null | undefined): void {
     this.kernel.set_file_resolver(resolver as unknown as Function)
   }
 
   // Call after registerHandler() — loads the behavior and fires initial effects.
-  // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths.
-  start(): void {
+  // Passes all merged behavior files as a bundle so the kernel can resolve `merge "…"` paths, and
+  // the knowledge/guide files separately so `teach`/`guide` effects arrive with their `content`
+  // filled in beside the path (the path itself is never replaced).
+  //
+  // `resolveContent: false` skips that second half, and a host wants it when it serves the files
+  // itself: the CLI's MCP server hands the path on as a `dot-agent://<path>` resource URI and lets
+  // the LLM host fetch it when it needs it. Resolving for such a host would inline every knowledge
+  // file into every effect payload it forwards — the exact cost the lazy fetch exists to avoid.
+  start(options: { resolveContent?: boolean } = {}): void {
     const bundle: Record<string, string> = {}
     for (const { path, content } of this.bundle.files.behaviors) {
       bundle[path] = content
+    }
+    if (options.resolveContent !== false) {
+      const contentFiles: Record<string, string> = {}
+      const named = [...(this.bundle.files.knowledge ?? []), ...(this.bundle.files.guides ?? [])]
+      for (const { path, content } of named) {
+        contentFiles[path] = content
+      }
+      this.kernel.set_content_files(JSON.stringify(contentFiles))
     }
     this.dispatchRaw(
       this.kernel.load_behavior_with_bundle(
