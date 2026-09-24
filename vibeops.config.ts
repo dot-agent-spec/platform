@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // This repository's vibe-ops configuration.
 //
 // It replaces `scripts/checks/_run.sh`, which carried the same declarations as an exported environment
