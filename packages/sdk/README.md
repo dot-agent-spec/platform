@@ -62,10 +62,10 @@ Full guide: [docs/how-to/load-an-agent-in-the-browser.md](../../docs/how-to/load
 |--------|-------------|
 | `loadAgent(input)` | Parse a `.agent` ZIP (`Uint8Array` \| `ArrayBuffer`) into an `AgentBundle` |
 | `AgentSession.create(bundle)` | Construct a session around a loaded bundle; initializes the WASM kernel |
-| `session.setFileResolver(fn)` | Register the Mode B fallback for `merge` paths missing from the bundle |
+| `session.setFileResolver(fn)` | Register the fallback for a `merge` path missing from the bundle (Mode B), and for a `teach`/`guide` path missing from the content map |
 | `session.registerHandler(type, fn)` | Register a per-effect-type handler (`goal`, `guide`, `teach`, `request_interact`, `transition`, `run_script`, `run_subagent`, `run_tool`, `set_memory`, `apply_css`, `remove_css`, …) |
 | `session.setEffectListener(fn)` | Optional catch-all called for every effect, in addition to per-type handlers |
-| `session.start()` | Load the behavior into the kernel and fire the `init` state's effects |
+| `session.start(options?)` | Load the behavior into the kernel and fire the `init` state's effects; also hands the bundle's `knowledge/` and `guides/` files to the kernel, unless `{ resolveContent: false }` |
 | `session.sendIntent(intent)` | Dispatch a user intent to the current state's `on intent` handler |
 | `session.sendEvent(event)` | Dispatch a named event to matching `on event` triggers |
 | `session.sendOfftopic()` | Dispatch to the current state's `on offtopic` handler |
@@ -77,6 +77,8 @@ Full guide: [docs/how-to/load-an-agent-in-the-browser.md](../../docs/how-to/load
 | `session.injectMemory(domain, key, value)` | Write a value into kernel memory |
 | `session.dispose()` | Free the underlying WASM kernel instance |
 | `validateMagicBytes(bytes)` \| `validateZipBomb(zip, size)` | Bundle-safety checks, re-exported from `@dot-agent/compiler/core` |
+
+**`teach` and `guide` effects carry resolved content.** `start()` passes the bundle's `files.knowledge` and `files.guides` to the kernel, so an effect whose `text` names one of those files also carries that file's text in `content`; anything else — inline prose, a path the bundle does not hold — arrives with `content: null`. The path in `text` is never replaced, so a handler that resolves paths on its own keeps working. Read `effect.content ?? effect.text` to take whichever is there. No extra call is needed. A host that serves those files itself — publishing them as URIs for a client to fetch on demand — passes `start({ resolveContent: false })` and keeps receiving bare paths at no payload cost.
 
 Full type definitions (`AgentBundle`, `AgentFiles`, `Effect`, `EffectHandler`, `AboutMe`) are in `dist/index.d.ts` after building.
 

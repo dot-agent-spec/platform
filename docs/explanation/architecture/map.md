@@ -220,8 +220,8 @@ Effects are the kernel's only output channel. The SDK dispatches each one to the
 | Effect | Fields | Handler responsibility |
 |---|---|---|
 | `Goal` | `text` | Pass to LLM context |
-| `Guide` | `text` | Pass to LLM or display |
-| `Teach` | `text` | Load teaching file |
+| `Guide` | `text`, `content` | Pass to LLM or display — read `content ?? text` |
+| `Teach` | `text`, `content` | Load teaching material — `content` when the kernel resolved it, else fetch `text` |
 | `RequestInteract` | — | Await user input |
 | `Transition` | `from`, `to` | Update UI state |
 | `RunTool` | `target`, `label?` | Call external tool |

@@ -76,7 +76,7 @@ state responsive
 state summary
   goal "Generate and present the summary"
   guide "Analyze the provided text to generate a clear, accurate summary. Present the result and invite the user to provide a new text or conclude the session."
-  teach "maintopics.md"
+  teach "knowledge/maintopics.md"
   interact
   on intent "new_text" transition to responsive
   on intent "end" transition to goodbye

@@ -50,8 +50,8 @@ const engine = new AgentDSLKernel();
 engine.observe((effect: Effect) => {
   switch (effect.type) {
     case "goal":             handleGoal(effect.text); break;
-    case "guide":            handleGuide(effect.text); break;
-    case "teach":            handleTeach(effect.text); break;
+    case "guide":            handleGuide(effect.text, effect.content); break;
+    case "teach":            handleTeach(effect.text, effect.content); break;
     case "request_interact": handleInteract(); break;
     case "run_script":       handleScript(effect); break;
     case "run_subagent":     handleSubagent(effect); break;
@@ -101,10 +101,27 @@ state welcome
     transition to setup
 `);
 // observer fires: goal → guide → request_interact
-// effects === [{ type: "goal", text: "…" }, { type: "guide", text: "…" }, { type: "request_interact" }]
+// effects === [{ type: "goal", text: "…" }, { type: "guide", text: "…", content: null }, { type: "request_interact" }]
 ```
 
 On parse error, fires and returns `[{ type: "parse_error", message: "…" }]`.
+
+---
+
+### `set_content_files(files_json: string): void`
+
+Hands the engine the agent's knowledge and guide files, as a JSON object mapping bundle path to file text. `teach` and `guide` effects whose `text` matches a key then arrive with `content` filled in beside the unchanged path.
+
+```typescript
+engine.set_content_files(JSON.stringify({
+  "knowledge/cars.md": "# Car categories\n…",
+  "guides/intro.md":   "Greet the user by name.",
+}));
+// teach "knowledge/cars.md" now emits
+//   { type: "teach", text: "knowledge/cars.md", content: "# Car categories\n…" }
+```
+
+Optional, and independent of the `merge` bundle: call it before `load_behavior` / `load_behavior_with_bundle`, or skip it entirely and keep receiving bare paths. `@dot-agent/sdk` calls it for you from `AgentSession.start()`. The `teach` effect section below states the lookup rule.
 
 ---
 
@@ -225,29 +242,50 @@ case "goal":
 
 ---
 
-### `{ type: "guide", text: string }`
+### `{ type: "guide", text: string, content: string | null }`
 
 **What it is:** A behavioral constraint or instruction for the LLM specific to this moment in the flow.
 
-**What JS must do:** Inject `text` into the LLM's context — typically as a system message or a high-priority prompt injection. Unlike `goal` (which is persistent for the state), `guide` may be injected transiently (e.g. prefixed to the next user turn).
+**What JS must do:** Inject the instruction into the LLM's context — typically as a system message or a high-priority prompt injection. Unlike `goal` (which is persistent for the state), `guide` may be injected transiently (e.g. prefixed to the next user turn).
+
+`text` is always the literal argument the author wrote. When it names a file the host handed to `set_content_files`, `content` carries that file's text; otherwise `content` is `null`. Read `content ?? text` unless you intend to fetch the file yourself — the `teach` section below states the full resolution rule, which is identical.
 
 ```typescript
 case "guide":
-  llm.prependInstruction(effect.text);
+  llm.prependInstruction(effect.content ?? effect.text);
   break;
 ```
 
 ---
 
-### `{ type: "teach", text: string }`
+### `{ type: "teach", text: string, content: string | null }`
 
 **What it is:** Knowledge or reference material the LLM should have access to.
 
-**What JS must do:** Load `text` into the LLM's context — via prompt injection, context cache (e.g. Anthropic's prompt caching), RAG retrieval pre-population, or a function call result. The mechanism depends on the runtime; the intent is to enrich the model's knowledge for this state.
+**What JS must do:** Load the material into the LLM's context — via prompt injection, context cache (e.g. Anthropic's prompt caching), RAG retrieval pre-population, or a function call result. The mechanism depends on the runtime; the intent is to enrich the model's knowledge for this state.
+
+**Two fields, because there are two kinds of host.** `text` is always the literal argument written in the DSL — a bundle-relative path such as `knowledge/cars.md`, or inline prose. `content` is that file's text when the kernel could resolve it, and `null` otherwise.
+
+- A host that wants the material reads `content ?? text`.
+- A host that prefers to fetch lazily ignores `content` and uses `text` as its own resource identifier — the dot-agent CLI's MCP server hands it on as `dot-agent://<path>`. Nothing is forced across the wire that such a host did not ask for.
+
+**How resolution works.** The kernel fills `content` from the map the host passes to `set_content_files(files_json)` — a JSON object of bundle path → file text — falling back to the callback registered with `set_file_resolver`. Three properties matter:
+
+| Property | Consequence |
+|---|---|
+| The call is **optional** | A host that never calls `set_content_files` keeps receiving bare paths, at no payload cost. |
+| The key is the **normalized** reference | The packer strips a leading `./` and converts `\` to `/` before choosing the bundle path, so `teach "./knowledge/cars.md"` is bundled — and looked up — as `knowledge/cars.md`. The kernel applies the same two rules. |
+| The match is **exact** | Beyond that normalization there is no suffix matching and no `knowledge/` prefix guessing: the packer bundles a reference at exactly that path and warns (W016) when it is unreachable, so a looser match here would bless a shape the packer refuses to produce. Inline prose and paths the bundle does not carry arrive with `content: null`. |
+| A miss is **not an error** | The effect is still emitted and the run continues, unlike `merge`, whose missing file fails the load. |
+| `set_file_resolver` is the **fallback** | A path absent from the map is offered to the resolver callback, which therefore now serves both `merge` and `teach`/`guide`. Only text ending in `.txt`/`.md` is offered — the packer's own test for a file reference — so a resolver is never handed inline prose. |
+
+**What a host retiring its own lookup should check.** The kernel resolves the namespaced bundle path and nothing else. An archive packed before the explicit-path rule can carry bare-name references (`teach "cars.md"`), which a host's hand-written resolver may still resolve by scanning and the kernel will not: those arrive with `content: null`. Repack such agents before deleting the host-side resolver.
+
+The `@dot-agent/sdk` does the wiring for you: `AgentSession.start()` feeds the bundle's `files.knowledge` and `files.guides` to `set_content_files` before loading the behavior, and `start({ resolveContent: false })` skips that for a host that serves the files itself.
 
 ```typescript
 case "teach":
-  await llm.loadContextCache(effect.text);
+  await llm.loadContextCache(effect.content ?? effect.text);
   break;
 ```
 
@@ -364,8 +402,8 @@ JS can read any domain with `get_memory()` and write with `set_memory()`. The FS
 ```typescript
 type Effect =
   | { type: "goal";             text: string }
-  | { type: "guide";            text: string }
-  | { type: "teach";            text: string }
+  | { type: "guide";            text: string; content: string | null }
+  | { type: "teach";            text: string; content: string | null }
   | { type: "request_interact" }
   | { type: "transition";       from: string; to: string }
   | { type: "run_script";       target: string; parameters: string | null; silent: boolean }
@@ -386,8 +424,8 @@ type GraphInfo = {
 
 interface AgentDSLKernelHandlers {
   goal(text: string): void;
-  guide(text: string): void;
-  teach(text: string): Promise<void> | void;
+  guide(text: string, content: string | null): void;
+  teach(text: string, content: string | null): Promise<void> | void;
   requestInteract(): void;
   runScript(target: string, parameters: string | null, silent: boolean): Promise<void>;
   runSubagent(target: string, parameters: string | null, background: boolean): Promise<void>;
@@ -417,8 +455,8 @@ export function useAgentDSLKernel(handlers: AgentDSLKernelHandlers) {
       engine.observe((effect: Effect) => {
         switch (effect.type) {
           case "goal":             handlers.goal(effect.text); break;
-          case "guide":            handlers.guide(effect.text); break;
-          case "teach":            handlers.teach(effect.text); break;
+          case "guide":            handlers.guide(effect.text, effect.content); break;
+          case "teach":            handlers.teach(effect.text, effect.content); break;
           case "request_interact": handlers.requestInteract(); break;
           case "run_script":       handlers.runScript(effect.target, effect.parameters, effect.silent); break;
           case "run_subagent":     handlers.runSubagent(effect.target, effect.parameters, effect.background); break;

@@ -80,3 +80,60 @@ fn test_interact_without_handlers_parses_after_forgiving_syntax() {
         Err(e) => panic!("Should parse with forgiving grammar: {}", e.0),
     }
 }
+
+// ── The serialized wire shape ────────────────────────────────────────────────
+//
+// The unit tests in src/engine assert on the Rust enum; JavaScript never sees that. What crosses
+// the WASM boundary is this JSON, and `content` sitting beside `text` is the whole contract a host
+// reads (`effect.content ?? effect.text`).
+
+#[test]
+fn teach_effect_serializes_both_text_and_resolved_content() {
+    use dot_agent_kernel_dsl::engine::AgentDSLKernel;
+    use std::collections::BTreeMap;
+
+    let dsl = "state init\n  teach \"knowledge/cars.md\"\n  interact\n";
+
+    let mut content_files = BTreeMap::new();
+    content_files.insert("knowledge/cars.md".to_string(), "# Cars".to_string());
+
+    let mut kernel = AgentDSLKernel::new();
+    kernel.set_content_files(content_files);
+    let effects = kernel
+        .load_behavior_with_bundle(dsl, &BTreeMap::new())
+        .expect("should load");
+
+    let teach = effects
+        .iter()
+        .map(|e| serde_json::to_value(e).expect("effect must serialize"))
+        .find(|v| v["type"] == "teach")
+        .expect("expected a teach effect");
+
+    assert_eq!(teach["text"], "knowledge/cars.md", "the path must stay on the wire");
+    assert_eq!(teach["content"], "# Cars", "the resolved content must ride beside it");
+}
+
+#[test]
+fn unresolved_teach_serializes_content_as_null_rather_than_omitting_it() {
+    use dot_agent_kernel_dsl::engine::AgentDSLKernel;
+    use std::collections::BTreeMap;
+
+    let dsl = "state init\n  teach \"knowledge/missing.md\"\n  interact\n";
+
+    let mut kernel = AgentDSLKernel::new();
+    let effects = kernel
+        .load_behavior_with_bundle(dsl, &BTreeMap::new())
+        .expect("an unresolvable teach must not fail the load");
+
+    let teach = effects
+        .iter()
+        .map(|e| serde_json::to_value(e).expect("effect must serialize"))
+        .find(|v| v["type"] == "teach")
+        .expect("expected a teach effect");
+
+    assert!(
+        teach.get("content").is_some(),
+        "the key must always be present, so a host can read content ?? text"
+    );
+    assert!(teach["content"].is_null(), "an unresolved path serializes as null");
+}

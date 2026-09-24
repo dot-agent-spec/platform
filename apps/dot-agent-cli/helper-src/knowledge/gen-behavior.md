@@ -39,7 +39,7 @@ state help
 - `on offtopic` — catches unmatched input
 - `interact` — emits request_interact, signals waiting for user
 - `goal "text"` / `guide "text"` — short inline text
-- `teach "filename.md"` — reference to a knowledge file
+- `teach "knowledge/filename.md"` — reference to a knowledge file, at its bundle path
 
 ## Required
 
