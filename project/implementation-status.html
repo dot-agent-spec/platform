@@ -1671,17 +1671,17 @@
 <tr>
 <td>✅ <code>set</code></td>
 <td>✅ <code>memory_stmt</code></td>
-<td>✅ <code>Statement::Set</code></td>
+<td>✅ <code>Statement::Set</code> (RHS <code>Value::Path</code> when unquoted)</td>
 <td></td>
-<td>✅ → <code>Effect::SetMemory</code> + writes <code>MemoryStore</code></td>
+<td>✅ → <code>Effect::SetMemory</code> + writes <code>MemoryStore</code>; a path RHS is resolved before the effect is emitted, and an unqualified bare word resolves to null (DA00-10)</td>
 <td>✅ <code>registerHandler(&quot;set_memory&quot;, fn)</code></td>
 </tr>
 <tr>
 <td>✅ <code>if … end</code></td>
 <td>✅ <code>conditional_stmt</code></td>
-<td>✅ <code>Statement::If</code></td>
+<td>✅ <code>Statement::If</code>; an unquoted operand is <code>Value::Path</code></td>
 <td></td>
-<td>✅ <code>eval_condition()</code> resolves at runtime</td>
+<td>✅ <code>eval_condition()</code> resolves at runtime — a path operand reads <code>MemoryStore</code> (DA00-10); an unresolvable one is null, and <code>== null</code> tests for unset (DA00-11)</td>
 <td>✅ transparent (no effect emitted)</td>
 </tr>
 <tr>

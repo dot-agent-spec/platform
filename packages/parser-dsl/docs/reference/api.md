@@ -349,8 +349,17 @@ interface Condition {
 type LogicalOp = "and" | "or";
 type Expr = Value | { left: Value; op: CompareOp; right: Value };
 type CompareOp = "==" | "!=" | ">" | "<" | ">=" | "<=";
-type Value = string | number | boolean | null;
+type Value = string | number | boolean | null | { path: string };
+// A quoted operand is a literal and arrives as a plain string.
+// An unquoted one is a memory reference and arrives tagged: { path: "session.lang" }.
 ```
+
+The tag is **positional**: it is applied only to an operand — either side of a comparison, or a `set`
+right-hand side. A state's `name` and a `transition_stmt`'s `state` come from the same grammar node but
+are plain strings, because neither is an operand. The reason the tag exists at all is
+[ADR DA00-10](../../../../project/adr/DA00-10-memory-reference-is-tagged-in-the-ast.md): the Rust enum
+is untagged and discriminates by JSON shape alone, so a bare string could never be told apart from a
+literal.
 
 ---
 

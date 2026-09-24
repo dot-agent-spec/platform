@@ -174,6 +174,17 @@ end
 
 Conditions: comparison operators `==`, `!=`, `>`, `<`, `>=`, `<=`; logical operators `and`, `or`. Each `if` is closed by its own `end`, so conditionals may nest.
 
+**Quoting decides what an operand means.** An unquoted operand is a memory reference and is read from
+the store; a quoted one is a literal and is compared as written:
+
+```
+if context.name == "danilo"     # read context.name, compare against the text danilo
+if context.name == danilo       # read context.name, compare against a read of danilo
+```
+
+The same applies to a `set` right-hand side, and the full semantics — including what an unqualified
+operand does — are in [`memory.md`](memory.md) § Reading from Memory.
+
 ### `after N prompts` — Temporal
 
 ```

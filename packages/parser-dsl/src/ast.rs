@@ -314,5 +314,10 @@ pub enum Value {
     Number(f64),
     Bool(bool),
     Null,
-    Path(String),
+    // A memory reference, e.g. `session.count`. Carried as an object
+    // (`{"path": "..."}`) so that `#[serde(untagged)]` can tell it apart from
+    // `Str`: both hold a `String`, and untagged serde discriminates by JSON
+    // shape alone, never by declaration order. Any future object-shaped variant
+    // added here would shadow this one — see ADR DA00-10.
+    Path { path: String },
 }

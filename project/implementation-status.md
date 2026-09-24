@@ -228,8 +228,8 @@ Legend:
 | ✅ `run subagent` | ✅ `run_stmt[subagent]` | ✅ `RunStmt { kind: Subagent }` | | ✅ → `Effect::RunSubagent {target, parameters, background}` | ✅ `registerHandler("run_subagent", fn)` |
 | ✅ `run tool` | ✅ `run_stmt[tool]` | ✅ `RunStmt { kind: Tool }` | | ✅ → `Effect::RunTool {target, parameters}` | ✅ `registerHandler("run_tool", fn)` |
 | 🗑️ `run … each` | 🗑️ `run_stmt[each]` | 🗑️ removed | | ❌ | ❌ |
-| ✅ `set` | ✅ `memory_stmt` | ✅ `Statement::Set` | | ✅ → `Effect::SetMemory` + writes `MemoryStore` | ✅ `registerHandler("set_memory", fn)` |
-| ✅ `if … end` | ✅ `conditional_stmt` | ✅ `Statement::If` | | ✅ `eval_condition()` resolves at runtime | ✅ transparent (no effect emitted) |
+| ✅ `set` | ✅ `memory_stmt` | ✅ `Statement::Set` (RHS `Value::Path` when unquoted) | | ✅ → `Effect::SetMemory` + writes `MemoryStore`; a path RHS is resolved before the effect is emitted, and an unqualified bare word resolves to null (DA00-10) | ✅ `registerHandler("set_memory", fn)` |
+| ✅ `if … end` | ✅ `conditional_stmt` | ✅ `Statement::If`; an unquoted operand is `Value::Path` | | ✅ `eval_condition()` resolves at runtime — a path operand reads `MemoryStore` (DA00-10); an unresolvable one is null, and `== null` tests for unset (DA00-11) | ✅ transparent (no effect emitted) |
 | ✅ `apply css` | ✅ `apply_stmt` | ✅ `Statement::Apply` | | ✅ → `Effect::ApplyCss {value}` | ✅ `registerHandler("apply_css", fn)` |
 | ✅ `remove css` | ✅ `remove_stmt` | ✅ `Statement::Remove` | | ✅ → `Effect::RemoveCss {value}` | ✅ `registerHandler("remove_css", fn)` |
 | ✅ `on failure` (run) | ✅ `failure_stmt` (sub-node of `run_stmt`) | ✅ `RunStmt.on_failure` | | ⚠️ field parsed, ignored at runtime (v0.2) | |

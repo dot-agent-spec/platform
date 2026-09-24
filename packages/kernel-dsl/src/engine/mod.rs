@@ -155,6 +155,252 @@ mod tests {
         k
     }
 
+    // ── issue #5: a condition and a `set` right-hand side must READ memory ────
+    //
+    // An unquoted operand is a memory reference. Before the fix the parser
+    // handed the kernel the path TEXT as a plain string, so `resolve_value`
+    // returned that text instead of looking the path up: every comparison
+    // against memory was false, every truthy check was true, and a
+    // memory-to-memory `set` copied the literal string "session.src".
+
+    fn kernel_with_memory(seed: &[(&str, &str, MemValue)], dsl: &str) -> AgentDSLKernel {
+        let mut k = AgentDSLKernel::new();
+        for (domain, key, value) in seed {
+            k.set_memory(domain, key, value.clone());
+        }
+        k.load_behavior(dsl).expect("DSL should parse");
+        k
+    }
+
+    const I5_BOOL_DSL: &str = concat!(
+        "state init\n",
+        "  if context.onboarding == true\n",
+        "    transition to onboarding\n",
+        "  else\n",
+        "    transition to responsive\n",
+        "  end\n",
+        "\n",
+        "state onboarding\n",
+        "  interact\n",
+        "\n",
+        "state responsive\n",
+        "  interact\n",
+    );
+
+    #[test]
+    fn i5_eq_true_matches_bool_memory() {
+        // The issue's own reproduction. Both cases live in one test on purpose:
+        // the `false` case passes even without the fix (everything fell to the
+        // else branch back then), so alone it would prove nothing. It stays as
+        // an over-correction guard beside the case that actually goes red.
+        let k = kernel_with_memory(&[("context", "onboarding", MemValue::Bool(true))], I5_BOOL_DSL);
+        assert_eq!(k.get_current_state(), "onboarding", "Bool(true) must take the then-branch");
+
+        let k = kernel_with_memory(&[("context", "onboarding", MemValue::Bool(false))], I5_BOOL_DSL);
+        assert_eq!(k.get_current_state(), "responsive", "Bool(false) must take the else-branch");
+    }
+
+    #[test]
+    fn i5_numeric_compare_reads_memory() {
+        let dsl = concat!(
+            "state init\n",
+            "  if session.count > 3\n",
+            "    transition to hi\n",
+            "  else\n",
+            "    transition to lo\n",
+            "  end\n",
+            "\n",
+            "state hi\n",
+            "  interact\n",
+            "\n",
+            "state lo\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("session", "count", MemValue::Num(7.0))], dsl);
+        assert_eq!(k.get_current_state(), "hi", "a numeric comparison must read the stored number");
+    }
+
+    #[test]
+    fn i5_quoted_string_stays_a_literal() {
+        // Earns its place twice: string comparison against memory works, AND a
+        // quoted operand must NOT be resolved as a memory path.
+        let dsl = concat!(
+            "state init\n",
+            "  if context.name == \"danilo\"\n",
+            "    transition to yes\n",
+            "  else\n",
+            "    transition to nope\n",
+            "  end\n",
+            "\n",
+            "state yes\n",
+            "  interact\n",
+            "\n",
+            "state nope\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("context", "name", MemValue::Str("danilo".into()))], dsl);
+        assert_eq!(k.get_current_state(), "yes", "stored string must compare against the literal");
+    }
+
+    #[test]
+    fn i5_truthy_reads_memory_not_path_text() {
+        // Disproves the workaround the issue documents: a bare truthy check used
+        // to see the non-empty path text and fire unconditionally.
+        let dsl = concat!(
+            "state init\n",
+            "  if context.flag\n",
+            "    transition to yes\n",
+            "  else\n",
+            "    transition to nope\n",
+            "  end\n",
+            "\n",
+            "state yes\n",
+            "  interact\n",
+            "\n",
+            "state nope\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("context", "flag", MemValue::Bool(false))], dsl);
+        assert_eq!(k.get_current_state(), "nope", "a falsy stored value must take the else-branch");
+    }
+
+    #[test]
+    fn i5_set_from_path_copies_memory_value() {
+        // Symptom that reaches the SDK through Effect::SetMemory.
+        let dsl = concat!(
+            "state init\n",
+            "  set context.copy = session.src\n",
+            "  interact\n",
+        );
+        let k = kernel_with_memory(&[("session", "src", MemValue::Num(42.0))], dsl);
+        let snapshot = k.get_memory();
+        let copied = snapshot
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "copy")
+            .expect("context.copy must exist after the set");
+        assert!(
+            matches!(copied.value, MemValue::Num(n) if n == 42.0),
+            "set from a memory path must copy the VALUE, got: {:?}",
+            copied.value
+        );
+    }
+
+    /// `state init` … the two branch states, appended to a condition body.
+    const BRANCHES: &str = "\n\nstate yes\n  interact\n\nstate lo\n  interact\n";
+
+    fn branch_taken(condition: &str, seed: &[(&str, &str, MemValue)]) -> String {
+        let dsl = format!(
+            "state init\n  if {}\n    transition to yes\n  else\n    transition to lo\n  end{}",
+            condition, BRANCHES
+        );
+        kernel_with_memory(seed, &dsl).get_current_state().to_string()
+    }
+
+    #[test]
+    fn i5_both_operands_are_tagged_under_a_non_eq_operator() {
+        // The tagging applies to an operand POSITION, so the right-hand side of a
+        // comparison is a reference too, and every operator goes through the same
+        // `resolve_value`. Pinned because a future mapping change could keep the
+        // left side working and silently drop the right.
+        let seed = |a: f64, b: f64| {
+            vec![
+                ("session", "a", MemValue::Num(a)),
+                ("session", "b", MemValue::Num(b)),
+            ]
+        };
+        assert_eq!(branch_taken("session.a != session.b", &seed(1.0, 2.0)), "yes");
+        assert_eq!(branch_taken("session.a != session.b", &seed(2.0, 2.0)), "lo");
+        assert_eq!(branch_taken("session.a >= session.b", &seed(2.0, 2.0)), "yes");
+    }
+
+    // ── DA00-11: an unresolvable reference is null, and null equality is how a
+    // behavior tests whether a path is set ───────────────────────────────────
+
+    #[test]
+    fn null_equality_tests_whether_a_path_is_set() {
+        let set = [("context", "x", MemValue::Str("v".into()))];
+        assert_eq!(branch_taken("context.x == null", &[]), "yes", "an unset path IS null");
+        assert_eq!(branch_taken("context.x == null", &set), "lo", "a set path is not null");
+        assert_eq!(branch_taken("context.x != null", &set), "yes", "`!= null` means: is set");
+        assert_eq!(branch_taken("context.x != null", &[]), "lo", "an unset path fails `!= null`");
+    }
+
+    #[test]
+    fn bare_word_equality_is_null_equality() {
+        // The larger half of DA00-11's consequence, and the one an author is most
+        // likely to be bitten by: DA00-10 makes an operand with no domain prefix a
+        // reference that resolves to null, and reflexive null equality then makes any
+        // two unresolvable operands equal. `if user.plan == free`, written meaning a
+        // string literal, fires whenever `user.plan` is unset. Pinned here so a later
+        // change to eval_compare cannot revert the documented behavior in silence.
+        let set = [("context", "plan", MemValue::Str("pro".into()))];
+        assert_eq!(branch_taken("mode == active", &[]), "yes", "two bare words are both null, so equal");
+        assert_eq!(branch_taken("mode != active", &[]), "lo", "and therefore not unequal");
+        assert_eq!(branch_taken("context.missing == planning", &[]), "yes", "unset path vs bare word: both null");
+        assert_eq!(branch_taken("context.plan == free", &set), "lo", "a resolvable operand is not null, so no match");
+    }
+
+    #[test]
+    fn an_unset_path_compared_to_a_literal() {
+        // The rest of the table in dsl/reference/memory.md, pinned so the document
+        // and the kernel cannot drift apart: `==` is false, `!=` is true, an
+        // ordering comparison is false, and null is not truthy.
+        assert_eq!(branch_taken("context.missing == \"x\"", &[]), "lo");
+        assert_eq!(branch_taken("context.missing != \"x\"", &[]), "yes");
+        assert_eq!(branch_taken("context.missing > 3", &[]), "lo");
+        assert_eq!(branch_taken("context.missing", &[]), "lo");
+    }
+
+    #[test]
+    fn an_unqualified_bare_word_on_a_set_stores_null() {
+        // The one observable break DA00-10 accepts: a lookup needs
+        // `<domain>.<key>`, so `planning` is a reference that cannot resolve and
+        // the store receives null — where the pre-tagging runtime wrote the text
+        // `"planning"`. Quoting it is what makes it a literal again.
+        let dsl = "state init\n  set context.stage = planning\n  interact\n";
+        let bare = kernel_with_memory(&[], dsl).get_memory();
+        let stored = bare
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "stage")
+            .expect("context.stage must exist after the set");
+        assert!(
+            matches!(stored.value, MemValue::Null),
+            "an unqualified bare word has no domain to read, so it resolves to null, got: {:?}",
+            stored.value
+        );
+
+        let quoted = "state init\n  set context.stage = \"planning\"\n  interact\n";
+        let quoted = kernel_with_memory(&[], quoted).get_memory();
+        let stored = quoted
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "stage")
+            .expect("context.stage must exist after the set");
+        assert!(
+            matches!(&stored.value, MemValue::Str(s) if s == "planning"),
+            "a quoted right-hand side is a literal and must survive, got: {:?}",
+            stored.value
+        );
+
+        // `true`, `false` and `null` are literals to the grammar, not bare words —
+        // which is why `set session.supersedes = true`, the only `set` in the
+        // tracked corpus, is unaffected by any of this.
+        let boolean = "state init\n  set context.flag = true\n  interact\n";
+        let boolean = kernel_with_memory(&[], boolean).get_memory();
+        let stored = boolean
+            .entries
+            .iter()
+            .find(|e| e.domain == "context" && e.key == "flag")
+            .expect("context.flag must exist after the set");
+        assert!(
+            matches!(stored.value, MemValue::Bool(true)),
+            "a boolean literal is not a bare word, got: {:?}",
+            stored.value
+        );
+    }
+
     #[test]
     fn transition_to_ended_emits_effect_and_updates_state() {
         let dsl = "state init\n  interact\n  on intent \"done\" transition to ended\n";
@@ -286,3 +532,4 @@ mod tests {
         assert_eq!(goal_text, ["from main"], "main file's state must shadow merged duplicate");
     }
 }
+
