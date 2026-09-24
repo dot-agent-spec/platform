@@ -633,6 +633,12 @@
 </tr>
 </tbody></table>
 <blockquote>
+<p>🧊 <strong>The freeze cells track <em>published</em> releases, and lag unreleased API by design.</strong> <code>Status</code> and
+<code>Version</code> answer &quot;what is on npm&quot;, so a package can carry <code>🧊 Frozen</code> while its <code>CHANGELOG.md</code> has an
+open <code>## [Unreleased]</code> block and the tables below already list exports that landed in <code>main</code>. A cell
+flips to <code>🔥 Active</code> when an unfreeze <em>window</em> is opened by a versioning task, and back to <code>🧊 Frozen</code>
+when <a href="templates/versioning-task.md">that task&#39;s release step closes it</a> — not when a commit lands.
+Where the two disagree, the feature tables are the newer of the two.</p>
 <p>✅ <strong>Compliance check 2026-06-27</strong> — all tests passing: kernel-dsl 14/14 + node-compat 4/4, sdk 7/7, parser-dsl 48/48, compiler 129/129, language-server 60/60. WASM <code>RuntimeError: unreachable</code> (P3) resolved via <code>BTreeMap</code>/<code>BTreeSet</code>; node-compat import path (P2) corrected; <code>CONTRIBUTING.md</code> created. See <a href="adr/DA00-06-ts-rs-for-ast-json-contract.md">compliance-check-2026-06-27.md</a>.</p>
 <p>🚀 <strong>First public release: <code>0.10.0</code></strong> — the one-time version jump decided in <a href="adr/DA00-02-two-axis-versioning.md">DA00-02</a>, published to the <code>latest</code> npm dist-tag (not <code>alpha</code>) after the pipeline was proven end-to-end by the <a href="adr/DA00-02-two-axis-versioning.md">pre-alpha rehearsal</a>.</p>
 </blockquote>
@@ -1120,6 +1126,16 @@
 <td>✅🗓️ <code>set_memory(domain, key, value_json)</code></td>
 <td>→ <code>injectMemory(domain, key, value)</code></td>
 <td></td>
+</tr>
+<tr>
+<td>✅2️⃣ <code>serialize_state()</code> → <code>string</code></td>
+<td>❌ no wrapper yet (issue #17, Wave 2)</td>
+<td>FSM position only: <code>{&quot;v&quot;:1,&quot;behavior&quot;:…,&quot;state&quot;:…,&quot;prompt_count&quot;:…}</code>. <a href="rfcs/0004-kernel-protocol.md">RFC-0004</a> § State serialization contributes the <strong>two names</strong>, not the field set: it is <strong>Draft</strong>, it describes the payload as &quot;active state, transition history&quot;, and <strong>no transition history is carried</strong> — restore repositions, it does not replay. <code>behavior</code> fingerprints the loaded state graph, so a blob from another agent is refused instead of applied on a bare state-name match. The RFC&#39;s memory-ownership half is <em>not</em> adopted; the blob excludes memory by design — that half is <code>get_memory</code> / <code>set_memory</code></td>
+</tr>
+<tr>
+<td>✅2️⃣ <code>restore_state(state_json)</code> → throws</td>
+<td>❌ no wrapper yet (issue #17, Wave 2)</td>
+<td>repositions the FSM without firing entry effects — but it requires a loaded behavior, and <code>load_behavior</code> enters <code>init</code> and emits <em>its</em> entry effects, which the host must discard first (<a href="plans/004-cli-run-refactor-and-mcp-server.md">Plan-004 §3.14</a>, whose two-export shape this supersedes). Validates version, behavior fingerprint and state name before writing either field, so a rejected restore leaves the kernel untouched; the only <code>Result</code> on this wasm surface — a bad blob throws rather than no-op&#39;ing silently. <code>prompt_count</code> has no rule of its own (every value is reachable honestly); <code>tick_prompt</code> saturates so a hostile counter cannot overflow or wrap</td>
 </tr>
 <tr>
 <td>✅ <code>Effect::ParseError { message }</code></td>

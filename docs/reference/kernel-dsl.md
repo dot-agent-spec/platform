@@ -222,6 +222,43 @@ type GraphInfo = {
 
 ---
 
+### `serialize_state(): string`
+
+Returns the FSM position as a compact JSON blob, for storage between interactions. Memory is not in it — that half travels through `get_memory()` / `set_memory()`.
+
+```typescript
+engine.serialize_state();
+// '{"v":1,"behavior":"3d9c1a7b0f52e8c4","state":"booking","prompt_count":3}'
+```
+
+| Field | What it is |
+|---|---|
+| `v` | Wire version of the blob's **shape**. Changes only when the kernel changes it. |
+| `behavior` | Fingerprint of the loaded state graph's **shape** — state names, intent targets, offtopic presence, `after N` thresholds. Two agents with the same graph shape share a fingerprint even if their prompt text (`goal`, etc.) differs. |
+| `state` | The active state name. |
+| `prompt_count` | Ticks since the last transition, so `after N prompts` handlers fire on the right turn. |
+
+With no behavior loaded, both string fields come back empty — a blob `restore_state()` refuses.
+
+---
+
+### `restore_state(state_json: string): void`
+
+Repositions the FSM from a blob `serialize_state()` produced, **firing no entry effects**. It validates before writing anything, so a rejected restore leaves the kernel exactly where it stood.
+
+**Throws** when the blob is malformed, carries a version this kernel does not read, was taken from a different behavior (or a revision that changed the state graph), names a state the loaded behavior does not declare, or when no behavior has been loaded yet. This is the only export on this surface that throws; every other one fails silently or returns an empty value.
+
+**Load first, then restore, and drop what the load emits.** `restore_state()` requires a loaded behavior, and `load_behavior()` enters `init` and emits *its* entry effects — describing a state the resumed session already left.
+
+```typescript
+const onLoad = engine.load_behavior(text); // [goal, request_interact] for `init` — discard
+engine.restore_state(blob);                // back where the session stopped
+for (const { domain, key, value } of saved) engine.set_memory(domain, key, JSON.stringify(value));
+engine.send_intent(next);
+```
+
+---
+
 ## WASM → JS (required handlers)
 
 These are the effects the WASM fires through the observer. Each one represents a directive that the JS/LLM runtime **must** implement for the flow to have any effect.

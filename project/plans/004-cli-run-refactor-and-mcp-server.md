@@ -312,14 +312,32 @@ To learn the DSL or protocol:
 
 **Trigger**: user says "run", "test", "execute", or "explain" with a `.agent` path or agent name, or invokes `/dot-agent`.
 
-#### 3.14 Kernel snapshot debt (v0.2)
+#### 3.14 Kernel snapshot debt (v0.2) — **PAID 2026-09-01, in a different shape**
 
-Full kernel snapshot/resume requires two additions in `packages/kernel-dsl/src`:
+Full kernel snapshot/resume required two additions in `packages/kernel-dsl/src`. What this section
+prescribed:
 
 - `get_prompt_count(): number` — exposes `Fsm.prompt_count` via `#[wasm_bindgen]`
 - `restore_state(name: string, count: number): void` — repositions the FSM without firing entry effects
 
-Without this, memory is serializable (`get_memory`/`set_memory`) but the FSM position cannot be faithfully restored. The "replay log" alternative (record all events, re-execute on restore) is deferred due to complexity cost.
+**What shipped instead** (issue #17): the blob pair [RFC-0004](../rfcs/0004-kernel-protocol.md) § State
+serialization names — `serialize_state(): string` and `restore_state(state_json: string)`, throwing on a
+bad blob. Do **not** add `get_prompt_count()` or the two-argument `restore_state` on top of it; they would
+collide with what is there. The deviation was deliberate, for three reasons:
+
+- **The counter cannot desynchronise from the state name when it travels inside the same blob.** As two
+  separate exports, a host that stored one and dropped the other resumes an FSM whose `after N prompts`
+  handlers fire on the wrong turn, with nothing to detect it.
+- **A positional signature has nowhere to put a version stamp or a behavior fingerprint.** The blob
+  carries both, so a snapshot from an older kernel, from another agent, or from a revision that changed
+  the state graph is refused rather than applied on a bare state-name match.
+- **`restore_state(name, count)` cannot fail loudly about the blob**, because there is no blob — only two
+  values already parsed by the caller.
+
+The "replay log" alternative (record all events, re-execute on restore) stays deferred due to complexity
+cost, and the shipped blob carries **no transition history**: restore repositions, it does not replay.
+Current shape and its call order: [`implementation-status.md`](../implementation-status.md) kernel-dsl
+exports table and `packages/kernel-dsl/README.md`.
 
 ---
 
@@ -410,6 +428,17 @@ Without this, memory is serializable (`get_memory`/`set_memory`) but the FSM pos
   `5. Verification` → `Success criteria`, and `Current State` → the `Tracks` checkboxes plus the dated
   static evidence that produced them. Nothing was deleted.
   **Date / Author:** 2026-08-14 / Danilo Borges
+
+- **Decision:** Pay §3.14's snapshot debt with RFC-0004's blob pair, and rewrite §3.14 to say so, rather
+  than build the `get_prompt_count()` + `restore_state(name, count)` it prescribed.
+  **Rationale:** the counter and the state name must not be separable — a host that persists one and drops
+  the other resumes an FSM whose `after N prompts` handlers fire on the wrong turn, undetectably. A
+  positional signature also has nowhere to carry a version stamp or a behavior fingerprint, and the
+  fingerprint is what stops one agent's position from restoring into another agent that reuses a state
+  name. The alternative — leaving §3.14 open beside the shipped pair — is the drift this repository names
+  as its main failure mode: the next reader implements a superseded signature that collides with what is
+  already there.
+  **Date / Author:** 2026-09-01 / Danilo Borges
 
 ## Outcomes & Retrospective
 
