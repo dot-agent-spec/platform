@@ -13,8 +13,8 @@ vibe-ops-template: rfc@2
 -->
 
 <!--
- RFC TEMPLATE — copy to rfcs/<NNNN>-<kebab-name>.md and fill in. Note the folder is `rfcs/`, plural.
- An RFC answers "should we do X, and how?". It requires ratification (see rfcs/AGENTS.md).
+ RFC TEMPLATE — copy to rfc/<NNNN>-<kebab-name>.md and fill in.
+ An RFC answers "should we do X, and how?". It requires ratification (see rfc/AGENTS.md).
  Delete these HTML comments before committing, and keep the section order. The `vibe-ops-template` line
  in the frontmatter at the top of this file STAYS: /vibe-ops:migrate reads it to find artifacts written
  against an older template, and removing it makes this file invisible to migration.
@@ -29,15 +29,6 @@ vibe-ops-template: rfc@2
 | Author | Your Name |
 | Depends on | <!-- RFC-XXXX, or remove the row --> |
 | Related | <!-- RFC-XXXX, or remove the row --> |
-
-<!-- Package impact table — see rfcs/AGENTS.md for the symbol legend (— · ⚠️ · 🔄 · ?). -->
-<!-- All `?` cells must be resolved before this RFC moves Draft → Review. -->
-
-| tree-sitter (L0) | parser-dsl (L1) | compiler (L2) | kernel-dsl (L2) | sdk (L3) | language-server (L3) |
-|---|---|---|---|---|---|
-| — | — | — | — | — | — |
-
-<!-- If it touches packages outside the core five, add: > **Also impacts:** transpiler-core, dot-agent-cli -->
 
 ---
 

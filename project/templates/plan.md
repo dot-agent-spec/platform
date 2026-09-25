@@ -13,8 +13,7 @@ vibe-ops-template: plan@3
 -->
 
 <!--
- PLAN TEMPLATE — copy to plans/<NNN>-<slug>.md. Numbering is plain NNN, NOT the DA scheme
- (that is for ADRs and pre-release logs only) — see .agents/rules/governance.md.
+ PLAN TEMPLATE — copy to plans/<NNN>-<slug>.md.
  A plan answers "how do we build X?". An RFC asks "should we, and how?"; a task dossier is ephemeral.
  A plan is PERMANENT: it stays as the design record after the work ships.
 

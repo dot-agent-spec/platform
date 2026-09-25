@@ -31,7 +31,12 @@ cd "$ROOT" || exit 2
 export NODE_OPTIONS="${NODE_OPTIONS:-} --no-warnings"
 
 RC=0
-for ops in check agents-md governance; do
+# `agents-md` is BOTH a module noun and an ops id, and the module wins the dispatch: `vibe-ops agents-md`
+# refuses for want of a subcommand and exits 2, so this loop propagated that code and every commit here
+# was refused whatever was staged — the refusal reading as a typo rather than as a gate that had stopped.
+# The full specifier reaches the ops unambiguously. Filed as entelekheia-ai/vibe-ops#28; when that lands,
+# the short name can come back.
+for ops in check @entelekheia/vibe-ops-agents-md governance; do
   if [ "${GATE_VERBOSE:-}" = "1" ]; then
     vibe-ops "$ops" --verbose || RC=$?
   else
