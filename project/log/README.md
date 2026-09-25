@@ -11,6 +11,12 @@ Written with `/vibe-ops:new-log`, never by hand. The lifecycle is
   — `rm` on a `.claude/` bridge symlink reports the failure mode of a Windows checkout, so the error text
   sends a reader to fix a problem they do not have.
 
+## Nested `AGENTS.md` + `vibeops.config.ts`
+
+- [`declaring-a-pairing-exception-after-the-agents-md-write.md`](declaring-a-pairing-exception-after-the-agents-md-write.md)
+  — a nested `AGENTS.md` that must stay unpaired was written before its pairing exception was declared, and
+  the authoring hook created the sibling `CLAUDE.md` the repository had ruled out.
+
 ## `tools/wasi-stub/`
 
 - [`wasi-stub-removed-then-restored-vendored.md`](wasi-stub-removed-then-restored-vendored.md) — wasi-stub
