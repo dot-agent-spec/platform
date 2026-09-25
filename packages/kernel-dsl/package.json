@@ -68,7 +68,7 @@
     "test:node": "node --test tests/*.test.js"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.2"
   },
   "publishConfig": {
     "access": "public"
