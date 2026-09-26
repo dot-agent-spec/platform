@@ -1028,7 +1028,7 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <td>-</td>
 <td><img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/kernel-dsl</td>
 <td>🔄 dependency</td>
-<td>dual build: <code>pkg/</code> (node) + <code>pkg-web/</code> (browser)</td>
+<td>one build in <code>pkg/</code>; <code>init()</code> picks the loader at runtime with <code>isNodeRuntime()</code> — <code>readFile</code> on Node, <code>fetch</code> in browsers and workers (<code>src/ts/index.ts</code>)</td>
 </tr>
 <tr>
 <td>🔄 dependency</td>

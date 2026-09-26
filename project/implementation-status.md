@@ -111,7 +111,7 @@ Legend:
 
 | ☑️ tree-sitter | ☑️ parser-dsl | compiler | kernel-dsl | sdk | Notes |
 |---|---|---|---|---|---|
-| 🔄 dependency (🦀 `language_*` + `NODE_TYPES_BEHAVIOR`) | 🔄 dependency (🦀 rlib: `parse_behavior`, `parse_description`, `mod ast`) | - | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/kernel-dsl | 🔄 dependency | dual build: `pkg/` (node) + `pkg-web/` (browser) |
+| 🔄 dependency (🦀 `language_*` + `NODE_TYPES_BEHAVIOR`) | 🔄 dependency (🦀 rlib: `parse_behavior`, `parse_description`, `mod ast`) | - | <img src="https://openmoji.org/data/color/svg/E06A.svg" alt="wasm" width="24"> @dot-agent/kernel-dsl | 🔄 dependency | one build in `pkg/`; `init()` picks the loader at runtime with `isNodeRuntime()` — `readFile` on Node, `fetch` in browsers and workers (`src/ts/index.ts`) |
 | 🔄 dependency | 🔄 dependency | - | 🦀 dot-agent-kernel-dsl (rlib, not published) | 🔄 dependency | links parser-dsl + tree-sitter crates directly |
 
 | ☑️✅🔥 kernel-dsl (wasm) | sdk | Notes |
