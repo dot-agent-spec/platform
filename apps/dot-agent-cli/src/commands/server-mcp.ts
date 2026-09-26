@@ -30,9 +30,17 @@ function registerDevTools(server: McpServer) {
     name: z.string().optional(),
     domain: z.string().optional(),
     dir: z.string().optional(),
-  }, async ({ name, domain, dir }) => {
-    const res = await init({ name, domain, dir })
-    return { content: [{ type: 'text', text: JSON.stringify({ ok: true, ...res }) }] }
+    force: z.boolean().optional(),
+  }, async ({ name, domain, dir, force }) => {
+    try {
+      const res = await init({ name, domain, dir, force })
+      return { content: [{ type: 'text', text: JSON.stringify({ ok: true, ...res }) }] }
+    } catch (err: any) {
+      // Only the collision refusal becomes a result; anything else still fails the call.
+      if (err?.code !== 'INIT_COLLISION') throw err
+      const reason = `${err.message}\nPass \`force: true\` to overwrite.`
+      return { content: [{ type: 'text', text: JSON.stringify({ ok: false, reason }) }] }
+    }
   })
 
   server.tool('dot_agent_pack', 'Validate and build a .agent file', {

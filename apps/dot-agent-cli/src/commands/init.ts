@@ -76,10 +76,14 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
   if (!force) {
     const collisions = relPaths.filter(rel => existsSync(join(dir, rel)))
     if (collisions.length > 0) {
-      throw new Error(
-        `Refusing to overwrite existing files in ${dir}:\n` +
-          collisions.map(rel => `  ${join(dir, rel)}`).join('\n') +
-          `\nUse --force to overwrite.`
+      // No "how to override" hint here: the CLI names `--force`, the MCP tool names its
+      // `force` parameter, and each surface appends its own on seeing this code.
+      throw Object.assign(
+        new Error(
+          `Refusing to overwrite existing files in ${dir}:\n` +
+            collisions.map(rel => `  ${join(dir, rel)}`).join('\n')
+        ),
+        { code: 'INIT_COLLISION', collisions }
       )
     }
   }
