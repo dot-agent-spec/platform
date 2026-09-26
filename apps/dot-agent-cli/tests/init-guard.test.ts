@@ -83,6 +83,28 @@ describe('init refuses to overwrite an existing file', () => {
     expect(await readFile(desc, 'utf-8')).toBe(SENTINEL)
   })
 
+  // Issue #47's follow-up review: server-mcp.test.ts mocks init(), so a wording regression in the
+  // real init() would slip past it unnoticed. This tests the real exported init() directly: the
+  // thrown error must carry a stable code and the raw collision list (so each surface — CLI,
+  // MCP — can append its own override hint), and the message itself must name neither surface's
+  // spelling of the override, since init() doesn't know which surface reached it.
+  it('the collision error carries INIT_COLLISION and the raw collisions, with no override hint', async () => {
+    await writeFile(join(dir, 'LICENSE'), SENTINEL)
+
+    let caught: any
+    try {
+      await init({ dir })
+    } catch (err) {
+      caught = err
+    }
+
+    expect(caught).toBeDefined()
+    expect(caught.code).toBe('INIT_COLLISION')
+    expect(caught.collisions).toEqual(['LICENSE'])
+    expect(caught.message).not.toMatch(/--force/)
+    expect(caught.message).not.toMatch(/force:/i)
+  })
+
   it('overwrites when force is set', async () => {
     const license = join(dir, 'LICENSE')
     await writeFile(license, SENTINEL)

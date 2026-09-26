@@ -2,6 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { startDevMcpServer } from '../src/commands/server-mcp.js'
+import { init } from '../src/commands/init.js'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 // Mock the commands
@@ -132,6 +133,36 @@ describe('server-mcp command', () => {
         delete process.env.CLAUDECODE
       }
     }
+  })
+
+  it('dot_agent_init exposes a force parameter and refuses without it using MCP wording, not --force (issue #47)', async () => {
+    await startDevMcpServer({ transport: 'stdio', port: 3000 })
+
+    const mockedInit = vi.mocked(init)
+
+    // Without force: init() refuses with an INIT_COLLISION error carrying no surface hint; the
+    // tool reports it as a result naming its own `force` parameter, never the CLI flag.
+    mockedInit.mockRejectedValueOnce(
+      Object.assign(new Error('Refusing to overwrite existing files in /mock/dir:\n  /mock/dir/LICENSE'), {
+        code: 'INIT_COLLISION',
+      })
+    )
+    const refused = await registeredTools['dot_agent_init']({ dir: '/mock/dir' })
+    const parsedRefused = JSON.parse(refused.content[0].text)
+    expect(parsedRefused.ok).toBe(false)
+    expect(parsedRefused.reason).toMatch(/\/mock\/dir\/LICENSE/)
+    expect(parsedRefused.reason).not.toMatch(/--force/)
+    expect(parsedRefused.reason).toMatch(/`force: true`/)
+
+    // Any other failure still fails the call instead of being folded into a result.
+    mockedInit.mockRejectedValueOnce(new Error('EACCES: permission denied'))
+    await expect(registeredTools['dot_agent_init']({ dir: '/mock/dir' })).rejects.toThrow(/EACCES/)
+
+    // With force: true, the same collision succeeds — init() is called with force forwarded.
+    mockedInit.mockResolvedValueOnce({ dir: '/mock/dir', files: ['file1'] })
+    const overwritten = await registeredTools['dot_agent_init']({ dir: '/mock/dir', force: true })
+    expect(mockedInit).toHaveBeenLastCalledWith({ name: undefined, domain: undefined, dir: '/mock/dir', force: true })
+    expect(JSON.parse(overwritten.content[0].text)).toEqual({ ok: true, dir: '/mock/dir', files: ['file1'] })
   })
 
   it('runtime tools report no agent loaded before load_agent is called', async () => {

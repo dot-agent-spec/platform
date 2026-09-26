@@ -9,7 +9,7 @@ import * as p from '@clack/prompts'
 
 import { version } from './version.js'
 import { init, pack, unpack, run, configure, startDevMcpServer, listAgents, getAgentPath } from './index.js'
-import { USAGE, parseInitArgs, wantsHelp } from './cli-args.js'
+import { USAGE, parseInitArgs, parsePackArgs, parseUnpackArgs, parseRunArgs, parseConfigureArgs, parseServerMcpArgs, wantsHelp } from './cli-args.js'
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -46,17 +46,14 @@ async function main() {
     if (command === 'init') {
       const options = parseInitArgs(args.slice(1))
 
-      const result = await init(options)
+      const result = await init(options).catch((err: any) => {
+        if (err?.code === 'INIT_COLLISION') err.message += '\nUse --force to overwrite.'
+        throw err
+      })
       formatSuccess(`Scaffolded agent project in ${result.dir}`)
       console.log(`  Files: ${result.files.join(', ')}`)
     } else if (command === 'pack') {
-      const options: any = {}
-      for (let i = 1; i < args.length; i++) {
-        if (args[i] === '--dir' && i + 1 < args.length) options.dir = args[++i]
-        if (args[i] === '--out' && i + 1 < args.length) options.out = args[++i]
-        if (args[i] === '--commit' && i + 1 < args.length) options.commit = args[++i]
-        if (args[i] === '--version' && i + 1 < args.length) options.version = args[++i]
-      }
+      const options = parsePackArgs(args.slice(1))
 
       const result = await pack(options)
       formatSuccess(`Packed → ${result.path}`)
@@ -68,29 +65,14 @@ async function main() {
         })
       }
     } else if (command === 'unpack') {
-      const file = args[1]
-      if (!file) {
-        formatError('Usage: dot-agent unpack <file.agent> [--out <dir>] [--force]')
-        process.exit(1)
-      }
-
-      const options: any = { file }
-      for (let i = 2; i < args.length; i++) {
-        if (args[i] === '--out' && i + 1 < args.length) options.out = args[++i]
-        if (args[i] === '--force') options.force = true
-      }
+      const options = parseUnpackArgs(args.slice(1))
 
       const result = await unpack(options)
       formatSuccess(`Unpacked to ${result.dir}`)
       console.log(`  ID: ${result.id}`)
       console.log(`  Files: ${result.files.length}`)
     } else if (command === 'configure') {
-      const claude = args.includes('--claude')
-      const gemini = args.includes('--gemini')
-      const agy = args.includes('--agy')
-      const murici = args.includes('--murici')
-      const skill = args.includes('--skill')
-      const mcp = args.includes('--mcp')
+      const { claude, gemini, agy, murici, skill, mcp } = parseConfigureArgs(args.slice(1))
 
       const hasTarget = claude || gemini || agy || murici
 
@@ -203,11 +185,9 @@ async function main() {
         formatWarning('Restart Claude Code / reconnect your MCP client for the change to take effect.')
       }
     } else if (command === 'server-mcp') {
-      const mcpTransportIdx = args.indexOf('--mcp-transport')
-      const mcpPortIdx = args.indexOf('--mcp-port')
-
-      let mcpTransport = mcpTransportIdx !== -1 ? args[mcpTransportIdx + 1] as 'stdio' | 'http' : undefined
-      let mcpPort = mcpPortIdx !== -1 ? parseInt(args[mcpPortIdx + 1], 10) : undefined
+      const parsed = parseServerMcpArgs(args.slice(1))
+      let mcpTransport = parsed.mcpTransport
+      let mcpPort = parsed.mcpPort
 
       if (!mcpTransport) {
         if (!process.stdout.isTTY || !process.stdin.isTTY) {
@@ -259,27 +239,13 @@ async function main() {
         port: mcpPort ?? 3000,
       })
     } else if (command === 'run') {
-      const isHelper = args.includes('--helper')
-      const sourceArg = isHelper ? undefined : args[1]
-
-      if (!isHelper && !sourceArg) {
-        formatError('Usage: dot-agent run <file.agent | dir> [--mcp] [--mcp-transport stdio|http] [--mcp-port <n>]')
-        formatError('       dot-agent run --helper [--mcp-transport stdio|http] [--mcp-port <n>]')
-        process.exit(1)
-      }
-
-      const runArgs = isHelper ? args.slice(1) : args.slice(2)
-      const mcp = runArgs.includes('--mcp') || isHelper
-      const mcpTransportIdx = runArgs.indexOf('--mcp-transport')
-      const mcpPortIdx = runArgs.indexOf('--mcp-port')
-      const mcpTransport = mcpTransportIdx !== -1 ? runArgs[mcpTransportIdx + 1] as 'stdio' | 'http' : undefined
-      const mcpPort = mcpPortIdx !== -1 ? parseInt(runArgs[mcpPortIdx + 1], 10) : undefined
+      const options = parseRunArgs(args.slice(1))
 
       const helperAsset = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'helper.agent')
-      const source = isHelper ? helperAsset : sourceArg!
+      const source = options.helper ? helperAsset : options.source!
 
-      const result = await run({ source, mcp, mcpTransport, mcpPort })
-      if (!mcp) {
+      const result = await run({ source, mcp: options.mcp, mcpTransport: options.mcpTransport, mcpPort: options.mcpPort })
+      if (!options.mcp) {
         formatSuccess(`Agent loaded: ${result.bundle.id}`)
         console.log(`  State: ${result.session.getState()}`)
       }
