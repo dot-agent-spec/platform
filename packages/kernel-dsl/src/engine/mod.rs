@@ -236,6 +236,15 @@ impl AgentDSLKernel {
         self.memory.set_raw(domain, key, value);
     }
 
+    /// Empty the whole memory store — all four domains — without touching the FSM.
+    ///
+    /// `set_memory` can only add or overwrite, so without this a host rehydrating a session could
+    /// not remove what `load_behavior`'s run of the init entry wrote. The rehydration sequence
+    /// calls it after the load and before re-injecting the saved memory.
+    pub fn clear_memory(&mut self) {
+        self.memory.clear_all();
+    }
+
     pub fn get_graph(&self) -> Option<String> {
         self.fsm.as_ref().map(|f| f.get_graph())
     }
@@ -273,10 +282,11 @@ impl AgentDSLKernel {
     /// `load_behavior` enters the init state, so its entry effects (typically `Goal` +
     /// `RequestInteract`) are emitted before the position can be corrected. Those effects
     /// belong to a state the session is no longer in: **discard them**, then restore. The
-    /// sequence is `load_behavior` → drop its effects → `restore_state` → `set_memory` →
-    /// `send_intent`.
+    /// sequence is `load_behavior` → drop its effects → `clear_memory` → `restore_state` →
+    /// `set_memory` → `send_intent`.
     ///
-    /// Memory is untouched by design; the host re-injects it with `set_memory`.
+    /// Memory is untouched by design; the host clears what the load wrote with `clear_memory`
+    /// and re-injects the saved memory with `set_memory`.
     pub fn restore_state(&mut self, snap: &fsm::FsmSnapshot) -> Result<(), String> {
         match &mut self.fsm {
             Some(fsm) => fsm.restore(snap),
@@ -923,6 +933,36 @@ mod tests {
         let snap = snap_for(&k, "ended", 0);
         k.restore_state(&snap).expect("a native state is a legal position, like transition_to's");
         assert_eq!(k.get_current_state(), "ended");
+    }
+
+    #[test]
+    fn clear_memory_empties_every_domain_and_leaves_the_fsm_alone() {
+        // The rehydration case: the load ran init's entry, which wrote memory the snapshot may
+        // not hold. clear_memory has to leave nothing behind in any of the four domains.
+        let dsl = concat!(
+            "state init\n",
+            "  set session.visits += 1\n",
+            "  set context.stage = \"planning\"\n",
+            "  interact\n",
+            "  on intent \"next\" transition to detail\n",
+            "state detail\n",
+            "  interact\n",
+        );
+        let mut k = AgentDSLKernel::new();
+        k.set_memory("user", "name", MemValue::Str("Ana".into()));
+        k.set_memory("worksession", "flag", MemValue::Bool(true));
+        k.load_behavior(dsl).expect("DSL should parse");
+        assert_eq!(k.get_memory().entries.len(), 4, "the setup must populate all four domains");
+
+        k.clear_memory();
+        assert!(k.get_memory().entries.is_empty(), "every domain must be empty after clear_memory");
+        assert_eq!(k.get_current_state(), "init", "clearing memory must not move the FSM");
+
+        k.set_memory("session", "visits", MemValue::Num(7.0));
+        let after = k.get_memory();
+        assert_eq!(after.entries.len(), 1, "the store must stay writable after a clear");
+        k.send_intent("next");
+        assert_eq!(k.get_current_state(), "detail");
     }
 
     #[test]
