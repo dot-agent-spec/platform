@@ -67,7 +67,10 @@ async function main() {
     } else if (command === 'unpack') {
       const options = parseUnpackArgs(args.slice(1))
 
-      const result = await unpack(options)
+      const result = await unpack(options).catch((err: any) => {
+        if (err?.code === 'UNPACK_EXISTS') err.message += ' Use --force to overwrite.'
+        throw err
+      })
       formatSuccess(`Unpacked to ${result.dir}`)
       console.log(`  ID: ${result.id}`)
       console.log(`  Files: ${result.files.length}`)

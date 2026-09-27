@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { startDevMcpServer } from '../src/commands/server-mcp.js'
 import { init } from '../src/commands/init.js'
+import { unpack } from '../src/commands/unpack.js'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 // Mock the commands
@@ -163,6 +164,25 @@ describe('server-mcp command', () => {
     const overwritten = await registeredTools['dot_agent_init']({ dir: '/mock/dir', force: true })
     expect(mockedInit).toHaveBeenLastCalledWith({ name: undefined, domain: undefined, dir: '/mock/dir', force: true })
     expect(JSON.parse(overwritten.content[0].text)).toEqual({ ok: true, dir: '/mock/dir', files: ['file1'] })
+  })
+
+  it('dot_agent_unpack refuses an existing directory naming its force parameter, not --force (issue #66)', async () => {
+    await startDevMcpServer({ transport: 'stdio', port: 3000 })
+
+    const mockedUnpack = vi.mocked(unpack)
+    mockedUnpack.mockRejectedValueOnce(
+      Object.assign(new Error('Output directory already exists: /mock/out.'), { code: 'UNPACK_EXISTS', dir: '/mock/out' })
+    )
+    const refused = await registeredTools['dot_agent_unpack']({ file: 'a.agent', out: '/mock/out' })
+    const parsed = JSON.parse(refused.content[0].text)
+    expect(parsed.ok).toBe(false)
+    expect(parsed.reason).toMatch(/\/mock\/out/)
+    expect(parsed.reason).not.toMatch(/--force/)
+    expect(parsed.reason).toMatch(/`force: true`/)
+
+    // Any other failure still fails the call instead of being folded into a result.
+    mockedUnpack.mockRejectedValueOnce(new Error('Missing .agent/aboutme.json in ZIP'))
+    await expect(registeredTools['dot_agent_unpack']({ file: 'a.agent' })).rejects.toThrow(/aboutme/)
   })
 
   it('runtime tools report no agent loaded before load_agent is called', async () => {

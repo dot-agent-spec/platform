@@ -444,4 +444,17 @@ describe('unpack -> pack round trip', () => {
     const second = await readArchive(secondArchive)
     expect(second.behavior).toBe(first.behavior)
   })
+
+  it('refuses an existing output directory with a coded error that names no surface, and overwrites with force (issue #66)', async () => {
+    const f = await roundTrip(description('behavior main.behavior'), { 'main.behavior': MAIN })
+    const err: any = await unpack({ file: f.firstArchive, out: f.unpackedDir }).catch(e => e)
+    expect(err).toBeInstanceOf(Error)
+    expect(err.code).toBe('UNPACK_EXISTS')
+    expect(err.dir).toBe(f.unpackedDir)
+    expect(err.message).toContain(f.unpackedDir)
+    expect(err.message).not.toMatch(/--force|force:/)
+
+    const again = await unpack({ file: f.firstArchive, out: f.unpackedDir, force: true })
+    expect(again.dir).toBe(f.unpackedDir)
+  })
 })

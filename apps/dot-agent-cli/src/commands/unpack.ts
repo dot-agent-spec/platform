@@ -129,14 +129,20 @@ export async function unpack(options: UnpackOptions): Promise<UnpackResult> {
   // Extract output directory
   const outDir = out || `./${aboutme.name}`
 
-  // Check if directory exists
+  // Check if directory exists. No "how to override" hint in the refusal: the CLI names `--force`,
+  // the MCP tool names its `force` parameter, and each surface appends its own on seeing the code.
+  let exists = true
   try {
     await stat(outDir)
-    if (!force) {
-      throw new Error(`Output directory already exists: ${outDir}. Use --force to overwrite.`)
-    }
   } catch (err: any) {
     if (err.code !== 'ENOENT') throw err
+    exists = false
+  }
+  if (exists && !force) {
+    throw Object.assign(new Error(`Output directory already exists: ${outDir}.`), {
+      code: 'UNPACK_EXISTS',
+      dir: outDir,
+    })
   }
 
   // Extract all files from root
@@ -155,6 +161,9 @@ export async function unpack(options: UnpackOptions): Promise<UnpackResult> {
     const descPath = filesManifest?.description
 
     if (descPath && files.has(descPath)) {
+      // parseDescriptionFile runs on the same wasm module as the behavior parser, and nothing
+      // else in a bare `unpack` process has initialised it.
+      await initBehaviorParser()
       const descResult = parseDescriptionFile(files.get(descPath)!)
       const entryRelPath = descResult.ok?.behavior
 

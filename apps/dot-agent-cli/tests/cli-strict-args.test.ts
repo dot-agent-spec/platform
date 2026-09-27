@@ -120,3 +120,20 @@ describe('dot-agent init names its own override on refusal (issue #47)', () => {
     }
   })
 })
+
+describe('dot-agent unpack names its own override on refusal (issue #66)', () => {
+  it('unpacking into an existing directory is refused and points at --force', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'dot-agent-cli-unpack-exists-'))
+    try {
+      expect((await runCli(['init', '--dir', join(dir, 'src')], dir)).code).toBe(0)
+      expect((await runCli(['pack', '--dir', join(dir, 'src'), '--out', join(dir, 'a.agent')], dir)).code).toBe(0)
+      expect((await runCli(['unpack', join(dir, 'a.agent'), '--out', join(dir, 'u')], dir)).code).toBe(0)
+      const { code, stdout, stderr } = await runCli(['unpack', join(dir, 'a.agent'), '--out', join(dir, 'u')], dir)
+      expect(code).not.toBe(0)
+      expect(stdout + stderr).toMatch(/Output directory already exists/)
+      expect(stdout + stderr).toMatch(/Use --force to overwrite\./)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+})
