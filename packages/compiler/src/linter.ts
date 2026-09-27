@@ -21,7 +21,11 @@ const MISSING_HINTS: Record<string, string> = {
   quoted_string: "Missing quoted string — expected a value in double quotes.",
 }
 
-function collectSyntaxErrors(root: Node, messages: LintMessage[], file: string): void {
+function collectSyntaxErrors(
+  root: Node,
+  messages: LintMessage[],
+  file: string,
+): void {
   const seen = new Set<string>()
 
   function push(node: Node, message: string, code: string, severity: 'error' | 'warning' = 'error') {
@@ -248,8 +252,11 @@ export async function lintBehavior(
     if (stateNode.hasError) continue
     const nameNode = stateNode.childForFieldName('name')
     const stateName = nameNode?.text ?? '?'
-    const hasInteract = stateNode.descendantsOfType('interact_stmt').length > 0
+    const interactStmts = stateNode.descendantsOfType('interact_stmt')
+    const hasInteract = interactStmts.length > 0
     const hasGoal = stateNode.descendantsOfType('goal_stmt').length > 0
+    const hasGuide = stateNode.descendantsOfType('guide_stmt').length > 0
+    const hasTeach = stateNode.descendantsOfType('teach_stmt').length > 0
     const intentHandlers = stateNode.descendantsOfType('intent_handler')
 
     // W013: interact without goal (supersedes E008 — downgraded to warning)
@@ -261,13 +268,65 @@ export async function lintBehavior(
       })
     }
 
-    // W012: goal without interact
-    if (hasGoal && !hasInteract) {
+    // W012: goal/guide/teach without interact (ADR DA00-09: an Oriented
+    // State carries goal/guide/teach only alongside 'interact'; a state with
+    // none of these three is a Setup State and this rule doesn't apply to it).
+    const presentOrientationNames = (
+      [hasGoal && 'goal', hasGuide && 'guide', hasTeach && 'teach'] as const
+    ).filter((n): n is 'goal' | 'guide' | 'teach' => n !== false)
+    if (presentOrientationNames.length > 0 && !hasInteract) {
       const { line, col } = nodePosition(nameNode ?? stateNode)
+      const list = presentOrientationNames.map(n => `'${n}'`).join(', ')
+      const isPlural = presentOrientationNames.length > 1
       messages.push({
         file, line, col, severity: 'warning', code: 'W012',
-        message: `'goal' is only valid in an oriented state. Add 'interact' or remove 'goal'.`,
+        message: `${list} ${isPlural ? 'are' : 'is'} only valid in an oriented state. Add 'interact' or remove ${isPlural ? 'them' : 'it'}.`,
       })
+    }
+
+    // W017: duplicate 'interact' in the same state, before the first
+    // state-level 'transition to'. The kernel's exec_entry_statements
+    // (fsm.rs) executes a state's entry statements in order and stops as
+    // soon as current_state changes — so an 'interact' that comes after a
+    // state-level transition never runs in that entry batch; only the ones
+    // preceding the first transition can both fire and emit a second
+    // 'request_interact' effect, which is what this rule flags (ADR
+    // DA00-09).
+    const bodyStmts = (stateNode.childForFieldName('body')?.children ?? []).filter(
+      (n): n is Node => n !== null,
+    )
+    const firstTransitionIndex = bodyStmts.findIndex(n => n.type === 'transition_stmt')
+    const interactsBeforeFirstTransition = bodyStmts.filter(
+      (n, i) => n.type === 'interact_stmt' && (firstTransitionIndex === -1 || i < firstTransitionIndex),
+    )
+    if (interactsBeforeFirstTransition.length > 1) {
+      for (const dup of interactsBeforeFirstTransition.slice(1)) {
+        const { line, col } = nodePosition(dup)
+        messages.push({
+          file, line, col, severity: 'warning', code: 'W017',
+          message: `Duplicate 'interact' in state '${stateName}' before any transition. Only one 'interact' is allowed per state before a 'transition to' — a second one, still reachable in the same entry batch, emits a second 'request_interact' effect with no dedupe at the host layer.`,
+        })
+      }
+    }
+
+    // W018: an entry statement after a state-level 'transition to' another state never runs —
+    // exec_entry_statements (fsm.rs) stops the entry batch as soon as current_state changes, the
+    // way code after a `return` never runs. A transition to the state itself does not change
+    // current_state, so it cuts nothing; a transition inside `if` is conditional, so it cuts
+    // nothing either; handlers are not entry statements and stay reachable declarations.
+    const leavingIndex = bodyStmts.findIndex(
+      n => n.type === 'transition_stmt' && n.childForFieldName('state')?.text !== stateName,
+    )
+    if (leavingIndex !== -1) {
+      const target = bodyStmts[leavingIndex].childForFieldName('state')?.text ?? '?'
+      for (const stmt of bodyStmts.slice(leavingIndex + 1)) {
+        if (stmt.type === 'intent_handler' || stmt.type === 'offtopic_handler' || stmt.type === 'comment') continue
+        const { line, col } = nodePosition(stmt)
+        messages.push({
+          file, line, col, severity: 'warning', code: 'W018',
+          message: `Unreachable: state '${stateName}' leaves for '${target}' on entry before this statement runs. Everything after a state-level 'transition to' is skipped, like code after a return — move it before the transition or remove it.`,
+        })
+      }
     }
 
     // E009: oriented state with no on intent handlers

@@ -190,3 +190,166 @@ describe('lintBehavior — file label', () => {
     msgs.forEach(m => expect(m.file).toBe('agent.behavior'))
   })
 })
+
+// ── W012: goal/guide/teach without interact (ADR DA00-09) ────────────────────
+
+describe('lintBehavior — W012 orientation statements without interact', () => {
+  it('warns W012 for guide with no interact in the state', async () => {
+    const src = `\
+state init
+  guide "top"
+  on intent "x" transition to init
+`
+    const msgs = await lintBehavior(src)
+    const w012 = msgs.filter(m => m.code === 'W012')
+    expect(w012).toHaveLength(1)
+    expect(w012[0].message).toMatch(/'guide'/)
+  })
+
+  it('warns W012 for teach with no interact in the state', async () => {
+    const src = `\
+state init
+  teach "knowledge/about.md"
+  on intent "x" transition to init
+`
+    const msgs = await lintBehavior(src)
+    expect(msgs.filter(m => m.code === 'W012')).toHaveLength(1)
+  })
+
+  it('does NOT warn W012 for a Setup State with no orientation at all', async () => {
+    const src = `\
+state init
+  transition to responsive
+
+state responsive
+  goal "Ready."
+  interact
+  on intent "x" transition to init
+  on offtopic transition to responsive
+`
+    const msgs = await lintBehavior(src)
+    expect(msgs.filter(m => m.code === 'W012')).toHaveLength(0)
+  })
+
+  it('does NOT warn W012 when interact is present alongside goal/guide/teach', async () => {
+    const msgs = await lintBehavior(VALID_BEHAVIOR)
+    expect(msgs.filter(m => m.code === 'W012')).toHaveLength(0)
+  })
+})
+
+// ── W017: duplicate interact in one state (ADR DA00-09) ──────────────────────
+
+describe('lintBehavior — W017 duplicate interact', () => {
+  it('warns W017 for two interact statements in the same state', async () => {
+    const src = `\
+state responsive
+  goal "Ready."
+  interact
+  interact
+  on intent "x" transition to responsive
+  on offtopic transition to responsive
+`
+    const msgs = await lintBehavior(src)
+    const w017 = msgs.filter(m => m.code === 'W017')
+    expect(w017).toHaveLength(1)
+    expect(w017[0].message).toMatch(/Duplicate 'interact'/)
+  })
+
+  it('does NOT warn W017 for a single interact', async () => {
+    const msgs = await lintBehavior(VALID_BEHAVIOR)
+    expect(msgs.filter(m => m.code === 'W017')).toHaveLength(0)
+  })
+
+  it('does NOT warn W017 when the second interact follows a state-level transition (unreachable in the same entry batch)', async () => {
+    const src = `\
+state responsive
+  goal "Ready."
+  interact
+  transition to init
+  interact
+  on intent "x" transition to responsive
+  on offtopic transition to responsive
+`
+    const msgs = await lintBehavior(src)
+    expect(msgs.filter(m => m.code === 'W017')).toHaveLength(0)
+  })
+})
+
+// ── W018: entry statements after a state-level transition never run ─────────
+
+describe('lintBehavior — W018 unreachable after transition', () => {
+  it('warns W018 on every entry statement after a transition to another state', async () => {
+    const src = `\
+state init
+  transition to responsive
+  set session.visits += 1
+  interact
+
+state responsive
+  goal "Ready."
+  interact
+  on intent "x" transition to responsive
+  on offtopic transition to responsive
+`
+    const msgs = await lintBehavior(src)
+    const w018 = msgs.filter(m => m.code === 'W018')
+    expect(w018.map(m => m.line)).toEqual([3, 4])
+    expect(w018[0].message).toMatch(/Unreachable: state 'init' leaves for 'responsive'/)
+  })
+
+  it('does NOT warn W018 on handlers after the transition — they are declarations, not entry statements', async () => {
+    const src = `\
+state responsive
+  goal "Ready."
+  interact
+  transition to other
+  on intent "x" transition to responsive
+  on offtopic transition to responsive
+
+state other
+  goal "Other."
+  interact
+  on intent "y" transition to responsive
+  on offtopic transition to other
+`
+    const msgs = await lintBehavior(src)
+    expect(msgs.filter(m => m.code === 'W018')).toHaveLength(0)
+  })
+
+  it('does NOT warn W018 after a transition to the state itself, which does not end the entry batch', async () => {
+    const src = `\
+state responsive
+  goal "Ready."
+  transition to responsive
+  interact
+  on intent "x" transition to responsive
+  on offtopic transition to responsive
+`
+    const msgs = await lintBehavior(src)
+    expect(msgs.filter(m => m.code === 'W018')).toHaveLength(0)
+  })
+
+  it('does NOT warn W018 after a transition inside if, which is conditional', async () => {
+    const src = `\
+state init
+  if user.name == null
+    transition to responsive
+  end
+  set session.visits += 1
+  transition to responsive
+
+state responsive
+  goal "Ready."
+  interact
+  on intent "x" transition to responsive
+  on offtopic transition to responsive
+`
+    const msgs = await lintBehavior(src)
+    expect(msgs.filter(m => m.code === 'W018')).toHaveLength(0)
+  })
+
+  it('does NOT warn W018 on a valid behavior', async () => {
+    const msgs = await lintBehavior(VALID_BEHAVIOR)
+    expect(msgs.filter(m => m.code === 'W018')).toHaveLength(0)
+  })
+})
