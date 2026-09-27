@@ -200,16 +200,23 @@ sequenceDiagram
     SDK-->>Runtime: RequestInteract — waiting for user
 
     Note over Runtime, Kernel: Between interactions (eviction model)
-    Runtime->>Kernel: serialize_state()
-    Kernel-->>Runtime: fsm_state_json (small, no memory)
-    Runtime->>Runtime: Evict WASM module from memory
+    Runtime->>SDK: session.snapshot()
+    SDK->>Kernel: serialize_state() + get_memory()
+    SDK-->>Runtime: AgentSnapshot (opaque, JSON-serialisable)
+    Runtime->>Runtime: Store JSON, dispose the session
 
     Note over Runtime, Kernel: Next interaction
-    Runtime->>Kernel: Reload WASM module (from cache)
-    Runtime->>Kernel: restore_state(fsm_state_json)
-    Runtime->>Kernel: inject_memory(...) for all domains
+    Runtime->>SDK: AgentSession.create(bundle) → session.restore(snapshot)
+    SDK->>Kernel: load_behavior(sources) — entry effects discarded
+    SDK->>Kernel: clear_memory() — drop what the init entry wrote
+    SDK->>Kernel: restore_state(fsm_state_json)
+    SDK->>Kernel: set_memory(...) for every stored entry
     Runtime->>SDK: send_intent(next_message)
 ```
+
+`restore()` takes the place of `start()` on a fresh session: it never emits the `init` state's entry
+effects, and a snapshot from another agent, a malformed one or one of an unknown version throws and
+leaves the session unstarted.
 
 ---
 

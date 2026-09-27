@@ -242,6 +242,12 @@ With no behavior loaded, both string fields come back empty — a blob `restore_
 
 ---
 
+### `clear_memory(): void`
+
+Empties the whole memory store — `context`, `session`, `worksession` and `user` — without moving the FSM or emitting effects. `set_memory()` only adds or overwrites, so this is the one way to remove a key. It exists for rehydration: `load_behavior()` runs the `init` entry, whose `set` statements (and those of any state it transitions into on load) write memory the saved session may never have held. Clear, then re-inject, and the restored memory is exactly the saved one.
+
+---
+
 ### `restore_state(state_json: string): void`
 
 Repositions the FSM from a blob `serialize_state()` produced, **firing no entry effects**. It validates before writing anything, so a rejected restore leaves the kernel exactly where it stood.
@@ -252,10 +258,19 @@ Repositions the FSM from a blob `serialize_state()` produced, **firing no entry 
 
 ```typescript
 const onLoad = engine.load_behavior(text); // [goal, request_interact] for `init` — discard
+engine.clear_memory();                     // drop what the init entry just wrote
 engine.restore_state(blob);                // back where the session stopped
-for (const { domain, key, value } of saved) engine.set_memory(domain, key, JSON.stringify(value));
+// saved = JSON.parse(engine.get_memory()).entries, taken beside the blob
+for (const { domain, key, value } of saved) {
+  // set_memory does not unescape: wrap a string in raw quotes, never JSON.stringify it
+  engine.set_memory(domain, key, typeof value === 'string' ? `"${value}"` : String(value));
+}
 engine.send_intent(next);
 ```
+
+`@dot-agent/sdk` runs this whole sequence for you: `session.snapshot()` captures the blob and the
+memory together, and `session.restore(snapshot)` on a fresh `AgentSession` loads, discards, restores
+and re-injects — see the [sdk README](../../packages/sdk/README.md).
 
 ---
 

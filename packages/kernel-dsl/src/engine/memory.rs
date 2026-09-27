@@ -97,6 +97,15 @@ impl MemoryStore {
         self.worksession.clear();
     }
 
+    /// Empty every domain. Destructured so a domain added to the struct cannot be missed here.
+    pub fn clear_all(&mut self) {
+        let MemoryStore { context, session, worksession, user } = self;
+        context.clear();
+        session.clear();
+        worksession.clear();
+        user.clear();
+    }
+
     // Resolve an AST Value to a MemValue, looking up paths in the store.
     pub fn resolve_value(&self, v: &Value) -> MemValue {
         match v {

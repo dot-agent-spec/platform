@@ -197,6 +197,16 @@ impl AgentDSLKernel {
         self.inner.set_memory(domain, key, mem_value);
     }
 
+    /// Empty the whole memory store — every domain — without moving the FSM or emitting effects.
+    ///
+    /// `set_memory` only adds or overwrites; this is the one way to remove a key. It exists for
+    /// rehydration: `load_behavior` runs the init state's entry, whose `set` statements (and those
+    /// of any state it transitions into) write memory the saved session may never have held.
+    /// Clearing before re-injecting makes the restored memory exactly the saved one.
+    pub fn clear_memory(&mut self) {
+        self.inner.clear_memory();
+    }
+
     /// Serialize the FSM position as compact JSON, for storage between interactions.
     ///
     /// Shape: `{"v":1,"behavior":"9f2c…","state":"booking","prompt_count":3}`. The counter
@@ -221,7 +231,8 @@ impl AgentDSLKernel {
     /// behavior, and `load_behavior` enters the init state — so its entry effects reach the
     /// observer before the position is corrected, and describe a state the session has already
     /// left. The rehydration sequence is `load_behavior` → discard its effects →
-    /// `restore_state` → `set_memory` → `send_intent`.
+    /// `clear_memory` → `restore_state` → `set_memory` → `send_intent`. The clear drops what the
+    /// load's run of the init entry wrote, which `set_memory` alone cannot remove.
     pub fn restore_state(&mut self, state_json: &str) -> Result<(), JsError> {
         self.inner.restore_state_json(state_json).map_err(|e| JsError::new(&e))
     }
