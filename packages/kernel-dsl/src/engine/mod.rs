@@ -16,7 +16,7 @@ type FileResolver = Option<Box<dyn Fn(&str) -> Option<String>>>;
 ///
 /// The bundle key is **not** the raw argument. `pack.ts` converts `\` to `/` and strips one leading
 /// `./` before deciding where the file lands, so `teach "./knowledge/cars.md"` packs clean — no
-/// E018, no W015, no W016 — under the key `knowledge/cars.md`. Looking the raw text up would miss
+/// E018, no W015, no E022 — under the key `knowledge/cars.md`. Looking the raw text up would miss
 /// it and hand the host `content: null` with no diagnostic at either end.
 ///
 /// This is normalization, not the prefix/suffix guessing [`lookup_content`] refuses: it maps a
@@ -39,7 +39,7 @@ fn looks_like_file_ref(text: &str) -> bool {
 /// The precedence mirrors `flatten_merges`, which resolves `merge "…"` the same way. The key is
 /// [`normalize_ref_path`] of the effect text and the match on it is **exact**: no suffix matching,
 /// no `knowledge/` prefix guessing, no extension heuristic. The packer bundles a reference at that
-/// normalized path and warns (W016) at pack time when it is unreachable — accepting a looser form
+/// normalized path and refuses to pack (E022) when it would be unreachable — accepting a looser form
 /// here would bless a shape the packer refuses to bundle.
 ///
 /// The resolver is consulted only for text that [`looks_like_file_ref`]. Without that gate a state

@@ -66,7 +66,7 @@ and reference it there.
 - A file in `guides/` or `knowledge/` that no statement names gets `W015` and is **left out** of the
   archive. That is intentional: at runtime the host only ever learns a path from a `teach`/`guide`
   effect, and there is no way to list the knowledge directory, so an unreferenced file is unreachable.
-- A reference that resolves *outside* `guides/`/`knowledge/` is bundled but gets `W016` — those two
+- A reference that resolves *outside* `guides/`/`knowledge/` fails `pack` with `E022` — those two
   directories are the only ones the runtime serves content from, so move it under one of them.
 - Only `.md` and `.txt` count as file references. `teach "some prose"` stays inline literal text.
 

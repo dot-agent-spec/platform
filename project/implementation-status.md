@@ -103,7 +103,7 @@ Legend:
 | ✅1️⃣ `full.pack(options?)` → `Promise<PackResult>` | | | full pipeline; consumed by CLI `pack.ts` |
 | ✅ `full.bundleFromDir(dir)` | | | Node.js; `bundle.ts` — reads an agent directory into an `AgentBundle` without going through a `.agent` ZIP |
 | ✅ `full.initBehaviorParser()` | | | behavior-only parser init; lighter than `initParsers()` |
-| ✅ `full.CONTENT_NAMESPACES` · `isInContentNamespace(p)` · `classifyContentPath(p)` | | 🔄 `sdk` | `namespace.ts` — `guides/` vs `knowledge/` classification; exported from **both** `index` and `core`; backs the linked-only bundling rule (E018/E020/W015/W016) |
+| ✅ `full.CONTENT_NAMESPACES` · `isInContentNamespace(p)` · `classifyContentPath(p)` | | 🔄 `sdk` | `namespace.ts` — `guides/` vs `knowledge/` classification; exported from **both** `index` and `core`; backs the linked-only bundling rule (E018/E020/W015/E022) |
 
 ---
 
@@ -231,8 +231,8 @@ Legend:
 | ✅1️⃣ `merge` | ✅ `merge_decl` | ✅ `BehaviorFile.merges[]` | ✅ resolves for transition lint | ✅ `load_behavior_with_bundle` flattens via bundle (Mode A) or `set_file_resolver` callback (Mode B); missing paths return `Err` | ✅ `files.behaviors[]` passed as bundle; `setFileResolver()` for Mode B fallback |
 | ✅1️⃣ `state` | ✅ `state_decl` | ✅ `StateDef` | ✅ lint + FSM validation | ✅ FSM state map | ✅ transparent via kernel |
 | ✅1️⃣ `goal` | ✅ `goal_stmt` | ✅ `Statement::Goal` | ✅ lint W002 (>280 chars) | ✅ → `Effect::Goal {text}` | ✅ `registerHandler("goal", fn)` |
-| ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W010 (>280 chars) · content-namespace checks E018 (file not found) · E020 (reserved bundle path) · W015 (orphan) · W016 (outside `guides/`/`knowledge/`) | ✅ → `Effect::Guide {text, content}` (`content` = bundled file's text, or null) | ✅ `registerHandler("guide", fn)`; `start()` feeds, unless `resolveContent: false`, `files.guides[]` to `set_content_files` |
-| ✅1️⃣ `teach` | ✅ `teach_stmt` | ✅ `Statement::Teach` | ✅ content-namespace checks E018 · E020 · W015 · W016 (same linked-only rule as `guide`) | ✅ → `Effect::Teach {text, content}`; exact lookup in `set_content_files` on the packer-normalized path, then the file resolver | ✅ `registerHandler("teach", fn)`; `start()` feeds, unless `resolveContent: false`, `files.knowledge[]` to `set_content_files` |
+| ✅1️⃣ `guide` | ✅ `guide_stmt` | ✅ `Statement::Guide` | ✅ lint W010 (>280 chars) · content-namespace checks E018 (file not found) · E020 (reserved bundle path) · W015 (orphan) · E022 (outside `guides/`/`knowledge/`) | ✅ → `Effect::Guide {text, content}` (`content` = bundled file's text, or null) | ✅ `registerHandler("guide", fn)`; `start()` feeds, unless `resolveContent: false`, `files.guides[]` to `set_content_files` |
+| ✅1️⃣ `teach` | ✅ `teach_stmt` | ✅ `Statement::Teach` | ✅ content-namespace checks E018 · E020 · W015 · E022 (same linked-only rule as `guide`) | ✅ → `Effect::Teach {text, content}`; exact lookup in `set_content_files` on the packer-normalized path, then the file resolver | ✅ `registerHandler("teach", fn)`; `start()` feeds, unless `resolveContent: false`, `files.knowledge[]` to `set_content_files` |
 | ✅1️⃣ `interact` | ✅ `interact_stmt` | ✅ `Statement::Interact` | ✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal/guide/teach w/o interact) · W017 (duplicate interact before a transition) · E009 (no intent handlers) | ✅ → `Effect::RequestInteract` | ✅ `registerHandler("request_interact", fn)` |
 | ✅1️⃣ `on intent "…"` | ✅ `intent_handler` | ✅ `Statement::OnIntent` | ✅ lint E005/W005 (dangling transition) | ✅ `send_intent()` dispatches body | ✅ → `sendIntent(intent)` |
 | ✅1️⃣ `on offtopic` | ✅ `offtopic_handler` | ✅ `Statement::OnOfftopic` | ✅ lint (missing offtopic) | ✅ `send_offtopic()` dispatches body | ✅ → `sendOfftopic()` |

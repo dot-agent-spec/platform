@@ -140,8 +140,8 @@ Content files are **not** swept out of `guides/` and `knowledge/`. A file ships 
 the behavior graph rather than of whatever happens to sit in the directory. A reference is a path
 relative to the agent root, resolved literally and bundled verbatim at that same path — the namespace
 comes from the path, not the keyword. A reference that resolves to no file is `E018`; a file that no
-reference names is `W015`; a reference that resolves outside `guides/`/`knowledge/` is `W016`
-(bundled, but unreachable — only those two prefixes are served at runtime).
+reference names is `W015`; a reference that resolves outside `guides/`/`knowledge/` is `E022` and
+blocks `pack` — only those two prefixes are served at runtime, so nothing would ever reach it.
 
 The rule exists because an unreferenced content file is unreachable at runtime anyway: the kernel's
 `teach` effect hands the host the reference path, and the MCP server exposes `dot-agent://knowledge/{+name}`

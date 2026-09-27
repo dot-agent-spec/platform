@@ -4,7 +4,8 @@ An agent project has: a `.description` file (metadata), a `.behavior` file (the 
 `SOUL.md` persona, and optional `guides/` and `knowledge/` directories. A `guide`/`teach` file
 reference is a path relative to the agent root (e.g. `teach "knowledge/x.md"`) and is bundled verbatim
 at that path. Only referenced files are packed — an unreferenced one is reported (`W015`) and left out
-of the bundle; a reference resolving outside `guides/`/`knowledge/` is reported (`W016`) as unreachable.
+of the bundle; a reference resolving outside `guides/`/`knowledge/` is a pack error (`E022`) — those two
+directories are the only ones the runtime can serve content from.
 
 Minimal valid `.behavior` (init state required):
 
