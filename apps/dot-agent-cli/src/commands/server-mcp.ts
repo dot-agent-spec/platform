@@ -58,8 +58,15 @@ function registerDevTools(server: McpServer) {
     out: z.string().optional(),
     force: z.boolean().optional(),
   }, async ({ file, out, force }) => {
-    const res = await unpack({ file, out, force })
-    return { content: [{ type: 'text', text: JSON.stringify({ ok: true, ...res }) }] }
+    try {
+      const res = await unpack({ file, out, force })
+      return { content: [{ type: 'text', text: JSON.stringify({ ok: true, ...res }) }] }
+    } catch (err: any) {
+      // Only the existing-directory refusal becomes a result; anything else still fails the call.
+      if (err?.code !== 'UNPACK_EXISTS') throw err
+      const reason = `${err.message} Pass \`force: true\` to overwrite.`
+      return { content: [{ type: 'text', text: JSON.stringify({ ok: false, reason }) }] }
+    }
   })
 
   server.tool(
