@@ -6,6 +6,7 @@ authors = ["Arnaud Golfouse <arnaud.golfouse@laposte.net>"]
 license-file = "../../LICENSE"
 description = "Detect all WASI-related imports in a WebAssembly file, and replace them with stubs that do nothing"
 repository = "https://github.com/typst-community/wasm-minimal-protocol"
+publish = false
 
 [dependencies]
 wast = "219.0"

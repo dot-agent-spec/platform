@@ -173,6 +173,11 @@ policy.
 To contribute, read [CONTRIBUTING.md](CONTRIBUTING.md) for the toolchain and build, and
 [GOVERNANCE.md](GOVERNANCE.md) for how language changes are proposed and decided.
 
+## Security
+
+Report a vulnerability privately — see [SECURITY.md](SECURITY.md) for the reporting channel, supported
+versions and disclosure timeline.
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
