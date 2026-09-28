@@ -40,6 +40,7 @@ one for the folder you are changing.
 | Language design decisions | `dsl/explanation/` |
 | Package / plugin implementation | `packages/*/`, `plugins/*/` — the code itself |
 | Architecture overview | `docs/explanation/architecture/map.md` |
+| Where untrusted input enters and what reads it | `docs/explanation/architecture/trust-boundaries.md` — updated in the same change that adds a package, entry point or file format read from outside |
 | Feature status across layers | `project/implementation-status.md` |
 | Which packages are not yet current | [`ROADMAP.md`](ROADMAP.md) § Where each package stands |
 | Proposed changes | `project/rfcs/` — Draft status is **not** canonical |
