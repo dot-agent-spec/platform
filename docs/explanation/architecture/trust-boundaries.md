@@ -12,6 +12,54 @@ WASM targets and is not itself a shipped component, so it is not treated as an i
 below. See the full component map at
 [`docs/explanation/architecture/map.md`](map.md).
 
+## Data flow
+
+Each subgraph is a trust boundary: what is inside it runs with the same trust. An arrow crossing a
+boundary carries input the receiver must treat as untrusted, labelled with the format that crosses.
+
+```mermaid
+flowchart LR
+  subgraph outside["Written by someone else"]
+    author["Agent author"]
+    client["MCP client / calling agent"]
+  end
+
+  subgraph editor["Editor host (long-lived)"]
+    ext["vscode-dot-agent<br/>extension.js"]
+    lsp["@dot-agent/language-server<br/>server.js"]
+  end
+
+  subgraph toolchain["Toolchain (per call)"]
+    ts["@dot-agent/tree-sitter<br/>generated parser (C)"]
+    pdsl["@dot-agent/parser-dsl<br/>mapper (Rust → WASM / rlib)"]
+    comp["@dot-agent/compiler<br/>consolidate, pack, zip-core"]
+  end
+
+  subgraph runtime["Runtime"]
+    sdk["@dot-agent/sdk<br/>loadAgent, AgentSession"]
+    kernel["@dot-agent/kernel-dsl<br/>FSM (WASM)"]
+    mcp["@dot-agent/cli<br/>MCP servers (long-lived)"]
+  end
+
+  author -- ".behavior / .description text" --> lsp
+  author -- ".agent bundle (zip)" --> sdk
+  author -- "fsm_state_json (if the writer is untrusted)" --> kernel
+  client -- "tool arguments" --> mcp
+
+  lsp -- "document text" --> ts
+  ts -- "syntax tree" --> pdsl
+  pdsl -- "AST + diagnostics (JSON)" --> comp
+  comp -- "diagnostics, SCXML" --> lsp
+  lsp -- "SCXML" --> ext
+
+  sdk -- "aboutme.json, files.json" --> comp
+  sdk -- "bundle files (JSON)" --> kernel
+  kernel -- "Effect[]" --> sdk
+  mcp -- "path → bytes" --> sdk
+```
+
+Where the bound at each crossing sits, and whether one exists, is the last table in this document.
+
 ## Untrusted inputs
 
 | Format | Who writes it | First reader |

@@ -1,0 +1,78 @@
+# OpenSSF Security Insights — https://github.com/ossf/security-insights (schema v2.2.0)
+# Machine-readable summary of this repository's security posture. The human-readable policy is
+# SECURITY.md; the architecture half of the threat model is docs/explanation/architecture/trust-boundaries.md.
+header:
+  schema-version: 2.2.0
+  last-updated: '2026-09-28'
+  last-reviewed: '2026-09-28'
+  url: https://github.com/dot-agent-spec/platform/blob/main/security-insights.yml
+  comment: Reviewed when SECURITY.md or trust-boundaries.md changes.
+
+project:
+  name: dot-agent
+  homepage: https://github.com/dot-agent-spec/platform
+  administrators:
+    - name: Danilo Borges
+      primary: true
+  repositories:
+    - name: platform
+      url: https://github.com/dot-agent-spec/platform
+      comment: The language specification, the toolchain, the runtime and the editor integration.
+  vulnerability-reporting:
+    reports-accepted: true
+    bug-bounty-available: false
+    policy: https://github.com/dot-agent-spec/platform/blob/main/SECURITY.md
+    comment: Report privately through GitHub private vulnerability reporting, as SECURITY.md describes.
+    in-scope:
+      - Input written by someone other than the user (agent files, identifiers, configuration, packaged agents) that crashes, hangs, exhausts resources, runs code, escapes the agent directory, leaks data or displays a different program than the one that runs.
+    out-of-scope:
+      - Vulnerabilities in third-party dependencies (report upstream).
+      - Behaviour that requires the user to write a malicious configuration for their own machine.
+      - Output a language model produces from a prompt the agent passes to it faithfully.
+  documentation:
+    design: https://github.com/dot-agent-spec/platform/blob/main/docs/explanation/architecture/map.md
+    release-process: https://github.com/dot-agent-spec/platform/blob/main/.agents/skills/publish/SKILL.md
+
+repository:
+  url: https://github.com/dot-agent-spec/platform
+  status: active
+  accepts-change-request: true
+  accepts-automated-change-request: true
+  bug-fixes-only: false
+  core-team:
+    - name: Danilo Borges
+      primary: true
+  license:
+    url: https://github.com/dot-agent-spec/platform/blob/main/LICENSE
+    expression: Apache-2.0
+  documentation:
+    contributing-guide: https://github.com/dot-agent-spec/platform/blob/main/CONTRIBUTING.md
+    governance: https://github.com/dot-agent-spec/platform/blob/main/GOVERNANCE.md
+    security-policy: https://github.com/dot-agent-spec/platform/blob/main/SECURITY.md
+  release:
+    automated-pipeline: true
+    changelog: https://github.com/dot-agent-spec/platform/releases
+    distribution-points:
+      - uri: https://www.npmjs.com/org/dot-agent
+        comment: npm packages under the @dot-agent scope
+      - uri: https://crates.io/search?q=dot-agent
+        comment: Rust crates dot-agent-tree-sitter, dot-agent-parser-dsl, dot-agent-kernel-dsl
+      - uri: https://marketplace.visualstudio.com/items?itemName=dot-agent.vscode-dot-agent
+        comment: the VS Code extension
+  security:
+    assessments:
+      self:
+        comment: Trust boundaries are documented in docs/explanation/architecture/trust-boundaries.md; layers are reviewed for correctness and hostile input, in dependency order.
+        date: '2026-09-28'
+        evidence: https://github.com/dot-agent-spec/platform/blob/main/docs/explanation/architecture/trust-boundaries.md
+      third-party: []
+    tools:
+      - name: Dependabot
+        type: SCA
+        integration:
+          adhoc: false
+          ci: true
+          release: false
+        rulesets:
+          - default
+        results: {}
