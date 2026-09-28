@@ -2,6 +2,10 @@
 
 > Sections marked **⚠️ aspirational** describe components not yet implemented.
 
+Where input written by someone other than the user enters, and which components read it, is in
+[`trust-boundaries.md`](trust-boundaries.md). A new package, entry point or file format read from outside
+updates that document in the same change.
+
 ---
 
 ## View 1: Monorepo Directory Structure
