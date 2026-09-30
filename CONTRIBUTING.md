@@ -86,10 +86,20 @@ re-pin and re-release its dependents, in topological order. The seven npm packag
 changesets `fixed` group that always releases at a single version, and `npx changeset version` performs the
 bump, the re-pin and the changelog in one step. Publishing itself is still the tag push above. A version
 with no prerelease publishes as `latest`; `-alpha.N` and `-beta.N` publish under the `alpha` and `beta`
-dist-tags, cut from branches of the same names in changesets' pre mode. The full
-runbook, including the
+dist-tags, cut from branches of the same names in changesets' pre mode. The full runbook, including the
 human-approval gate before any tag is pushed, is the `/publish` skill in
 [`.agents/skills/publish/`](.agents/skills/publish/).
+
+### Which branch a pull request targets
+
+| The change | Target | Reaches `latest` |
+|---|---|---|
+| A bug fix, with a `patch` changeset | `main` | on the next release from `main` |
+| Anything else — a feature, a contract or behaviour change | `alpha` | by promotion: `alpha` → `beta` → `main` |
+
+So between releases `main` carries only `patch` changesets, and a `minor` one reaches it only through the
+promotion from `beta`, which is itself the stable release. A fix merged into `main` is then merged forward
+into `beta` and `alpha`, so no channel ships without it.
 
 The two version axes — the DSL milestone and per-package semver — and the rule that maps one to the other
 are in [`ROADMAP.md`](ROADMAP.md).
