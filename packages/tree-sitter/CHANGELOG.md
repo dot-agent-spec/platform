@@ -1,5 +1,7 @@
 # @dot-agent/tree-sitter
 
+## 0.12.0-beta.1
+
 ## 0.12.0-alpha.0
 
 ## 0.10.1 and earlier

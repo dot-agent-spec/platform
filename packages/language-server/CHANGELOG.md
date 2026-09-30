@@ -1,5 +1,18 @@
 # @dot-agent/language-server
 
+## 0.12.0-beta.1
+
+### Patch Changes
+
+- Updated dependencies [b340f27]
+- Updated dependencies [b340f27]
+- Updated dependencies [b340f27]
+- Updated dependencies [b340f27]
+- Updated dependencies [b340f27]
+  - @dot-agent/compiler@0.12.0-beta.1
+  - @dot-agent/parser-dsl@0.12.0-beta.1
+  - @dot-agent/tree-sitter@0.12.0-beta.1
+
 ## 0.12.0-alpha.0
 
 ### Patch Changes

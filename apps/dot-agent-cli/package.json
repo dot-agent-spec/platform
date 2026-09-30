@@ -1,6 +1,6 @@
 {
   "name": "@dot-agent/cli",
-  "version": "0.12.0-alpha.0",
+  "version": "0.12.0-beta.1",
   "license": "Apache-2.0",
   "description": "CLI toolkit for building, packaging, and executing deterministic FSM-based agents",
   "author": {
@@ -74,8 +74,8 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@dot-agent/compiler": "0.12.0-alpha.0",
-    "@dot-agent/sdk": "0.12.0-alpha.0",
+    "@dot-agent/compiler": "0.12.0-beta.1",
+    "@dot-agent/sdk": "0.12.0-beta.1",
     "@modelcontextprotocol/sdk": "^1.30.0"
   },
   "scripts": {
