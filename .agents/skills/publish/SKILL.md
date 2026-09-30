@@ -8,6 +8,8 @@ Consolidated runbook so this process is never re-derived from scratch. Publishin
 bump versions + re-pin cross-deps on `main`, then push `<pkg>@<version>` tags, and the GitHub Actions
 `publish-*.yml` workflows do the actual `npm publish --provenance` via OIDC. **There is no local publish.**
 
+This is an event skill. Each run publishes one release, and a second run publishes a second.
+
 **Usage:** `/publish` — then work through the phases below for the packages you're releasing.
 
 ## 🔒 Human-approval gate (read first, state it upfront)
@@ -195,3 +197,11 @@ npm). If any wave fails, **stop** — don't push later waves, since their pinned
 Once the release is published and verified, **re-open this file and reconcile it with what actually
 happened** — fix any step that differed, tighten anything that was fuzzy, add any new footgun you hit. Keep
 it accurate so the next round doesn't re-discover the process.
+
+**The *Channels* section rests on a simulation, not on a release.** Every step in it was run in a scratch
+clone; none has yet carried a real alpha, a promotion or a forward-port to npm. The first of each is what
+confirms or breaks it — look hardest at the `package.json` side kept in a forward-port, and at whether the
+reset after a stable release leaves the next prerelease on the next version.
+
+Verified against: `@changesets/cli` 2.31.1, git 2.x, the `publish-*.yml` and `changeset-status.yml`
+workflows as of 2026-09-30.
