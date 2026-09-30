@@ -1,0 +1,34 @@
+name: Changeset
+
+# Fails a pull request that changes a published package without declaring the
+# change in a `.changeset/*.md` file. Changesets never reads commit messages, so
+# the file is the only record `changeset version` turns into a version bump and
+# a CHANGELOG entry. A change that needs no release (docs inside a package, a
+# test-only edit, a Dependabot bump) declares that with `npx changeset add --empty`.
+#
+# No `npm ci`: `changeset status` reads only package.json files and git, so the
+# CLI runs through npx at the version pinned in the root package.json. Keep the
+# two in step.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    name: Changeset declared
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # `--since` resolves where HEAD diverged from main, which needs history.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check for a changeset
+        run: npx --yes @changesets/cli@2.31.1 status --since=origin/main

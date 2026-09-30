@@ -53,22 +53,26 @@ Dirs: `packages/<pkg>` except `cli` → `apps/dot-agent-cli`, `vscode` → `apps
 ## The exact-pin cascade (why releases fan out)
 
 Pins are **exact**, so bumping package X forces every package that pins X to (a) update that pin string and
-(b) republish under a new version — which in turn cascades to *their* dependents. To compute a release set:
+(b) republish under a new version — which in turn cascades to *their* dependents.
 
-1. Start with the packages whose **own source changed**.
-2. Add every package that exact-pins any package now in the set. Update its pin(s) to the new version and
-   give it its own patch bump.
-3. Repeat until closure. `tree-sitter` at the root only cascades if *it* changed.
+The seven packages are one changesets **`fixed` group** (`.changeset/config.json`), so the release set is
+always all seven, at one version. `npx changeset version` computes that version from the pending
+`.changeset/*.md` files, writes it into every `package.json`, re-pins the exact cross-dependencies and writes
+each `CHANGELOG.md`. Nothing about the cascade is computed by hand any more. `vscode-dot-agent` is in the
+config's `ignore` list and is not moved.
 
-`scripts/release.mjs` bumps `version` in `package.json` + `Cargo.toml` but **does NOT touch cross-dep pins**
-and applies **one version per run** — so the pin edits (and multi-version batches) are always manual.
+`scripts/release.mjs` predates changesets: it bumps one package per run and does not touch pins. It is not
+part of this runbook.
 
 ## Version discipline
 
 - **patch** (`0.10.2`→`0.10.3`): bug fix, no API/contract change. **WASM ABI must be unchanged** — the
   wasm-bindgen glue is exact-pinned against the `.wasm`, so a patch must not touch the ABI.
 - **minor** (`0.10`→`0.11`): additive / any WASM-ABI or contract change. (If pins are ever loosened to `^`,
-  this rule is what keeps `^0.x` safe. Don't propose changesets or other versioning tooling unless asked.)
+  this rule is what keeps `^0.x` safe.) `major` is never used in 0.x.
+
+The level is declared per change, in the `.changeset/*.md` file the pull request carried; the release takes
+the highest pending level.
 
 ## Phase 1 — Bump & re-pin (on a release branch off fresh `main`)
 
@@ -76,18 +80,16 @@ and applies **one version per run** — so the pin edits (and multi-version batc
    **Diff local `main` vs `origin/main` first** (`git rev-list --left-right --count origin/main...main`) —
    unpushed local commits silently ride along into a release branch cut from `main`.
 2. Branch `chore/release-<slug>`.
-3. For each package in the release set: bump `version` in its `package.json`; update its exact pins to the
-   new versions of anything else in the set; bump `Cargo.toml` `version` **only for crates that changed**
-   (kernel-dsl, parser-dsl, tree-sitter have crates; compiler/sdk/language-server/cli are TS-only). Keep
-   `Cargo.toml` aligned with npm even though these tags publish **npm-only** (crates.io is a separate
-   Trusted-Publishing path).
-4. `npm install` to regenerate `package-lock.json`. (`Cargo.lock` is **gitignored** — CI regenerates it; no
+3. `npx changeset status --verbose` — read the version it will produce and the changesets it will consume.
+   Then `npx changeset version`: it bumps all seven `package.json` files, re-pins the exact cross-deps,
+   writes each `CHANGELOG.md` from the changesets' summaries and deletes the consumed `.changeset/*.md`.
+   **Never edit a `CHANGELOG.md` by hand** — fix the changeset summary and re-run instead. The
+   `vscode-extension` changelog is the exception: it is outside changesets and stays hand-written.
+4. Set `version` in the three `Cargo.toml` files (kernel-dsl, parser-dsl, tree-sitter; the others are
+   TS-only) to the same new version — changesets moves only `package.json`. Keep them aligned with npm even
+   though these tags publish **npm-only** (crates.io is a separate Trusted-Publishing path).
+5. `npm install` to regenerate `package-lock.json`. (`Cargo.lock` is **gitignored** — CI regenerates it; no
    need to commit it.)
-5. Add a dated **CHANGELOG.md** entry per bumped package (Keep-a-Changelog format already in each). Write a
-   real fix description for changed packages; `Re-pin @dot-agent/* to patched versions` for pin-only bumps.
-   Collapse stale pre-release history into one line rather than reconstructing precise attribution. Some
-   packages carry an `[Unreleased]` section holding already-merged-but-unpublished work (e.g. compiler/sdk/cli
-   from a prior round) — finalize it to the new version+date, don't drop it.
 6. **Rebuild the TS packages** (`tsdown`) after bumping so tracked, build-generated version constants refresh
    — notably `packages/compiler/src/generated-version.ts` (`COMPILER_VERSION`), which is committed and goes
    stale otherwise. (`apps/dot-agent-cli/src/version.ts` reads `package.json` at runtime, so it needs no

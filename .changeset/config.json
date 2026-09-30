@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@dot-agent/tree-sitter",
+      "@dot-agent/parser-dsl",
+      "@dot-agent/kernel-dsl",
+      "@dot-agent/compiler",
+      "@dot-agent/sdk",
+      "@dot-agent/language-server",
+      "@dot-agent/cli"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["vscode-dot-agent"]
+}

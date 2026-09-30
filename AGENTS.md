@@ -54,6 +54,9 @@ one for the folder you are changing.
   `dsl/`, `docs/` and `examples/`. Doc drift across the layers is this repository's main failure mode.
 - **New syntax is gated by an RFC before the grammar is touched**, and a grammar change propagates to
   every layer below it. This is the one change class where design comes first by rule.
+- **A change to a published package needs a `.changeset/*.md`**, and CI fails the pull request without
+  one. `CHANGELOG.md` files are generated from those files — never write one by hand
+  ([`.changeset/README.md`](.changeset/README.md)).
 - **Never reinstate a git hook for licence headers.** `core.hooksPath` is repo-scoped, so one package
   installing a hook reconfigures the whole monorepo
   ([#19](https://github.com/dot-agent-spec/platform/issues/19)).
