@@ -1,29 +1,17 @@
 {
   "id": "dot-agent-spec",
-  "version": "0.3.0",
-  "summary": "The open issues ordered in release waves by distance from tree-sitter: each wave bumps the packages it names, and the exact-pin cascade carries the bump to everything downstream. Waves 0 and 1 landed as #43-#45 and #49-#51, the gate went back to green with #54 and #56, and CLI hardening landed as #62-#64.",
+  "version": "0.4.0",
+  "summary": "The open issues ordered in release waves by distance from tree-sitter: each wave bumps the packages it names, and the exact-pin cascade carries the bump to everything downstream. Waves 0 to 2 and the CLI hardening landed (#43-#70): the gate is green, compiler and sdk carry #7, #9, #17 and the DA00-09 lints, and the cli refuses unknown options everywhere.",
   "corpus": "dot-agent-spec",
   "waves": [
     {
-      "id": "w1",
-      "name": "Wave 2 — compiler to sdk",
-      "goal": "compiler and sdk are bumped once, with #14, #7 and #9 fixed and the AgentSession snapshot API on top of the kernel primitive.",
+      "id": "w4",
+      "name": "Wave 4 — guide/teach inside a handler, at the grammar",
+      "goal": "guide or teach placed inside an on intent/on offtopic handler gets one error at the statement, with tree-sitter, parser-dsl and the linter agreeing, and DA00-09 amended to record it.",
       "items": [
         {
           "ref": "ref:url:github.com/dot-agent-spec/platform/issues/14",
-          "note": "compiler. Needs a maintainer decision before any code: a linter that re-reads the raw text of a parse ERROR node was built and rejected in review — it fired on a valid state-level guide after an unrelated syntax error, hid that error, and missed 128 of 192 generated placements, because tree-sitter recovers the handler differently depending on what follows it. Options: (A) ship only the DA00-09 follow-up lints (W012 extended to guide/teach, W017 duplicate interact, both reviewed correct) and keep #14 open for a grammar-level fix; (B) admit guide/teach in handler bodies in the grammar so parser-dsl and the linter reject them at the exact position — a tree-sitter cascade and an amendment to DA00-09; (C) a conservative text scan that never suppresses E004. Unmerged work: branch fix/issue-14."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/7",
-          "note": "cli, not compiler (apps/dot-agent-cli/src/commands/unpack.ts). unpack now restores the source layout by walking the description's merge graph, leaving the description byte-for-byte."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/9",
-          "note": "compiler + sdk. W016 is warn-only in packages/compiler/src/pack.ts:333-359, and packages/sdk/src/load.ts classifies by prefix alone. Needs a maintainer decision: whether W016 becomes an error, which breaks pack for anyone who today only gets the warning."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/17",
-          "note": "sdk half only. The kernel primitive landed in #51 (serialize_state / restore_state, bound to a behavior fingerprint); what remains is the snapshot and rehydrate API on AgentSession in packages/sdk/src/session.ts. Needs a maintainer decision on its shape: an opaque JSON-serialisable snapshot plus a snapshot option on loadAgent, or exposed state and memory fields that become public contract."
+          "note": "Grammar first. The lints DA00-09 asked for landed in #68 (W012 extended to guide/teach, W017 a second interact, W018 statements after a transition); guide/teach inside an on intent/on offtopic handler still reports a generic E004. A precise error needs tree-sitter-behavior to admit guide/teach in a handler body so parser-dsl and the linter can refuse it at the exact position — an amendment to ADR DA00-09 and a cascade from tree-sitter down. A linter reading the raw text of the parse ERROR node was built and rejected in review (false positive on a valid state-level guide, hid the real error, missed 128 of 192 placements)."
         }
       ]
     },
