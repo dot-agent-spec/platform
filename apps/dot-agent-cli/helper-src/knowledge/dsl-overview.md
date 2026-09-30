@@ -35,11 +35,13 @@ state greeting
 - Intent names in handlers are quoted strings: `on intent "name"`
 - `transition to <state>` (two words, no underscore)
 - `interact` emits a `request_interact` effect (signals the agent is waiting for user input); it
-  pairs with `goal` — a state with `goal` but no `interact` gets a W012 lint warning, and
-  `interact` without `goal` gets W013
+  pairs with `goal` — a state with `goal`/`guide`/`teach` but no `interact` gets a W012 lint
+  warning, and `interact` without `goal` gets W013
 - `goal`/`guide`/`teach` are state-level only, valid in an **Oriented State** (one that also
   declares `interact`); a state with none of those is a **Setup State** — see `dsl_states` for the
   full statement/handler reference
+- Anything after a state-level `transition to` another state never runs, like code after a return (W018)
+- A second `interact` in the same state, before any `transition to`, gets a W017 lint warning
 
 ## Merge
 

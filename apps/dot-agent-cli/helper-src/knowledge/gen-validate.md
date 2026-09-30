@@ -30,8 +30,10 @@ This lints the .description and .behavior files, applies the same checks as `dot
 | W008 | Duplicate `on intent "label"` in the same state — **error-severity despite the `W` prefix, blocks pack** |
 | W009 | Unreachable state — nothing transitions to it and it isn't the entry state |
 | W011 | `on intent` handler transitions back to its own enclosing state |
-| W012 | `goal` in a state without `interact` — add `interact` or remove `goal` |
+| W012 | `goal`/`guide`/`teach` in a state without `interact` — add `interact` or remove it |
 | W013 | `interact` without `goal` — add `goal "..."` before `interact` |
+| W017 | Duplicate `interact` in the same state before any `transition to` — only one is allowed |
+| W018 | A statement after a state-level `transition to` another state never runs — move it before the transition or remove it |
 
 Full reference: `packages/compiler/docs/reference/lint-codes.md`.
 

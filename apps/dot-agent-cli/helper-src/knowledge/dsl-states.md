@@ -21,8 +21,9 @@ A state is either an **Oriented State** or a **Setup State** — pick one, don't
 - **Setup State** — no `interact`, no orientation. Its `on intent`/`on offtopic` handlers do
   nothing but `transition to`, moving straight to whichever state handles the topic.
 
-`goal`/`guide`/`teach` outside an Oriented State, or two `interact` in the same state, are not
-valid shapes — every pattern in `gen_patterns` is one or the other, never a mix.
+`goal`/`guide`/`teach` outside an Oriented State (W012), or two `interact` in the same state before
+any `transition to` (W017), are not valid shapes — every pattern in `gen_patterns` is one or the
+other, never a mix.
 
 ## Orientation statements
 
@@ -30,10 +31,10 @@ State-level only — never inside a handler body.
 
 | Statement | Syntax | Effect emitted | Description |
 |---|---|---|---|
-| `goal` | `goal "text"` | `goal` | Sets the LLM's current objective — pairs with `interact` (W012 if `goal` has no `interact`; W013 the other way round) |
-| `guide` | `guide "text"` | `guide` | Instruction or context — use it immediately |
-| `teach` | `teach "knowledge/filename.md"` | `teach` | References a knowledge file by its bundle path |
-| `interact` | `interact` | `request_interact` | Pauses — agent is waiting for user input; marks the state an Oriented State |
+| `goal` | `goal "text"` | `goal` | Sets the LLM's current objective — pairs with `interact` (W012 if `goal`/`guide`/`teach` has no `interact`; W013 the other way round) |
+| `guide` | `guide "text"` | `guide` | Instruction or context — use it immediately (W012 without `interact`) |
+| `teach` | `teach "knowledge/filename.md"` | `teach` | References a knowledge file by its bundle path (W012 without `interact`) |
+| `interact` | `interact` | `request_interact` | Pauses — agent is waiting for user input; marks the state an Oriented State (W017 if duplicated before any transition) |
 
 ## Handlers
 

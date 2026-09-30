@@ -1641,7 +1641,7 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <td>✅1️⃣ <code>interact</code></td>
 <td>✅ <code>interact_stmt</code></td>
 <td>✅ <code>Statement::Interact</code></td>
-<td>✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal w/o interact) · E009 (no intent handlers)</td>
+<td>✅ lint W006 (no handlers) · W013 (no goal) · W012 (goal/guide/teach w/o interact) · W017 (duplicate interact before a transition) · E009 (no intent handlers)</td>
 <td>✅ → <code>Effect::RequestInteract</code></td>
 <td>✅ <code>registerHandler(&quot;request_interact&quot;, fn)</code></td>
 </tr>
@@ -1665,7 +1665,7 @@ Where the two disagree, the feature tables are the newer of the two.</p>
 <td>✅1️⃣ <code>transition to</code></td>
 <td>✅ <code>transition_stmt</code></td>
 <td>✅ <code>Statement::Transition</code></td>
-<td>✅ lint E005/W005</td>
+<td>✅ lint E005/W005 · W018 (entry statements after it are unreachable)</td>
 <td>✅ → <code>Effect::Transition {from, to}</code></td>
 <td>✅ <code>registerHandler(&quot;transition&quot;, fn)</code></td>
 </tr>
