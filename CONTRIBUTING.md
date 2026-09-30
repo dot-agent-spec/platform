@@ -74,8 +74,18 @@ dependencies re-pinned on `main`, then a `<package>@<version>` tag is pushed —
 `kernel-dsl@0.1.3`, `vscode@0.3.3` — and the matching `publish-*.yml` workflow in
 [`.github/workflows/`](.github/workflows/) runs `npm publish --provenance` over OIDC.
 
+**A pull request that changes a published package carries a changeset** — a `.changeset/*.md` file naming
+the package, the bump and a summary for whoever upgrades. Write it with `npx changeset`, or declare that the
+change needs no release with `npx changeset add --empty`; CI fails the pull request otherwise. The summary
+becomes the changelog entry, so the `CHANGELOG.md` files are generated and never edited by hand, except the
+VS Code extension's, which sits outside changesets. What the bump levels mean here is in
+[`.changeset/README.md`](.changeset/README.md).
+
 The packages depend on each other with exact pins, so a release cascades: bumping a package obliges you to
-re-pin and re-release its dependents, in topological order. The full runbook, including the
+re-pin and re-release its dependents, in topological order. The seven npm packages are therefore one
+changesets `fixed` group that always releases at a single version, and `npx changeset version` performs the
+bump, the re-pin and the changelog in one step. Publishing itself is still the tag push above. The full
+runbook, including the
 human-approval gate before any tag is pushed, is the `/publish` skill in
 [`.agents/skills/publish/`](.agents/skills/publish/).
 
