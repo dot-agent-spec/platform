@@ -99,7 +99,8 @@ human-approval gate before any tag is pushed, is the `/publish` skill in
 
 So between releases `main` carries only `patch` changesets, and a `minor` one reaches it only through the
 promotion from `beta`, which is itself the stable release. A fix merged into `main` is then merged forward
-into `beta` and `alpha`, so no channel ships without it.
+into `beta` and `alpha`, so no channel ships without it: the Forward-port workflow keeps one pull request
+open from `main` into each channel, and a conflict there is resolved as the `/publish` skill describes.
 
 The two version axes — the DSL milestone and per-package semver — and the rule that maps one to the other
 are in [`ROADMAP.md`](ROADMAP.md).

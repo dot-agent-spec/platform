@@ -1,0 +1,87 @@
+name: Forward-port
+
+# Keeps one open pull request from main into each prerelease channel, so a fix
+# released on main reaches alpha and beta without anyone remembering to merge
+# it. The runbook step it automates is the /publish skill's "Forward-port a fix".
+#
+# The pull request's head is a disposable `forward-port/<channel>` branch, never
+# main itself: GitHub's conflict editor commits the resolution to the head
+# branch, and with main as the head that would carry the channel's pre.json
+# into main. When the pull request already exists, main is merged into that
+# branch instead of replacing it, so a resolution committed there survives.
+#
+# It authenticates with the FORWARD_PORT_TOKEN secret, a GitHub App or
+# fine-grained token with contents and pull-requests write access. A pull
+# request opened or pushed with GITHUB_TOKEN triggers no workflow, so the
+# channel guards in changeset-status.yml would never run on it.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: forward-port
+  cancel-in-progress: false
+
+jobs:
+  forward-port:
+    name: main into ${{ matrix.channel }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [alpha, beta]
+    env:
+      CHANNEL: ${{ matrix.channel }}
+      BRANCH: forward-port/${{ matrix.channel }}
+      GH_TOKEN: ${{ secrets.FORWARD_PORT_TOKEN }}
+    steps:
+      - name: Require the token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::FORWARD_PORT_TOKEN is not set. Add a GitHub App or fine-grained token with contents and pull-requests write access as a repository secret."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.FORWARD_PORT_TOKEN }}
+
+      - name: Stop when the channel already contains main
+        id: ahead
+        run: |
+          count=$(git rev-list --count "origin/$CHANNEL..origin/main")
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "main is $count commit(s) ahead of $CHANNEL"
+
+      - name: Bring the forward-port branch up to main
+        if: steps.ahead.outputs.count != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git switch -c "$BRANCH" "origin/$BRANCH"
+            git merge --no-edit origin/main
+          else
+            git switch -c "$BRANCH" origin/main
+          fi
+          git push origin "$BRANCH"
+
+      - name: Open the pull request if none is open
+        if: steps.ahead.outputs.count != '0'
+        run: |
+          open=$(gh pr list --base "$CHANNEL" --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$open" ]; then
+            echo "Pull request #$open is already open; its branch was updated."
+            exit 0
+          fi
+          gh pr create --base "$CHANNEL" --head "$BRANCH" \
+            --title "Forward-port main into $CHANNEL" \
+            --body "Opened by the Forward-port workflow. It merges what main has and $CHANNEL does not.
+
+          Conflicts are expected on the seven \`package.json\` files after a stable release: keep **$CHANNEL**'s side of the \`version\` and pin lines, and check whether the fix changed a dependency line that must be kept by hand. \`.gitattributes\` merges the \`CHANGELOG.md\` files. The runbook is the \`/publish\` skill, *Forward-port a fix*."
