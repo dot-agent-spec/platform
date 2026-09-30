@@ -95,8 +95,8 @@ guide "guides/car-rental.md"   // filepath form — resolved at runtime
 Optional. Injected into message context after `goal`. Accepts inline text or a file path.
 
 The file path is **bundle-relative and must carry its namespace** — `guides/…` or `knowledge/…`,
-exactly as the packer bundles it. A bare `car-rental.md` is bundled at the root instead, which the
-linter reports as unreachable (W016).
+exactly as the packer bundles it. A bare `car-rental.md` would resolve at the root instead, which
+`pack` refuses as unreachable (E022).
 
 ### `teach` — Knowledge Injection
 

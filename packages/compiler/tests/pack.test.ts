@@ -164,8 +164,8 @@ describe('collectFiles — guide/teach references', () => {
     expect(files.get('knowledge/sub/deep.md')).toBe('# Deep')
   })
 
-  // A reference outside guides//knowledge/ is bundled verbatim (it exists), but
-  // W016 flags it as unreachable — see findOrphanContentFiles tests below.
+  // collectFiles() itself still bundles it verbatim (it exists) — E022 fires
+  // one layer up, in findOrphanContentFiles()/pack(), not here.
   it('bundles a reference that resolves outside guides//knowledge/ at its literal path', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'recipes.md': 'sourdough' } })
     const files = await collectFiles(dir, 'agent.description', mergedWith('teach "recipes.md"'), [])
@@ -242,21 +242,21 @@ describe('findOrphanContentFiles', () => {
     expect(messages.filter(m => m.code === 'W015')).toEqual([])
   })
 
-  it('reports W016 for a reference that resolves outside guides//knowledge/', async () => {
+  it('reports E022 for a reference that resolves outside guides//knowledge/', async () => {
     const dir = await makeAgentDir({ extraFiles: { 'recipes.md': 'sourdough' } })
     const messages = await findOrphanContentFiles(dir, mergedWith('teach "recipes.md"'))
-    const w016 = messages.filter(m => m.code === 'W016')
-    expect(w016).toHaveLength(1)
-    expect(w016[0]).toMatchObject({ file: 'recipes.md', code: 'W016', severity: 'warning' })
+    const e022 = messages.filter(m => m.code === 'E022')
+    expect(e022).toHaveLength(1)
+    expect(e022[0]).toMatchObject({ file: 'recipes.md', code: 'E022', severity: 'error' })
   })
 
   // Regression: a reference outside guides//knowledge/ that doesn't exist on disk
-  // at all gets E018 from collectFiles(), not W016 — W016's message claims "it
-  // will be bundled", which would be false for a file that's simply missing.
-  it('does not report W016 for a reference that resolves to no file on disk', async () => {
+  // at all gets E018 from collectFiles(), not E022 — E022's message claims a
+  // real file must move, which would be false for a file that's simply missing.
+  it('does not report E022 for a reference that resolves to no file on disk', async () => {
     const dir = await makeAgentDir()
     const messages = await findOrphanContentFiles(dir, mergedWith('teach "ghost.md"'))
-    expect(messages.filter(m => m.code === 'W016')).toEqual([])
+    expect(messages.filter(m => m.code === 'E022')).toEqual([])
   })
 
   it('reports a file whose extension teach could never reference', async () => {
@@ -390,6 +390,26 @@ describe('pack — happy path', () => {
     const result = await pack({ dir, version: 'v1.0.0' })
     const errors = result.warnings.filter(m => m.severity === 'error')
     expect(errors).toHaveLength(0)
+  })
+
+  // platform#9: a guide/teach reference that resolves outside guides//knowledge/
+  // is bundled but unreachable at runtime (only those two prefixes are served) —
+  // this used to be a warning-only case. It now refuses the pack outright (E022)
+  // instead of writing an archive with content nothing can ever serve.
+  const behaviorWithOutsideTeach = `state init\n  transition to responsive\n\nstate responsive\n  goal "How can I help?"\n  interact\n  teach "recipes.md"\n  on intent "examine" transition to examine\n  on intent "done" transition to init\n  on offtopic transition to responsive\n\nstate examine\n  goal "Review."\n  interact\n  on intent "complete" transition to responsive\n  on offtopic transition to responsive\n`
+
+  it('refuses to pack (E022) when a reference resolves outside guides//knowledge/', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'recipes.md': 'sourdough' } })
+    await writeFile(join(dir, 'agent.behavior'), behaviorWithOutsideTeach)
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow('E022')
+  })
+
+  it('names the file, the reference and the destination in the E022 message', async () => {
+    const dir = await makeAgentDir({ extraFiles: { 'recipes.md': 'sourdough' } })
+    await writeFile(join(dir, 'agent.behavior'), behaviorWithOutsideTeach)
+    await expect(pack({ dir, version: 'v1.0.0' })).rejects.toThrow(
+      /recipes\.md[\s\S]*teach[\s\S]*(guides\/|knowledge\/)/
+    )
   })
 })
 

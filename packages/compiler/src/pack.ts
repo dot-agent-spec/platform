@@ -330,15 +330,16 @@ export async function findOrphanContentFiles(
     const bundlePath = normalizeRefPath(text)
     referenced.add(bundlePath)
 
-    // W016: a reference that resolves outside guides/ or knowledge/. It is
-    // bundled at its literal path, but bundle.ts/sdk-load.ts only expose files
-    // under those two prefixes, so the runtime can never hand its content to
-    // the host — the teach/guide effect would surface a path nothing serves.
-    // Flags the old "loose file next to agent.behavior" convention, now
-    // unreachable. Only fires when the file actually exists and will actually
-    // be bundled — a reference to a nonexistent file gets E018 from
-    // collectFiles() instead, and this warning would otherwise falsely claim
-    // it "will be bundled".
+    // E022 (platform#9): a reference that resolves outside guides/ or
+    // knowledge/. bundle.ts/sdk-load.ts only expose files under those two
+    // prefixes, so the runtime can never hand its content to the host — the
+    // teach/guide effect would surface a path nothing serves. Formerly a
+    // warning (a warning, so pack still wrote an archive with unreachable
+    // content); it is an error now, so pack() refuses before writing the
+    // archive rather than shipping a bundle nothing can serve. Flags the old
+    // "loose file next to agent.behavior" convention. Only fires when the
+    // file actually exists and would otherwise be bundled — a reference to a
+    // nonexistent file gets E018 from collectFiles() instead.
     if (isExternalPath(dir, bundlePath) || isInContentNamespace(bundlePath)) continue
     try {
       await stat(join(dir, bundlePath))
@@ -349,9 +350,9 @@ export async function findOrphanContentFiles(
       file: bundlePath,
       line: 1,
       col: 1,
-      severity: 'warning',
-      code: 'W016',
-      message: `'${kind}' reference '${text}' resolves outside guides/ or knowledge/ — it will be bundled but is unreachable at runtime; move it under knowledge/ (or guides/) and reference it there`,
+      severity: 'error',
+      code: 'E022',
+      message: `'${kind}' reference '${text}' resolves to '${bundlePath}', which is outside guides/ and knowledge/ — those are the only two directories the runtime can serve content from; move '${bundlePath}' under guides/ or knowledge/ and update the '${kind}' statement to reference it there`,
     })
   }
 
@@ -420,7 +421,8 @@ export async function collectFiles(
   // path relative to the agent root, resolved literally and bundled verbatim at
   // that same path — no namespace guessing, no doubled `knowledge/knowledge/…`.
   // findOrphanContentFiles() reports what this loop leaves behind (W015) and any
-  // reference that lands outside guides/ or knowledge/ (W016).
+  // reference that lands outside guides/ or knowledge/ (E022, checked by pack()
+  // before it writes the archive).
   const refs = await collectBehaviorFileRefs(mergedBehaviorText)
   for (const { kind, text } of refs.values()) {
     const bundlePath = normalizeRefPath(text)
@@ -516,7 +518,19 @@ export async function pack(options: PackOptions = {}): Promise<PackResult> {
   const version = await resolveVersionInteractive(options.version)
   const commit = await resolveCommit(options.commit)
   const allFiles = await collectFiles(dir, descriptionFileName, mergedText, mergeSources, df.persona ?? undefined)
-  const warnings = [...lintWarnings, ...(await findOrphanContentFiles(dir, mergedText))]
+  const contentMessages = await findOrphanContentFiles(dir, mergedText)
+
+  // E022 (platform#9): a guide/teach reference resolving outside guides/ or
+  // knowledge/ is bundled but unreachable at runtime — refuse before writing
+  // the archive rather than shipping a bundle nothing can serve.
+  const contentErrors = contentMessages.filter(m => m.severity === 'error')
+  if (contentErrors.length > 0) {
+    throw new Error(
+      `Lint failed:\n${contentErrors.map(e => `  ${e.file}:${e.line}:${e.col} ${e.code} ${e.message}`).join('\n')}`
+    )
+  }
+
+  const warnings = [...lintWarnings, ...contentMessages.filter(m => m.severity === 'warning')]
 
   const contentForHash = Array.from(allFiles.values()).join('')
   const sha256 = createHash('sha256').update(contentForHash).digest('hex')

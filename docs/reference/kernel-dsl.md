@@ -327,7 +327,7 @@ case "guide":
 |---|---|
 | The call is **optional** | A host that never calls `set_content_files` keeps receiving bare paths, at no payload cost. |
 | The key is the **normalized** reference | The packer strips a leading `./` and converts `\` to `/` before choosing the bundle path, so `teach "./knowledge/cars.md"` is bundled — and looked up — as `knowledge/cars.md`. The kernel applies the same two rules. |
-| The match is **exact** | Beyond that normalization there is no suffix matching and no `knowledge/` prefix guessing: the packer bundles a reference at exactly that path and warns (W016) when it is unreachable, so a looser match here would bless a shape the packer refuses to produce. Inline prose and paths the bundle does not carry arrive with `content: null`. |
+| The match is **exact** | Beyond that normalization there is no suffix matching and no `knowledge/` prefix guessing: the packer bundles a reference at exactly that path and refuses to pack (E022) when it would be unreachable, so a looser match here would bless a shape the packer refuses to produce. Inline prose and paths the bundle does not carry arrive with `content: null`. |
 | A miss is **not an error** | The effect is still emitted and the run continues, unlike `merge`, whose missing file fails the load. |
 | `set_file_resolver` is the **fallback** | A path absent from the map is offered to the resolver callback, which therefore now serves both `merge` and `teach`/`guide`. Only text ending in `.txt`/`.md` is offered — the packer's own test for a file reference — so a resolver is never handed inline prose. |
 

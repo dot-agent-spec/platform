@@ -328,16 +328,48 @@ describe('unpack -> pack round trip', () => {
   })
 
   it('a teach reference stored under behaviors/ is not mistaken for a merge source', async () => {
+    // platform#9: `pack` now refuses (E022) a `teach "behaviors/notes.md"`
+    // reference — it resolves outside guides/ and knowledge/, so it can no
+    // longer be produced by calling pack() here. But an archive built by a
+    // pre-E022 compiler could carry exactly this shape (that reference only
+    // earned a warning back then), and unpack must still not mistake it for
+    // a merge source. Build that archive by hand, mirroring the layout
+    // collectFiles() produced for it (packages/compiler/src/pack.ts): the
+    // entry file stored under `behaviors/main.behavior` (every merge source,
+    // including the entry itself, lands under `behaviors/`), the teach
+    // target stored verbatim at `behaviors/notes.md`, and the flattened
+    // `agent.behavior` at the bundle root.
     const root = await scratchDir()
-    const srcDir = join(root, 'src-agent')
-    await mkdir(srcDir, { recursive: true })
-    await writeFile(join(srcDir, 'agent.description'), description('behavior main.behavior'))
-    await writeFile(join(srcDir, 'main.behavior'), MAIN.replace('guide "Greet the user."', 'teach "behaviors/notes.md"'))
-    await mkdir(join(srcDir, 'behaviors'), { recursive: true })
-    await writeFile(join(srcDir, 'behaviors', 'notes.md'), '# notes\n')
 
+    // A genuine `.agent/aboutme.json`, from a real pack of an equivalent,
+    // E022-clean fixture — only the manifest shape matters here.
+    const seedSrc = join(root, 'seed')
+    await mkdir(seedSrc, { recursive: true })
+    await writeFile(join(seedSrc, 'agent.description'), description('behavior main.behavior'))
+    await writeFile(join(seedSrc, 'main.behavior'), MAIN)
+    const seedArchive = join(root, 'seed.agent')
+    await pack({ dir: seedSrc, out: seedArchive, version: '1.0.0' })
+    const aboutmeText = await (await readZip(seedArchive)).file('.agent/aboutme.json')!.async('text')
+
+    const entryWithTeach = MAIN.replace('guide "Greet the user."', 'teach "behaviors/notes.md"')
+    const zip = await readZip(seedArchive)
+    zip.file('.agent/aboutme.json', aboutmeText)
+    zip.file(
+      '.agent/files.json',
+      JSON.stringify({
+        description: 'agent.description',
+        behavior: 'agent.behavior',
+        behaviors: ['behaviors/main.behavior', 'behaviors/notes.md'],
+        guides: [],
+        knowledge: [],
+      }),
+    )
+    zip.file('agent.description', description('behavior main.behavior'))
+    zip.file('agent.behavior', entryWithTeach)
+    zip.file('behaviors/main.behavior', entryWithTeach)
+    zip.file('behaviors/notes.md', '# notes\n')
     const firstArchive = join(root, 'a1.agent')
-    await pack({ dir: srcDir, out: firstArchive, version: '1.0.0' })
+    await writeZip(zip, firstArchive)
 
     const unpackedDir = join(root, 'u')
     await unpack({ file: firstArchive, out: unpackedDir })
@@ -348,12 +380,6 @@ describe('unpack -> pack round trip', () => {
     expect(entry).toContain('teach "behaviors/notes.md"')
     const notes = await readFile(join(unpackedDir, 'behaviors', 'notes.md'), 'utf-8')
     expect(notes).toBe('# notes\n')
-
-    const secondArchive = join(root, 'a2.agent')
-    await pack({ dir: unpackedDir, out: secondArchive, version: '1.0.0' })
-    const first = await readArchive(firstArchive)
-    const second = await readArchive(secondArchive)
-    expect(second.behavior).toBe(first.behavior)
   })
 
   it('a hand-built archive whose root agent.behavior is already the real entry extracts verbatim and re-packs', async () => {

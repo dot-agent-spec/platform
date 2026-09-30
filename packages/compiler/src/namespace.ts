@@ -4,7 +4,8 @@
 // collectFiles() bundles a guide/teach reference at its literal path, but
 // bundle.ts, sdk/load.ts, and the CLI's MCP resource handlers each classify a
 // bundled file into guides/knowledge purely by this prefix — a reference
-// resolving outside them is bundled but unreachable (see pack.ts's W016).
+// resolving outside them is refused at pack time (see pack.ts's E022) rather
+// than bundled unreachable.
 // Single source of truth so the three sites can't drift on the prefix list.
 export const CONTENT_NAMESPACES = ['guides', 'knowledge'] as const
 export type ContentNamespace = (typeof CONTENT_NAMESPACES)[number]

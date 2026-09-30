@@ -260,3 +260,34 @@ test('AgentSession.start({ resolveContent: false }) keeps bare paths', async () 
   assert.equal(teach[0].content, null, 'no content map was handed over, so nothing resolves')
   assert.equal(guide[0].content, null)
 })
+
+// platform#9: pack() now refuses (E022) to produce a fresh archive carrying a
+// guide/teach reference that resolves outside guides/knowledge/ — but an
+// archive already produced by a pre-change compiler (which only warned, W016)
+// can still exist on disk. loadAgent() must keep loading it rather than
+// throwing on a bundle that used to be legal to ship. classifyContentPath()
+// (packages/compiler/src/namespace.ts) filters purely by prefix, so this file
+// simply never lands in files.guides/files.knowledge/files.behaviors — it is
+// silently unreachable through those typed arrays, same as before this task.
+test('loadAgent still loads an old-style archive with content outside guides/knowledge (pre-E022)', async () => {
+  const zip = new JSZip()
+  zip.file('.agent/aboutme.json', JSON.stringify(ABOUTME))
+  zip.file('.agent/files.json', JSON.stringify({
+    description: 'sdk-test.description',
+    behavior: 'sdk-test.behavior',
+  }))
+  zip.file('sdk-test.description', DESCRIPTION)
+  zip.file('sdk-test.behavior', BEHAVIOR)
+  // A file a pre-E022 pack would have bundled verbatim at its literal,
+  // out-of-namespace path (e.g. `teach "recipes.md"` at the agent root).
+  zip.file('recipes.md', 'sourdough')
+  const bytes = await zip.generateAsync({ type: 'uint8array' })
+
+  const bundle = await loadAgent(bytes)
+
+  assert.equal(bundle.id, ABOUTME.id, 'the archive still loads without throwing')
+  assert.ok(!bundle.files.guides.some(g => g.path === 'recipes.md'))
+  assert.ok(!bundle.files.knowledge.some(k => k.path === 'recipes.md'))
+  assert.ok(!bundle.files.behaviors.some(b => b.path === 'recipes.md'),
+    'the out-of-namespace file is dropped from every typed array, same as before this change')
+})

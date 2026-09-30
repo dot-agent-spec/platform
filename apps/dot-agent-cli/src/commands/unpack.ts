@@ -25,7 +25,8 @@ import {
 // merge graph apart from everything else pack.ts happens to store under
 // `behaviors/`: `collectFiles()` also lands `guide`/`teach` references there
 // when the author wrote them that way (e.g. `teach "behaviors/notes.md"`,
-// which is legal — it only earns a W016 warning), and that array lists every
+// which a current `pack` refuses with `E022` — but an archive built before
+// that check existed can still carry one), and that array lists every
 // key under the `behaviors/` prefix regardless. Restoring by that list alone
 // moves a referenced content file out from under the path the behavior text
 // still names it by, and a hand-built (or otherwise unusual) archive can

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   host layer (ADR DA00-09).
 
 ### Changed
+- **Breaking: `W016` is now `E022` and blocks `pack()`.** A `guide`/`teach` reference resolving outside `guides/`/`knowledge/` used to warn and still bundle the file; `pack` now refuses before writing the archive, naming the file, the reference and the namespace it must move to. Resolves [platform#9](https://github.com/dot-agent-spec/platform/issues/9).
 - **`W012` generalized to `guide`/`teach`, not just `goal`.** Per ADR DA00-09, an Oriented State (one with
   `interact`) is the only state allowed to carry `goal`, `guide`, or `teach`; a Setup State (no `interact`)
   must carry none of them. `W012` previously checked only `goal`; it now fires for any of the three found
