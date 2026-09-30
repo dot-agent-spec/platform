@@ -1,6 +1,6 @@
 {
   "id": "dot-agent-spec",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "summary": "The open issues ordered in release waves by distance from tree-sitter: each wave bumps the packages it names, and the exact-pin cascade carries the bump to everything downstream. Waves 0 to 2 and the CLI hardening landed (#43-#70): the gate is green, compiler and sdk carry #7, #9, #17 and the DA00-09 lints, and the cli refuses unknown options everywhere.",
   "corpus": "dot-agent-spec",
   "waves": [
@@ -16,13 +16,13 @@
       ]
     },
     {
-      "id": "w3",
-      "name": "Wave 3 — language-server debt",
-      "goal": "Merge-graph resolution lives in one place in the language server, with a decision recorded on multi-root workspaces.",
+      "id": "w5",
+      "name": "Wave 5 — sdk memory type matches the kernel",
+      "goal": "AgentSession.getMemory()'s type, docs and return value agree, and the hand-mirrored copies in consumers are checked.",
       "items": [
         {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/4",
-          "note": "Three call sites: features/diagnostics.js:66/86/89/109 and server.js:185-186, no cache, no multi-root. Refactor with no visible symptom; the language server is a leaf."
+          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/102",
+          "note": "sdk. getMemory() is typed as an array (packages/sdk/src/session.ts:231) but returns the kernel's { entries } (packages/kernel-dsl/src/engine/memory.rs:160-162). Needs a maintainer decision: return .entries to match the type, or retype to { entries }. Either breaks some caller."
         }
       ]
     }
