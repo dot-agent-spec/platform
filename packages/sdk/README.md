@@ -140,3 +140,4 @@ npm test          # node --test against tests/node.test.js
 npm run build     # compile to dist/ with tsup
 npm run typecheck # tsc --noEmit
 ```
+
