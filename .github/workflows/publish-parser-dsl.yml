@@ -28,7 +28,7 @@ jobs:
           targets: wasm32-wasip1
 
       - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version "=0.2.122" --locked
 
       - name: Install dependencies
         run: npm ci
