@@ -32,3 +32,14 @@ jobs:
 
       - name: Check for a changeset
         run: npx --yes @changesets/cli@2.31.1 status --since=origin/main
+
+      # The alpha and beta branches sit in pre mode. Merged into main in that
+      # state, `.changeset/pre.json` turns the next stable release into a
+      # prerelease; promotion runs `changeset pre exit` first.
+      - name: Pre mode stays off main
+        if: github.base_ref == 'main'
+        run: |
+          if [ -f .changeset/pre.json ] && grep -q '"mode": *"pre"' .changeset/pre.json; then
+            echo "::error file=.changeset/pre.json::pre mode is on; run 'npx changeset pre exit' before merging into main"
+            exit 1
+          fi

@@ -18,6 +18,11 @@ What is particular to this repository:
 - **The seven npm packages are one `fixed` group.** A release moves all of them to the same version, so
   naming only the package you changed is enough — the others follow, and the changelog of one that did
   not change gets an empty version heading.
+- **Three npm channels: `latest`, `alpha`, `beta`.** A prerelease is cut on the `alpha` or `beta` branch,
+  which sits in pre mode (`npx changeset pre enter <channel>`); the version it produces, `X.Y.Z-beta.N`,
+  names the dist-tag it publishes under. Any other prerelease identifier fails the publish workflow, and a
+  pull request into `main` fails while `.changeset/pre.json` is in pre mode. The runbook is the `/publish`
+  skill.
 - **`vscode-dot-agent` is ignored.** It bundles the build output and ships on its own track, so no
   changeset may name it, and its `CHANGELOG.md` stays hand-written in Keep a Changelog format.
 - **The summary is the changelog entry**, read by someone upgrading. Write what changed for them and what
