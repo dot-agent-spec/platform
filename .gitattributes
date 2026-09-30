@@ -1,0 +1,5 @@
+# Changesets writes a new version section at the top of every CHANGELOG.md, on
+# main and on the alpha and beta branches alike, so merging one branch into
+# another conflicts on all seven files every time. Union keeps both sections.
+packages/*/CHANGELOG.md merge=union
+apps/dot-agent-cli/CHANGELOG.md merge=union
