@@ -1,48 +1,17 @@
 {
   "id": "dot-agent-spec",
-  "version": "0.2.0",
-  "summary": "The open issues ordered in release waves by distance from tree-sitter: each wave bumps the packages it names, and the exact-pin cascade carries the bump to everything downstream. Waves 0 and 1 landed as #43-#45 and #49-#51; the gate went back to green with #54 and #56.",
+  "version": "0.4.0",
+  "summary": "The open issues ordered in release waves by distance from tree-sitter: each wave bumps the packages it names, and the exact-pin cascade carries the bump to everything downstream. Waves 0 to 2 and the CLI hardening landed (#43-#70): the gate is green, compiler and sdk carry #7, #9, #17 and the DA00-09 lints, and the cli refuses unknown options everywhere.",
   "corpus": "dot-agent-spec",
   "waves": [
     {
-      "id": "w1",
-      "name": "Wave 2 — compiler to sdk",
-      "goal": "compiler and sdk are bumped once, with #14, #7 and #9 fixed and the AgentSession snapshot API on top of the kernel primitive.",
+      "id": "w4",
+      "name": "Wave 4 — guide/teach inside a handler, at the grammar",
+      "goal": "guide or teach placed inside an on intent/on offtopic handler gets one error at the statement, with tree-sitter, parser-dsl and the linter agreeing, and DA00-09 amended to record it.",
       "items": [
         {
           "ref": "ref:url:github.com/dot-agent-spec/platform/issues/14",
-          "note": "compiler only. ADR DA00-09 rejects changing the grammar; the fix is generalising W012/W013 to guide/teach in packages/compiler/src/linter.ts:263-291, plus a lint for a duplicate interact."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/7",
-          "note": "compiler. unpack writes the consolidated behavior as agent.behavior but leaves the .description declaring the original name, so the next pack fails E012. DA01-02 fixed the pack side only; unpack.ts is the missing half. Before #9: both touch pack/unpack."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/9",
-          "note": "compiler + sdk. W016 is warn-only in packages/compiler/src/pack.ts:339-359, and packages/sdk/src/load.ts:56-58 classifies by prefix alone. Decide whether W016 becomes an error."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/17",
-          "note": "sdk half only. The kernel primitive landed in #51 (serialize_state / restore_state, bound to a behavior fingerprint); what remains is the snapshot and rehydrate API on AgentSession in packages/sdk/src/session.ts."
-        }
-      ]
-    },
-    {
-      "id": "w2",
-      "name": "CLI hardening — leaf, no cascade",
-      "goal": "Every CLI command rejects unknown options, the MCP init surface can pass force, and the tracker stops describing pkg-web/.",
-      "items": [
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/47",
-          "note": "dot_agent_init exposes no force (apps/dot-agent-cli/src/commands/server-mcp.ts:29), so the refusal #43 added is a dead end over MCP and its error text names a CLI flag. Can run alongside any wave: cli is a leaf."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/46",
-          "note": "pack, unpack, run, configure and server-mcp still use the permissive loop #43 removed from init. Measured: pack --dr /tmp/x discards the typo, packs cwd and overwrites the output file with exit 0. Move them onto cli-args.ts."
-        },
-        {
-          "ref": "ref:url:github.com/dot-agent-spec/platform/issues/48",
-          "note": "project/implementation-status.md:107 describes a kernel-dsl pkg-web/ that does not exist. Docs only."
+          "note": "Grammar first. The lints DA00-09 asked for landed in #68 (W012 extended to guide/teach, W017 a second interact, W018 statements after a transition); guide/teach inside an on intent/on offtopic handler still reports a generic E004. A precise error needs tree-sitter-behavior to admit guide/teach in a handler body so parser-dsl and the linter can refuse it at the exact position — an amendment to ADR DA00-09 and a cascade from tree-sitter down. A linter reading the raw text of the parse ERROR node was built and rejected in review (false positive on a valid state-level guide, hid the real error, missed 128 of 192 placements)."
         }
       ]
     },
