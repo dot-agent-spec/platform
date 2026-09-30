@@ -8,6 +8,8 @@ Consolidated runbook so this process is never re-derived from scratch. Publishin
 bump versions + re-pin cross-deps on `main`, then push `<pkg>@<version>` tags, and the GitHub Actions
 `publish-*.yml` workflows do the actual `npm publish --provenance` via OIDC. **There is no local publish.**
 
+This is an event skill. Each run publishes one release, and a second run publishes a second.
+
 **Usage:** `/publish` — then work through the phases below for the packages you're releasing.
 
 ## 🔒 Human-approval gate (read first, state it upfront)
@@ -74,19 +76,43 @@ part of this runbook.
 The level is declared per change, in the `.changeset/*.md` file the pull request carried; the release takes
 the highest pending level.
 
+## Channels — alpha, beta, and how work moves between them
+
+Fixes land on `main`; everything else lands on `alpha` and reaches `main` only by promotion
+(CONTRIBUTING, *Which branch a pull request targets*). The `alpha` and `beta` branches each sit in
+changesets' pre mode, recorded in their own `.changeset/pre.json`, so `changeset version` there produces
+`X.Y.Z-alpha.N` / `X.Y.Z-beta.N`. Pre mode keeps every changeset file until it exits.
+
+- **Prerelease.** On the channel branch, Phase 1 from step 3 and Phase 2 as usual, then push its tags in
+  Phase 3's waves. No PR into `main`.
+- **alpha → beta.** On `beta`, `git merge alpha`. It always conflicts on `.changeset/pre.json` (each branch
+  added its own) — keep beta's: `git checkout --ours .changeset/pre.json`. The next `changeset version`
+  continues the counter from alpha's (`-alpha.0` is followed by `-beta.1`), which still sorts correctly.
+- **beta → main — the stable release.** On `beta`, `npx changeset pre exit`, then Phase 1 from step 3:
+  `changeset version` produces the plain `X.Y.Z` and deletes `pre.json`. PR into `main`; CI refuses one that
+  still carries `pre.json` in pre mode.
+- **After a stable release, reset both channels onto it.** In each of `beta` and `alpha`: `git merge main`,
+  take `main`'s side of every conflicting `package.json` (`git checkout --theirs`), `git rm
+  .changeset/pre.json`, commit, then `npx changeset pre enter <channel>` and commit again. Pre mode records
+  the released versions as its base, so the channel's next prerelease targets the next version (`0.12.1`
+  released → `0.13.0-alpha.0` for a pending minor), and changesets not yet promoted stay pending.
+- **Forward-port a fix.** After a fix lands on `main` (and after its release), merge `main` into `beta` and
+  `main` into `alpha` — each from `main`. `.gitattributes` unions the `CHANGELOG.md` files, so the conflicts
+  left are the `version` and pin lines of the seven `package.json`: keep the channel's side (`git checkout
+  --ours`). Check the diff first: a fix that changed a dependency in a `package.json` needs that line kept by
+  hand.
+- **Never merge `beta` into `alpha`.** Once alpha has been promoted into beta, beta's `pre.json` descends
+  from alpha's, so the merge applies it **without a conflict** and alpha silently switches to tag `beta` —
+  its next "alpha" publishes `-beta.N` under the `beta` dist-tag. CI refuses a pull request into either
+  branch whose `pre.json` names the other channel; a direct push is not checked.
+
 ## Phase 1 — Bump & re-pin (on a release branch off fresh `main`)
 
 1. `git checkout main && git pull` — confirm the fix commit(s) you're releasing are actually present.
    **Diff local `main` vs `origin/main` first** (`git rev-list --left-right --count origin/main...main`) —
    unpushed local commits silently ride along into a release branch cut from `main`.
-2. Branch `chore/release-<slug>`. **An `alpha` or `beta` release is cut on the channel's own branch instead**
-   (`alpha` or `beta`, updated from `main`), which sits in changesets' pre mode: `npx changeset pre enter
-   alpha` (or `beta`) once, committing `.changeset/pre.json`, and every `changeset version` there produces
-   `X.Y.Z-alpha.N`. Its tags are pushed from that branch, and it is **never merged into `main` while
-   `pre.json` says `"mode": "pre"`** — the next stable release on `main` would come out as a prerelease.
-   Moving alpha → beta is `pre exit` then `pre enter beta`; the counter carries on (`-alpha.1` is followed
-   by `-beta.2`), which still sorts correctly. Promotion to stable is `pre exit`, `changeset version` for
-   the plain `X.Y.Z`, then the usual PR into `main`.
+2. Branch `chore/release-<slug>`. **An `alpha` or `beta` release is cut on the channel's own branch
+   instead**, and its tags are pushed from there — see *Channels* below.
 3. `npx changeset status --verbose` — read the version it will produce and the changesets it will consume.
    Then `npx changeset version`: it bumps all seven `package.json` files, re-pins the exact cross-deps,
    writes each `CHANGELOG.md` from the changesets' summaries and deletes the consumed `.changeset/*.md`.
@@ -171,3 +197,11 @@ npm). If any wave fails, **stop** — don't push later waves, since their pinned
 Once the release is published and verified, **re-open this file and reconcile it with what actually
 happened** — fix any step that differed, tighten anything that was fuzzy, add any new footgun you hit. Keep
 it accurate so the next round doesn't re-discover the process.
+
+**The *Channels* section rests on a simulation, not on a release.** Every step in it was run in a scratch
+clone; none has yet carried a real alpha, a promotion or a forward-port to npm. The first of each is what
+confirms or breaks it — look hardest at the `package.json` side kept in a forward-port, and at whether the
+reset after a stable release leaves the next prerelease on the next version.
+
+Verified against: `@changesets/cli` 2.31.1, git 2.x, the `publish-*.yml` and `changeset-status.yml`
+workflows as of 2026-09-30.

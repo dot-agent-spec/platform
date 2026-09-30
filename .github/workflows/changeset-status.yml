@@ -39,6 +39,17 @@ jobs:
       # The alpha and beta branches sit in pre mode. Merged into main in that
       # state, `.changeset/pre.json` turns the next stable release into a
       # prerelease; promotion runs `changeset pre exit` first.
+      # Merging beta into alpha applies beta's pre.json without a conflict,
+      # and alpha would then publish -beta.N under the beta dist-tag.
+      - name: Pre mode matches the channel
+        if: github.base_ref == 'alpha' || github.base_ref == 'beta'
+        run: |
+          tag=$(node -p "require('./.changeset/pre.json').tag" 2>/dev/null || echo none)
+          if [ "$tag" != "$GITHUB_BASE_REF" ]; then
+            echo "::error file=.changeset/pre.json::pre mode tag is '$tag' on a pull request into $GITHUB_BASE_REF; restore $GITHUB_BASE_REF's pre.json"
+            exit 1
+          fi
+
       - name: Pre mode stays off main
         if: github.base_ref == 'main'
         run: |
