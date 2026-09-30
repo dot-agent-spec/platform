@@ -79,7 +79,14 @@ the highest pending level.
 1. `git checkout main && git pull` — confirm the fix commit(s) you're releasing are actually present.
    **Diff local `main` vs `origin/main` first** (`git rev-list --left-right --count origin/main...main`) —
    unpushed local commits silently ride along into a release branch cut from `main`.
-2. Branch `chore/release-<slug>`.
+2. Branch `chore/release-<slug>`. **An `alpha` or `beta` release is cut on the channel's own branch instead**
+   (`alpha` or `beta`, updated from `main`), which sits in changesets' pre mode: `npx changeset pre enter
+   alpha` (or `beta`) once, committing `.changeset/pre.json`, and every `changeset version` there produces
+   `X.Y.Z-alpha.N`. Its tags are pushed from that branch, and it is **never merged into `main` while
+   `pre.json` says `"mode": "pre"`** — the next stable release on `main` would come out as a prerelease.
+   Moving alpha → beta is `pre exit` then `pre enter beta`; the counter carries on (`-alpha.1` is followed
+   by `-beta.2`), which still sorts correctly. Promotion to stable is `pre exit`, `changeset version` for
+   the plain `X.Y.Z`, then the usual PR into `main`.
 3. `npx changeset status --verbose` — read the version it will produce and the changesets it will consume.
    Then `npx changeset version`: it bumps all seven `package.json` files, re-pins the exact cross-deps,
    writes each `CHANGELOG.md` from the changesets' summaries and deletes the consumed `.changeset/*.md`.
@@ -126,8 +133,9 @@ fails. So push tags dependency-first, and wait for each wave's Actions run to go
 
 Tag → workflow: `kernel-dsl@*`→`publish-kernel-dsl.yml`, `parser-dsl@*`→`publish-parser-dsl.yml`,
 `compiler@*`/`sdk@*`/`language-server@*`/`cli@*`→`publish-ts.yml` (its `resolve` job maps prefix→dir; it also
-builds the whole chain from the workspace before publishing the target). dist-tag logic in each workflow:
-version containing `-` → `alpha`, else `latest`.
+builds the whole chain from the workspace before publishing the target). The npm dist-tag comes from the
+version, through `scripts/npm-dist-tag.sh`: no prerelease → `latest`, `-alpha.N` → `alpha`, `-beta.N` →
+`beta`; any other identifier fails the workflow before `npm publish`.
 
 ```
 git tag kernel-dsl@0.10.3 && git push origin kernel-dsl@0.10.3       # push the wave's tag(s)

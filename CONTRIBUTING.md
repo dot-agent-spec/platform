@@ -84,7 +84,9 @@ VS Code extension's, which sits outside changesets. What the bump levels mean he
 The packages depend on each other with exact pins, so a release cascades: bumping a package obliges you to
 re-pin and re-release its dependents, in topological order. The seven npm packages are therefore one
 changesets `fixed` group that always releases at a single version, and `npx changeset version` performs the
-bump, the re-pin and the changelog in one step. Publishing itself is still the tag push above. The full
+bump, the re-pin and the changelog in one step. Publishing itself is still the tag push above. A version
+with no prerelease publishes as `latest`; `-alpha.N` and `-beta.N` publish under the `alpha` and `beta`
+dist-tags, cut from branches of the same names in changesets' pre mode. The full
 runbook, including the
 human-approval gate before any tag is pushed, is the `/publish` skill in
 [`.agents/skills/publish/`](.agents/skills/publish/).
