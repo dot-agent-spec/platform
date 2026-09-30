@@ -88,16 +88,23 @@ changesets' pre mode, recorded in their own `.changeset/pre.json`, so `changeset
 - **alpha → beta.** On `beta`, `git merge alpha`. It always conflicts on `.changeset/pre.json` (each branch
   added its own) — keep beta's: `git checkout --ours .changeset/pre.json`. The next `changeset version`
   continues the counter from alpha's (`-alpha.0` is followed by `-beta.1`), which still sorts correctly.
-- **beta → main — the stable release.** On `beta`, `npx changeset pre exit`, then Phase 1 from step 3:
-  `changeset version` produces the plain `X.Y.Z` and deletes `pre.json`. PR into `main`; CI refuses one that
-  still carries `pre.json` in pre mode.
+  Beta's changelog then repeats alpha's entries under its own version, because each branch's `pre.json`
+  records only what that branch consumed; the stable release gathers them into one section.
+- **beta → main — the stable release.** Cut `chore/release-<version>` from `beta`, and on it
+  `npx changeset pre exit`, then Phase 1 from step 3: `changeset version` produces the plain `X.Y.Z` and
+  deletes `pre.json`. `beta` itself stays in pre mode, usable while the pull request waits. PR into `main`:
+  CI refuses one that still carries `pre.json` in pre mode, and skips the changeset check on
+  `chore/release-*`, whose diff deletes the changesets it consumed. Phase 3 then tags the merge commit on
+  `main`.
 - **After a stable release, reset both channels onto it.** In each of `beta` and `alpha`: `git merge main`,
   take `main`'s side of every conflicting `package.json` (`git checkout --theirs`), `git rm
   .changeset/pre.json`, commit, then `npx changeset pre enter <channel>` and commit again. Pre mode records
   the released versions as its base, so the channel's next prerelease targets the next version (`0.12.1`
   released → `0.13.0-alpha.0` for a pending minor), and changesets not yet promoted stay pending.
 - **Forward-port a fix.** After a fix lands on `main` (and after its release), merge `main` into `beta` and
-  `main` into `alpha` — each from `main`. `.gitattributes` unions the `CHANGELOG.md` files, so the conflicts
+  `main` into `alpha` — each from `main`. The Forward-port workflow does this on every push to `main`,
+  keeping one pull request open from `forward-port/<channel>` into each channel (it needs the
+  `FORWARD_PORT_TOKEN` secret); a conflict is resolved on that branch, never with `main` as the head. `.gitattributes` unions the `CHANGELOG.md` files, so the conflicts
   left are the `version` and pin lines of the seven `package.json`: keep the channel's side (`git checkout
   --ours`). Check the diff first: a fix that changed a dependency in a `package.json` needs that line kept by
   hand.
@@ -163,8 +170,11 @@ builds the whole chain from the workspace before publishing the target). The npm
 version, through `scripts/npm-dist-tag.sh`: no prerelease → `latest`, `-alpha.N` → `alpha`, `-beta.N` →
 `beta`; any other identifier fails the workflow before `npm publish`.
 
+Tags are **annotated** — this repository's git config refuses a lightweight tag with "fatal: no tag
+message?".
+
 ```
-git tag kernel-dsl@0.10.3 && git push origin kernel-dsl@0.10.3       # push the wave's tag(s)
+git tag -a -m 'kernel-dsl@0.10.3' kernel-dsl@0.10.3 <commit> && git push origin kernel-dsl@0.10.3
 gh run list --limit 5 --json databaseId,name,status,event               # find the run id
 gh run watch <run-id> --exit-status && echo GREEN                       # blocks until done; nonzero if it failed
 npm view @dot-agent/<pkg> version                                       # confirm live on npm before next wave
@@ -173,6 +183,11 @@ npm view @dot-agent/<pkg> version                                       # confir
 `gh run watch --exit-status` is the wait-for-green gate between waves — its exit code is the go/no-go. Only
 advance when the run is green *and* `npm view` shows the version live (the next wave's pins resolve against
 npm). If any wave fails, **stop** — don't push later waves, since their pinned deps won't exist.
+
+**npm answers 404 for a freshly published version for a few minutes** while the run that published it is
+green and its log ends in `+ @dot-agent/<pkg>@<version>`. Poll `npm view @dot-agent/<pkg> dist-tags
+--prefer-online` every thirty seconds or so before the next wave; a 404 right after a green run is that lag,
+not a failure. A red run is the failure — read its log before touching the tag.
 
 **Footguns:**
 - Backticks inside **double quotes** execute for real in Bash — this has nearly caused an accidental root
@@ -198,10 +213,12 @@ Once the release is published and verified, **re-open this file and reconcile it
 happened** — fix any step that differed, tighten anything that was fuzzy, add any new footgun you hit. Keep
 it accurate so the next round doesn't re-discover the process.
 
-**The *Channels* section rests on a simulation, not on a release.** Every step in it was run in a scratch
-clone; none has yet carried a real alpha, a promotion or a forward-port to npm. The first of each is what
-confirms or breaks it — look hardest at the `package.json` side kept in a forward-port, and at whether the
-reset after a stable release leaves the next prerelease on the next version.
+**Two steps of *Channels* still rest on a simulation.** An alpha, the alpha → beta merge, a beta and a
+conflict-free forward-port have run for real; the stable publish from a promotion and the reset after it
+have not, and neither has a forward-port whose `package.json` files conflict. The first of each confirms or
+breaks it — look hardest at whether the reset leaves the next prerelease on the next version, and at the
+`package.json` side kept in a conflicting forward-port.
 
-Verified against: `@changesets/cli` 2.31.1, git 2.x, the `publish-*.yml` and `changeset-status.yml`
-workflows as of 2026-09-30.
+Verified against: `@changesets/cli` 2.31.1, `wasm-bindgen-cli` 0.2.122, git 2.x, and the `publish-*.yml`,
+`changeset-status.yml` and `forward-port.yml` workflows, in the `0.12.0-alpha.0` and `0.12.0-beta.1`
+publishes of 2026-09-30.
