@@ -30,6 +30,14 @@ name a construct in order to exclude it.
 symlinks: the plugin folder has to stand alone to be installable from the marketplace. Edit both, then
 `diff` them — nothing fails if you edit only one.
 
+**A command that calls a compiler parser initialises it itself, and its own tests cannot tell you it
+forgot.** `parseBehaviorFile` and `parseDescriptionFile` run on a wasm module that is initialised once
+per process by `initBehaviorParser()`; called before it, they throw `Cannot read properties of undefined
+(reading '__wbindgen_free_command_export')`. A unit test that calls `pack()` first has already
+initialised it for the whole process, so the command passes there and crashes when a user runs it
+alone — `unpack` shipped to `main` that way. Prove such a command in a fresh process through the built
+binary, as `tests/cli-strict-args.test.ts` does for `unpack`.
+
 **Two MCP servers, not one.** `run --mcp` / `run --helper` starts `startMcpServer` → `registerRuntime()`
 only. `server-mcp.ts` registers four authoring tools **and** calls `registerRuntime()`. `registerRuntime()`
 is `registerLoadTool` (`load_agent`) + the five session tools + `registerResources` — reading only
