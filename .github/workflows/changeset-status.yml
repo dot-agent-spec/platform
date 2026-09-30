@@ -33,11 +33,14 @@ jobs:
       # Against the pull request's own base, not main: the alpha and beta
       # branches keep every changeset until pre mode exits, so compared with
       # main a pull request into them would pass on changesets it did not add.
-      # Skipped on the Forward-port workflow's pull requests: they carry main,
-      # which passed this check already, and after a stable release their diff
-      # holds version bumps whose changesets that release consumed.
+      # Skipped on two kinds of pull request whose diff holds version bumps
+      # without the changesets behind them, because `changeset version`
+      # consumed those: a release (`chore/release-*`, the /publish skill's
+      # branch name), and the Forward-port workflow's (`forward-port/*`), which
+      # carry main after a release. Their changes passed this check when each
+      # changeset was added.
       - name: Check for a changeset
-        if: ${{ !startsWith(github.head_ref, 'forward-port/') }}
+        if: ${{ !startsWith(github.head_ref, 'forward-port/') && !startsWith(github.head_ref, 'chore/release-') }}
         run: npx --yes @changesets/cli@2.31.1 status --since="origin/$GITHUB_BASE_REF"
 
       # The alpha and beta branches sit in pre mode. Merged into main in that
