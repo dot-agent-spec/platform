@@ -1,0 +1,15 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "@dot-agent/cli": "0.11.1",
+    "vscode-dot-agent": "0.10.1",
+    "@dot-agent/compiler": "0.10.2",
+    "@dot-agent/kernel-dsl": "0.10.3",
+    "@dot-agent/language-server": "0.10.2",
+    "@dot-agent/parser-dsl": "0.10.2",
+    "@dot-agent/sdk": "0.10.3",
+    "@dot-agent/tree-sitter": "0.10.1"
+  },
+  "changesets": []
+}
