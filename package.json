@@ -14,7 +14,8 @@
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present",
-    "generate:dashboard": "node scripts/generate-dashboard.js"
+    "generate:dashboard": "node scripts/generate-dashboard.js",
+    "version-packages": "changeset version && sh scripts/collapse-prerelease-changelogs.sh"
   },
   "engines": {
     "node": ">=24.0.0"

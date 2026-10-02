@@ -1,5 +1,0 @@
----
-"@dot-agent/cli": minor
----
-
-**Breaking: `pack`, `unpack`, `run`, `configure` and `server-mcp` refuse an unknown option, an unexpected positional argument, a missing value, a repeated flag, or a value that starts with `-` (almost always a missing value, not the next flag)** with a non-zero exit that names the option and the command, before any file is touched — the strict parsing `init` already had, and `init` itself now also rejects a repeated flag the same way (`init --dir a --dir b` no longer silently scaffolds into `b`). `run` and `server-mcp` additionally validate `--mcp-transport` (only `stdio` or `http`) and `--mcp-port` (an integer from 1 to 65535) instead of passing either straight through — an unrecognised transport used to start an HTTP server regardless of what was asked for, and a non-numeric port reached `parseInt` unchecked. They used to drop unrecognised tokens, so `pack --dr /tmp/x` packed the current directory and overwrote the output file with exit 0 ([#46](https://github.com/dot-agent-spec/platform/issues/46)).

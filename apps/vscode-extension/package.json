@@ -48,10 +48,10 @@
     "install-ext": "code --install-extension vscode-dot-agent-*.vsix"
   },
   "dependencies": {
-    "@dot-agent/parser-dsl": "0.12.0-alpha.0",
-    "@dot-agent/compiler": "0.12.0-alpha.0",
-    "@dot-agent/language-server": "0.12.0-alpha.0",
-    "@dot-agent/tree-sitter": "0.12.0-alpha.0",
+    "@dot-agent/parser-dsl": "0.12.0",
+    "@dot-agent/compiler": "0.12.0",
+    "@dot-agent/language-server": "0.12.0",
+    "@dot-agent/tree-sitter": "0.12.0",
     "vscode-languageclient": "^10.1.1"
   },
   "devDependencies": {

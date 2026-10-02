@@ -1,10 +1,10 @@
 # @dot-agent/parser-dsl
 
-## 0.12.0-alpha.0
+## 0.12.0
 
 ### Minor Changes
 
-- b340f27: **BREAKING — `Value` gained an object shape, and a memory reference now uses it.** An unquoted
+- **BREAKING — `Value` gained an object shape, and a memory reference now uses it.** An unquoted
   operand — either side of a comparison, or the right-hand side of a `set` — is a memory reference and
   is emitted as `{ "path": "session.count" }` where it used to be the bare string `"session.count"`.
   The published type moves from `string | number | boolean | null` to
