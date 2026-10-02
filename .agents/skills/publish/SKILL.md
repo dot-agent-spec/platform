@@ -114,8 +114,11 @@ changesets' pre mode, recorded in their own `.changeset/pre.json`, so `changeset
 2. Branch `chore/release-<slug>`. **An `alpha` or `beta` release is cut on the channel's own branch
    instead**, and its tags are pushed from there — see *Channels* below.
 3. `npx changeset status --verbose` — read the version it will produce and the changesets it will consume.
-   Then `npx changeset version`: it bumps all seven `package.json` files, re-pins the exact cross-deps,
-   writes each `CHANGELOG.md` from the changesets' summaries and deletes the consumed `.changeset/*.md`.
+   Then `npm run version-packages`, never bare `changeset version`: it bumps all seven `package.json`
+   files, re-pins the exact cross-deps, writes each `CHANGELOG.md` through `.changeset/changelog.cjs` and
+   deletes the consumed `.changeset/*.md`, then — on a stable version only —
+   `scripts/collapse-prerelease-changelogs.sh` removes that version's `-alpha.N`/`-beta.N` sections, which
+   pre mode would otherwise leave repeating every entry once per channel.
    **Never edit a `CHANGELOG.md` by hand** — fix the changeset summary and re-run instead. The
    `vscode-extension` changelog is the exception: it is outside changesets and stays hand-written.
 4. Set `version` in the three `Cargo.toml` files (kernel-dsl, parser-dsl, tree-sitter; the others are
