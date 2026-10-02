@@ -22,7 +22,8 @@ tag push is not (a version can't be re-published or unpublished after 72h).
 - **Pre-approval:** the human may pre-approve the batch up front ("go ahead and publish X, Y, Z"). If so, you
   may proceed through the waves without re-asking — **but only while everything goes clean.**
 - **Critical-error override:** if anything critical surfaces at any point — a failing or hanging test, a
-  security-relevant finding, an unexpected diff, a wrong/extra tag, a workflow failing mid-cascade — **stop
+  security-relevant finding, an unexpected diff, a wrong/extra tag, a workflow failing mid-cascade, or an
+  environment that refuses `git tag` or `git push` (an agent's guard can) — **stop
   and request a fresh human review, even if the batch was pre-approved.** Pre-approval covers the happy path,
   not surprises.
 
@@ -115,6 +116,12 @@ changesets' pre mode, recorded in their own `.changeset/pre.json`, so `changeset
 
 ## Phase 1 — Bump & re-pin (on a release branch off fresh `main`)
 
+**When the release commit is already merged** — a promotion PR from `beta`, or a release PR merged before
+this run — steps 2–6 are a check, not work: every `package.json` at the new version with exact pins, the
+three `Cargo.toml` aligned, `COMPILER_VERSION` matching, no `.changeset/pre.json`, then Phase 2 on that
+commit. A `.changeset/*.md` with empty frontmatter left on `main` is a `changeset add --empty`
+declaration, expected and inert.
+
 1. `git checkout main && git pull` — confirm the fix commit(s) you're releasing are actually present.
    **Diff local `main` vs `origin/main` first** (`git rev-list --left-right --count origin/main...main`) —
    unpushed local commits silently ride along into a release branch cut from `main`.
@@ -133,7 +140,7 @@ changesets' pre mode, recorded in their own `.changeset/pre.json`, so `changeset
    though these tags publish **npm-only** (crates.io is a separate Trusted-Publishing path).
 5. `npm install` to regenerate `package-lock.json`. (`Cargo.lock` is **gitignored** — CI regenerates it; no
    need to commit it.)
-6. **Rebuild the TS packages** (`tsdown`) after bumping so tracked, build-generated version constants refresh
+6. **Rebuild the TS packages** (`tsdown`; `language-server` has no build — it ships its JS source) after bumping so tracked, build-generated version constants refresh
    — notably `packages/compiler/src/generated-version.ts` (`COMPILER_VERSION`), which is committed and goes
    stale otherwise. (`apps/dot-agent-cli/src/version.ts` reads `package.json` at runtime, so it needs no
    rebuild.) `dist/` is gitignored; the point is the tracked source constants, not the build output.
@@ -145,9 +152,13 @@ package's `npm test`, and `publish-ts.yml` runs `npm test --if-present` in the t
 `vitest run` for compiler/language-server/cli, `node --test` for sdk). A red test **blocks that package's
 publish**. Run locally first:
 
-- `npm run build` for the WASM chain (tree-sitter → parser-dsl → kernel-dsl) if dist/ is stale — the
-  browser-bundle guard tests bundle the built `dist/`. WASM (`pkg/`) is unchanged on a TS-only release, so
-  running `tsdown` directly per package is enough — no need for the full `cargo test` + wasm rebuild.
+- `npm run build` builds everything in order, and needs **Docker running** (tree-sitter's WASM goes
+  through emscripten). Without Docker, in order: copy the two tree-sitter `.wasm` files from a checkout
+  that has them (only when the grammar sources are unchanged), `cargo test -p dot-agent-parser-dsl` — which
+  generates the git-ignored `packages/parser-dsl/bindings/` that its `tsdown` imports, failing with
+  `UNRESOLVED_IMPORT ../../bindings/AgentDecl` until it exists — then `scripts/build-wasm.sh` for
+  parser-dsl and kernel-dsl, then `tsdown` per package. The browser-bundle guard tests bundle the built
+  `dist/`, so a fresh worktree must build before it tests.
 - `npm test` for every package in the release set. All green.
 
 Pre-flight is not a formality: it has caught real, non-obvious bugs mid-release (e.g. a language-server
@@ -167,9 +178,10 @@ fails. So push tags dependency-first, and wait for each wave's Actions run to go
 - **Wave 3:** `sdk@` (needs kernel-dsl, compiler); `language-server@` (needs parser-dsl, compiler, tree-sitter).
 - **Wave 4:** `cli@` (needs sdk, compiler).
 
-Tag → workflow: `kernel-dsl@*`→`publish-kernel-dsl.yml`, `parser-dsl@*`→`publish-parser-dsl.yml`,
+Tag → workflow: `tree-sitter@*`→`publish-tree-sitter.yml`, `kernel-dsl@*`→`publish-kernel-dsl.yml`, `parser-dsl@*`→`publish-parser-dsl.yml`,
 `compiler@*`/`sdk@*`/`language-server@*`/`cli@*`→`publish-ts.yml` (its `resolve` job maps prefix→dir; it also
-builds the whole chain from the workspace before publishing the target). The npm dist-tag comes from the
+builds the whole chain from the workspace before publishing the target), and `vscode@*`→`publish-vscode.yml`,
+outside these waves. The npm dist-tag comes from the
 version, through `scripts/npm-dist-tag.sh`: no prerelease → `latest`, `-alpha.N` → `alpha`, `-beta.N` →
 `beta`; any other identifier fails the workflow before `npm publish`.
 
@@ -178,11 +190,12 @@ message?".
 
 ```
 git tag -a -m 'kernel-dsl@0.10.3' kernel-dsl@0.10.3 <commit> && git push origin kernel-dsl@0.10.3
-gh run list --limit 5 --json databaseId,name,status,event               # find the run id
+gh run list --limit 20 --json databaseId,headBranch -q '.[] | select(.headBranch=="kernel-dsl@0.10.3") | .databaseId'  # the run of that tag
 gh run watch <run-id> --exit-status && echo GREEN                       # blocks until done; nonzero if it failed
 npm view @dot-agent/<pkg> version                                       # confirm live on npm before next wave
 ```
 
+A wave's tags may be pushed together; watch each tag's run, one after another — the wave advances when all are green.
 `gh run watch --exit-status` is the wait-for-green gate between waves — its exit code is the go/no-go. Only
 advance when the run is green *and* `npm view` shows the version live (the next wave's pins resolve against
 npm). If any wave fails, **stop** — don't push later waves, since their pinned deps won't exist.
@@ -201,11 +214,15 @@ not a failure. A red run is the failure — read its log before touching the tag
 ## Phase 4 — Verify & GitHub Releases
 
 - Every workflow run green (browser-bundle guard included for WASM/sdk).
-- `npm view @dot-agent/<pkg> version` = new version, tagged `latest`.
+- `npm view @dot-agent/<pkg> dist-tags --prefer-online` shows the new version under `latest` (or the channel).
 - Spot-check pins: `npm view @dot-agent/<pkg>@<new> dependencies` shows the re-pinned versions.
 - **Anything beyond `npm publish` needs a local `npm login`** — OIDC only authorizes `npm publish`;
   `npm dist-tag add` and friends fail **E401** in CI even with `id-token:write`.
-- GitHub Release: write **real presentation copy in English**, not just the raw changelog.
+- GitHub Release: **one per platform release**, tagged `v<version>` on the released commit (a `v*` tag
+  triggers no publish workflow), with **real presentation copy in English** adapted from the `## <version>`
+  sections of the seven changelogs — what changed for a user, breaking changes and what to do about them
+  first: `gh release create v<version> --target <full sha> --title '…' --notes-file <file> --latest`.
+  `--target` needs the full SHA. A prerelease gets no GitHub Release.
 - `vscode-extension` is not on npm pins — it bundles build output, released on its own track.
 
 ---
@@ -216,12 +233,12 @@ Once the release is published and verified, **re-open this file and reconcile it
 happened** — fix any step that differed, tighten anything that was fuzzy, add any new footgun you hit. Keep
 it accurate so the next round doesn't re-discover the process.
 
-**Two steps of *Channels* still rest on a simulation.** An alpha, the alpha → beta merge, a beta and a
-conflict-free forward-port have run for real; the stable publish from a promotion and the reset after it
-have not, and neither has a forward-port whose `package.json` files conflict. The first of each confirms or
-breaks it — look hardest at whether the reset leaves the next prerelease on the next version, and at the
-`package.json` side kept in a conflicting forward-port.
+**One step of *Channels* still rests on a simulation: a forward-port whose `package.json` files
+conflict.** Everything else has run for real — an alpha, the alpha → beta merge, a beta, a promotion, the
+stable publish, and the reset, which came in through the Forward-port pull requests (`main` carried no
+`pre.json`, so each channel only needed `pre enter` again). The first conflicting forward-port confirms or
+breaks the *keep the channel's side* rule; look hardest at a dependency line the fix changed.
 
 Verified against: `@changesets/cli` 2.31.1, `wasm-bindgen-cli` 0.2.122, git 2.x, and the `publish-*.yml`,
-`changeset-status.yml` and `forward-port.yml` workflows, in the `0.12.0-alpha.0` and `0.12.0-beta.1`
-publishes of 2026-09-30.
+`changeset-status.yml` and `forward-port.yml` workflows, in the `0.12.0-alpha.0`, `0.12.0-beta.1` and `0.12.0`
+publishes of 2026-09-30 to 2026-10-02.
